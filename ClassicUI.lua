@@ -1,7 +1,7 @@
 -- ------------------------------------------------------------ --
 -- Addon: ClassicUI                                             --
 --                                                              --
--- Version: 1.0.5                                               --
+-- Version: 1.0.6                                               --
 -- Author: Millán - C'Thun                                      --
 --                                                              --
 -- License: GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007 --
@@ -31,7 +31,7 @@ local SCALE_EPSILON = 0.0001
 ClassicUI.BAG_SIZE = 32
 ClassicUI.BAGS_WIDTH = (4*ClassicUI.BAG_SIZE+32)
 ClassicUI.ACTION_BAR_OFFSET = 48
-ClassicUI.VERSION = "1.0.5"
+ClassicUI.VERSION = "1.0.6"
 
 ClassicUI.TitanPanelIsPresent = false
 ClassicUI.TitanPanelBottomBarsYOffset = 0
@@ -654,7 +654,7 @@ function ClassicUI:MainFunction()
 			if ( (not StatusTrackingBarManager:IsShown()) or (StatusTrackingBarManager:GetNumberVisibleBars() < 1) ) then
 				yPos = 90 + 8 + ClassicUI.db.profile.barsConfig.RightMultiActionBars.yOffset
 			end
-			VerticalMultiBarsContainer:SetPoint("BOTTOMRIGHT", UIParent, 0, yPos);
+			VerticalMultiBarsContainer:SetPoint("BOTTOMRIGHT", VerticalMultiBarsContainer:GetParent(), 0, yPos);
 			MultiBarRight:SetPoint("TOPRIGHT", MultiBarRight:GetParent(), "TOPRIGHT", 2 + ClassicUI.db.profile.barsConfig.RightMultiActionBars.xOffset, 0)
 			if (MultiBarLeft:GetParent() ~= VerticalMultiBarsContainer) then
 				MultiBarLeft:SetParent(VerticalMultiBarsContainer)
@@ -758,7 +758,7 @@ function ClassicUI:MainFunction()
 		local xPos = -(ClassicUI:GetExtraWidth() / 2)
 		if ( PetActionBarFrame_IsAboveStance(true) ) then
 			xPos = xPos + -74 + ClassicUI.db.profile.barsConfig.PetActionBarFrame.xOffset
-		elseif ( MainMenuBarVehicleLeaveButton and MainMenuBarVehicleLeaveButton:IsShown() ) then
+		elseif ( MainMenuBarVehicleLeaveButton and MainMenuBarVehicleLeaveButton:IsShown() and (MainMenuBarVehicleLeaveButton:GetRight() ~= nil) ) then
 			xPos = xPos + MainMenuBarVehicleLeaveButton:GetRight() + 20;
 		elseif ( StanceBarFrame and GetNumShapeshiftForms() > 0 ) then
 			xPos = xPos + 390 + ClassicUI.db.profile.barsConfig.PetActionBarFrame.xOffsetIfStanceBar;
@@ -823,6 +823,8 @@ function ClassicUI:MainFunction()
 		end
 	end
 	Update_PetActionBar = ClassicUI.Update_PetActionBar
+	--Hook a function to update PetActionBar
+	hooksecurefunc('PetActionBar_UpdatePositionValues', Update_PetActionBar)
 	
 	-- Function to set the position and scale of StanceBar
 	ClassicUI.Update_StanceBar = function()
@@ -1251,8 +1253,8 @@ function ClassicUI:MainFunction()
 		
 		-- Set the position and scale for MainMenuBarArtFrame
 		local menuBarBagsWidth = BAGS_WIDTH + 60 + extraWidth;
-		MainMenuBarArtFrame:SetPoint("TOPLEFT", MainMenuBar, ((-menuBarBagsWidth)/2) + ClassicUI.db.profile.barsConfig.MainMenuBar.xOffset, 10 + offsetY + ClassicUI.db.profile.barsConfig.MainMenuBar.yOffset);
-		MainMenuBarArtFrame:SetPoint("BOTTOMRIGHT", MainMenuBar, ((-menuBarBagsWidth)/2) + ClassicUI.db.profile.barsConfig.MainMenuBar.xOffset, 10 + offsetY + ClassicUI.db.profile.barsConfig.MainMenuBar.yOffset);
+		MainMenuBarArtFrame:SetPoint("TOPLEFT", MainMenuBarArtFrame:GetParent(), ((-menuBarBagsWidth)/2) + ClassicUI.db.profile.barsConfig.MainMenuBar.xOffset, 10 + offsetY + ClassicUI.db.profile.barsConfig.MainMenuBar.yOffset);
+		MainMenuBarArtFrame:SetPoint("BOTTOMRIGHT", MainMenuBarArtFrame:GetParent(), ((-menuBarBagsWidth)/2) + ClassicUI.db.profile.barsConfig.MainMenuBar.xOffset, 10 + offsetY + ClassicUI.db.profile.barsConfig.MainMenuBar.yOffset);
 		if ((math.abs(MainMenuBarArtFrame:GetScale()-ClassicUI.db.profile.barsConfig.MainMenuBar.scale) > SCALE_EPSILON) or (math.abs(StatusTrackingBarManager:GetScale()-ClassicUI.db.profile.barsConfig.MainMenuBar.scale) > SCALE_EPSILON)) then
 			MainMenuBarArtFrame:SetScale(ClassicUI.db.profile.barsConfig.MainMenuBar.scale)
 			StatusTrackingBarManager:SetScale(ClassicUI.db.profile.barsConfig.MainMenuBar.scale)
