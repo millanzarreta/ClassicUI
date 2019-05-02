@@ -100,6 +100,7 @@ L['Enable RedRange'] = true
 L['LossOfControlUI CC Remover'] = true
 L['Enable LossOfControlUI Remover'] = true
 
+L['RELOADUI_MSG'] = '|cffffd200ClassicUI|r\n\n|cffff0000ReloadUI:|r To apply this action an interface reload is needed. If you wish to continue with this operation, push \'Accept\', otherwise push \'Cancel\' or the \'Escape\' key'
 L['EXTRA_OPTIONS_DESC'] = 'Some Addons already incorporate these extra features. Before activating any extra functionality in ClassicUI check that no other Addon already performs the same function, otherwise some errors or unexpected behaviours could occur.'
 L['GUILD_PANEL_MODE_OPTIONS_DESC'] = 'This additional functionality allows you to recover the old guild panel. You can select open the old guild panel by means of some access modes (keybind, left or right click on the guild microbutton, ...) and conserve other access modes to continue accessing the new social guild panel'
 L['OPEN_GUILD_PANEL_NORMAL'] = 'Default mode to open guild panel...'

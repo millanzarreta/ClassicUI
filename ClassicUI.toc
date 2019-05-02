@@ -1,7 +1,7 @@
 ## Interface: 80000
 ## Title: ClassicUI
 ## Author: millanzarreta
-## Version: 1.0.7
+## Version: 1.0.8
 ## Notes: Restores the classic main interface pre-BFA
 ## Notes-esES: Restaura la interfaz principal clasica pre-BFA
 ## X-Category: Action Bars

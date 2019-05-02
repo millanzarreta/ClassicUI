@@ -100,6 +100,7 @@ L['Enable RedRange'] = 'Activar RedRange'
 L['LossOfControlUI CC Remover'] = 'LossOfControlUI CC Remover'
 L['Enable LossOfControlUI Remover'] = 'Activar LossOfControlUI Remover'
 
+L['RELOADUI_MSG'] = '|cffffd200ClassicUI|r\n\n|cffff0000ReloadUI:|r Para aplicar esta acción es necesario recargar la inferfaz. Si deseas seguir con esta operación, pulsa \'Aceptar\', de lo contrario pulsa \'Cancelar\' o la tecla \'Escape\''
 L['EXTRA_OPTIONS_DESC'] = 'Algunos Addons ya incorporan estas características adicionales. Antes de activar ninguna funcionalidad adicional en ClassicUI deberías comprobar que ningún otro Addon ya esté realizando la misma función, de lo contrario se podrían producir algunos errores o comportamientos inesperados.'
 L['GUILD_PANEL_MODE_OPTIONS_DESC'] = 'Esta funcionalidad adicional permite recuperar el viejo panel de hermandad. Puede seleccionar abrir el viejo panel de hermandad mediante algunos modos de acceso (keybind, click izquierdo o derecho en el microbotón de hermandad, ...) y consevar otros modos de acceso para seguir accediendo al nuevo panel de hermandad social'
 L['OPEN_GUILD_PANEL_NORMAL'] = 'Comportamiento por defecto al abrir el panel de hermandad...'

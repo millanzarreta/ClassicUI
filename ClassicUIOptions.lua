@@ -33,7 +33,7 @@ ClassicUI.optionsTable = {
 					desc = L['Enable ClassicUI'],
 					confirm = function(_, newValue)
 						if (not newValue) then
-							return L['ReloadUI']
+							return L['RELOADUI_MSG']
 						else
 							return false
 						end
@@ -1050,6 +1050,12 @@ ClassicUI.optionsTable = {
 							get = function(_, keyname) return ClassicUI.db.profile.barsConfig.SingleStatusBar.hide[keyname] end,
 							set = function(_, keyname, value)
 								ClassicUI.db.profile.barsConfig.SingleStatusBar.hide[keyname] = value
+								ClassicUI:UpdateStatusBarCache()
+								if (not ClassicUI.cached_SingleStatusBar_hide) then
+									if (not StatusTrackingBarManager:IsShown()) then
+										StatusTrackingBarManager:Show()
+									end
+								end
 								ClassicUI:SetPositionForStatusBars_MainMenuBar()
 							end,
 						},
@@ -1269,6 +1275,12 @@ ClassicUI.optionsTable = {
 							get = function(_, keyname) return ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.hide[keyname] end,
 							set = function(_, keyname, value)
 								ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.hide[keyname] = value
+								ClassicUI:UpdateStatusBarCache()
+								if (not ClassicUI.cached_DoubleStatusBar_hide) then
+									if (not StatusTrackingBarManager:IsShown()) then
+										StatusTrackingBarManager:Show()
+									end
+								end
 								ClassicUI:SetPositionForStatusBars_MainMenuBar()
 							end,
 						},
@@ -1662,7 +1674,7 @@ ClassicUI.optionsTable = {
 					desc = L['Enable ClassicUI'],
 					confirm = function(_, newValue)
 						if (not newValue) then
-							return L['ReloadUI']
+							return L['RELOADUI_MSG']
 						else
 							return false
 						end
@@ -1694,7 +1706,7 @@ ClassicUI.optionsTable = {
 					width = "double",
 					confirm = function(_, newValue)
 						if ((not newValue) and (not ClassicUI:IsEnabled())) then
-							return L['ReloadUI']
+							return L['RELOADUI_MSG']
 						else
 							return false
 						end
@@ -1851,7 +1863,7 @@ ClassicUI.optionsTable = {
 							confirm = function(_, newValue)
 								if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
 									if ((ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode >= 2) and (newValue < 2)) then
-										return L['ReloadUI']
+										return L['RELOADUI_MSG']
 									else
 										return false
 									end
@@ -1913,7 +1925,7 @@ ClassicUI.optionsTable = {
 							confirm = function(_, newValue)
 								if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
 									if ((not newValue) and (ClassicUI.db.profile.extraConfigs.RedRangeConfig.enabled)) then
-										return L['ReloadUI']
+										return L['RELOADUI_MSG']
 									else
 										return false
 									end
@@ -1968,7 +1980,7 @@ ClassicUI.optionsTable = {
 							confirm = function(_, newValue)
 								if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
 									if ((not newValue) and (ClassicUI.db.profile.extraConfigs.LossOfControlUIConfig.enabled)) then
-										return L['ReloadUI']
+										return L['RELOADUI_MSG']
 									else
 										return false
 									end
