@@ -102,11 +102,84 @@ ClassicUI.optionsTable = {
 								ClassicUI.db.profile.barsConfig.MainMenuBar.yOffset = value
 								ClassicUI.SetPositionForStatusBars_MainMenuBar()
 							end
+						},
+						scale = {
+							order = 4,
+							type = "range",
+							softMin = 0.01,
+							softMax = 4,
+							step = 0.01,
+							bigStep = 0.03,
+							name = L['Scale'],
+							desc = L['Scale'],
+							get = function() return ClassicUI.db.profile.barsConfig.MainMenuBar.scale end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.MainMenuBar.scale = value
+								ClassicUI.SetPositionForStatusBars_MainMenuBar()
+							end
+						}
+					}
+				},
+				OverrideActionBarOptions = {
+					order = 7,
+					type = "group",
+					name = L['OverrideActionBar'],
+					desc = L['OverrideActionBar'],
+					args = {
+						Header1 = {
+							type = 'header',
+							order = 1,
+							name = L['OverrideActionBar']
+						},
+						xOffset = {
+							order = 2,
+							type = "range",
+							softMin = -500,
+							softMax = 500,
+							step = 1,
+							bigStep = 10,
+							name = L['xOffset'],
+							desc = L['xOffset'],
+							get = function() return ClassicUI.db.profile.barsConfig.OverrideActionBar.xOffset end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.OverrideActionBar.xOffset = value
+								ClassicUI.SetPositionForStatusBars_MainMenuBar()
+							end
+						},
+						yOffset = {
+							order = 3,
+							type = "range",
+							softMin = -500,
+							softMax = 500,
+							step = 1,
+							bigStep = 10,
+							name = L['yOffset'],
+							desc = L['yOffset'],
+							get = function() return ClassicUI.db.profile.barsConfig.OverrideActionBar.yOffset end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.OverrideActionBar.yOffset = value
+								ClassicUI.SetPositionForStatusBars_MainMenuBar()
+							end
+						},
+						scale = {
+							order = 4,
+							type = "range",
+							softMin = 0.01,
+							softMax = 4,
+							step = 0.01,
+							bigStep = 0.03,
+							name = L['Scale'],
+							desc = L['Scale'],
+							get = function() return ClassicUI.db.profile.barsConfig.OverrideActionBar.scale end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.OverrideActionBar.scale = value
+								ClassicUI.SetPositionForStatusBars_MainMenuBar()
+							end
 						}
 					}
 				},
 				GargoyleOptions = {
-					order = 7,
+					order = 8,
 					type = "group",
 					name = L['GargoyleFrames'],
 					desc = L['GargoyleFrames'],
@@ -184,15 +257,36 @@ ClassicUI.optionsTable = {
 						Spacer1 = {
 							type = "description",
 							order = 6,
+							width = "normal",
+							name = ""
+						},
+						scaleLeftGargoyle = {
+							order = 7,
+							type = "range",
+							softMin = 0.01,
+							softMax = 4,
+							step = 0.01,
+							bigStep = 0.03,
+							name = L['Scale'],
+							desc = L['Scale'],
+							get = function() return ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.scale end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.scale = value
+								ClassicUI.SetPositionForStatusBars_MainMenuBar()
+							end
+						},
+						Spacer2 = {
+							type = "description",
+							order = 8,
 							name = ""
 						},
 						Header2 = {
 							type = 'header',
-							order = 7,
+							order = 9,
 							name = L['Right Gargoyle']
 						},
 						hideRightGargoyle = {
-							order = 8,
+							order = 10,
 							type = "toggle",
 							name = L['Hide'],
 							desc = L['Hide Right Gargoyle'],
@@ -203,7 +297,7 @@ ClassicUI.optionsTable = {
 							end,
 						},
 						xOffsetRightGargoyle = {
-							order = 9,
+							order = 11,
 							type = "range",
 							softMin = -500,
 							softMax = 500,
@@ -218,7 +312,7 @@ ClassicUI.optionsTable = {
 							end
 						},
 						yOffsetRightGargoyle = {
-							order = 10,
+							order = 12,
 							type = "range",
 							softMin = -500,
 							softMax = 500,
@@ -233,7 +327,7 @@ ClassicUI.optionsTable = {
 							end
 						},
 						modelRightGargoyle = {
-							order = 11,
+							order = 13,
 							type = "select",
 							name = L['Right Gargoyle Model'],
 							desc = L['Select the model of the Right Gargoyle'],
@@ -256,10 +350,31 @@ ClassicUI.optionsTable = {
 								end
 							end,
 						},
+						Spacer3 = {
+							type = "description",
+							order = 14,
+							width = "normal",
+							name = ""
+						},
+						scaleRightGargoyle = {
+							order = 15,
+							type = "range",
+							softMin = 0.01,
+							softMax = 4,
+							step = 0.01,
+							bigStep = 0.03,
+							name = L['Scale'],
+							desc = L['Scale'],
+							get = function() return ClassicUI.db.profile.barsConfig.RightGargoyleFrame.scale end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.RightGargoyleFrame.scale = value
+								ClassicUI.SetPositionForStatusBars_MainMenuBar()
+							end
+						}
 					},
 				},
 				MultiActionBarOptions = {
-					order = 8,
+					order = 9,
 					type = "group",
 					name = L['MultiActionBar'],
 					desc = L['MultiActionBar'],
@@ -356,18 +471,33 @@ ClassicUI.optionsTable = {
 								}
 							}
 						},
+						scaleBottomMultiActionBars = {
+							order = 6,
+							type = "range",
+							softMin = 0.01,
+							softMax = 4,
+							step = 0.01,
+							bigStep = 0.03,
+							name = L['Scale'],
+							desc = L['Scale'],
+							get = function() return ClassicUI.db.profile.barsConfig.BottomMultiActionBars.scale end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.BottomMultiActionBars.scale = value
+								ClassicUI.Update_MultiActionBar()
+							end
+						},
 						Spacer2 = {
 							type = "description",
-							order = 6,
+							order = 7,
 							name = ""
 						},
 						Header2 = {
 							type = 'header',
-							order = 7,
+							order = 8,
 							name = L['RightMultiActionBars']
 						},
 						xOffsetRightMultiActionBars = {
-							order = 8,
+							order = 9,
 							type = "range",
 							softMin = -500,
 							softMax = 500,
@@ -382,7 +512,7 @@ ClassicUI.optionsTable = {
 							end
 						},
 						yOffsetRightMultiActionBars = {
-							order = 9,
+							order = 10,
 							type = "range",
 							softMin = -500,
 							softMax = 500,
@@ -397,7 +527,7 @@ ClassicUI.optionsTable = {
 							end
 						},
 						OffsetsStatusBar2 = {
-							order = 10,
+							order = 11,
 							inline = true,
 							type = "group",
 							name = " ",
@@ -447,11 +577,26 @@ ClassicUI.optionsTable = {
 									end
 								}
 							}
+						},
+						scaleRightMultiActionBars = {
+							order = 12,
+							type = "range",
+							softMin = 0.01,
+							softMax = 4,
+							step = 0.01,
+							bigStep = 0.03,
+							name = L['Scale'],
+							desc = L['Scale'],
+							get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.scale end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.RightMultiActionBars.scale = value
+								ClassicUI.Update_MultiActionBar()
+							end
 						}
 					}
 				},
 				PetActionBarOptions = {
-					order = 9,
+					order = 10,
 					type = "group",
 					name = L['PetActionBar'],
 					desc = L['PetActionBar'],
@@ -562,11 +707,26 @@ ClassicUI.optionsTable = {
 									end
 								}
 							}
+						},
+						scale = {
+							order = 7,
+							type = "range",
+							softMin = 0.01,
+							softMax = 4,
+							step = 0.01,
+							bigStep = 0.03,
+							name = L['Scale'],
+							desc = L['Scale'],
+							get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.scale end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.PetActionBarFrame.scale = value
+								ClassicUI.Update_PetActionBar()
+							end
 						}
 					}
 				},
 				StanceBarOptions = {
-					order = 10,
+					order = 11,
 					type = "group",
 					name = L['StanceBar'],
 					desc = L['StanceBar'],
@@ -662,11 +822,26 @@ ClassicUI.optionsTable = {
 									end
 								}
 							}
+						},
+						scale = {
+							order = 6,
+							type = "range",
+							softMin = 0.01,
+							softMax = 4,
+							step = 0.01,
+							bigStep = 0.03,
+							name = L['Scale'],
+							desc = L['Scale'],
+							get = function() return ClassicUI.db.profile.barsConfig.StanceBarFrame.scale end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.StanceBarFrame.scale = value
+								ClassicUI.Update_StanceBar()
+							end
 						}
 					}
 				},
 				PossessBarOptions = {
-					order = 11,
+					order = 12,
 					type = "group",
 					name = L['PossessBar'],
 					desc = L['PossessBar'],
@@ -762,11 +937,26 @@ ClassicUI.optionsTable = {
 									end
 								}
 							}
+						},
+						scale = {
+							order = 6,
+							type = "range",
+							softMin = 0.01,
+							softMax = 4,
+							step = 0.01,
+							bigStep = 0.03,
+							name = L['Scale'],
+							desc = L['Scale'],
+							get = function() return ClassicUI.db.profile.barsConfig.PossessBarFrame.scale end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.PossessBarFrame.scale = value
+								ClassicUI.Update_PossessBar()
+							end
 						}
 					}
 				},
 				StatusBarOptions = {
-					order = 12,
+					order = 13,
 					type = "group",
 					name = L['StatusBar'],
 					desc = L['StatusBar'],
@@ -786,8 +976,31 @@ ClassicUI.optionsTable = {
 							order = 3,
 							name = ""
 						},
-						SingleStatusBarxOffset = {
+						hideSingleStatusBar = {
 							order = 4,
+							type = "multiselect",
+							name = L['Hide for:'],
+							desc = L['Hide SingleStatusBar for the selected StatusBar types'],
+							values = {
+								[0] = L['ExpBar'],
+								[1] = L['HonorBar'],
+								[2] = L['AzeriteBar'],
+								[3] = L['ArtifactBar'],
+								[4] = L['ReputationBar']
+							},
+							get = function(_, keyname) return ClassicUI.db.profile.barsConfig.SingleStatusBar.hide[keyname] end,
+							set = function(_, keyname, value)
+								ClassicUI.db.profile.barsConfig.SingleStatusBar.hide[keyname] = value
+								ClassicUI:SetPositionForStatusBars_MainMenuBar()
+							end,
+						},
+						Spacer2 = {
+							type = "description",
+							order = 5,
+							name = ""
+						},
+						SingleStatusBarxOffset = {
+							order = 6,
 							type = "range",
 							softMin = -500,
 							softMax = 500,
@@ -802,7 +1015,7 @@ ClassicUI.optionsTable = {
 							end
 						},
 						SingleStatusBaryOffset = {
-							order = 5,
+							order = 7,
 							type = "range",
 							softMin = -500,
 							softMax = 500,
@@ -816,13 +1029,13 @@ ClassicUI.optionsTable = {
 								ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
 							end
 						},
-						Spacer2 = {
+						Spacer3 = {
 							type = "description",
-							order = 6,
+							order = 8,
 							name = ""
 						},
 						SingleStatusBarxSize = {
-							order = 7,
+							order = 9,
 							type = "range",
 							softMin = -500,
 							softMax = 500,
@@ -837,7 +1050,7 @@ ClassicUI.optionsTable = {
 							end
 						},
 						SingleStatusBarySize = {
-							order = 8,
+							order = 10,
 							type = "range",
 							softMin = -500,
 							softMax = 500,
@@ -852,7 +1065,7 @@ ClassicUI.optionsTable = {
 							end
 						},
 						SingleStatusBarArt = {
-							order = 9,
+							order = 11,
 							type = "group",
 							inline = true,
 							name = L['ArtFrame'],
@@ -904,7 +1117,7 @@ ClassicUI.optionsTable = {
 							}
 						},
 						SingleStatusBarOverlay = {
-							order = 10,
+							order = 12,
 							type = "group",
 							inline = true,
 							name = L['OverlayFrame'],
@@ -955,28 +1168,56 @@ ClassicUI.optionsTable = {
 								}
 							}
 						},
-						Spacer3 = {
+						Spacer4 = {
 							type = "description",
-							order = 11,
+							order = 13,
 							name = ""
 						},
 						Header2 = {
 							type = 'header',
-							order = 12,
+							order = 14,
 							name = L['DoubleStatusBar']
 						},
 						Comment2 = {
 							type = 'description',
-							order = 13,
+							order = 15,
 							name = L['Configuration for 2 visible StatusBars']
 						},
-						Spacer4 = {
+						Spacer5 = {
 							type = 'description',
-							order = 14,
+							order = 16,
+							name = ""
+						},
+						hideDoubleStatusBar = {
+							order = 17,
+							type = "multiselect",
+							name = L['Hide for:'],
+							desc = L['Hide DoubleStatusBar for the selected StatusBar types'],
+							values = {
+								[0] = L['ExpBar+HonorBar'],
+								[1] = L['ExpBar+AzeriteBar'],
+								[2] = L['ExpBar+ArtifactBar'],
+								[3] = L['ExpBar+ReputationBar'],
+								[4] = L['HonorBar+AzeriteBar'],
+								[5] = L['HonorBar+ArtifactBar'],
+								[6] = L['HonorBar+ReputationBar'],
+								[7] = L['AzeriteBar+ArtifactBar'],
+								[8] = L['AzeriteBar+ReputationBar'],
+								[9] = L['ArtifactBar+ReputationBar']
+							},
+							get = function(_, keyname) return ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.hide[keyname] end,
+							set = function(_, keyname, value)
+								ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.hide[keyname] = value
+								ClassicUI:SetPositionForStatusBars_MainMenuBar()
+							end,
+						},
+						Spacer6 = {
+							type = 'description',
+							order = 18,
 							name = ""
 						},
 						UpperStatusBar = {
-							order = 15,
+							order = 19,
 							inline = true,
 							type = "group",
 							name = L['UpperStatusBar'],
@@ -1150,7 +1391,7 @@ ClassicUI.optionsTable = {
 							}
 						},
 						LowerStatusBar = {
-							order = 16,
+							order = 20,
 							inline = true,
 							type = "group",
 							name = L['LowerStatusBar'],

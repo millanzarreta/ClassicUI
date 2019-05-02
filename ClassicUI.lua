@@ -1,7 +1,7 @@
 -- ------------------------------------------------------------ --
 -- Addon: ClassicUI                                             --
 --                                                              --
--- Version: 1.0.4                                               --
+-- Version: 1.0.5                                               --
 -- Author: Millán - C'Thun                                      --
 --                                                              --
 -- License: GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007 --
@@ -25,12 +25,16 @@ local L = LibStub("AceLocale-3.0"):GetLocale("ClassicUI");
 
 local _G = _G
 local _
+local SCALE_EPSILON = 0.0001
 
 -- Global variables
 ClassicUI.BAG_SIZE = 32
 ClassicUI.BAGS_WIDTH = (4*ClassicUI.BAG_SIZE+32)
 ClassicUI.ACTION_BAR_OFFSET = 48
-ClassicUI.VERSION = "1.0.4"
+ClassicUI.VERSION = "1.0.5"
+
+ClassicUI.TitanPanelIsPresent = false
+ClassicUI.TitanPanelBottomBarsYOffset = 0
 
 ClassicUI.Update_MultiActionBar = function() end
 ClassicUI.Update_PetActionBar = function() end
@@ -51,40 +55,59 @@ ClassicUI.defaults = {
 			},
 			['LeftGargoyleFrame'] = {
 				hide = false,
+				scale = 1,
 				model = 0	-- 0 = Gryphon, 1 = Lion
 			},
 			['RightGargoyleFrame'] = {
 				hide = false,
+				scale = 1,
 				model = 0	-- 0 = Gryphon, 1 = Lion
 			},
-			['MainMenuBar'] = {},
+			['MainMenuBar'] = {
+				scale = 1
+			},
+			['OverrideActionBar'] = {
+				scale = 1
+			},
 			['BottomMultiActionBars'] = {
 				ignoreyOffsetStatusBar = false,
 				yOffset1StatusBar = 0,
-				yOffset2StatusBar = 0
+				yOffset2StatusBar = 0,
+				scale = 1
 			},
 			['RightMultiActionBars'] = {
 				ignoreyOffsetStatusBar = false,
 				yOffset1StatusBar = 0,
-				yOffset2StatusBar = 0
+				yOffset2StatusBar = 0,
+				scale = 1
 			},
 			['PetActionBarFrame'] = {
 				ignoreyOffsetStatusBar = false,
 				yOffset1StatusBar = 0,
 				yOffset2StatusBar = 0,
-				xOffsetIfStanceBar = 0
+				xOffsetIfStanceBar = 0,
+				scale = 1
 			},
 			['StanceBarFrame'] = {
 				ignoreyOffsetStatusBar = false,
 				yOffset1StatusBar = 0,
-				yOffset2StatusBar = 0
+				yOffset2StatusBar = 0,
+				scale = 1
 			},
 			['PossessBarFrame'] = {
 				ignoreyOffsetStatusBar = false,
 				yOffset1StatusBar = 0,
-				yOffset2StatusBar = 0
+				yOffset2StatusBar = 0,
+				scale = 1
 			},
 			['SingleStatusBar'] = {
+				hide = {
+					[0] = false,	-- ExpBar
+					[1] = false,	-- HonorBar
+					[2] = false,	-- AzeriteBar
+					[3] = false,	-- ArtifactBar
+					[4] = false		-- ReputationBar
+				},
 				xSize = 0,
 				ySize = 0,
 				artHide = false,
@@ -95,6 +118,18 @@ ClassicUI.defaults = {
 				yOffsetOverlay = 0
 			},
 			['DoubleUpperStatusBar'] = {
+				hide = {
+					[0] = false,	-- ExpBar+HonorBar
+					[1] = false,	-- ExpBar+AzeriteBar
+					[2] = false,	-- ExpBar+ArtifactBar
+					[3] = false,	-- ExpBar+ReputationBar
+					[4] = false,	-- HonorBar+AzeriteBar
+					[5] = false,	-- HonorBar+ArtifactBar
+					[6] = false,	-- HonorBar+ReputationBar
+					[7] = false,	-- AzeriteBar+ArtifactBar
+					[8] = false,	-- AzeriteBar+ReputationBar
+					[9] = false		-- ArtifactBar+ReputationBar
+				},
 				xSize = 0,
 				ySize = 0,
 				artHide = false,
@@ -312,6 +347,68 @@ function ClassicUI:GetExtraWidth()
 	return extraWidth
 end
 
+-- Function to get the identifier of SingleStatusBars for our 'n' config number
+function ClassicUI:GetSingleBarToHide(n)
+	if (n == 0) then		-- ExpBar (priority = 0)
+		return 0
+	elseif (n == 1) then	-- HonorBar (priority = 2)
+		return 2
+	elseif (n == 2) then	-- AzeriteBar (priority = 3)
+		return 3
+	elseif (n == 3) then	-- ArtifactBar (priority = 4)
+		return 4
+	elseif (n == 4) then	-- ReputationBar (priority = 1)
+		return 1
+	else
+		return nil
+	end
+end
+
+-- Function to get the identifiers of DoubleStatusBars for our 'n' config number
+function ClassicUI:GetDoubleBarsToHide(n)
+	if (n == 0) then		-- ExpBar+HonorBar (priority = 0, 2)
+		return 0, 2
+	elseif (n == 1) then	-- ExpBar+AzeriteBar (priority = 0, 3)
+		return 0, 3
+	elseif (n == 2) then	-- ExpBar+ArtifactBar (priority = 0, 4)
+		return 0, 4
+	elseif (n == 3) then	-- ExpBar+ReputationBar (priority = 0, 1)
+		return 0, 1
+	elseif (n == 4) then	-- HonorBar+AzeriteBar (priority = 2, 3)
+		return 2, 3
+	elseif (n == 5) then	-- HonorBar+ArtifactBar (priority = 2, 4)
+		return 2, 4
+	elseif (n == 6) then	-- HonorBar+ReputationBar (priority = 2, 1)
+		return 1, 2
+	elseif (n == 7) then	-- AzeriteBar+ArtifactBar (priority = 3, 4)
+		return 3, 4
+	elseif (n == 8) then	-- AzeriteBar+ReputationBar (priority = 3, 1)
+		return 1, 3
+	elseif (n == 9) then	-- ArtifactBar+ReputationBar (priority = 4, 1)
+		return 1, 4
+	else
+		return nil, nil
+	end
+end
+
+-- Function to fast-check if TitanPanel addon is present
+function ClassicUI:CheckTitanPanel()
+	if (ClassicUI.TitanPanelIsPresent) then
+		return true
+	else
+		if ((TITAN_PANEL_BAR_HEIGHT ~= nil) and (TitanUtils_AddonAdjust ~= nil) and (TitanPanelGetVar ~= nil)) then
+			TitanUtils_AddonAdjust("MainMenuBar", true)
+			TitanUtils_AddonAdjust("OverrideActionBar", true)
+			TitanUtils_AddonAdjust("MultiBarRight", true)
+			TitanUtils_AddonAdjust("MicroButtonAndBagsBar", true)
+			ClassicUI.TitanPanelIsPresent = true
+			return true
+		else
+			return false
+		end
+	end
+end
+
 -- Function to update the status bars when requested
 function ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
 	if (ClassicUI:IsEnabled()) then
@@ -436,6 +533,8 @@ function ClassicUI:MainFunction()
 	MainMenuBarBackpackButton:SetPoint("RIGHT", MainMenuBarArtFrameBackground.BagsArt, -4, -1);
 	MainMenuBarBackpackButton:SetSize(BAG_SIZE-2, BAG_SIZE-2)
 	MainMenuBarBackpackButtonNormalTexture:SetAlpha(0)
+	MainMenuBarBackpackButtonCount:ClearAllPoints()
+	MainMenuBarBackpackButtonCount:SetPoint("CENTER", 1, -7)
 	for i = 0,3 do
 		_G["CharacterBag"..i.."Slot"]:SetParent(MainMenuBarArtFrame);
 		_G["CharacterBag"..i.."Slot"]:SetSize(BAG_SIZE-2, BAG_SIZE-2);
@@ -505,14 +604,14 @@ function ClassicUI:MainFunction()
 			return
 		end
 		delayFunc_Update_MultiActionBar = false
-		-- Set position MultiBarBottomLeft and MultiBarBottomRight
+		-- Set position and scale MultiBarBottomLeft and MultiBarBottomRight
 		if (SHOW_MULTI_ACTIONBAR_1 or SHOW_MULTI_ACTIONBAR_2) then
 			MultiBarBottomLeft:ClearAllPoints();
 			MultiBarBottomRightButton7:ClearAllPoints();
 			MultiBarBottomRightButton1:ClearAllPoints();
 			local xPos = 0 + ClassicUI.db.profile.barsConfig.BottomMultiActionBars.xOffset
-			local yPos
-			if (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.ignoreyOffsetStatusBar) then
+			local yPos = 0
+			if (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.ignoreyOffsetStatusBar and StatusTrackingBarManager:IsShown()) then
 				if ( StatusTrackingBarManager:GetNumberVisibleBars() == 2 ) then
 					yPos = 9 + 17 + ClassicUI.db.profile.barsConfig.BottomMultiActionBars.yOffset2StatusBar
 				elseif ( StatusTrackingBarManager:GetNumberVisibleBars() == 1 ) then
@@ -525,17 +624,21 @@ function ClassicUI:MainFunction()
 					yPos = 9 + 8 + ClassicUI.db.profile.barsConfig.BottomMultiActionBars.yOffset
 				end
 			end
-			if ( StatusTrackingBarManager:GetNumberVisibleBars() < 1 ) then
+			if ( (not StatusTrackingBarManager:IsShown()) or (StatusTrackingBarManager:GetNumberVisibleBars() < 1) ) then
 				yPos = 9 + 3 + ClassicUI.db.profile.barsConfig.BottomMultiActionBars.yOffset
 			end
 			MultiBarBottomLeft:SetPoint("BOTTOMLEFT", ActionButton1, "TOPLEFT", xPos, yPos);
 			MultiBarBottomRightButton1:SetPoint("TOPLEFT", MultiBarBottomLeftButton12, "TOPLEFT", 48, 0);
 			MultiBarBottomRightButton7:SetPoint("TOPLEFT", MultiBarBottomRightButton6, "TOPLEFT", 42, 0);
+			if ((math.abs(MultiBarBottomLeft:GetScale()-ClassicUI.db.profile.barsConfig.BottomMultiActionBars.scale) > SCALE_EPSILON) or (math.abs(MultiBarBottomRight:GetScale()-ClassicUI.db.profile.barsConfig.BottomMultiActionBars.scale) > SCALE_EPSILON)) then
+				MultiBarBottomLeft:SetScale(ClassicUI.db.profile.barsConfig.BottomMultiActionBars.scale)
+				MultiBarBottomRight:SetScale(ClassicUI.db.profile.barsConfig.BottomMultiActionBars.scale)
+			end
 		end
-		-- Set position VerticalMultiBarsContainer (yPos) and MultiBarRight (xPos)
-		if ( SHOW_MULTI_ACTIONBAR_3 ) then
-			local yPos
-			if (ClassicUI.db.profile.barsConfig.RightMultiActionBars.ignoreyOffsetStatusBar) then
+		-- Set position and scale VerticalMultiBarsContainer (yPos) and MultiBarRight (xPos)
+		if ( SHOW_MULTI_ACTIONBAR_3 or SHOW_MULTI_ACTION_BAR_4) then
+			local yPos = 0
+			if (ClassicUI.db.profile.barsConfig.RightMultiActionBars.ignoreyOffsetStatusBar and StatusTrackingBarManager:IsShown()) then
 				if ( StatusTrackingBarManager:GetNumberVisibleBars() == 2 ) then
 					yPos = 90 + 17 + ClassicUI.db.profile.barsConfig.RightMultiActionBars.yOffset2StatusBar
 				elseif ( StatusTrackingBarManager:GetNumberVisibleBars() == 1 ) then
@@ -548,13 +651,17 @@ function ClassicUI:MainFunction()
 					yPos = 90 + 8 + ClassicUI.db.profile.barsConfig.RightMultiActionBars.yOffset
 				end
 			end
-			if ( StatusTrackingBarManager:GetNumberVisibleBars() < 1 ) then
+			if ( (not StatusTrackingBarManager:IsShown()) or (StatusTrackingBarManager:GetNumberVisibleBars() < 1) ) then
 				yPos = 90 + 8 + ClassicUI.db.profile.barsConfig.RightMultiActionBars.yOffset
 			end
 			VerticalMultiBarsContainer:SetPoint("BOTTOMRIGHT", UIParent, 0, yPos);
-		end
-		if ( SHOW_MULTI_ACTIONBAR_3 or SHOW_MULTI_ACTION_BAR_4) then
 			MultiBarRight:SetPoint("TOPRIGHT", MultiBarRight:GetParent(), "TOPRIGHT", 2 + ClassicUI.db.profile.barsConfig.RightMultiActionBars.xOffset, 0)
+			if (MultiBarLeft:GetParent() ~= VerticalMultiBarsContainer) then
+				MultiBarLeft:SetParent(VerticalMultiBarsContainer)
+			end
+			if (math.abs(VerticalMultiBarsContainer:GetScale()-ClassicUI.db.profile.barsConfig.RightMultiActionBars.scale) > SCALE_EPSILON) then
+				VerticalMultiBarsContainer:SetScale(ClassicUI.db.profile.barsConfig.RightMultiActionBars.scale)
+			end
 		end
 		-- Set the grid background for MultiBarBottomRightButton1 to MultiBarBottomRightButton6 (is hidden by default)
 		if (SHOW_MULTI_ACTIONBAR_2) then
@@ -637,7 +744,7 @@ function ClassicUI:MainFunction()
 	-- Hook function to update MultiActionBars
 	hooksecurefunc("MultiActionBar_Update", Update_MultiActionBar);
 	
-	-- Function to set the position of PetActionBar
+	-- Function to set the position and scale of PetActionBar
 	ClassicUI.Update_PetActionBar = function()
 		if InCombatLockdown() then
 			delayFunc_Update_PetActionBar = true
@@ -661,19 +768,19 @@ function ClassicUI:MainFunction()
 			xPos = xPos + -74 + ClassicUI.db.profile.barsConfig.PetActionBarFrame.xOffset
 		end
 		-- Set yPos
-		local yPos
-		if (ClassicUI.db.profile.barsConfig.PetActionBarFrame.ignoreyOffsetStatusBar) then
+		local yPos = 0
+		if (ClassicUI.db.profile.barsConfig.PetActionBarFrame.ignoreyOffsetStatusBar and StatusTrackingBarManager:IsShown()) then
 			if ( StatusTrackingBarManager:GetNumberVisibleBars() == 2 ) then
 				if ( SHOW_MULTI_ACTIONBAR_1 ) then
-					yPos = 138 + ClassicUI.db.profile.barsConfig.PetActionBarFrame.yOffset2StatusBar;
+					yPos = 138 - 4 + ClassicUI.db.profile.barsConfig.PetActionBarFrame.yOffset2StatusBar;
 				else
-					yPos = 138 - ACTION_BAR_OFFSET + ClassicUI.db.profile.barsConfig.PetActionBarFrame.yOffset2StatusBar;
+					yPos = 138 - 4 - ACTION_BAR_OFFSET + ClassicUI.db.profile.barsConfig.PetActionBarFrame.yOffset2StatusBar;
 				end
 			elseif ( StatusTrackingBarManager:GetNumberVisibleBars() == 1 ) then
 				if ( SHOW_MULTI_ACTIONBAR_1 ) then
-					yPos = 138 + ClassicUI.db.profile.barsConfig.PetActionBarFrame.yOffset1StatusBar;
+					yPos = 138 - 10 + ClassicUI.db.profile.barsConfig.PetActionBarFrame.yOffset1StatusBar;
 				else
-					yPos = 138 - ACTION_BAR_OFFSET + ClassicUI.db.profile.barsConfig.PetActionBarFrame.yOffset1StatusBar;
+					yPos = 138 - 10 - ACTION_BAR_OFFSET + ClassicUI.db.profile.barsConfig.PetActionBarFrame.yOffset1StatusBar;
 				end
 			end
 		else
@@ -698,12 +805,26 @@ function ClassicUI:MainFunction()
 				yPos = 137 - ACTION_BAR_OFFSET + ClassicUI.db.profile.barsConfig.PetActionBarFrame.yOffset;
 			end
 		end
+		if (not StatusTrackingBarManager:IsShown()) then
+			if ( StatusTrackingBarManager:GetNumberVisibleBars() == 2 ) then
+				yPos = yPos - 14
+			elseif ( StatusTrackingBarManager:GetNumberVisibleBars() == 1 ) then
+				yPos = yPos - 5
+			end
+		end
+		if (ClassicUI.TitanPanelIsPresent) then
+			yPos = yPos + ClassicUI.TitanPanelBottomBarsYOffset
+		end
 		-- Set position for PetActionBarFrame to xPos, yPos
 		CUI_PetActionBarFrame:SetPoint("TOPLEFT", PetActionBarFrame:GetParent(), "BOTTOMLEFT", xPos, yPos);
+		-- Set scale for PetActionBar
+		if (math.abs(PetActionBarFrame:GetScale()-ClassicUI.db.profile.barsConfig.PetActionBarFrame.scale) > SCALE_EPSILON) then
+			PetActionBarFrame:SetScale(ClassicUI.db.profile.barsConfig.PetActionBarFrame.scale)
+		end
 	end
 	Update_PetActionBar = ClassicUI.Update_PetActionBar
 	
-	-- Function to set the position of StanceBar
+	-- Function to set the position and scale of StanceBar
 	ClassicUI.Update_StanceBar = function()
 		if InCombatLockdown() then
 			delayFunc_Update_StanceBar = true
@@ -716,8 +837,8 @@ function ClassicUI:MainFunction()
 		-- Set xPos
 		local xPos = -80 + ClassicUI.db.profile.barsConfig.StanceBarFrame.xOffset - (ClassicUI:GetExtraWidth() / 2)
 		-- Set yPos
-		local yPos
-		if (ClassicUI.db.profile.barsConfig.StanceBarFrame.ignoreyOffsetStatusBar) then
+		local yPos = 0
+		if (ClassicUI.db.profile.barsConfig.StanceBarFrame.ignoreyOffsetStatusBar and StatusTrackingBarManager:IsShown()) then
 			if ( StatusTrackingBarManager:GetNumberVisibleBars() == 2 ) then
 				if ( SHOW_MULTI_ACTIONBAR_1 ) then
 					yPos = 41 + ClassicUI.db.profile.barsConfig.StanceBarFrame.yOffset2StatusBar
@@ -753,14 +874,28 @@ function ClassicUI:MainFunction()
 				yPos = 44 - ACTION_BAR_OFFSET + ClassicUI.db.profile.barsConfig.StanceBarFrame.yOffset
 			end
 		end
+		if (not StatusTrackingBarManager:IsShown()) then
+			if ( StatusTrackingBarManager:GetNumberVisibleBars() == 2 ) then
+				yPos = yPos - 14
+			elseif ( StatusTrackingBarManager:GetNumberVisibleBars() == 1 ) then
+				yPos = yPos - 5
+			end
+		end
+		if (ClassicUI.TitanPanelIsPresent) then
+			yPos = yPos + ClassicUI.TitanPanelBottomBarsYOffset
+		end
 		-- Set position for StanceBarFrame to xPos, yPos
 		StanceBarFrame:SetPoint("BOTTOMLEFT", StanceBarFrame:GetParent(), "TOPLEFT", xPos, yPos)
+		-- Set scale for StanceBarFrame
+		if (math.abs(StanceBarFrame:GetScale()-ClassicUI.db.profile.barsConfig.StanceBarFrame.scale) > SCALE_EPSILON) then
+			StanceBarFrame:SetScale(ClassicUI.db.profile.barsConfig.StanceBarFrame.scale)
+		end
 	end
 	Update_StanceBar = ClassicUI.Update_StanceBar
 	-- Hook this function to update StanceBar
 	hooksecurefunc("StanceBar_Update", Update_StanceBar)
 
-	-- Function to set the position of PossessBar
+	-- Function to set the position and scale of PossessBar
 	ClassicUI.Update_PossessBar = function()
 		if InCombatLockdown() then
 			delayFunc_Update_PossessBar = true
@@ -773,8 +908,8 @@ function ClassicUI:MainFunction()
 		-- Set xPos
 		local xPos = -80 + ClassicUI.db.profile.barsConfig.PossessBarFrame.xOffset - (ClassicUI:GetExtraWidth() / 2)
 		-- Set yPos
-		local yPos
-		if (ClassicUI.db.profile.barsConfig.PossessBarFrame.ignoreyOffsetStatusBar) then
+		local yPos = 0
+		if (ClassicUI.db.profile.barsConfig.PossessBarFrame.ignoreyOffsetStatusBar and StatusTrackingBarManager:IsShown()) then
 			if ( StatusTrackingBarManager:GetNumberVisibleBars() == 2 ) then
 				if ( SHOW_MULTI_ACTIONBAR_1 ) then
 					yPos = 41 + ClassicUI.db.profile.barsConfig.PossessBarFrame.yOffset2StatusBar
@@ -810,8 +945,22 @@ function ClassicUI:MainFunction()
 				yPos = 44 - ACTION_BAR_OFFSET + ClassicUI.db.profile.barsConfig.PossessBarFrame.yOffset
 			end
 		end
+		if (not StatusTrackingBarManager:IsShown()) then
+			if ( StatusTrackingBarManager:GetNumberVisibleBars() == 2 ) then
+				yPos = yPos - 14
+			elseif ( StatusTrackingBarManager:GetNumberVisibleBars() == 1 ) then
+				yPos = yPos - 5
+			end
+		end
+		if (ClassicUI.TitanPanelIsPresent) then
+			yPos = yPos + ClassicUI.TitanPanelBottomBarsYOffset
+		end
 		-- Set position for PossessBarFrame to xPos, yPos
 		PossessBarFrame:SetPoint("BOTTOMLEFT", PossessBarFrame:GetParent(), "TOPLEFT", xPos, yPos)
+		-- Set scale for PossessBarFrame
+		if (math.abs(PossessBarFrame:GetScale()-ClassicUI.db.profile.barsConfig.PossessBarFrame.scale) > SCALE_EPSILON) then
+			PossessBarFrame:SetScale(ClassicUI.db.profile.barsConfig.PossessBarFrame.scale)
+		end
 	end
 	Update_PossessBar = ClassicUI.Update_PossessBar
 	-- Hook this function to update StanceBar
@@ -976,9 +1125,15 @@ function ClassicUI:MainFunction()
 			end
 		end
 		
-		-- Move Gargoyles
+		-- Move Gargoyles and set their scale
 		MainMenuBarArtFrame.LeftEndCap:SetPoint("BOTTOMLEFT", MainMenuBarArtFrame, "BOTTOMLEFT", 64 - BAGS_WIDTH + ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.xOffset, -10 + ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.yOffset);
 		MainMenuBarArtFrame.RightEndCap:SetPoint("BOTTOMRIGHT", MainMenuBarArtFrame, "BOTTOMRIGHT", 156 + BAGS_WIDTH + ClassicUI.db.profile.barsConfig.RightGargoyleFrame.xOffset + extraWidth, -10 + ClassicUI.db.profile.barsConfig.RightGargoyleFrame.yOffset);
+		if (math.abs(MainMenuBarArtFrame.LeftEndCap:GetScale()-ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.scale) > SCALE_EPSILON) then
+			MainMenuBarArtFrame.LeftEndCap:SetScale(ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.scale)
+		end
+		if (math.abs(MainMenuBarArtFrame.RightEndCap:GetScale()-ClassicUI.db.profile.barsConfig.RightGargoyleFrame.scale) > SCALE_EPSILON) then
+			MainMenuBarArtFrame.RightEndCap:SetScale(ClassicUI.db.profile.barsConfig.RightGargoyleFrame.scale)
+		end
 		
 		-- If OverrideActionBar is showed, let the Blizzard code move the MicroButtons. If OverrideActionBar, is hidden we must move the MicroButtons on our frame.
 		if (not OverrideActionBar:IsShown()) then
@@ -1002,20 +1157,112 @@ function ClassicUI:MainFunction()
 		MainMenuBarArtFrameBackground:ClearAllPoints();
 		MainMenuBarArtFrameBackground:SetPoint("BOTTOM", MainMenuBarArtFrame, 0, -10);
 		
-		-- Set the offsetY for the MainMenuBarArtFrame
+		-- Set the offsetY for the MainMenuBarArtFrame and also show/hide StatusBars if needed
 		local offsetY;
 		if ( StatusTrackingBarManager:GetNumberVisibleBars() == 2 ) then
+			-- Set offsetY
 			offsetY = -17;
+			-- Show/Hide the DoubleStatusBar
+			local hideDoubleStatusBar = false
+			local barsShown = {}
+			for _, v in pairs(StatusTrackingBarManager.bars) do
+				if (v:ShouldBeVisible()) then
+					table.insert(barsShown, v:GetPriority())
+				end
+			end
+			table.sort(barsShown)
+			if (#barsShown > 1) then
+				for k, v in pairs(ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.hide) do
+					if (v) then
+						local barToHide1, barToHide2 = ClassicUI:GetDoubleBarsToHide(k)
+						if ((barToHide1 ~= nil) and (barToHide2 ~= nil) and (barToHide1 == barsShown[1]) and (barToHide2 == barsShown[2])) then
+							hideDoubleStatusBar = true
+							break
+						end
+					end
+				end
+			end
+			if ( hideDoubleStatusBar ) then
+				if (StatusTrackingBarManager:IsShown()) then
+					StatusTrackingBarManager:Hide()
+				end
+			else
+				if (not StatusTrackingBarManager:IsShown()) then
+					StatusTrackingBarManager:Show()
+				end
+			end
 		elseif ( StatusTrackingBarManager:GetNumberVisibleBars() == 1 ) then
+			-- Set offsetY
 			offsetY = -14;
+			-- Show/Hide the SingleStatusBar
+			local hideSingleStatusBar = false
+			local barsShown = {}
+			for _, v in pairs(StatusTrackingBarManager.bars) do
+				if (v:ShouldBeVisible()) then
+					table.insert(barsShown, v:GetPriority())
+				end
+			end
+			table.sort(barsShown)
+			if (#barsShown > 0) then
+				for k, v in pairs(ClassicUI.db.profile.barsConfig.SingleStatusBar.hide) do
+					if (v) then
+						local barToHide = ClassicUI:GetSingleBarToHide(k)
+						if ((barToHide ~= nil) and (barToHide == barsShown[1])) then
+							hideSingleStatusBar = true
+							break
+						end
+					end
+				end
+			end
+			if ( hideSingleStatusBar ) then
+				if (StatusTrackingBarManager:IsShown()) then
+					StatusTrackingBarManager:Hide()
+				end
+			else
+				if (not StatusTrackingBarManager:IsShown()) then
+					StatusTrackingBarManager:Show()
+				end
+			end
 		else
+			-- Set offsetY
 			offsetY = 0;
 		end
 		
-		-- Set the position for MainMenuBarArtFrame
+		-- Compatibility with TitanPanel
+		if (ClassicUI:CheckTitanPanel()) then
+			if (not TitanPanelGetVar("AuxScreenAdjust")) then
+				local titan_barnum_bot = 0
+				if TitanPanelGetVar("AuxBar2_Show") then
+					titan_barnum_bot = 2
+				elseif TitanPanelGetVar("AuxBar_Show") then
+					titan_barnum_bot = 1
+				end
+				local titan_scale = TitanPanelGetVar("Scale")
+				if (titan_scale and (titan_barnum_bot > 0)) then
+					ClassicUI.TitanPanelBottomBarsYOffset = (TITAN_PANEL_BAR_HEIGHT * titan_scale) * (titan_barnum_bot) - 1; 
+					offsetY = offsetY + ClassicUI.TitanPanelBottomBarsYOffset
+				else
+					ClassicUI.TitanPanelBottomBarsYOffset = 0
+				end
+			else
+				ClassicUI.TitanPanelBottomBarsYOffset = 0
+			end
+		end
+		
+		-- Set the position and scale for MainMenuBarArtFrame
 		local menuBarBagsWidth = BAGS_WIDTH + 60 + extraWidth;
 		MainMenuBarArtFrame:SetPoint("TOPLEFT", MainMenuBar, ((-menuBarBagsWidth)/2) + ClassicUI.db.profile.barsConfig.MainMenuBar.xOffset, 10 + offsetY + ClassicUI.db.profile.barsConfig.MainMenuBar.yOffset);
 		MainMenuBarArtFrame:SetPoint("BOTTOMRIGHT", MainMenuBar, ((-menuBarBagsWidth)/2) + ClassicUI.db.profile.barsConfig.MainMenuBar.xOffset, 10 + offsetY + ClassicUI.db.profile.barsConfig.MainMenuBar.yOffset);
+		if ((math.abs(MainMenuBarArtFrame:GetScale()-ClassicUI.db.profile.barsConfig.MainMenuBar.scale) > SCALE_EPSILON) or (math.abs(StatusTrackingBarManager:GetScale()-ClassicUI.db.profile.barsConfig.MainMenuBar.scale) > SCALE_EPSILON)) then
+			MainMenuBarArtFrame:SetScale(ClassicUI.db.profile.barsConfig.MainMenuBar.scale)
+			StatusTrackingBarManager:SetScale(ClassicUI.db.profile.barsConfig.MainMenuBar.scale)
+		end
+		
+		-- Set the position and scale for OverrideActionBar
+		OverrideActionBar:SetPoint("BOTTOM", OverrideActionBar:GetParent(), "BOTTOM", ClassicUI.db.profile.barsConfig.OverrideActionBar.xOffset, ClassicUI.db.profile.barsConfig.OverrideActionBar.yOffset + ClassicUI.TitanPanelBottomBarsYOffset)
+		if (math.abs(OverrideActionBar:GetScale()-ClassicUI.db.profile.barsConfig.OverrideActionBar.scale) > SCALE_EPSILON) then
+			OverrideActionBar:SetScale(ClassicUI.db.profile.barsConfig.OverrideActionBar.scale)
+		end
 		
 		if ( IsPlayerInWorld() ) then
 			-- Don't let UIParent_ManageFramePositions manage the MultiBarBottomLeft, StanceBarFrame and PossessBarFrame. Sadly can't do this for PetActionBarFrame.
@@ -1076,9 +1323,13 @@ function ClassicUI:ToggleVisibilityKeybinds(mode)
 			if (actionButtonHK) then
 				actionButtonHK:SetAlpha(0)
 			end
+			actionButtonHK =  _G["OverrideActionBarButton"..i.."HotKey"]
+			if (actionButtonHK) then
+				actionButtonHK:SetAlpha(0)
+			end
 		end
 	elseif (mode == 2) or (mode == 3) then
-		ClassicUI:HookKeybindsVisibilityMode2()
+		ClassicUI:HookKeybindsVisibilityMode()
 		for i = 1, 12 do
 			local actionButton
 			actionButton = _G["ExtraActionButton"..i]
@@ -1126,6 +1377,11 @@ function ClassicUI:ToggleVisibilityKeybinds(mode)
 				actionButton.HotKey:SetAlpha(1)
 				ActionButton_UpdateHotkeys(actionButton)
 			end
+			actionButton =  _G["OverrideActionBarButton"..i]
+			if (actionButton) then
+				actionButton.HotKey:SetAlpha(1)
+				ActionButton_UpdateHotkeys(actionButton)
+			end
 		end
 	else
 		for i = 1, 12 do
@@ -1166,12 +1422,16 @@ function ClassicUI:ToggleVisibilityKeybinds(mode)
 			if (actionButtonHK) then
 				actionButtonHK:SetAlpha(1)
 			end
+			actionButtonHK =  _G["OverrideActionBarButton"..i.."HotKey"]
+			if (actionButtonHK) then
+				actionButtonHK:SetAlpha(1)
+			end
 		end
 	end
 end
 
 -- The OnlyShowDotRange or OnlyShowPermanentDotRange keybind options require a Hook
-function ClassicUI:HookKeybindsVisibilityMode2()
+function ClassicUI:HookKeybindsVisibilityMode()
 	if (not ACTIONBUTTON_UPDATEHOTKEYS_HOOKED) then
 		hooksecurefunc("ActionButton_UpdateHotkeys", function(self, actionButtonType)
 			if (ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode == 2) then
