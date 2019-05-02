@@ -1,7 +1,7 @@
 -- ------------------------------------------------------------ --
 -- Addon: ClassicUI                                             --
 --                                                              --
--- Version: 1.0.8                                               --
+-- Version: 1.0.9                                               --
 -- Author: Millán - C'Thun                                      --
 --                                                              --
 -- License: GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007 --
@@ -32,11 +32,12 @@ local SCALE_EPSILON = 0.0001
 ClassicUI.BAG_SIZE = 32
 ClassicUI.BAGS_WIDTH = (4*ClassicUI.BAG_SIZE+32)
 ClassicUI.ACTION_BAR_OFFSET = 48
-ClassicUI.VERSION = "1.0.8"
+ClassicUI.VERSION = "1.0.9"
 
 ClassicUI.cached_NumberVisibleBars = 0
 ClassicUI.cached_DoubleStatusBar_hide = nil
 ClassicUI.cached_SingleStatusBar_hide = nil
+ClassicUI.cached_LastMainMenuBarPoint = { "BOTTOM", UIParent, "BOTTOM", 0, MainMenuBar and MainMenuBar:GetYOffset() or 14 }
 ClassicUI.TitanPanelIsPresent = false
 ClassicUI.LibJostleIsPresent = false
 ClassicUI.TitanPanelBottomBarsYOffset = 0
@@ -383,15 +384,22 @@ function ClassicUI:CheckTitanPanel()
 	if (ClassicUI.TitanPanelIsPresent) then
 		return true
 	else
-		if ((TITAN_PANEL_BAR_HEIGHT ~= nil) and (TitanUtils_AddonAdjust ~= nil) and (TitanPanelGetVar ~= nil)) then
+		if ((TITAN_PANEL_BAR_HEIGHT == nil) or (TitanUtils_AddonAdjust == nil) or (TitanPanelGetVar == nil)) then
+			return false
+		else
 			TitanUtils_AddonAdjust("MainMenuBar", true)
 			TitanUtils_AddonAdjust("OverrideActionBar", true)
 			TitanUtils_AddonAdjust("MultiBarRight", true)
 			TitanUtils_AddonAdjust("MicroButtonAndBagsBar", true)
+			if (MainMenuBar:IsUserPlaced()) then
+				MainMenuBar:SetMovable(true)
+				MainMenuBar:SetUserPlaced(false)
+				MainMenuBar:SetMovable(false)
+			elseif (MainMenuBar:IsMovable()) then
+				MainMenuBar:SetMovable(false)
+			end
 			ClassicUI.TitanPanelIsPresent = true
 			return true
-		else
-			return false
 		end
 	end
 end
@@ -408,7 +416,9 @@ function ClassicUI:CheckLibJostle()
 				Jostle = ChocolateBar.Jostle
 			end
 		end
-		if (Jostle ~= nil) then
+		if (Jostle == nil) then
+			return false
+		else
 			if (not Gypsy_HotBarCapsule) then
 				Gypsy_HotBarCapsule = {}
 			end
@@ -421,8 +431,6 @@ function ClassicUI:CheckLibJostle()
 			end
 			ClassicUI.LibJostleIsPresent = true
 			return true
-		else
-			return false
 		end
 	end
 end
@@ -1209,6 +1217,14 @@ function ClassicUI:MainFunction()
 		ClassicUI:MoveMicroButtons("BOTTOMLEFT", MainMenuBarArtFrameBackground.MicroButtonArt, "BOTTOMLEFT", 45, 2, false)
 	end)
 	
+	-- Hook to refresh the cached values of the last not nil point positions for the MainMenuBar
+	hooksecurefunc(MainMenuBar, "SetPoint", function(self)
+		local point, relativeTo, relativePoint, xOfs, yOfs = self:GetPoint()
+		if (point ~= nil) and (xOfs ~= nil) and (yOfs ~= nil) then
+			ClassicUI.cached_LastMainMenuBarPoint = { point, relativeTo, relativePoint, xOfs, yOfs }
+		end
+	end)
+	
 	-- A function to update all bars and frames, especially the MainMenuBar, MicroButtons and bags frames
 	ClassicUI.SetPositionForStatusBars_MainMenuBar = function()
 		local extraWidth = ClassicUI:GetExtraWidth()
@@ -1262,6 +1278,48 @@ function ClassicUI:MainFunction()
 		MainMenuBarArtFrame.PageNumber:ClearAllPoints();
 		MainMenuBarArtFrame.PageNumber:SetPoint("CENTER", MainMenuBarArtFrameBackground.MicroButtonArt, "LEFT", 30, 0);
 		
+		-- Compatibility with TitanPanel
+		if (ClassicUI:CheckTitanPanel()) then
+			if (not TitanPanelGetVar("AuxScreenAdjust")) then
+				local titan_barnum_bot = 0
+				if TitanPanelGetVar("AuxBar2_Show") then
+					titan_barnum_bot = 2
+				elseif TitanPanelGetVar("AuxBar_Show") then
+					titan_barnum_bot = 1
+				end
+				local titan_scale = TitanPanelGetVar("Scale")
+				if (titan_scale and (titan_barnum_bot > 0)) then
+					ClassicUI.TitanPanelBottomBarsYOffset = (TITAN_PANEL_BAR_HEIGHT * titan_scale) * (titan_barnum_bot) - 1; 
+				else
+					ClassicUI.TitanPanelBottomBarsYOffset = 0
+				end
+			else
+				ClassicUI.TitanPanelBottomBarsYOffset = 0
+			end
+		end
+		
+		-- Compatibility with LibJostle library
+		ClassicUI:CheckLibJostle()
+		
+		-- Compatibility with addons that sets MainMenuBar or MicroButtonAndBagsBar as UserPlaced
+		local wasUserPlaced = false
+		if (MainMenuBar:IsUserPlaced()) then
+			wasUserPlaced = true
+			MainMenuBar:SetMovable(true)
+			MainMenuBar:SetUserPlaced(false)
+			MainMenuBar:SetMovable(false)
+		elseif (MainMenuBar:IsMovable()) then
+			MainMenuBar:SetMovable(false)
+		end
+		if (MicroButtonAndBagsBar:IsUserPlaced()) then
+			wasUserPlaced = true
+			MicroButtonAndBagsBar:SetMovable(true)
+			MicroButtonAndBagsBar:SetUserPlaced(false)
+			MicroButtonAndBagsBar:SetMovable(false)
+		elseif (MicroButtonAndBagsBar:IsMovable()) then
+			MicroButtonAndBagsBar:SetMovable(false)
+		end
+		
 		if InCombatLockdown() then
 			delayFunc_SetPositionForStatusBars_MainMenuBar = true
 			if (not fclFrame:IsEventRegistered("PLAYER_REGEN_ENABLED")) then
@@ -1281,7 +1339,7 @@ function ClassicUI:MainFunction()
 		local offsetY;
 		if ( ClassicUI.cached_NumberVisibleBars == 2 ) then
 			-- Set offsetY
-			offsetY = -17;
+			offsetY = -17 + ClassicUI.TitanPanelBottomBarsYOffset;
 			-- Show/Hide the DoubleStatusBar
 			if (ClassicUI.cached_DoubleStatusBar_hide) then
 				local hideDoubleStatusBar = false
@@ -1313,7 +1371,7 @@ function ClassicUI:MainFunction()
 			end
 		elseif ( ClassicUI.cached_NumberVisibleBars == 1 ) then
 			-- Set offsetY
-			offsetY = -14;
+			offsetY = -14 + ClassicUI.TitanPanelBottomBarsYOffset;
 			-- Show/Hide the SingleStatusBar
 			if (ClassicUI.cached_SingleStatusBar_hide) then
 				local hideSingleStatusBar = false
@@ -1345,32 +1403,13 @@ function ClassicUI:MainFunction()
 			end
 		else
 			-- Set offsetY
-			offsetY = 0;
+			offsetY = 0 + ClassicUI.TitanPanelBottomBarsYOffset;
 		end
 		
-		-- Compatibility with TitanPanel
-		if (ClassicUI:CheckTitanPanel()) then
-			if (not TitanPanelGetVar("AuxScreenAdjust")) then
-				local titan_barnum_bot = 0
-				if TitanPanelGetVar("AuxBar2_Show") then
-					titan_barnum_bot = 2
-				elseif TitanPanelGetVar("AuxBar_Show") then
-					titan_barnum_bot = 1
-				end
-				local titan_scale = TitanPanelGetVar("Scale")
-				if (titan_scale and (titan_barnum_bot > 0)) then
-					ClassicUI.TitanPanelBottomBarsYOffset = (TITAN_PANEL_BAR_HEIGHT * titan_scale) * (titan_barnum_bot) - 1; 
-					offsetY = offsetY + ClassicUI.TitanPanelBottomBarsYOffset
-				else
-					ClassicUI.TitanPanelBottomBarsYOffset = 0
-				end
-			else
-				ClassicUI.TitanPanelBottomBarsYOffset = 0
-			end
+		-- Detect and fix the unresponsive action bars issue caused by other addons that sets the MainMenuBar or the MicroButtonAndBagsBar as UserPlaced
+		if ((MainMenuBar:IsUserPlaced() or MicroButtonAndBagsBar:IsUserPlaced() or wasUserPlaced) and (MainMenuBar:GetPoint() == nil)) then
+			MainMenuBar:SetPoint(ClassicUI.cached_LastMainMenuBarPoint[1], ClassicUI.cached_LastMainMenuBarPoint[2], ClassicUI.cached_LastMainMenuBarPoint[3], ClassicUI.cached_LastMainMenuBarPoint[4], ClassicUI.cached_LastMainMenuBarPoint[5])
 		end
-		
-		-- Compatibility with LibJostle library
-		ClassicUI:CheckLibJostle()
 		
 		-- Set the position and scale for MainMenuBarArtFrame
 		local menuBarBagsWidth = BAGS_WIDTH + 60 + extraWidth;
@@ -1675,7 +1714,13 @@ function ClassicUI:HookLossOfControlUICCRemover()
 				self.cooldown:SetSwipeColor(0, 0, 0);
 				self.cooldown:SetHideCountdownNumbers(false);
 				if ( charges and maxCharges and maxCharges > 1 and charges < maxCharges ) then
-					StartChargeCooldown(self, chargeStart, chargeDuration, chargeModRate);
+					if chargeStart == 0 then
+						ClearChargeCooldown(self);
+					else
+						if self.chargeCooldown then
+							CooldownFrame_Set(self.chargeCooldown, chargeStart, chargeDuration, true, true, chargeModRate);
+						end
+					end
 				else
 					ClearChargeCooldown(self);
 				end
