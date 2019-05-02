@@ -1,7 +1,7 @@
 -- ------------------------------------------------------------ --
 -- Addon: ClassicUI                                             --
 --                                                              --
--- Version: 1.0.0                                               --
+-- Version: 1.0.1                                               --
 -- Author: Millán - C'Thun                                      --
 --                                                              --
 -- License: GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007 --
@@ -30,7 +30,7 @@ local _
 ClassicUI.BAG_SIZE = 32
 ClassicUI.BAGS_WIDTH = (4*ClassicUI.BAG_SIZE+32)
 ClassicUI.ACTION_BAR_OFFSET = 48
-ClassicUI.VERSION = "1.0.0"
+ClassicUI.VERSION = "1.0.1"
 
 ClassicUI.Update_MultiActionBar = function() end
 ClassicUI.Update_PetActionBar = function() end
@@ -116,12 +116,10 @@ function ClassicUI:OnInitialize()
 	-- Start ClassicUI Core
 	if (self.db.profile.enabled) then
 		ClassicUI:Enable()
-	else
-		ClassicUI:Disable()
-	end
-	if (ClassicUI:IsEnabled()) then
 		ClassicUI:MainFunction() 
 		ClassicUI:ExtraFunction()
+	else
+		ClassicUI:Disable()
 	end
 end
 
@@ -137,10 +135,12 @@ function ClassicUI:RefreshConfig()
 	else
 		if (self.db.profile.enabled) then
 			self:Enable()
-			ReloadUI()
+			self:MainFunction() 
+			self:ExtraFunction()
+			self.SetPositionForStatusBars_MainMenuBar()
 		end
 	end
-	ClassicUI:ToggleVisibilityKeybinds(self.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode)
+	self:ToggleVisibilityKeybinds(self.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode)
 	-- We should do a ReloadUI if the old self.db.profile.extraConfigs..KeybindsConfig.hideKeybindsMode == 2, but we have not the old value, so we don't do anything, who cares :)
 	if ((not self.db.profile.extraConfigs.RedRangeConfig.enabled) and (REDRANGEICONS_HOOKED)) then
 		ReloadUI()
@@ -151,11 +151,11 @@ function ClassicUI:RefreshConfig()
 end
 
 function ClassicUI:OnEnable()
-	print(L['ClassicUI Enabled'])
+	print('|cffd78900' .. L['ClassicUI'] .. ' v' .. ClassicUI.VERSION .. '|r ' .. L['enabled'])
 end
 
 function ClassicUI:OnDisable()
-	print(L['ClassicUI Disabled'])
+	print('|cffd78900' .. L['ClassicUI'] .. ' v' .. ClassicUI.VERSION .. '|r ' .. L['disabled'])
 end
 
 --Show Options Menu
@@ -639,7 +639,31 @@ function ClassicUI:MainFunction()
 			bar:SetSize(width, 12);
 		end
 	end);
+	
+	-- Function to move the rest indicator
+	hooksecurefunc(ExhaustionTickMixin, "UpdateTickPosition", function(self)
+		local playerCurrXP = UnitXP("player");
+		local playerMaxXP = UnitXPMax("player");
+		local exhaustionThreshold = GetXPExhaustion();
+		local exhaustionStateID, exhaustionStateName, exhaustionStateMultiplier = GetRestState();
+		
+		if ( exhaustionStateID and exhaustionStateID >= 3 ) then
+			self:SetPoint("CENTER", self:GetParent() , "RIGHT", 0, 0);
+		end
 
+		if ( not exhaustionThreshold ) then
+			return
+		else
+			local exhaustionTickSet = max(((playerCurrXP + exhaustionThreshold) / playerMaxXP) * (self:GetParent():GetWidth()), 0);
+			self:ClearAllPoints();
+			if ( exhaustionTickSet > self:GetParent():GetWidth() ) then
+				return
+			else
+				self:SetPoint("CENTER", self:GetParent(), "LEFT", exhaustionTickSet, 0);
+			end
+		end
+	end)
+	
 	-- Hook to avoid bad UI behaviour when the MultiBarBottomRight is hidden
 	local oMainMenuBar_ChangeMenuBarSizeAndPosition = MainMenuBar.ChangeMenuBarSizeAndPosition
 	hooksecurefunc(MainMenuBar, "ChangeMenuBarSizeAndPosition", function(self, rightMultiBarShowing)
@@ -708,6 +732,10 @@ function ClassicUI:MainFunction()
 		-- Hide and resize the new MicroButtonAndBagsBar frame.
 		MicroButtonAndBagsBar:SetWidth(1);	-- This allow the UIParent code center the MainMenuBar frame correctly.
 		MicroButtonAndBagsBar:Hide();
+		-- Move Latency and Ticket MicroButtons
+		MainMenuBarPerformanceBar:SetPoint("CENTER", MainMenuBarPerformanceBar:GetParent(), "CENTER", 0, 11);
+		HelpOpenTicketButton:SetPoint("CENTER", HelpOpenTicketButton:GetParent(), "TOPRIGHT", -3, -4);
+		HelpOpenWebTicketButton:SetPoint("CENTER", HelpOpenWebTicketButton:GetParent(), "TOPRIGHT", -3, -4);
 		
 		if InCombatLockdown() then
 			delayFunc_SetPositionForStatusBars_MainMenuBar = true

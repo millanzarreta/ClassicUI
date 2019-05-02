@@ -31,16 +31,29 @@ ClassicUI.optionsTable = {
 					type = "toggle",
 					name = L['Enable ClassicUI'],
 					desc = L['Enable ClassicUI'],
-					confirm = function () return L['ReloadUI'] end,
+					confirm = function(_, newValue)
+						if (not newValue) then
+							return L['ReloadUI']
+						else
+							return false
+						end
+					end,
 					get = function() return ClassicUI.db.profile.enabled end,
 					set = function(_,value)
 						ClassicUI.db.profile.enabled = value
 						if value then
-							ClassicUI:Enable()
+							if (not ClassicUI:IsEnabled()) then
+								ClassicUI:Enable()
+								ClassicUI:MainFunction() 
+								ClassicUI:ExtraFunction()
+								ClassicUI.SetPositionForStatusBars_MainMenuBar()
+							end
 						else
-							ClassicUI:Disable()
+							if (ClassicUI:IsEnabled()) then
+								ClassicUI:Disable()
+								ReloadUI()
+							end
 						end
-						ReloadUI()
 					end
 				},
 				Header1 = {
@@ -722,24 +735,54 @@ ClassicUI.optionsTable = {
 					order = 3,
 					name = " "
 				},
+				enabled = {
+					order = 4,
+					type = "toggle",
+					name = L['Enable ClassicUI'],
+					desc = L['Enable ClassicUI'],
+					confirm = function(_, newValue)
+						if (not newValue) then
+							return L['ReloadUI']
+						else
+							return false
+						end
+					end,
+					get = function() return ClassicUI.db.profile.enabled end,
+					set = function(_,value)
+						ClassicUI.db.profile.enabled = value
+						if value then
+							if (not ClassicUI:IsEnabled()) then
+								ClassicUI:Enable()
+								ClassicUI:MainFunction() 
+								ClassicUI:ExtraFunction()
+								ClassicUI.SetPositionForStatusBars_MainMenuBar()
+							end
+						else
+							if (ClassicUI:IsEnabled()) then
+								ClassicUI:Disable()
+								ReloadUI()
+							end
+						end
+					end
+				},
 				Header1 = {
 					type = 'header',
-					order = 4,
+					order = 5,
 					name = L['Extra Options']
 				},
 				Comment1 = {
 					type = 'description',
-					order = 5,
+					order = 6,
 					name = L['EXTRA_OPTIONS_DESC']
 					
 				},
 				Spacer2 = {
 					type = "description",
-					order = 6,
+					order = 7,
 					name = ""
 				},
 				keybindsVisibilityOptions = {
-					order = 7,
+					order = 8,
 					name = L['Keybinds Visibility Options'],
 					type = "group",
 					args = {
@@ -802,7 +845,7 @@ ClassicUI.optionsTable = {
 					}
 				},
 				redRangeOptions = {
-					order = 8,
+					order = 9,
 					name = L['RedRange Options'],
 					type = "group",
 					args = {
@@ -857,7 +900,7 @@ ClassicUI.optionsTable = {
 					}
 				},
 				LossOfControlUIOptions = {
-					order = 9,
+					order = 10,
 					name = L['LossOfControlUI CC Remover'],
 					type = "group",
 					args = {
