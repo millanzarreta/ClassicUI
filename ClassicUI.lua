@@ -1,7 +1,7 @@
 -- ------------------------------------------------------------ --
 -- Addon: ClassicUI                                             --
 --                                                              --
--- Version: 1.0.2                                               --
+-- Version: 1.0.3                                               --
 -- Author: Millán - C'Thun                                      --
 --                                                              --
 -- License: GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007 --
@@ -30,13 +30,15 @@ local _
 ClassicUI.BAG_SIZE = 32
 ClassicUI.BAGS_WIDTH = (4*ClassicUI.BAG_SIZE+32)
 ClassicUI.ACTION_BAR_OFFSET = 48
-ClassicUI.VERSION = "1.0.2"
+ClassicUI.VERSION = "1.0.3"
 
 ClassicUI.Update_MultiActionBar = function() end
 ClassicUI.Update_PetActionBar = function() end
 ClassicUI.Update_StanceBar = function() end
 ClassicUI.Update_PossessBar = function() end
 ClassicUI.SetPositionForStatusBars_MainMenuBar = function() end
+ClassicUI.TransferPetActionBarFrameChildrens = function() end
+ClassicUI.StatusTrackingBarManager_LayoutBar = function() end
 
 -- Default settings
 ClassicUI.defaults = {
@@ -48,10 +50,12 @@ ClassicUI.defaults = {
 				yOffset = 0
 			},
 			['LeftGargoyleFrame'] = {
-				hide = false
+				hide = false,
+				model = 0	-- 0 = Gryphon, 1 = Lion
 			},
 			['RightGargoyleFrame'] = {
-				hide = false
+				hide = false,
+				model = 0	-- 0 = Gryphon, 1 = Lion
 			},
 			['MainMenuBar'] = {},
 			['BottomMultiActionBars'] = {
@@ -79,11 +83,47 @@ ClassicUI.defaults = {
 				ignoreyOffsetStatusBar = false,
 				yOffset1StatusBar = 0,
 				yOffset2StatusBar = 0
+			},
+			['SingleStatusBar'] = {
+				xSize = 0,
+				ySize = 0,
+				artHide = false,
+				xOffsetArt = 0,
+				yOffsetArt = 0,
+				overlayHide = false,
+				xOffsetOverlay = 0,
+				yOffsetOverlay = 0
+			},
+			['DoubleUpperStatusBar'] = {
+				xSize = 0,
+				ySize = 0,
+				artHide = false,
+				xOffsetArt = 0,
+				yOffsetArt = 0,
+				overlayHide = false,
+				xOffsetOverlay = 0,
+				yOffsetOverlay = 0
+			},
+			['DoubleLowerStatusBar'] = {
+				xSize = 0,
+				ySize = 0,
+				artHide = false,
+				xOffsetArt = 0,
+				yOffsetArt = 0,
+				overlayHide = false,
+				xOffsetOverlay = 0,
+				yOffsetOverlay = 0
 			}
 		},
 		extraConfigs = {
+			['forceExtraOptions'] = false,
+			['GuildPanelMode'] = {
+				defauiltOpenOldMenu = false,
+				leftClickMicroButtonOpenOldMenu = false, 
+				rightClickMicroButtonOpenOldMenu = false
+			},
 			['KeybindsConfig'] = {
-				hideKeybindsMode = 0	--0 = show keybinds, 1 = hide keybinds, 2 = show range dots on keybinds
+				hideKeybindsMode = 0	--0 = show keybinds, 1 = hide keybinds, 2 = show range dots on keybinds, 3 = show permanent range dots on keybinds
 			},
 			['RedRangeConfig'] = {
 				enabled = false
@@ -95,6 +135,7 @@ ClassicUI.defaults = {
 	},
 }
 
+-- First function fired
 function ClassicUI:OnInitialize()
 	self.db = AceDB:New("ClassicUI_DB", self.defaults, true)
 	
@@ -111,7 +152,7 @@ function ClassicUI:OnInitialize()
 	self.optionsFrames.extraOptions = AceConfigDialog:AddToBlizOptions("ClassicUI", L["Extra Options"], "ClassicUI", "extraOptions")
 	self.optionsFrames.profiles = AceConfigDialog:AddToBlizOptions("ClassicUI", L["Profiles"], "ClassicUI", "profiles")
 	
-	self:RegisterChatCommand("ClassicUI", function() ClassicUI:ShowConfig() end )
+	self:RegisterChatCommand("ClassicUI", "SlashCommand")
 	
 	-- Start ClassicUI Core
 	if (self.db.profile.enabled) then
@@ -120,17 +161,35 @@ function ClassicUI:OnInitialize()
 		ClassicUI:ExtraFunction()
 	else
 		ClassicUI:Disable()
+		if (ClassicUI.db.profile.forceExtraOptions) then
+			ClassicUI:ExtraFunction()
+		end
 	end
 end
 
 -- Executed after modifying, resetting or changing profiles from the profile configuration menu
 function ClassicUI:RefreshConfig()
+	if (ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.model == 1) then
+		MainMenuBarArtFrame.LeftEndCap:Hide()
+	else
+		MainMenuBarArtFrame.LeftEndCap:SetSize(128, 76)
+		MainMenuBarArtFrame.LeftEndCap:SetTexture("Interface\\MAINMENUBAR\\UI-MainMenuBar-EndCap-Dwarf.blp")
+		MainMenuBarArtFrame.LeftEndCap:SetTexCoord(0/128, 128/128, 52/128, 128/128);
+	end
+	if (ClassicUI.db.profile.barsConfig.RightGargoyleFrame.model == 1) then
+		MainMenuBarArtFrame.RightEndCap:Hide()
+	else
+		MainMenuBarArtFrame.RightEndCap:SetSize(128, 76)
+		MainMenuBarArtFrame.RightEndCap:SetTexture("Interface\\MAINMENUBAR\\UI-MainMenuBar-EndCap-Dwarf.blp")
+		MainMenuBarArtFrame.RightEndCap:SetTexCoord(128/128, 0/128, 52/128, 128/128);
+	end
 	if (self:IsEnabled()) then
 		if (not self.db.profile.enabled) then
 			self:Disable()
 			ReloadUI()
 		else
 			self.SetPositionForStatusBars_MainMenuBar()
+			ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
 		end
 	else
 		if (self.db.profile.enabled) then
@@ -138,10 +197,13 @@ function ClassicUI:RefreshConfig()
 			self:MainFunction() 
 			self:ExtraFunction()
 			self.SetPositionForStatusBars_MainMenuBar()
+			ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+		else
+			ReloadUI()	--We do this ReloadUI because the old value of self.db.profile.forceExtraOptions could be true
 		end
 	end
 	self:ToggleVisibilityKeybinds(self.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode)
-	-- We should do a ReloadUI if the old self.db.profile.extraConfigs..KeybindsConfig.hideKeybindsMode == 2, but we have not the old value, so we don't do anything, who cares :)
+	-- We should do a ReloadUI if the old self.db.profile.extraConfigs..KeybindsConfig.hideKeybindsMode >= 2, but we have not the old value, so we don't do anything, who cares :)
 	if ((not self.db.profile.extraConfigs.RedRangeConfig.enabled) and (REDRANGEICONS_HOOKED)) then
 		ReloadUI()
 	end
@@ -150,24 +212,134 @@ function ClassicUI:RefreshConfig()
 	end
 end
 
+-- Function to control the slash commands
+function ClassicUI:SlashCommand(str)
+	local cmd, arg1 = ClassicUI:GetArgs(str, 2, 1)
+	cmd = strlower(cmd or "")
+	arg1 = strlower(arg1 or "")
+	if (cmd == "enable") or (cmd == "on") then
+		if (not ClassicUI:IsEnabled()) then
+			ClassicUI.db.profile.enabled = true
+			ClassicUI:Enable()
+			ClassicUI:MainFunction() 
+			ClassicUI:ExtraFunction()
+			ClassicUI.SetPositionForStatusBars_MainMenuBar()
+			ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+		end
+	elseif (cmd == "disable") or (cmd == "off") then
+		if (ClassicUI:IsEnabled()) then
+			ClassicUI.db.profile.enabled = false
+			ClassicUI:Disable()
+			ReloadUI()
+		end
+	elseif (cmd == "extraoptions") or (cmd == "eo") then
+		ClassicUI:ShowConfig(1)
+	elseif (cmd == "forceextraoptions") or (cmd == "fextraoptions") or (cmd == "feo") then
+		if (arg1 == "enable") or (arg1 == "on") then
+			if (not ClassicUI.db.profile.forceExtraOptions) then
+				ClassicUI.db.profile.forceExtraOptions = true
+				if (not ClassicUI:IsEnabled()) then
+					ClassicUI:ExtraFunction()
+				end
+			end
+		elseif (arg1 == "disable") or (arg1 == "off") then
+			if (ClassicUI.db.profile.forceExtraOptions) then
+				ClassicUI.db.profile.forceExtraOptions = false
+				if (not ClassicUI:IsEnabled()) then
+					ReloadUI()
+				end
+			end
+		else
+			ClassicUI:ShowConfig(1)
+		end
+	elseif (cmd == "profiles") then
+		ClassicUI:ShowConfig(2)
+	elseif (cmd == "help") then
+		ClassicUI:ShowHelp()
+	else
+		ClassicUI:ShowConfig()
+	end
+end
+
+-- Print the help
+function ClassicUI:ShowHelp()
+	ClassicUI:Print('|cffd78900' .. L['ClassicUI'] .. ' v' .. ClassicUI.VERSION .. '|r')
+	ClassicUI:Print("|cffd2a679" .. L['CLASSICUI_HELP_LINE1'] .. "|r")
+	ClassicUI:Print("|cffd2a679" .. L['CLASSICUI_HELP_LINE2'] .. "|r")
+	ClassicUI:Print("|cffd2a679" .. L['CLASSICUI_HELP_LINE3'] .. "|r")
+	ClassicUI:Print("|cffd2a679" .. L['CLASSICUI_HELP_LINE4'] .. "|r")
+	ClassicUI:Print("|cffd2a679" .. L['CLASSICUI_HELP_LINE5'] .. "|r")
+	ClassicUI:Print("|cffd2a679" .. L['CLASSICUI_HELP_LINE6'] .. "|r")
+	ClassicUI:Print("|cffd2a679" .. L['CLASSICUI_HELP_LINE7'] .. "|r")
+end
+
 function ClassicUI:OnEnable()
-	print('|cffd78900' .. L['ClassicUI'] .. ' v' .. ClassicUI.VERSION .. '|r ' .. L['enabled'])
+	DEFAULT_CHAT_FRAME:AddMessage('|cffd78900' .. L['ClassicUI'] .. ' v' .. ClassicUI.VERSION .. '|r ' .. L['enabled'])
 end
 
 function ClassicUI:OnDisable()
-	print('|cffd78900' .. L['ClassicUI'] .. ' v' .. ClassicUI.VERSION .. '|r ' .. L['disabled'])
+	DEFAULT_CHAT_FRAME:AddMessage('|cffd78900' .. L['ClassicUI'] .. ' v' .. ClassicUI.VERSION .. '|r ' .. L['disabled'])
 end
 
 --Show Options Menu
-function ClassicUI:ShowConfig()
+function ClassicUI:ShowConfig(category)
 	-- Call twice to workaround a bug in Blizzard's function
 	InterfaceOptionsFrame_OpenToCategory(self.optionsFrames.profiles)
 	InterfaceOptionsFrame_OpenToCategory(self.optionsFrames.profiles)
-	InterfaceOptionsFrame_OpenToCategory(self.optionsFrames.general)
+	if (category ~= nil) then
+		if (category == 0) then
+			InterfaceOptionsFrame_OpenToCategory(self.optionsFrames.general)
+		elseif (category == 1) then
+			InterfaceOptionsFrame_OpenToCategory(self.optionsFrames.extraOptions)
+		elseif (category == 2) then
+			InterfaceOptionsFrame_OpenToCategory(self.optionsFrames.profiles)
+		else
+			InterfaceOptionsFrame_OpenToCategory(self.optionsFrames.general)
+		end
+	else
+		InterfaceOptionsFrame_OpenToCategory(self.optionsFrames.general)
+	end
+end
+
+-- This function gets the extra width needed to some frames when the MultiBarBottomRight is hidden
+function ClassicUI:GetExtraWidth()
+	local extraWidth
+	if (math.floor(MainMenuBar:GetWidth()+0.5) < 804) then
+		extraWidth = 804 - math.floor(MainMenuBar:GetWidth()+0.5)
+	else
+		extraWidth = 0
+	end
+	return extraWidth
+end
+
+-- Function to update the status bars when requested
+function ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+	if (ClassicUI:IsEnabled()) then
+		local visBars = {};
+		for i, bar in ipairs(StatusTrackingBarManager.bars) do
+			if ( bar:ShouldBeVisible() ) then
+				table.insert(visBars, bar);
+			end
+		end
+		table.sort(visBars, function(left, right) return left:GetPriority() < right:GetPriority() end);
+		local width = StatusTrackingBarManager:GetParent():GetSize();
+		local TOP_BAR = true;
+		local IS_DOUBLE = true;
+		if ( #visBars > 1 ) then
+			ClassicUI.StatusTrackingBarManager_LayoutBar(StatusTrackingBarManager, visBars[1], width, not TOP_BAR, IS_DOUBLE);
+			ClassicUI.StatusTrackingBarManager_LayoutBar(StatusTrackingBarManager, visBars[2], width, TOP_BAR, IS_DOUBLE);
+		elseif( #visBars == 1 ) then
+			ClassicUI.StatusTrackingBarManager_LayoutBar(StatusTrackingBarManager, visBars[1], width, TOP_BAR, not IS_DOUBLE);
+		end
+	end
 end
 
 function ClassicUI:ExtraFunction()
-	--Extra Option: Keybinds
+	--Extra Option: Guild Panel Mode
+	if ((ClassicUI.db.profile.extraConfigs.GuildPanelMode.defauiltOpenOldMenu) or (ClassicUI.db.profile.extraConfigs.GuildPanelMode.rightClickMicroButtonOpenOldMenu) or (ClassicUI.db.profile.extraConfigs.GuildPanelMode.leftClickMicroButtonOpenOldMenu)) then
+		ClassicUI:HookOpenGuildPanelMode()
+	end
+	--Extra Option: Keybinds Visibility
 	if (ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode > 0) then
 		self:ToggleVisibilityKeybinds(ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode)
 	end
@@ -193,6 +365,8 @@ function ClassicUI:MainFunction()
 	local Update_StanceBar
 	local Update_PossessBar
 	local SetPositionForStatusBars_MainMenuBar
+	local TransferPetActionBarFrameChildrens
+	local StatusTrackingBarManager_LayoutBar
 
 	-- Create the frame and the flag variables needed to execute protected functions after leave combat.
 	-- If a protected function tries to running while the player is in combat, a flag for the funcion is
@@ -203,7 +377,7 @@ function ClassicUI:MainFunction()
 	local delayFunc_Update_PossessBar = false
 	local delayFunc_Update_StanceBar = false
 	local delayFunc_Update_PetActionBar = false
-	local delayFunc_MainMenuBar_ChangeMenuBarSizeAndPosition = false
+	local delayFunc_Create_PetActionBar = false
 	fclFrame:SetScript("OnEvent",function(self,event)
 		if event=="PLAYER_REGEN_ENABLED" then
 			fclFrame:UnregisterEvent("PLAYER_REGEN_ENABLED")
@@ -227,47 +401,99 @@ function ClassicUI:MainFunction()
 				delayFunc_Update_PetActionBar = false
 				Update_PetActionBar()
 			end
-			if (delayFunc_MainMenuBar_ChangeMenuBarSizeAndPosition) then
-				delayFunc_MainMenuBar_ChangeMenuBarSizeAndPosition = false
-				MainMenuBar:ChangeMenuBarSizeAndPosition()
+			if (delayFunc_TransferPetActionBarFrameChildrens) then
+				delayFunc_TransferPetActionBarFrameChildrens = false
+				TransferPetActionBarFrameChildrens()
 			end
 		end
 	end)
 	
 	-- Create a second backdrop texture (only cosmetic)
 	MainMenuBarArtFrameBackground.BackgroundLarge2 = MainMenuBarArtFrameBackground:CreateTexture();
-	MainMenuBarArtFrameBackground.BackgroundLarge2:SetSize(231, 49);
-	MainMenuBarArtFrameBackground.BackgroundLarge2:SetPoint("BOTTOMLEFT", MainMenuBarArtFrameBackground.BackgroundLarge, "BOTTOMRIGHT", -11, 0);
+	MainMenuBarArtFrameBackground.BackgroundLarge2:SetSize(500, 8);
+	MainMenuBarArtFrameBackground.BackgroundLarge2:SetPoint("TOPLEFT", MainMenuBarArtFrameBackground.BackgroundLarge, "TOPLEFT", 524, 0);
 	MainMenuBarArtFrameBackground.BackgroundLarge2:SetTexture(MicroButtonAndBagsBar.MicroBagBar:GetTexture());
-	MainMenuBarArtFrameBackground.BackgroundLarge2:SetTexCoord(154/1024, 385/1024, 116/256, 165/256);
+	MainMenuBarArtFrameBackground.BackgroundLarge2:SetTexCoord(154/1024, 654/1024, 116/256, 124/256);
 	MainMenuBarArtFrameBackground.BackgroundLarge2:SetAlpha(MainMenuBarArtFrameBackground.BackgroundLarge:GetAlpha())
 	
 	-- Create new textures for microbuttons backdrop
 	MainMenuBarArtFrameBackground.MicroButtonArt = MainMenuBarArtFrameBackground:CreateTexture();
-	MainMenuBarArtFrameBackground.MicroButtonArt:SetSize(309, 42);
-	MainMenuBarArtFrameBackground.MicroButtonArt:SetPoint("BOTTOMLEFT", MainMenuBarArtFrame, 548, -10);
-	MainMenuBarArtFrameBackground.MicroButtonArt:SetTexture(MicroButtonAndBagsBar.MicroBagBar:GetTexture());
-	MainMenuBarArtFrameBackground.MicroButtonArt:SetTexCoord(245/1024, 542/1024, 212/256, 255/256);
+	MainMenuBarArtFrameBackground.MicroButtonArt:SetSize(256, 43);
+	MainMenuBarArtFrameBackground.MicroButtonArt:SetPoint("BOTTOMLEFT", MainMenuBarArtFrameBackground.BackgroundLarge, "BOTTOMLEFT", 512, 0);
+	MainMenuBarArtFrameBackground.MicroButtonArt:SetTexture("Interface\\MAINMENUBAR\\UI-MainMenuBar-Dwarf.blp");
+	MainMenuBarArtFrameBackground.MicroButtonArt:SetTexCoord(0/256, 256/256, 85/256, 128/256);
 	
 	-- Create new textures for bags backdrop
-	-- Background for all the bags
-	MainMenuBarArtFrameBackground.BagsBackgroundArt = MainMenuBarArtFrameBackground:CreateTexture();
-	MainMenuBarArtFrameBackground.BagsBackgroundArt:SetSize(168, 42);
-	MainMenuBarArtFrameBackground.BagsBackgroundArt:SetPoint("BOTTOMLEFT", MainMenuBarArtFrame, 856, -10);
-	MainMenuBarArtFrameBackground.BagsBackgroundArt:SetTexture(MicroButtonAndBagsBar.MicroBagBar:GetTexture());
-	MainMenuBarArtFrameBackground.BagsBackgroundArt:SetTexCoord(245/1024, 542/1024, 212/256, 255/256);
-	-- MainBags backdrop
-	MainMenuBarArtFrameBackground.MainBagsArt = MainMenuBarArtFrameBackground:CreateTexture();
-	MainMenuBarArtFrameBackground.MainBagsArt:SetSize(BAG_SIZE + 1, BAG_SIZE + 3);
-	MainMenuBarArtFrameBackground.MainBagsArt:SetPoint("BOTTOMRIGHT", MainMenuBarArtFrameBackground.BagsBackgroundArt, -2, 4);
-	MainMenuBarArtFrameBackground.MainBagsArt:SetTexture(MicroButtonAndBagsBar.MicroBagBar:GetTexture());
-	MainMenuBarArtFrameBackground.MainBagsArt:SetTexCoord(462/1024, 495/1024, 177/256, 211/256);
-	-- MultiBags backdrop
-	MainMenuBarArtFrameBackground.MultiBagsArt = MainMenuBarArtFrameBackground:CreateTexture();
-	MainMenuBarArtFrameBackground.MultiBagsArt:SetSize(BAGS_WIDTH - 30, BAG_SIZE + 3);
-	MainMenuBarArtFrameBackground.MultiBagsArt:SetPoint("BOTTOMRIGHT", MainMenuBarArtFrameBackground.MainBagsArt, -(BAG_SIZE+1), 0);
-	MainMenuBarArtFrameBackground.MultiBagsArt:SetTexture(MicroButtonAndBagsBar.MicroBagBar:GetTexture());
-	MainMenuBarArtFrameBackground.MultiBagsArt:SetTexCoord(365/1024, 495/1024, 177/256, 211/256);
+	MainMenuBarArtFrameBackground.BagsArt = MainMenuBarArtFrameBackground:CreateTexture();
+	MainMenuBarArtFrameBackground.BagsArt:SetSize(256, 43);
+	MainMenuBarArtFrameBackground.BagsArt:SetPoint("BOTTOMLEFT", MainMenuBarArtFrameBackground.MicroButtonArt, "BOTTOMRIGHT", 0, 0);
+	MainMenuBarArtFrameBackground.BagsArt:SetTexture("Interface\\MAINMENUBAR\\UI-MainMenuBar-Dwarf.blp");
+	MainMenuBarArtFrameBackground.BagsArt:SetTexCoord(0/256, 256/256, 21/256, 64/256);
+	
+	-- Move the bags buttons
+	MainMenuBarBackpackButton:SetParent(MainMenuBarArtFrame);
+	MainMenuBarBackpackButton:ClearAllPoints();
+	MainMenuBarBackpackButton:SetPoint("RIGHT", MainMenuBarArtFrameBackground.BagsArt, -4, -1);
+	MainMenuBarBackpackButton:SetSize(BAG_SIZE-2, BAG_SIZE-2)
+	MainMenuBarBackpackButtonNormalTexture:SetAlpha(0)
+	for i = 0,3 do
+		_G["CharacterBag"..i.."Slot"]:SetParent(MainMenuBarArtFrame);
+		_G["CharacterBag"..i.."Slot"]:SetSize(BAG_SIZE-2, BAG_SIZE-2);
+		_G["CharacterBag"..i.."Slot"].IconBorder:SetSize(BAG_SIZE-2, BAG_SIZE-2);
+		--_G["CharacterBag"..i.."SlotNormalTexture"]:SetAlpha(0)	-- seems unnecessary, at least for this icons size
+	end
+	CharacterBag0Slot:ClearAllPoints();
+	CharacterBag0Slot:SetPoint("RIGHT", MainMenuBarArtFrameBackground.BagsArt, -36, -1);
+
+	-- Hide and resize the old MicroButtonAndBagsBar frame.
+	MicroButtonAndBagsBar:SetWidth(1);	-- This allow the UIParent code center the MainMenuBar frame correctly.
+	MicroButtonAndBagsBar:Hide();
+	
+	-- Move Latency and Ticket MicroButtons
+	MainMenuBarPerformanceBar:SetPoint("CENTER", MainMenuBarPerformanceBar:GetParent(), "CENTER", 0, 11);
+	HelpOpenTicketButton:SetPoint("CENTER", HelpOpenTicketButton:GetParent(), "TOPRIGHT", -3, -4);
+	HelpOpenWebTicketButton:SetPoint("CENTER", HelpOpenWebTicketButton:GetParent(), "TOPRIGHT", -3, -4);
+	
+	-- Hide the Gargoyles (will be processed later)
+	MainMenuBarArtFrame.LeftEndCap:Hide()
+	MainMenuBarArtFrame.RightEndCap:Hide()
+	
+	-- Create a new subFrame CUI_PetActionBarFrame of PetActionBarFrame
+	CUI_PetActionBarFrame = CreateFrame("Frame", "CUI_PetActionBarFrame", PetActionBarFrame)
+	CUI_PetActionBarFrame:SetSize(PetActionBarFrame:GetSize())
+	CUI_PetActionBarFrame:SetPoint(PetActionBarFrame:GetPoint())
+	CUI_PetActionBarFrame:SetFrameStrata(PetActionBarFrame:GetFrameStrata())
+	CUI_PetActionBarFrame:EnableMouse(true)
+	
+	-- Function to set the new parent (CUI_PetActionBarFrame) for the PetActionBarFrame childrens and anchor they to CUI_PetActionBarFrame
+	ClassicUI.TransferPetActionBarFrameChildrens = function()
+		if InCombatLockdown() then
+			delayFunc_TransferPetActionBarFrameChildrens = true
+			if (not fclFrame:IsEventRegistered("PLAYER_REGEN_ENABLED")) then
+				fclFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+			end
+			return
+		end
+		delayFunc_TransferPetActionBarFrameChildrens = false
+		PetActionBarFrame:EnableMouse(false)
+		for _, v in ipairs({PetActionBarFrame:GetChildren()}) do
+			if (v ~= CUI_PetActionBarFrame) then
+				v:SetParent(CUI_PetActionBarFrame)
+			end
+			local point, relativeTo, relativePoint, xOfs, yOfs = v:GetPoint()
+			if (relativeTo == PetActionBarFrame) then
+				v:ClearAllPoints()
+				v:SetPoint(point, CUI_PetActionBarFrame, relativePoint, xOfs, yOfs)
+			end
+		end
+		SlidingActionBarTexture0:SetParent(CUI_PetActionBarFrame)
+		SlidingActionBarTexture1:SetParent(CUI_PetActionBarFrame)
+		local point, _, relativePoint, xOfs, yOfs = SlidingActionBarTexture0:GetPoint()
+		SlidingActionBarTexture0:ClearAllPoints()
+		SlidingActionBarTexture0:SetPoint(point, CUI_PetActionBarFrame, relativePoint, xOfs, yOfs)
+	end
+	TransferPetActionBarFrameChildrens = ClassicUI.TransferPetActionBarFrameChildrens
+	TransferPetActionBarFrameChildrens()
 	
 	--Function to set the position of MultiActionBars
 	ClassicUI.Update_MultiActionBar = function()
@@ -411,11 +637,6 @@ function ClassicUI:MainFunction()
 	-- Hook function to update MultiActionBars
 	hooksecurefunc("MultiActionBar_Update", Update_MultiActionBar);
 	
-	-- We are unable to get the UIParent not to manage the PetActionBar. We need replace PetActionBar.SetPoint function to prevent this. But this induce some minor taints...
-	PetActionBarFrame.oSetPoint = PetActionBarFrame.SetPoint	-- Reference to original SetPoint function
-	PetActionBarFrame.SetPoint = function(self)	-- Enjoy the unlucky taint
-		Update_PetActionBar()
-	end
 	-- Function to set the position of PetActionBar
 	ClassicUI.Update_PetActionBar = function()
 		if InCombatLockdown() then
@@ -427,17 +648,17 @@ function ClassicUI:MainFunction()
 		end
 		delayFunc_Update_PetActionBar = false
 		-- Set xPos
-		local xPos
+		local xPos = -(ClassicUI:GetExtraWidth() / 2)
 		if ( PetActionBarFrame_IsAboveStance(true) ) then
-			xPos = -74 + ClassicUI.db.profile.barsConfig.PetActionBarFrame.xOffset
+			xPos = xPos + -74 + ClassicUI.db.profile.barsConfig.PetActionBarFrame.xOffset
 		elseif ( MainMenuBarVehicleLeaveButton and MainMenuBarVehicleLeaveButton:IsShown() ) then
-			xPos = MainMenuBarVehicleLeaveButton:GetRight() + 20;
+			xPos = xPos + MainMenuBarVehicleLeaveButton:GetRight() + 20;
 		elseif ( StanceBarFrame and GetNumShapeshiftForms() > 0 ) then
-			xPos = 390 + ClassicUI.db.profile.barsConfig.PetActionBarFrame.xOffsetIfStanceBar;
+			xPos = xPos + 390 + ClassicUI.db.profile.barsConfig.PetActionBarFrame.xOffsetIfStanceBar;
 		elseif ( MultiCastActionBarFrame and HasMultiCastActionBar() ) then
-			xPos = 390 + ClassicUI.db.profile.barsConfig.PetActionBarFrame.xOffsetIfStanceBar;
+			xPos = xPos + 390 + ClassicUI.db.profile.barsConfig.PetActionBarFrame.xOffsetIfStanceBar;
 		else
-			xPos = -74 + ClassicUI.db.profile.barsConfig.PetActionBarFrame.xOffset
+			xPos = xPos + -74 + ClassicUI.db.profile.barsConfig.PetActionBarFrame.xOffset
 		end
 		-- Set yPos
 		local yPos
@@ -478,7 +699,7 @@ function ClassicUI:MainFunction()
 			end
 		end
 		-- Set position for PetActionBarFrame to xPos, yPos
-		PetActionBarFrame:oSetPoint("TOPLEFT", PetActionBarFrame:GetParent(), "BOTTOMLEFT", xPos, yPos);
+		CUI_PetActionBarFrame:SetPoint("TOPLEFT", PetActionBarFrame:GetParent(), "BOTTOMLEFT", xPos, yPos);
 	end
 	Update_PetActionBar = ClassicUI.Update_PetActionBar
 	
@@ -493,7 +714,7 @@ function ClassicUI:MainFunction()
 		end
 		delayFunc_Update_StanceBar = false
 		-- Set xPos
-		local xPos = -80 + ClassicUI.db.profile.barsConfig.StanceBarFrame.xOffset
+		local xPos = -80 + ClassicUI.db.profile.barsConfig.StanceBarFrame.xOffset - (ClassicUI:GetExtraWidth() / 2)
 		-- Set yPos
 		local yPos
 		if (ClassicUI.db.profile.barsConfig.StanceBarFrame.ignoreyOffsetStatusBar) then
@@ -550,7 +771,7 @@ function ClassicUI:MainFunction()
 		end
 		delayFunc_Update_PossessBar = false
 		-- Set xPos
-		local xPos = -80 + ClassicUI.db.profile.barsConfig.PossessBarFrame.xOffset
+		local xPos = -80 + ClassicUI.db.profile.barsConfig.PossessBarFrame.xOffset - (ClassicUI:GetExtraWidth() / 2)
 		-- Set yPos
 		local yPos
 		if (ClassicUI.db.profile.barsConfig.PossessBarFrame.ignoreyOffsetStatusBar) then
@@ -597,48 +818,100 @@ function ClassicUI:MainFunction()
 	hooksecurefunc("PossessBar_Update", Update_PossessBar)
 	
 	-- Function to modify the status bars (enlarge status bars to include bags and microbuttons and move it between the 2 rows of buttons)
-	hooksecurefunc(StatusTrackingBarManager, "LayoutBar", function (self, bar, barWidth, isTopBar, isDouble)
+	ClassicUI.StatusTrackingBarManager_LayoutBar = function (self, bar, barWidth, isTopBar, isDouble)
 		-- Seems that this function does not need protection (InCombatLockdown)
 		bar:ClearAllPoints();
-		local width = barWidth + BAGS_WIDTH + 60
+		local width = barWidth + BAGS_WIDTH + 60 + ClassicUI:GetExtraWidth()
 		if ( isDouble ) then
 			self:SetDoubleBarSize(bar, width);
-			if( isDouble ) then 
-				self.SingleBarLargeUpper:SetSize(width, 9); 
-				self.SingleBarLarge:SetSize(width, 12)
-			else
-				self.SingleBarSmallUpper:SetSize(width, 9);
-				self.SingleBarSmall:SetSize(width, 12); 
-			end
+			self.SingleBarLargeUpper:SetSize(width + ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xSize, 9 + ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.ySize); 
+			self.SingleBarLarge:SetSize(width + ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xSize, 12 + ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.ySize)
 			if ( isTopBar ) then
-				bar:SetPoint("BOTTOMLEFT", MainMenuBarArtFrame, "TOPLEFT", 0, -7);
+				bar:SetPoint("BOTTOMLEFT", MainMenuBarArtFrame, "TOPLEFT", 0 + ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xOffset, -7 + ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.yOffset);
 				bar.StatusBar:SetPoint("RIGHT", bar, "RIGHT", 0, -1);
-				bar.OverlayFrame:SetPoint("TOPLEFT", bar, "TOPLEFT", 0, -4)
-				self.SingleBarLarge:SetPoint("CENTER", bar, "CENTER", 0, -10)
-				bar.StatusBar:SetSize(width, 9);
-				bar:SetSize(width, 9);
+				bar.OverlayFrame:SetPoint("TOPLEFT", bar, "TOPLEFT", 0 + ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xOffsetOverlay, -4 + ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.yOffsetOverlay)
+				if (ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.overlayHide) then
+					bar.OverlayFrame:Hide()
+				else
+					if (not bar.OverlayFrame:IsShown()) then
+						bar.OverlayFrame:Show()
+					end
+				end
+				self.SingleBarLarge:SetPoint("CENTER", bar, "CENTER", 0 - ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xOffset + ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xOffset - (ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xSize / 2) + (ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xSize / 2) + ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xOffsetArt, -10 - ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.yOffset + ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.yOffset - (ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.ySize / 2) + (ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.ySize / 2) + ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.yOffsetArt)
+				self.SingleBarLargeUpper:SetPoint("TOP", self.SingleBarLarge, "TOP", 0 + ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xOffset - ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xOffset - ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xOffsetArt + (ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xSize / 2) - (ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xSize / 2) + ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xOffsetArt, 8 + ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.yOffset - ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.yOffset - ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.yOffsetArt + (ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.ySize) - ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.ySize + ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.yOffsetArt)
+				if (ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.artHide) then
+					self.SingleBarLargeUpper:Hide()
+				end
+				if (ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.artHide) then
+					self.SingleBarLarge:Hide()
+				end
+				bar.StatusBar:SetSize(width + ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xSize, 9 + ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.ySize);
+				bar:SetSize(width + ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xSize, 9 + ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.ySize);
 			else
-				bar:SetPoint("BOTTOMLEFT", MainMenuBarArtFrame, "TOPLEFT", 0, -18);
+				bar:SetPoint("BOTTOMLEFT", MainMenuBarArtFrame, "TOPLEFT", 0 + ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xOffset, -18 + ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.yOffset);
 				bar.StatusBar:SetPoint("RIGHT", bar, "RIGHT", 0, 0);
-				bar.OverlayFrame:SetPoint("TOPLEFT", bar, "TOPLEFT", 0, -7)
-				bar.StatusBar:SetSize(width, 11);
-				bar:SetSize(width, 12);
+				bar.OverlayFrame:SetPoint("TOPLEFT", bar, "TOPLEFT", 0 + ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xOffsetOverlay, -7 + ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.yOffsetOverlay)
+				if (ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.overlayHide) then
+					bar.OverlayFrame:Hide()
+				else
+					if (not bar.OverlayFrame:IsShown()) then
+						bar.OverlayFrame:Show()
+					end
+				end
+				bar.StatusBar:SetSize(width + ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xSize, 11 + ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.ySize);
+				bar:SetSize(width + ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xSize, 12 + ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.ySize);
 			end
 		else 
-			bar:SetPoint("BOTTOMLEFT", MainMenuBarArtFrame, "TOPLEFT", 0, -18);
+			bar:SetPoint("BOTTOMLEFT", MainMenuBarArtFrame, "TOPLEFT", 0 + ClassicUI.db.profile.barsConfig.SingleStatusBar.xOffset, -18 + ClassicUI.db.profile.barsConfig.SingleStatusBar.yOffset);
 			bar.StatusBar:SetPoint("RIGHT", bar, "RIGHT", 0, 0);
-			bar.OverlayFrame:SetPoint("TOPLEFT", bar, "TOPLEFT", 0, -7)
-			self:SetSingleBarSize(bar, width);
-			if (self.largeSize) then 
-				self.SingleBarLarge:SetSize(width, 12); 
+			bar.OverlayFrame:SetPoint("TOPLEFT", bar, "TOPLEFT", 0 + ClassicUI.db.profile.barsConfig.SingleStatusBar.xOffsetOverlay, -7 + ClassicUI.db.profile.barsConfig.SingleStatusBar.yOffsetOverlay)
+			if (ClassicUI.db.profile.barsConfig.SingleStatusBar.overlayHide) then
+				bar.OverlayFrame:Hide()
 			else
-				self.SingleBarSmall:SetSize(width, 12); 
+				if (not bar.OverlayFrame:IsShown()) then
+						bar.OverlayFrame:Show()
+					end
 			end
-			self.SingleBarLarge:SetPoint("CENTER", bar, "CENTER", 0, 0)
-			bar.StatusBar:SetSize(width, 12); 
-			bar:SetSize(width, 12);
+			self:SetSingleBarSize(bar, width);
+			self.SingleBarLarge:SetSize(width + ClassicUI.db.profile.barsConfig.SingleStatusBar.xSize, 12 + ClassicUI.db.profile.barsConfig.SingleStatusBar.ySize); 
+			self.SingleBarLarge:SetPoint("CENTER", bar, "CENTER", 0 + ClassicUI.db.profile.barsConfig.SingleStatusBar.xOffsetArt, 0 + ClassicUI.db.profile.barsConfig.SingleStatusBar.yOffsetArt)
+			if (ClassicUI.db.profile.barsConfig.SingleStatusBar.artHide) then
+				self.SingleBarLarge:Hide()
+			end
+			bar.StatusBar:SetSize(width + ClassicUI.db.profile.barsConfig.SingleStatusBar.xSize, 12 + ClassicUI.db.profile.barsConfig.SingleStatusBar.ySize); 
+			bar:SetSize(width + ClassicUI.db.profile.barsConfig.SingleStatusBar.xSize, 12 + ClassicUI.db.profile.barsConfig.SingleStatusBar.ySize);
 		end
-	end);
+	end
+	StatusTrackingBarManager_LayoutBar = ClassicUI.StatusTrackingBarManager_LayoutBar
+	-- Hook this function to StatusTrackingBarManager:LayoutBar
+	hooksecurefunc(StatusTrackingBarManager, "LayoutBar", StatusTrackingBarManager_LayoutBar)
+	
+	-- Hook this function to execute 'SetDoubleBarSize' as if it has self.largeSize=true
+	hooksecurefunc(StatusTrackingBarManager, 'SetDoubleBarSize', function(self, bar, width)
+		local textureHeight = self:GetInitialBarHeight(); 
+		local statusBarHeight = textureHeight - 5; 
+		if ( not self.largeSize ) then
+			self.SingleBarSmallUpper:Hide(); 
+			self.SingleBarSmall:Hide(); 
+		end
+		self.SingleBarLargeUpper:SetSize(width, statusBarHeight); 
+		self.SingleBarLargeUpper:SetPoint("CENTER", bar, 0, 4);
+		self.SingleBarLargeUpper:Show();
+		self.SingleBarLarge:SetSize(width, statusBarHeight); 
+		self.SingleBarLarge:SetPoint("CENTER", bar, 0, -5);
+		self.SingleBarLarge:Show(); 
+	end)
+	
+	-- Hook this function to execute 'SetSingleBarSize' as if it has self.largeSize=true
+	hooksecurefunc(StatusTrackingBarManager, 'SetSingleBarSize', function(self, bar, width) 
+		local textureHeight = self:GetInitialBarHeight();
+		if ( not self.largeSize ) then
+			self.SingleBarSmall:Hide(); 
+		end
+		self.SingleBarLarge:SetSize(width, textureHeight); 
+		self.SingleBarLarge:SetPoint("CENTER", bar, 0, 4);
+		self.SingleBarLarge:Show(); 
+	end)
 	
 	-- Function to move the rest indicator
 	hooksecurefunc(ExhaustionTickMixin, "UpdateTickPosition", function(self)
@@ -664,28 +937,15 @@ function ClassicUI:MainFunction()
 		end
 	end)
 	
-	-- Hook to avoid bad UI behaviour when the MultiBarBottomRight is hidden
-	local oMainMenuBar_ChangeMenuBarSizeAndPosition = MainMenuBar.ChangeMenuBarSizeAndPosition
-	hooksecurefunc(MainMenuBar, "ChangeMenuBarSizeAndPosition", function(self, rightMultiBarShowing)
-		if InCombatLockdown() then
-			delayFunc_MainMenuBar_ChangeMenuBarSizeAndPosition = true
-			if (not fclFrame:IsEventRegistered("PLAYER_REGEN_ENABLED")) then
-				fclFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
-			end
-			return
-		end
-		delayFunc_MainMenuBar_ChangeMenuBarSizeAndPosition = false
-		rightMultiBarShowing = IsNormalActionBarState()
-		oMainMenuBar_ChangeMenuBarSizeAndPosition(self, rightMultiBarShowing)
-	end)
-	
 	-- Hook to move MicroButtons when the MainMenuBar is Showed
 	MainMenuBar:HookScript("OnShow", function()
-		MoveMicroButtons("BOTTOMLEFT", MainMenuBarArtFrameBackground.MicroButtonArt, "BOTTOMLEFT", 9, 2, false);
+		MoveMicroButtons("BOTTOMLEFT", MainMenuBarArtFrameBackground.MicroButtonArt, "BOTTOMLEFT", 45, 2, false);
 	end)
 	
 	-- A function to update all bars and frames, especially the MainMenuBar, MicroButtons and bags frames
 	ClassicUI.SetPositionForStatusBars_MainMenuBar = function()
+		local extraWidth = ClassicUI:GetExtraWidth()
+		
 		-- Show/Hide Gargoyles
 		if (ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.hide) then
 			if (MainMenuBarArtFrame.LeftEndCap:IsShown()) then
@@ -694,6 +954,11 @@ function ClassicUI:MainFunction()
 		else
 			if (not MainMenuBarArtFrame.LeftEndCap:IsShown()) then
 				MainMenuBarArtFrame.LeftEndCap:Show()
+				if (ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.model == 1) then
+					MainMenuBarArtFrame.LeftEndCap:SetSize(128, 86)
+					MainMenuBarArtFrame.LeftEndCap:SetTexture("Interface\\MAINMENUBAR\\UI-MainMenuBar-EndCap-Human.blp")
+					MainMenuBarArtFrame.LeftEndCap:SetTexCoord(0/128, 128/128, 42/128, 128/128);
+				end
 			end
 		end
 		if (ClassicUI.db.profile.barsConfig.RightGargoyleFrame.hide) then
@@ -703,39 +968,26 @@ function ClassicUI:MainFunction()
 		else
 			if (not MainMenuBarArtFrame.RightEndCap:IsShown()) then
 				MainMenuBarArtFrame.RightEndCap:Show()
+				if (ClassicUI.db.profile.barsConfig.RightGargoyleFrame.model == 1) then
+					MainMenuBarArtFrame.RightEndCap:SetSize(128, 86)
+					MainMenuBarArtFrame.RightEndCap:SetTexture("Interface\\MAINMENUBAR\\UI-MainMenuBar-EndCap-Human.blp")
+					MainMenuBarArtFrame.RightEndCap:SetTexCoord(128/128, 0/128, 42/128, 128/128);
+				end
 			end
 		end
+		
 		-- Move Gargoyles
 		MainMenuBarArtFrame.LeftEndCap:SetPoint("BOTTOMLEFT", MainMenuBarArtFrame, "BOTTOMLEFT", 64 - BAGS_WIDTH + ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.xOffset, -10 + ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.yOffset);
-		MainMenuBarArtFrame.RightEndCap:SetPoint("BOTTOMRIGHT", MainMenuBarArtFrame, "BOTTOMRIGHT", 156 + BAGS_WIDTH + ClassicUI.db.profile.barsConfig.RightGargoyleFrame.xOffset, -10 + ClassicUI.db.profile.barsConfig.RightGargoyleFrame.yOffset);
+		MainMenuBarArtFrame.RightEndCap:SetPoint("BOTTOMRIGHT", MainMenuBarArtFrame, "BOTTOMRIGHT", 156 + BAGS_WIDTH + ClassicUI.db.profile.barsConfig.RightGargoyleFrame.xOffset + extraWidth, -10 + ClassicUI.db.profile.barsConfig.RightGargoyleFrame.yOffset);
 		
 		-- If OverrideActionBar is showed, let the Blizzard code move the MicroButtons. If OverrideActionBar, is hidden we must move the MicroButtons on our frame.
 		if (not OverrideActionBar:IsShown()) then
-			MoveMicroButtons("BOTTOMLEFT", MainMenuBarArtFrameBackground.MicroButtonArt, "BOTTOMLEFT", 9, 2, false);
+			MoveMicroButtons("BOTTOMLEFT", MainMenuBarArtFrameBackground.MicroButtonArt, "BOTTOMLEFT", 45, 2, false);
 		end
 		
-		-- Move the bags buttons
-		MainMenuBarBackpackButton:SetParent(MainMenuBarArtFrame);
-		MainMenuBarBackpackButton:ClearAllPoints();
-		MainMenuBarBackpackButton:SetPoint("RIGHT", MainMenuBarArtFrameBackground.MainBagsArt, -2, -1);
-		MainMenuBarBackpackButton:SetSize(BAG_SIZE-2, BAG_SIZE-2)
-		MainMenuBarBackpackButtonNormalTexture:SetAlpha(0)
-		for i = 0,3 do
-			_G["CharacterBag"..i.."Slot"]:SetParent(MainMenuBarArtFrame);
-			_G["CharacterBag"..i.."Slot"]:SetSize(BAG_SIZE-2, BAG_SIZE-2);
-			_G["CharacterBag"..i.."Slot"].IconBorder:SetSize(BAG_SIZE-2, BAG_SIZE-2);
-			--_G["CharacterBag"..i.."SlotNormalTexture"]:SetAlpha(0)	-- seems unnecessary, at least for this icons size
-		end
-		CharacterBag0Slot:ClearAllPoints();
-		CharacterBag0Slot:SetPoint("RIGHT", MainMenuBarArtFrameBackground.MultiBagsArt, -1, -1);
-
-		-- Hide and resize the new MicroButtonAndBagsBar frame.
-		MicroButtonAndBagsBar:SetWidth(1);	-- This allow the UIParent code center the MainMenuBar frame correctly.
-		MicroButtonAndBagsBar:Hide();
-		-- Move Latency and Ticket MicroButtons
-		MainMenuBarPerformanceBar:SetPoint("CENTER", MainMenuBarPerformanceBar:GetParent(), "CENTER", 0, 11);
-		HelpOpenTicketButton:SetPoint("CENTER", HelpOpenTicketButton:GetParent(), "TOPRIGHT", -3, -4);
-		HelpOpenWebTicketButton:SetPoint("CENTER", HelpOpenWebTicketButton:GetParent(), "TOPRIGHT", -3, -4);
+		-- Move the PageNumber frame
+		MainMenuBarArtFrame.PageNumber:ClearAllPoints();
+		MainMenuBarArtFrame.PageNumber:SetPoint("CENTER", MainMenuBarArtFrameBackground.MicroButtonArt, "LEFT", 30, 0);
 		
 		if InCombatLockdown() then
 			delayFunc_SetPositionForStatusBars_MainMenuBar = true
@@ -761,10 +1013,10 @@ function ClassicUI:MainFunction()
 		end
 		
 		-- Set the position for MainMenuBarArtFrame
-		local menuBarRealWidth = MainMenuBar:GetWidth() + BAGS_WIDTH + 60;
-		MainMenuBarArtFrame:SetPoint("TOPLEFT", MainMenuBar, ((MainMenuBar:GetWidth()-menuBarRealWidth)/2) + ClassicUI.db.profile.barsConfig.MainMenuBar.xOffset, 10 + offsetY + ClassicUI.db.profile.barsConfig.MainMenuBar.yOffset);
-		MainMenuBarArtFrame:SetPoint("BOTTOMRIGHT", MainMenuBar, ((MainMenuBar:GetWidth()-menuBarRealWidth)/2) + ClassicUI.db.profile.barsConfig.MainMenuBar.xOffset, 10 + offsetY + ClassicUI.db.profile.barsConfig.MainMenuBar.yOffset);
-
+		local menuBarBagsWidth = BAGS_WIDTH + 60 + extraWidth;
+		MainMenuBarArtFrame:SetPoint("TOPLEFT", MainMenuBar, ((-menuBarBagsWidth)/2) + ClassicUI.db.profile.barsConfig.MainMenuBar.xOffset, 10 + offsetY + ClassicUI.db.profile.barsConfig.MainMenuBar.yOffset);
+		MainMenuBarArtFrame:SetPoint("BOTTOMRIGHT", MainMenuBar, ((-menuBarBagsWidth)/2) + ClassicUI.db.profile.barsConfig.MainMenuBar.xOffset, 10 + offsetY + ClassicUI.db.profile.barsConfig.MainMenuBar.yOffset);
+		
 		if ( IsPlayerInWorld() ) then
 			-- Don't let UIParent_ManageFramePositions manage the MultiBarBottomLeft, StanceBarFrame and PossessBarFrame. Sadly can't do this for PetActionBarFrame.
 			UIPARENT_MANAGED_FRAME_POSITIONS["MultiBarBottomLeft"] = nil;
@@ -825,7 +1077,7 @@ function ClassicUI:ToggleVisibilityKeybinds(mode)
 				actionButtonHK:SetAlpha(0)
 			end
 		end
-	elseif (mode == 2) then
+	elseif (mode == 2) or (mode == 3) then
 		ClassicUI:HookKeybindsVisibilityMode2()
 		for i = 1, 12 do
 			local actionButton
@@ -918,11 +1170,15 @@ function ClassicUI:ToggleVisibilityKeybinds(mode)
 	end
 end
 
--- The OnlyShowDotRange keybind options require a Hook
+-- The OnlyShowDotRange or OnlyShowPermanentDotRange keybind options require a Hook
 function ClassicUI:HookKeybindsVisibilityMode2()
 	if (not ACTIONBUTTON_UPDATEHOTKEYS_HOOKED) then
 		hooksecurefunc("ActionButton_UpdateHotkeys", function(self, actionButtonType)
-			self.HotKey:SetText(RANGE_INDICATOR);
+			if (ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode == 2) then
+				self.HotKey:SetText(RANGE_INDICATOR);
+			else
+				self.HotKey:SetText(' '..RANGE_INDICATOR);
+			end
 		end)
 		ACTIONBUTTON_UPDATEHOTKEYS_HOOKED = true
 	end
@@ -942,28 +1198,28 @@ function ClassicUI:HookLossOfControlUICCRemover()
 			end
 		end)
 		hooksecurefunc('ActionButton_UpdateCooldown', function(self)
-			local start, duration, enable, charges, maxCharges, chargeStart, chargeDuration;
-			local modRate = 1.0;
-			local chargeModRate = 1.0;
-			if ( self.spellID ) then
-				start, duration, enable, modRate = GetSpellCooldown(self.spellID);
-				charges, maxCharges, chargeStart, chargeDuration, chargeModRate = GetSpellCharges(self.spellID);
-			else
-				start, duration, enable, modRate = GetActionCooldown(self.action);
-				charges, maxCharges, chargeStart, chargeDuration, chargeModRate = GetActionCharges(self.action);
-			end
-			if ( self.cooldown.currentCooldownType ~= COOLDOWN_TYPE_NORMAL ) then
+			if ( self.cooldown.currentCooldownType == COOLDOWN_TYPE_LOSS_OF_CONTROL ) then
+				local start, duration, enable, charges, maxCharges, chargeStart, chargeDuration;
+				local modRate = 1.0;
+				local chargeModRate = 1.0;
+				if ( self.spellID ) then
+					start, duration, enable, modRate = GetSpellCooldown(self.spellID);
+					charges, maxCharges, chargeStart, chargeDuration, chargeModRate = GetSpellCharges(self.spellID);
+				else
+					start, duration, enable, modRate = GetActionCooldown(self.action);
+					charges, maxCharges, chargeStart, chargeDuration, chargeModRate = GetActionCharges(self.action);
+				end
 				self.cooldown:SetEdgeTexture("Interface\\Cooldown\\edge");
 				self.cooldown:SetSwipeColor(0, 0, 0);
 				self.cooldown:SetHideCountdownNumbers(false);
 				self.cooldown.currentCooldownType = COOLDOWN_TYPE_NORMAL;
+				if ( charges and maxCharges and maxCharges > 1 and charges < maxCharges ) then
+					StartChargeCooldown(self, chargeStart, chargeDuration, chargeModRate);
+				else
+					ClearChargeCooldown(self);
+				end
+				CooldownFrame_Set(self.cooldown, start, duration, enable, false, modRate);
 			end
-			if ( charges and maxCharges and maxCharges > 1 and charges < maxCharges ) then
-				StartChargeCooldown(self, chargeStart, chargeDuration, chargeModRate);
-			else
-				ClearChargeCooldown(self);
-			end
-			CooldownFrame_Set(self.cooldown, start, duration, enable, false, modRate);
 		end)
 		DISABLELOSSOFCONTROLUI_HOOKED = true
 	end
@@ -1016,5 +1272,58 @@ function ClassicUI:HookRedRangeIcons()
 			end
 		end)
 		REDRANGEICONS_HOOKED = true
+	end
+end
+
+-- Function to hook the functionalities of the Guild Panel Mode extra option
+function ClassicUI:HookOpenGuildPanelMode()
+	if (not OPENGUILDPANEL_HOOKED) then
+		-- New global functions ToggleOldGuildFrame and ToggleNewGuildFrame to toggle the old and the new menu frame respectively
+		ToggleNewGuildFrame = ToggleGuildFrame;
+		function ToggleOldGuildFrame()
+			if (IsKioskModeEnabled()) then
+				return;
+			end
+			local factionGroup = UnitFactionGroup("player");
+			if (factionGroup == "Neutral") then
+				return;
+			end
+			if ( IsTrialAccount() or (IsVeteranTrialAccount() and not IsInGuild()) ) then
+				UIErrorsFrame:AddMessage(ERR_RESTRICTED_ACCOUNT_TRIAL, 1.0, 0.1, 0.1, 1.0);
+				return;
+			end
+			if ( IsInGuild() ) then
+				GuildFrame_LoadUI();
+				if ( GuildFrame_Toggle ) then
+					GuildFrame_Toggle();
+				end
+			else
+				ToggleGuildFinder();
+			end
+		end
+
+		-- Set hook to open new or old menu (this hook work on keybinds, guild alert click, ...)
+		hooksecurefunc("ToggleGuildFrame", function(self)
+			if (ClassicUI.db.profile.extraConfigs.GuildPanelMode.defauiltOpenOldMenu) then
+				ToggleNewGuildFrame()
+				ToggleOldGuildFrame()
+			end
+		end)
+
+		--Set GuildMicroButton click specific hook
+		GuildMicroButton:HookScript('OnClick', function(self, button)
+			if (button == 'RightButton') then
+				if (ClassicUI.db.profile.extraConfigs.GuildPanelMode.rightClickMicroButtonOpenOldMenu) then
+					ToggleNewGuildFrame()
+					ToggleOldGuildFrame()
+				end
+			else
+				if (ClassicUI.db.profile.extraConfigs.GuildPanelMode.leftClickMicroButtonOpenOldMenu) then
+					ToggleNewGuildFrame()
+					ToggleOldGuildFrame()
+				end
+			end
+		end)
+		OPENGUILDPANEL_HOOKED = true
 	end
 end

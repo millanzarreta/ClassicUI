@@ -47,6 +47,7 @@ ClassicUI.optionsTable = {
 								ClassicUI:MainFunction() 
 								ClassicUI:ExtraFunction()
 								ClassicUI.SetPositionForStatusBars_MainMenuBar()
+								ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
 							end
 						else
 							if (ClassicUI:IsEnabled()) then
@@ -115,7 +116,7 @@ ClassicUI.optionsTable = {
 							order = 1,
 							name = L['Left Gargoyle']
 						},
-						enabledLeftGargoyle = {
+						hideLeftGargoyle = {
 							order = 2,
 							type = "toggle",
 							name = L['Hide'],
@@ -156,18 +157,42 @@ ClassicUI.optionsTable = {
 								ClassicUI.SetPositionForStatusBars_MainMenuBar()
 							end
 						},
+						modelLeftGargoyle = {
+							order = 5,
+							type = "select",
+							name = L['Left Gargoyle Model'],
+							desc = L['Select the model of the Left Gargoyle'],
+							values = {
+								[0] = L['Default - Gryphon'],
+								[1] = L['Lion']
+							},
+							get = function() return ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.model end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.model = value
+								if (ClassicUI:IsEnabled()) then
+									if (value == 1) then
+										MainMenuBarArtFrame.LeftEndCap:Hide()
+									else
+										MainMenuBarArtFrame.LeftEndCap:SetSize(128, 76)
+										MainMenuBarArtFrame.LeftEndCap:SetTexture("Interface\\MAINMENUBAR\\UI-MainMenuBar-EndCap-Dwarf.blp")
+										MainMenuBarArtFrame.LeftEndCap:SetTexCoord(0/128, 128/128, 52/128, 128/128);
+									end
+									ClassicUI.SetPositionForStatusBars_MainMenuBar()
+								end
+							end,
+						},
 						Spacer1 = {
 							type = "description",
-							order = 5,
+							order = 6,
 							name = ""
 						},
 						Header2 = {
 							type = 'header',
-							order = 6,
+							order = 7,
 							name = L['Right Gargoyle']
 						},
-						enabledRightGargoyle = {
-							order = 7,
+						hideRightGargoyle = {
+							order = 8,
 							type = "toggle",
 							name = L['Hide'],
 							desc = L['Hide Right Gargoyle'],
@@ -178,7 +203,7 @@ ClassicUI.optionsTable = {
 							end,
 						},
 						xOffsetRightGargoyle = {
-							order = 8,
+							order = 9,
 							type = "range",
 							softMin = -500,
 							softMax = 500,
@@ -193,7 +218,7 @@ ClassicUI.optionsTable = {
 							end
 						},
 						yOffsetRightGargoyle = {
-							order = 9,
+							order = 10,
 							type = "range",
 							softMin = -500,
 							softMax = 500,
@@ -206,7 +231,31 @@ ClassicUI.optionsTable = {
 								ClassicUI.db.profile.barsConfig.RightGargoyleFrame.yOffset = value
 								ClassicUI.SetPositionForStatusBars_MainMenuBar()
 							end
-						}
+						},
+						modelRightGargoyle = {
+							order = 11,
+							type = "select",
+							name = L['Right Gargoyle Model'],
+							desc = L['Select the model of the Right Gargoyle'],
+							values = {
+								[0] = L['Default - Gryphon'],
+								[1] = L['Lion']
+							},
+							get = function() return ClassicUI.db.profile.barsConfig.RightGargoyleFrame.model end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.RightGargoyleFrame.model = value
+								if (ClassicUI:IsEnabled()) then
+									if (value == 1) then
+										MainMenuBarArtFrame.RightEndCap:Hide()
+									else
+										MainMenuBarArtFrame.RightEndCap:SetSize(128, 76)
+										MainMenuBarArtFrame.RightEndCap:SetTexture("Interface\\MAINMENUBAR\\UI-MainMenuBar-EndCap-Dwarf.blp")
+										MainMenuBarArtFrame.RightEndCap:SetTexCoord(128/128, 0/128, 52/128, 128/128);
+									end
+									ClassicUI.SetPositionForStatusBars_MainMenuBar()
+								end
+							end,
+						},
 					},
 				},
 				MultiActionBarOptions = {
@@ -250,8 +299,13 @@ ClassicUI.optionsTable = {
 								ClassicUI.Update_MultiActionBar()
 							end
 						},
-						OffsetsStatusBar1 = {
+						Spacer1 = {
+							type = "description",
 							order = 4,
+							name = ""
+						},
+						OffsetsStatusBar1 = {
+							order = 5,
 							inline = true,
 							type = "group",
 							name = " ",
@@ -302,18 +356,18 @@ ClassicUI.optionsTable = {
 								}
 							}
 						},
-						Spacer1 = {
+						Spacer2 = {
 							type = "description",
-							order = 5,
+							order = 6,
 							name = ""
 						},
 						Header2 = {
 							type = 'header',
-							order = 6,
+							order = 7,
 							name = L['RightMultiActionBars']
 						},
 						xOffsetRightMultiActionBars = {
-							order = 7,
+							order = 8,
 							type = "range",
 							softMin = -500,
 							softMax = 500,
@@ -328,7 +382,7 @@ ClassicUI.optionsTable = {
 							end
 						},
 						yOffsetRightMultiActionBars = {
-							order = 8,
+							order = 9,
 							type = "range",
 							softMin = -500,
 							softMax = 500,
@@ -343,7 +397,7 @@ ClassicUI.optionsTable = {
 							end
 						},
 						OffsetsStatusBar2 = {
-							order = 9,
+							order = 10,
 							inline = true,
 							type = "group",
 							name = " ",
@@ -710,6 +764,566 @@ ClassicUI.optionsTable = {
 							}
 						}
 					}
+				},
+				StatusBarOptions = {
+					order = 12,
+					type = "group",
+					name = L['StatusBar'],
+					desc = L['StatusBar'],
+					args = {
+						Header1 = {
+							type = 'header',
+							order = 1,
+							name = L['SingleStatusBar']
+						},
+						Comment1 = {
+							type = 'description',
+							order = 2,
+							name = L['Configuration for 1 visible StatusBar']
+						},
+						Spacer1 = {
+							type = "description",
+							order = 3,
+							name = ""
+						},
+						SingleStatusBarxOffset = {
+							order = 4,
+							type = "range",
+							softMin = -500,
+							softMax = 500,
+							step = 1,
+							bigStep = 10,
+							name = L['xOffset'],
+							desc = L['xOffset'],
+							get = function() return ClassicUI.db.profile.barsConfig.SingleStatusBar.xOffset end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.SingleStatusBar.xOffset = value
+								ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+							end
+						},
+						SingleStatusBaryOffset = {
+							order = 5,
+							type = "range",
+							softMin = -500,
+							softMax = 500,
+							step = 1,
+							bigStep = 10,
+							name = L['yOffset'],
+							desc = L['yOffset'],
+							get = function() return ClassicUI.db.profile.barsConfig.SingleStatusBar.yOffset end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.SingleStatusBar.yOffset = value
+								ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+							end
+						},
+						Spacer2 = {
+							type = "description",
+							order = 6,
+							name = ""
+						},
+						SingleStatusBarxSize = {
+							order = 7,
+							type = "range",
+							softMin = -500,
+							softMax = 500,
+							step = 1,
+							bigStep = 10,
+							name = L['xSize'],
+							desc = L['xSize'],
+							get = function() return ClassicUI.db.profile.barsConfig.SingleStatusBar.xSize end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.SingleStatusBar.xSize = value
+								ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+							end
+						},
+						SingleStatusBarySize = {
+							order = 8,
+							type = "range",
+							softMin = -500,
+							softMax = 500,
+							step = 1,
+							bigStep = 10,
+							name = L['ySize'],
+							desc = L['ySize'],
+							get = function() return ClassicUI.db.profile.barsConfig.SingleStatusBar.ySize end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.SingleStatusBar.ySize = value
+								ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+							end
+						},
+						SingleStatusBarArt = {
+							order = 9,
+							type = "group",
+							inline = true,
+							name = L['ArtFrame'],
+							desc = "",
+							args = {
+								hideArt = {
+									order = 1,
+									type = "toggle",
+									name = L['Hide'],
+									desc = L['Hide ArtFrame'],
+									get = function() return ClassicUI.db.profile.barsConfig.SingleStatusBar.artHide end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.SingleStatusBar.artHide = value
+										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+									end,
+								},
+								xOffsetArt = {
+									order = 2,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.SingleStatusBar.artHide) end,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['xOffsetArt'],
+									desc = L['xOffsetArt'],
+									get = function() return ClassicUI.db.profile.barsConfig.SingleStatusBar.xOffsetArt end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.SingleStatusBar.xOffsetArt = value
+										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+									end
+								},
+								yOffsetArt = {
+									order = 3,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.SingleStatusBar.artHide) end,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['yOffsetArt'],
+									desc = L['yOffsetArt'],
+									get = function() return ClassicUI.db.profile.barsConfig.SingleStatusBar.yOffsetArt end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.SingleStatusBar.yOffsetArt = value
+										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+									end
+								}
+							}
+						},
+						SingleStatusBarOverlay = {
+							order = 10,
+							type = "group",
+							inline = true,
+							name = L['OverlayFrame'],
+							desc = "",
+							args = {
+								hideOverlay = {
+									order = 1,
+									type = "toggle",
+									name = L['Hide'],
+									desc = L['Hide OverlayFrame'],
+									get = function() return ClassicUI.db.profile.barsConfig.SingleStatusBar.overlayHide end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.SingleStatusBar.overlayHide = value
+										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+									end,
+								},
+								xOffsetOverlay = {
+									order = 2,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.SingleStatusBar.overlayHide) end,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['xOffsetOverlay'],
+									desc = L['xOffsetOverlay'],
+									get = function() return ClassicUI.db.profile.barsConfig.SingleStatusBar.xOffsetOverlay end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.SingleStatusBar.xOffsetOverlay = value
+										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+									end
+								},
+								yOffsetOverlay = {
+									order = 3,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.SingleStatusBar.overlayHide) end,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['yOffsetOverlay'],
+									desc = L['yOffsetOverlay'],
+									get = function() return ClassicUI.db.profile.barsConfig.SingleStatusBar.yOffsetOverlay end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.SingleStatusBar.yOffsetOverlay = value
+										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+									end
+								}
+							}
+						},
+						Spacer3 = {
+							type = "description",
+							order = 11,
+							name = ""
+						},
+						Header2 = {
+							type = 'header',
+							order = 12,
+							name = L['DoubleStatusBar']
+						},
+						Comment2 = {
+							type = 'description',
+							order = 13,
+							name = L['Configuration for 2 visible StatusBars']
+						},
+						Spacer4 = {
+							type = 'description',
+							order = 14,
+							name = ""
+						},
+						UpperStatusBar = {
+							order = 15,
+							inline = true,
+							type = "group",
+							name = L['UpperStatusBar'],
+							desc = "",
+							args = {
+								xOffset = {
+									order = 1,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['xOffset'],
+									desc = L['xOffset'],
+									get = function() return ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xOffset end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xOffset = value
+										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+									end
+								},
+								yOffset = {
+									order = 2,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['yOffset'],
+									desc = L['yOffset'],
+									get = function() return ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.yOffset end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.yOffset = value
+										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+									end
+								},
+								Spacer1 = {
+									type = "description",
+									order = 3,
+									name = ""
+								},
+								xSize = {
+									order = 4,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['xSize'],
+									desc = L['xSize'],
+									get = function() return ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xSize end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xSize = value
+										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+									end
+								},
+								ySize = {
+									order = 5,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['ySize'],
+									desc = L['ySize'],
+									get = function() return ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.ySize end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.ySize = value
+										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+									end
+								},
+								DoubleUpperStatusBarArt = {
+									order = 6,
+									type = "group",
+									inline = true,
+									name = L['ArtFrame'],
+									desc = "",
+									args = {
+										hideArt = {
+											order = 1,
+											type = "toggle",
+											name = L['Hide'],
+											desc = L['Hide ArtFrame'],
+											get = function() return ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.artHide end,
+											set = function(_,value)
+												ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.artHide = value
+												ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+											end,
+										},
+										xOffsetArt = {
+											order = 2,
+											type = "range",
+											softMin = -500,
+											softMax = 500,
+											step = 1,
+											bigStep = 10,
+											name = L['xOffsetArt'],
+											desc = L['xOffsetArt'],
+											get = function() return ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xOffsetArt end,
+											set = function(_,value)
+												ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xOffsetArt = value
+												ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+											end
+										},
+										yOffsetArt = {
+											order = 3,
+											type = "range",
+											softMin = -500,
+											softMax = 500,
+											step = 1,
+											bigStep = 10,
+											name = L['yOffsetArt'],
+											desc = L['yOffsetArt'],
+											get = function() return ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.yOffsetArt end,
+											set = function(_,value)
+												ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.yOffsetArt = value
+												ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+											end
+										}
+									}
+								},
+								DoubleUpperStatusBarOverlay = {
+									order = 7,
+									type = "group",
+									inline = true,
+									name = L['OverlayFrame'],
+									desc = "",
+									args = {
+										hideOverlay = {
+											order = 1,
+											type = "toggle",
+											name = L['Hide'],
+											desc = L['Hide OverlayFrame'],
+											get = function() return ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.overlayHide end,
+											set = function(_,value)
+												ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.overlayHide = value
+												ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+											end,
+										},
+										xOffsetOverlay = {
+											order = 2,
+											type = "range",
+											softMin = -500,
+											softMax = 500,
+											step = 1,
+											bigStep = 10,
+											name = L['xOffsetOverlay'],
+											desc = L['xOffsetOverlay'],
+											get = function() return ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xOffsetOverlay end,
+											set = function(_,value)
+												ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xOffsetOverlay = value
+												ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+											end
+										},
+										yOffsetOverlay = {
+											order = 3,
+											type = "range",
+											softMin = -500,
+											softMax = 500,
+											step = 1,
+											bigStep = 10,
+											name = L['yOffsetOverlay'],
+											desc = L['yOffsetOverlay'],
+											get = function() return ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.yOffsetOverlay end,
+											set = function(_,value)
+												ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.yOffsetOverlay = value
+												ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+											end
+										}
+									}
+								}
+							}
+						},
+						LowerStatusBar = {
+							order = 16,
+							inline = true,
+							type = "group",
+							name = L['LowerStatusBar'],
+							desc = "",
+							args = {
+								xOffset = {
+									order = 1,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['xOffset'],
+									desc = L['xOffset'],
+									get = function() return ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xOffset end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xOffset = value
+										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+									end
+								},
+								yOffset = {
+									order = 2,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['yOffset'],
+									desc = L['yOffset'],
+									get = function() return ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.yOffset end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.yOffset = value
+										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+									end
+								},
+								Spacer1 = {
+									type = "description",
+									order = 3,
+									name = ""
+								},
+								xSize = {
+									order = 4,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['xSize'],
+									desc = L['xSize'],
+									get = function() return ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xSize end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xSize = value
+										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+									end
+								},
+								ySize = {
+									order = 5,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['ySize'],
+									desc = L['ySize'],
+									get = function() return ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.ySize end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.ySize = value
+										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+									end
+								},
+								DoubleUpperStatusBarArt = {
+									order = 6,
+									type = "group",
+									inline = true,
+									name = L['ArtFrame'],
+									desc = "",
+									args = {
+										hideArt = {
+											order = 1,
+											type = "toggle",
+											name = L['Hide'],
+											desc = L['Hide ArtFrame'],
+											get = function() return ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.artHide end,
+											set = function(_,value)
+												ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.artHide = value
+												ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+											end,
+										},
+										xOffsetArt = {
+											order = 2,
+											type = "range",
+											softMin = -500,
+											softMax = 500,
+											step = 1,
+											bigStep = 10,
+											name = L['xOffsetArt'],
+											desc = L['xOffsetArt'],
+											get = function() return ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xOffsetArt end,
+											set = function(_,value)
+												ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xOffsetArt = value
+												ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+											end
+										},
+										yOffsetArt = {
+											order = 3,
+											type = "range",
+											softMin = -500,
+											softMax = 500,
+											step = 1,
+											bigStep = 10,
+											name = L['yOffsetArt'],
+											desc = L['yOffsetArt'],
+											get = function() return ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.yOffsetArt end,
+											set = function(_,value)
+												ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.yOffsetArt = value
+												ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+											end
+										}
+									}
+								},
+								DoubleUpperStatusBarOverlay = {
+									order = 7,
+									type = "group",
+									inline = true,
+									name = L['OverlayFrame'],
+									desc = "",
+									args = {
+										hideOverlay = {
+											order = 1,
+											type = "toggle",
+											name = L['Hide'],
+											desc = L['Hide OverlayFrame'],
+											get = function() return ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.overlayHide end,
+											set = function(_,value)
+												ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.overlayHide = value
+												ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+											end,
+										},
+										xOffsetOverlay = {
+											order = 2,
+											type = "range",
+											softMin = -500,
+											softMax = 500,
+											step = 1,
+											bigStep = 10,
+											name = L['xOffsetOverlay'],
+											desc = L['xOffsetOverlay'],
+											get = function() return ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xOffsetOverlay end,
+											set = function(_,value)
+												ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xOffsetOverlay = value
+												ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+											end
+										},
+										yOffsetOverlay = {
+											order = 3,
+											type = "range",
+											softMin = -500,
+											softMax = 500,
+											step = 1,
+											bigStep = 10,
+											name = L['yOffsetOverlay'],
+											desc = L['yOffsetOverlay'],
+											get = function() return ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.yOffsetOverlay end,
+											set = function(_,value)
+												ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.yOffsetOverlay = value
+												ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+											end
+										}
+									}
+								}
+							}
+						}
+					}
 				}
 			}
 		},
@@ -756,6 +1370,7 @@ ClassicUI.optionsTable = {
 								ClassicUI:MainFunction() 
 								ClassicUI:ExtraFunction()
 								ClassicUI.SetPositionForStatusBars_MainMenuBar()
+								ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
 							end
 						else
 							if (ClassicUI:IsEnabled()) then
@@ -765,37 +1380,156 @@ ClassicUI.optionsTable = {
 						end
 					end
 				},
+				forceExtraOptions = {
+					order = 5,
+					type = "toggle",
+					name = L['Force Extra Options'],
+					desc = L['Enable Extra Options even ClassicUI is disabled'],
+					width = "double",
+					confirm = function(_, newValue)
+						if ((not newValue) and (not ClassicUI:IsEnabled())) then
+							return L['ReloadUI']
+						else
+							return false
+						end
+					end,
+					get = function() return ClassicUI.db.profile.forceExtraOptions end,
+					set = function(_,value)
+						ClassicUI.db.profile.forceExtraOptions = value
+						if value then
+							if (not ClassicUI:IsEnabled()) then
+								ClassicUI:ExtraFunction()
+							end
+						else
+							if (not ClassicUI:IsEnabled()) then
+								ReloadUI()
+							end
+						end
+					end
+				},
 				Header1 = {
 					type = 'header',
-					order = 5,
+					order = 6,
 					name = L['Extra Options']
 				},
 				Comment1 = {
 					type = 'description',
-					order = 6,
+					order = 7,
 					name = L['EXTRA_OPTIONS_DESC']
-					
 				},
 				Spacer2 = {
 					type = "description",
-					order = 7,
+					order = 8,
 					name = ""
 				},
-				keybindsVisibilityOptions = {
-					order = 8,
-					name = L['Keybinds Visibility Options'],
+				openGuildPanelOptions = {
+					order = 9,
+					name = L['Guild Panel Mode'],
 					type = "group",
 					args = {
 						Header1 = {
 							type = 'header',
 							order = 1,
-							name = L['Keybinds Visibility Options']
+							name = L['Guild Panel Mode']
+						},
+						Comment1 = {
+							type = 'description',
+							order = 2,
+							name = L['GUILD_PANEL_MODE_OPTIONS_DESC']
+						},
+						Spacer1 = {
+							type = "description",
+							order = 3,
+							name = ""
+						},
+						openGuildPanelNormalMode = {
+							order = 4,
+							type = "select",
+							name = L['OPEN_GUILD_PANEL_NORMAL'],
+							desc = L['OPEN_GUILD_PANEL_NORMAL_DESC'],
+							width = "double",
+							values = {
+								[0] = L['Defauilt - Show the new social guild panel'],
+								[1] = L['Show the old guild panel']
+							},
+							get = function()
+								return (ClassicUI.db.profile.extraConfigs.GuildPanelMode.defauiltOpenOldMenu and 1 or 0)
+							end,
+							set = function(_, value)
+								if (value == 1) then
+									ClassicUI.db.profile.extraConfigs.GuildPanelMode.defauiltOpenOldMenu = true
+									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
+										ClassicUI:HookOpenGuildPanelMode()
+									end
+								else
+									ClassicUI.db.profile.extraConfigs.GuildPanelMode.defauiltOpenOldMenu = false
+								end
+							end
+						},
+						openGuildPanelLeftClickMicroButton = {
+							order = 5,
+							type = "select",
+							name = L['OPEN_GUILD_PANEL_LEFT_MICROBUTTON_CLICK'],
+							desc = L['OPEN_GUILD_PANEL_LEFT_MICROBUTTON_CLICK_DESC'],
+							width = "double",
+							values = {
+								[0] = L['Defauilt - Show the new social guild panel'],
+								[1] = L['Show the old guild panel']
+							},
+							get = function()
+								return (ClassicUI.db.profile.extraConfigs.GuildPanelMode.leftClickMicroButtonOpenOldMenu and 1 or 0)
+							end,
+							set = function(_, value)
+								if (value == 1) then
+									ClassicUI.db.profile.extraConfigs.GuildPanelMode.leftClickMicroButtonOpenOldMenu = true
+									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
+										ClassicUI:HookOpenGuildPanelMode()
+									end
+								else
+									ClassicUI.db.profile.extraConfigs.GuildPanelMode.leftClickMicroButtonOpenOldMenu = false
+								end
+							end
+						},
+						openGuildPanelRightClickMicroButton = {
+							order = 6,
+							type = "select",
+							name = L['OPEN_GUILD_PANEL_RIGHT_MICROBUTTON_CLICK'],
+							desc = L['OPEN_GUILD_PANEL_RIGHT_MICROBUTTON_CLICK_DESC'],
+							width = "double",
+							values = {
+								[0] = L['Defauilt - Show the new social guild panel'],
+								[1] = L['Show the old guild panel']
+							},
+							get = function()
+								return (ClassicUI.db.profile.extraConfigs.GuildPanelMode.rightClickMicroButtonOpenOldMenu and 1 or 0)
+							end,
+							set = function(_, value)
+								if (value == 1) then
+									ClassicUI.db.profile.extraConfigs.GuildPanelMode.rightClickMicroButtonOpenOldMenu = true
+									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
+										ClassicUI:HookOpenGuildPanelMode()
+									end
+								else
+									ClassicUI.db.profile.extraConfigs.GuildPanelMode.rightClickMicroButtonOpenOldMenu = false
+								end
+							end
+						}
+					}
+				},
+				keybindsVisibilityOptions = {
+					order = 10,
+					name = L['Keybinds Visibility'],
+					type = "group",
+					args = {
+						Header1 = {
+							type = 'header',
+							order = 1,
+							name = L['Keybinds Visibility']
 						},
 						Comment1 = {
 							type = 'description',
 							order = 2,
 							name = L['KEYBINDS_VISIBILITY_OPTIONS_DESC']
-							
 						},
 						Spacer1 = {
 							type = "description",
@@ -805,12 +1539,12 @@ ClassicUI.optionsTable = {
 						hideKeybindsMode = {
 							order = 4,
 							type = "select",
-							name = L['Keybinds Visibility Options'],
+							name = L['Keybinds Visibility'],
 							desc = L['KEYBINDS_VISIBILITY_OPTIONS_SELECT_DESC'],
 							width = "double",
 							confirm = function(_, newValue)
-								if (ClassicUI:IsEnabled()) then
-									if ((ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode == 2) and (newValue ~= 2)) then
+								if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
+									if ((ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode >= 2) and (newValue < 2)) then
 										return L['ReloadUI']
 									else
 										return false
@@ -822,21 +1556,22 @@ ClassicUI.optionsTable = {
 							values = {
 								[0] = L['Default - Show all keybinds'],
 								[1] = L['Hide completly all keybinds'],
-								[2] = L['Hide keybinds but show dot range']
+								[2] = L['Hide keybinds but show dot range'],
+								[3] = L['Hide keybinds but show a permanent dot range']
 							},
 							get = function()
 								return ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode
 							end,
 							set = function(_, value)
-								if ((ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode == 2) and (value ~= 2)) then
+								if ((ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode >= 2) and (value < 2)) then
 									ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode = value
-									if (ClassicUI:IsEnabled()) then
+									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
 										ClassicUI:ToggleVisibilityKeybinds(value)
 										ReloadUI()
 									end
 								else
 									ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode = value
-									if (ClassicUI:IsEnabled()) then
+									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
 										ClassicUI:ToggleVisibilityKeybinds(value)
 									end
 								end
@@ -845,14 +1580,14 @@ ClassicUI.optionsTable = {
 					}
 				},
 				redRangeOptions = {
-					order = 9,
-					name = L['RedRange Options'],
+					order = 11,
+					name = L['RedRange'],
 					type = "group",
 					args = {
 						Header1 = {
 							type = 'header',
 							order = 1,
-							name = L['RedRange Options']
+							name = L['RedRange']
 						},
 						Comment1 = {
 							type = 'description',
@@ -870,7 +1605,7 @@ ClassicUI.optionsTable = {
 							name = L['Enable'],
 							desc = L['Enable RedRange'],
 							confirm = function(_, newValue)
-								if (ClassicUI:IsEnabled()) then
+								if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
 									if ((not newValue) and (ClassicUI.db.profile.extraConfigs.RedRangeConfig.enabled)) then
 										return L['ReloadUI']
 									else
@@ -886,12 +1621,12 @@ ClassicUI.optionsTable = {
 							set = function(_,value)
 								if ((not value) and (ClassicUI.db.profile.extraConfigs.RedRangeConfig.enabled)) then
 									ClassicUI.db.profile.extraConfigs.RedRangeConfig.enabled = value
-									if (ClassicUI:IsEnabled()) then
+									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
 										ReloadUI()
 									end
 								else
 									ClassicUI.db.profile.extraConfigs.RedRangeConfig.enabled = value
-									if (ClassicUI:IsEnabled()) then
+									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
 										ClassicUI:HookRedRangeIcons()
 									end
 								end
@@ -900,7 +1635,7 @@ ClassicUI.optionsTable = {
 					}
 				},
 				LossOfControlUIOptions = {
-					order = 10,
+					order = 12,
 					name = L['LossOfControlUI CC Remover'],
 					type = "group",
 					args = {
@@ -913,7 +1648,6 @@ ClassicUI.optionsTable = {
 							type = 'description',
 							order = 2,
 							name = L['LOSSOFCONTROLUI_OPTION_DESC']
-							
 						},
 						Spacer1 = {
 							type = "description",
@@ -926,7 +1660,7 @@ ClassicUI.optionsTable = {
 							name = L['Enable'],
 							desc = L['Enable LossOfControlUI Remover'],
 							confirm = function(_, newValue)
-								if (ClassicUI:IsEnabled()) then
+								if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
 									if ((not newValue) and (ClassicUI.db.profile.extraConfigs.LossOfControlUIConfig.enabled)) then
 										return L['ReloadUI']
 									else
@@ -942,12 +1676,12 @@ ClassicUI.optionsTable = {
 							set = function(_,value)
 								if ((not value) and (ClassicUI.db.profile.extraConfigs.LossOfControlUIConfig.enabled)) then
 									ClassicUI.db.profile.extraConfigs.LossOfControlUIConfig.enabled = value
-									if (ClassicUI:IsEnabled()) then
+									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
 										ReloadUI()
 									end
 								else
 									ClassicUI.db.profile.extraConfigs.LossOfControlUIConfig.enabled = value
-									if (ClassicUI:IsEnabled()) then
+									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
 										ClassicUI:HookLossOfControlUICCRemover()
 									end
 								end
