@@ -1,7 +1,7 @@
 -- ------------------------------------------------------------ --
 -- Addon: ClassicUI                                             --
 --                                                              --
--- Version: 1.1.1                                               --
+-- Version: 1.1.2                                               --
 -- Author: Millán - C'Thun                                      --
 --                                                              --
 -- License: GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007 --
@@ -32,7 +32,7 @@ local SCALE_EPSILON = 0.0001
 ClassicUI.BAG_SIZE = 32
 ClassicUI.BAGS_WIDTH = (4*ClassicUI.BAG_SIZE+32)
 ClassicUI.ACTION_BAR_OFFSET = 48
-ClassicUI.VERSION = "1.1.1"
+ClassicUI.VERSION = "1.1.2"
 
 ClassicUI.cached_NumberVisibleBars = 0
 ClassicUI.cached_NumberRealVisibleBars = 0
@@ -1458,6 +1458,7 @@ function ClassicUI:MainFunction()
 				MainMenuBarArtFrameBackground.BackgroundSmall:SetTexCoord(0, 1, 7/49, 1)
 				MainMenuBarArtFrameBackground.BackgroundLarge:SetPoint("TOPLEFT", MainMenuBarArtFrameBackground, "TOPLEFT", 0, -7)
 				MainMenuBarArtFrameBackground.BackgroundSmall:SetPoint("TOPLEFT", MainMenuBarArtFrameBackground, "TOPLEFT", 0, -7)
+				MainMenuBarArtFrameBackground.BackgroundLarge2:Hide()
 			end
 		else
 			if (yPosMainMenuBL ~= 0) then
@@ -1465,6 +1466,7 @@ function ClassicUI:MainFunction()
 				MainMenuBarArtFrameBackground.BackgroundSmall:SetTexCoord(0, 1, 0, 1)
 				MainMenuBarArtFrameBackground.BackgroundLarge:SetPoint("TOPLEFT", MainMenuBarArtFrameBackground, "TOPLEFT", 0, 0)
 				MainMenuBarArtFrameBackground.BackgroundSmall:SetPoint("TOPLEFT", MainMenuBarArtFrameBackground, "TOPLEFT", 0, 0)
+				MainMenuBarArtFrameBackground.BackgroundLarge2:Show()
 			end
 		end
 		
