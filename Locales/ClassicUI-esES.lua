@@ -1,4 +1,5 @@
 local L = LibStub("AceLocale-3.0"):NewLocale("ClassicUI","esES",false)
+if not L then return end 
 
 L[''] = true
 L['ClassicUI'] = true

@@ -1,4 +1,4 @@
-local L = LibStub("AceLocale-3.0"):GetLocale("ClassicUI", true)
+local L = LibStub("AceLocale-3.0"):GetLocale("ClassicUI")
 
 ClassicUI.optionsTable = {
 	type = 'group',

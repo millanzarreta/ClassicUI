@@ -1,7 +1,7 @@
 -- ------------------------------------------------------------ --
 -- Addon: ClassicUI                                             --
 --                                                              --
--- Version: 1.0.1                                               --
+-- Version: 1.0.2                                               --
 -- Author: Millán - C'Thun                                      --
 --                                                              --
 -- License: GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007 --
@@ -30,7 +30,7 @@ local _
 ClassicUI.BAG_SIZE = 32
 ClassicUI.BAGS_WIDTH = (4*ClassicUI.BAG_SIZE+32)
 ClassicUI.ACTION_BAR_OFFSET = 48
-ClassicUI.VERSION = "1.0.1"
+ClassicUI.VERSION = "1.0.2"
 
 ClassicUI.Update_MultiActionBar = function() end
 ClassicUI.Update_PetActionBar = function() end
@@ -940,6 +940,30 @@ function ClassicUI:HookLossOfControlUICCRemover()
 					self:SetDrawBling(true)
 				end
 			end
+		end)
+		hooksecurefunc('ActionButton_UpdateCooldown', function(self)
+			local start, duration, enable, charges, maxCharges, chargeStart, chargeDuration;
+			local modRate = 1.0;
+			local chargeModRate = 1.0;
+			if ( self.spellID ) then
+				start, duration, enable, modRate = GetSpellCooldown(self.spellID);
+				charges, maxCharges, chargeStart, chargeDuration, chargeModRate = GetSpellCharges(self.spellID);
+			else
+				start, duration, enable, modRate = GetActionCooldown(self.action);
+				charges, maxCharges, chargeStart, chargeDuration, chargeModRate = GetActionCharges(self.action);
+			end
+			if ( self.cooldown.currentCooldownType ~= COOLDOWN_TYPE_NORMAL ) then
+				self.cooldown:SetEdgeTexture("Interface\\Cooldown\\edge");
+				self.cooldown:SetSwipeColor(0, 0, 0);
+				self.cooldown:SetHideCountdownNumbers(false);
+				self.cooldown.currentCooldownType = COOLDOWN_TYPE_NORMAL;
+			end
+			if ( charges and maxCharges and maxCharges > 1 and charges < maxCharges ) then
+				StartChargeCooldown(self, chargeStart, chargeDuration, chargeModRate);
+			else
+				ClearChargeCooldown(self);
+			end
+			CooldownFrame_Set(self.cooldown, start, duration, enable, false, modRate);
 		end)
 		DISABLELOSSOFCONTROLUI_HOOKED = true
 	end
