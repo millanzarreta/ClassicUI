@@ -1,7 +1,7 @@
 -- ------------------------------------------------------------ --
 -- Addon: ClassicUI                                             --
 --                                                              --
--- Version: 1.0.9                                               --
+-- Version: 1.1.1                                               --
 -- Author: Millán - C'Thun                                      --
 --                                                              --
 -- License: GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007 --
@@ -32,9 +32,10 @@ local SCALE_EPSILON = 0.0001
 ClassicUI.BAG_SIZE = 32
 ClassicUI.BAGS_WIDTH = (4*ClassicUI.BAG_SIZE+32)
 ClassicUI.ACTION_BAR_OFFSET = 48
-ClassicUI.VERSION = "1.1.0"
+ClassicUI.VERSION = "1.1.1"
 
 ClassicUI.cached_NumberVisibleBars = 0
+ClassicUI.cached_NumberRealVisibleBars = 0
 ClassicUI.cached_DoubleStatusBar_hide = nil
 ClassicUI.cached_SingleStatusBar_hide = nil
 ClassicUI.cached_LastMainMenuBarPoint = { "BOTTOM", UIParent, "BOTTOM", 0, MainMenuBar and MainMenuBar:GetYOffset() or 14 }
@@ -62,11 +63,13 @@ ClassicUI.defaults = {
 			},
 			['LeftGargoyleFrame'] = {
 				hide = false,
+				alpha = 1,
 				scale = 1,
 				model = 0	-- 0 = Gryphon, 1 = Lion
 			},
 			['RightGargoyleFrame'] = {
 				hide = false,
+				alpha = 1,
 				scale = 1,
 				model = 0	-- 0 = Gryphon, 1 = Lion
 			},
@@ -118,12 +121,15 @@ ClassicUI.defaults = {
 					[3] = false,	-- ArtifactBar
 					[4] = false		-- ReputationBar
 				},
+				alpha = 0.5,
 				xSize = 0,
 				ySize = 0,
 				artHide = false,
+				artAlpha = 1.0,
 				xOffsetArt = 0,
 				yOffsetArt = 0,
 				overlayHide = false,
+				overlayAlpha = 1.0,
 				xOffsetOverlay = 0,
 				yOffsetOverlay = 0
 			},
@@ -140,22 +146,28 @@ ClassicUI.defaults = {
 					[8] = false,	-- AzeriteBar+ReputationBar
 					[9] = false		-- ArtifactBar+ReputationBar
 				},
+				alpha = 0.5,
 				xSize = 0,
 				ySize = 0,
 				artHide = false,
+				artAlpha = 1.0,
 				xOffsetArt = 0,
 				yOffsetArt = 0,
 				overlayHide = false,
+				overlayAlpha = 1.0,
 				xOffsetOverlay = 0,
 				yOffsetOverlay = 0
 			},
 			['DoubleLowerStatusBar'] = {
+				alpha = 0.5,
 				xSize = 0,
 				ySize = 0,
 				artHide = false,
+				artAlpha = 1.0,
 				xOffsetArt = 0,
 				yOffsetArt = 0,
 				overlayHide = false,
+				overlayAlpha = 1.0,
 				xOffsetOverlay = 0,
 				yOffsetOverlay = 0
 			}
@@ -220,6 +232,8 @@ function ClassicUI:RefreshConfig()
 		MainMenuBarArtFrame.LeftEndCap:SetSize(128, 76)
 		MainMenuBarArtFrame.LeftEndCap:SetTexture("Interface\\MAINMENUBAR\\UI-MainMenuBar-EndCap-Dwarf.blp")
 		MainMenuBarArtFrame.LeftEndCap:SetTexCoord(0/128, 128/128, 52/128, 128/128);
+		MainMenuBarArtFrame.LeftEndCap:SetScale(1)
+		MainMenuBarArtFrame.LeftEndCap:SetAlpha(1)
 	end
 	if (ClassicUI.db.profile.barsConfig.RightGargoyleFrame.model == 1) then
 		MainMenuBarArtFrame.RightEndCap:Hide()
@@ -227,6 +241,8 @@ function ClassicUI:RefreshConfig()
 		MainMenuBarArtFrame.RightEndCap:SetSize(128, 76)
 		MainMenuBarArtFrame.RightEndCap:SetTexture("Interface\\MAINMENUBAR\\UI-MainMenuBar-EndCap-Dwarf.blp")
 		MainMenuBarArtFrame.RightEndCap:SetTexCoord(128/128, 0/128, 52/128, 128/128);
+		MainMenuBarArtFrame.RightEndCap:SetScale(1)
+		MainMenuBarArtFrame.RightEndCap:SetAlpha(1)
 	end
 	if (self:IsEnabled()) then
 		if (not self.db.profile.enabled) then
@@ -524,8 +540,8 @@ function ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
 		local TOP_BAR = true;
 		local IS_DOUBLE = true;
 		if ( #visBars > 1 ) then
-			ClassicUI.StatusTrackingBarManager_LayoutBar(StatusTrackingBarManager, visBars[1], width, not TOP_BAR, IS_DOUBLE);
-			ClassicUI.StatusTrackingBarManager_LayoutBar(StatusTrackingBarManager, visBars[2], width, TOP_BAR, IS_DOUBLE);
+			ClassicUI.StatusTrackingBarManager_LayoutBar(StatusTrackingBarManager, visBars[2], width, not TOP_BAR, IS_DOUBLE);
+			ClassicUI.StatusTrackingBarManager_LayoutBar(StatusTrackingBarManager, visBars[1], width, TOP_BAR, IS_DOUBLE);
 		elseif( #visBars == 1 ) then
 			ClassicUI.StatusTrackingBarManager_LayoutBar(StatusTrackingBarManager, visBars[1], width, TOP_BAR, not IS_DOUBLE);
 		end
@@ -670,7 +686,7 @@ function ClassicUI:MainFunction()
 	CUI_PetActionBarFrame:SetSize(PetActionBarFrame:GetSize())
 	CUI_PetActionBarFrame:SetPoint(PetActionBarFrame:GetPoint())
 	CUI_PetActionBarFrame:SetFrameStrata(PetActionBarFrame:GetFrameStrata())
-	CUI_PetActionBarFrame:EnableMouse(true)
+	CUI_PetActionBarFrame:EnableMouse(false)
 	
 	-- Function to set the new parent (CUI_PetActionBarFrame) for the PetActionBarFrame childrens and anchor they to CUI_PetActionBarFrame
 	ClassicUI.TransferPetActionBarFrameChildrens = function()
@@ -1098,66 +1114,78 @@ function ClassicUI:MainFunction()
 			if ( isTopBar ) then
 				bar:SetPoint("BOTTOMLEFT", MainMenuBarArtFrame, "TOPLEFT", 0 + ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xOffset, -7 + ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.yOffset);
 				bar.StatusBar:SetPoint("RIGHT", bar, "RIGHT", 0, -1);
-				bar.OverlayFrame:SetPoint("TOPLEFT", bar, "TOPLEFT", 0 + ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xOffsetOverlay, -4 + ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.yOffsetOverlay)
+				bar.OverlayFrame:SetPoint("TOPLEFT", bar, "TOPLEFT", 0 + ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xOffsetOverlay, -1 + ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.yOffsetOverlay)
 				if (ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.overlayHide) then
 					bar.OverlayFrame:Hide()
 				else
 					if (not bar.OverlayFrame:IsShown()) then
 						bar.OverlayFrame:Show()
 					end
+					bar.OverlayFrame:SetAlpha(ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.overlayAlpha);
 				end
 				self.SingleBarLarge:SetPoint("CENTER", bar, "CENTER", 0 - ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xOffset + ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xOffset - (ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xSize / 2) + (ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xSize / 2) + ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xOffsetArt, -10 - ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.yOffset + ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.yOffset - (ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.ySize / 2) + (ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.ySize / 2) + ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.yOffsetArt)
 				self.SingleBarLargeUpper:SetPoint("TOP", self.SingleBarLarge, "TOP", 0 + ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xOffset - ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xOffset - ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xOffsetArt + (ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xSize / 2) - (ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xSize / 2) + ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xOffsetArt, 8 + ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.yOffset - ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.yOffset - ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.yOffsetArt + (ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.ySize) - ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.ySize + ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.yOffsetArt)
 				if (ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.artHide) then
 					self.SingleBarLargeUpper:Hide()
+				else
+					self.SingleBarLargeUpper:SetAlpha(ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.artAlpha)
 				end
 				if (ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.artHide) then
 					self.SingleBarLarge:Hide()
+				else
+					self.SingleBarLarge:SetAlpha(ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.artAlpha)
 				end
 				bar.StatusBar:SetSize(width + ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xSize, 9 + ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.ySize);
 				if ((bar.priority == 0) and (bar.ExhaustionLevelFillBar)) then
 					bar.ExhaustionLevelFillBar:SetSize(width + ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xSize, 9 + ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.ySize)
 				end
 				bar:SetSize(width + ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xSize, 9 + ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.ySize);
+				bar.StatusBar.Background:SetAlpha(ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.alpha);
 			else
 				bar:SetPoint("BOTTOMLEFT", MainMenuBarArtFrame, "TOPLEFT", 0 + ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xOffset, -18 + ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.yOffset);
 				bar.StatusBar:SetPoint("RIGHT", bar, "RIGHT", 0, 0);
-				bar.OverlayFrame:SetPoint("TOPLEFT", bar, "TOPLEFT", 0 + ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xOffsetOverlay, -7 + ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.yOffsetOverlay)
+				bar.OverlayFrame:SetPoint("TOPLEFT", bar, "TOPLEFT", 0 + ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xOffsetOverlay, -3 + ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.yOffsetOverlay)
 				if (ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.overlayHide) then
 					bar.OverlayFrame:Hide()
 				else
 					if (not bar.OverlayFrame:IsShown()) then
 						bar.OverlayFrame:Show()
 					end
+					bar.OverlayFrame:SetAlpha(ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.overlayAlpha);
 				end
 				bar.StatusBar:SetSize(width + ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xSize, 11 + ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.ySize);
 				if ((bar.priority == 0) and (bar.ExhaustionLevelFillBar)) then
 					bar.ExhaustionLevelFillBar:SetSize(width + ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xSize, 11 + ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.ySize)
 				end
 				bar:SetSize(width + ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xSize, 12 + ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.ySize);
+				bar.StatusBar.Background:SetAlpha(ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.alpha);
 			end
 		else
 			bar:SetPoint("BOTTOMLEFT", MainMenuBarArtFrame, "TOPLEFT", 0 + ClassicUI.db.profile.barsConfig.SingleStatusBar.xOffset, -18 + ClassicUI.db.profile.barsConfig.SingleStatusBar.yOffset);
 			bar.StatusBar:SetPoint("RIGHT", bar, "RIGHT", 0, 0);
-			bar.OverlayFrame:SetPoint("TOPLEFT", bar, "TOPLEFT", 0 + ClassicUI.db.profile.barsConfig.SingleStatusBar.xOffsetOverlay, -7 + ClassicUI.db.profile.barsConfig.SingleStatusBar.yOffsetOverlay)
+			bar.OverlayFrame:SetPoint("TOPLEFT", bar, "TOPLEFT", 0 + ClassicUI.db.profile.barsConfig.SingleStatusBar.xOffsetOverlay, -3 + ClassicUI.db.profile.barsConfig.SingleStatusBar.yOffsetOverlay)
 			if (ClassicUI.db.profile.barsConfig.SingleStatusBar.overlayHide) then
 				bar.OverlayFrame:Hide()
 			else
 				if (not bar.OverlayFrame:IsShown()) then
-						bar.OverlayFrame:Show()
-					end
+					bar.OverlayFrame:Show()
+				end
+				bar.OverlayFrame:SetAlpha(ClassicUI.db.profile.barsConfig.SingleStatusBar.overlayAlpha);
 			end
 			self:SetSingleBarSize(bar, width);
 			self.SingleBarLarge:SetSize(width + ClassicUI.db.profile.barsConfig.SingleStatusBar.xSize, 12 + ClassicUI.db.profile.barsConfig.SingleStatusBar.ySize);
 			self.SingleBarLarge:SetPoint("CENTER", bar, "CENTER", 0 + ClassicUI.db.profile.barsConfig.SingleStatusBar.xOffsetArt, 0 + ClassicUI.db.profile.barsConfig.SingleStatusBar.yOffsetArt)
 			if (ClassicUI.db.profile.barsConfig.SingleStatusBar.artHide) then
 				self.SingleBarLarge:Hide()
+			else
+				self.SingleBarLarge:SetAlpha(ClassicUI.db.profile.barsConfig.SingleStatusBar.artAlpha)
 			end
 			bar.StatusBar:SetSize(width + ClassicUI.db.profile.barsConfig.SingleStatusBar.xSize, 12 + ClassicUI.db.profile.barsConfig.SingleStatusBar.ySize);
 			if ((bar.priority == 0) and (bar.ExhaustionLevelFillBar)) then
 				bar.ExhaustionLevelFillBar:SetSize(width + ClassicUI.db.profile.barsConfig.SingleStatusBar.xSize, 12 + ClassicUI.db.profile.barsConfig.SingleStatusBar.ySize)
 			end
 			bar:SetSize(width + ClassicUI.db.profile.barsConfig.SingleStatusBar.xSize, 12 + ClassicUI.db.profile.barsConfig.SingleStatusBar.ySize);
+			bar.StatusBar.Background:SetAlpha(ClassicUI.db.profile.barsConfig.SingleStatusBar.alpha);
 		end
 	end
 	StatusTrackingBarManager_LayoutBar = ClassicUI.StatusTrackingBarManager_LayoutBar
@@ -1167,7 +1195,7 @@ function ClassicUI:MainFunction()
 	-- Hook this function to execute 'SetDoubleBarSize' as if it has self.largeSize=true
 	hooksecurefunc(StatusTrackingBarManager, 'SetDoubleBarSize', function(self, bar, width)
 		local textureHeight = self:GetInitialBarHeight(); 
-		local statusBarHeight = textureHeight - 5; 
+		local statusBarHeight = textureHeight - 4; 
 		if ( not self.largeSize ) then
 			self.SingleBarSmallUpper:Hide(); 
 			self.SingleBarSmall:Hide(); 
@@ -1176,7 +1204,7 @@ function ClassicUI:MainFunction()
 		self.SingleBarLargeUpper:SetPoint("CENTER", bar, 0, 4);
 		self.SingleBarLargeUpper:Show();
 		self.SingleBarLarge:SetSize(width, statusBarHeight); 
-		self.SingleBarLarge:SetPoint("CENTER", bar, 0, -5);
+		self.SingleBarLarge:SetPoint("CENTER", bar, 0, -9);
 		self.SingleBarLarge:Show(); 
 	end)
 	
@@ -1187,7 +1215,7 @@ function ClassicUI:MainFunction()
 			self.SingleBarSmall:Hide(); 
 		end
 		self.SingleBarLarge:SetSize(width, textureHeight); 
-		self.SingleBarLarge:SetPoint("CENTER", bar, 0, 4);
+		self.SingleBarLarge:SetPoint("CENTER", bar, 0, 0);
 		self.SingleBarLarge:Show(); 
 	end)
 	
@@ -1232,7 +1260,7 @@ function ClassicUI:MainFunction()
 	ClassicUI.SetPositionForStatusBars_MainMenuBar = function()
 		local extraWidth = ClassicUI:GetExtraWidth()
 		
-		-- Show/Hide Gargoyles
+		-- Show/Hide Gargoyles and set their scale and alpha
 		if (ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.hide) then
 			if (MainMenuBarArtFrame.LeftEndCap:IsShown()) then
 				MainMenuBarArtFrame.LeftEndCap:Hide()
@@ -1243,8 +1271,12 @@ function ClassicUI:MainFunction()
 				if (ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.model == 1) then
 					MainMenuBarArtFrame.LeftEndCap:SetSize(128, 86)
 					MainMenuBarArtFrame.LeftEndCap:SetTexture("Interface\\MAINMENUBAR\\UI-MainMenuBar-EndCap-Human.blp")
-					MainMenuBarArtFrame.LeftEndCap:SetTexCoord(0/128, 128/128, 42/128, 128/128);
+					MainMenuBarArtFrame.LeftEndCap:SetTexCoord(0/128, 128/128, 42/128, 128/128)
 				end
+				if (math.abs(MainMenuBarArtFrame.LeftEndCap:GetScale()-ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.scale) > SCALE_EPSILON) then
+					MainMenuBarArtFrame.LeftEndCap:SetScale(ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.scale)
+				end
+				MainMenuBarArtFrame.LeftEndCap:SetAlpha(ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.alpha)
 			end
 		end
 		if (ClassicUI.db.profile.barsConfig.RightGargoyleFrame.hide) then
@@ -1257,20 +1289,18 @@ function ClassicUI:MainFunction()
 				if (ClassicUI.db.profile.barsConfig.RightGargoyleFrame.model == 1) then
 					MainMenuBarArtFrame.RightEndCap:SetSize(128, 86)
 					MainMenuBarArtFrame.RightEndCap:SetTexture("Interface\\MAINMENUBAR\\UI-MainMenuBar-EndCap-Human.blp")
-					MainMenuBarArtFrame.RightEndCap:SetTexCoord(128/128, 0/128, 42/128, 128/128);
+					MainMenuBarArtFrame.RightEndCap:SetTexCoord(128/128, 0/128, 42/128, 128/128)
+				end
+				MainMenuBarArtFrame.RightEndCap:SetAlpha(ClassicUI.db.profile.barsConfig.RightGargoyleFrame.alpha)
+				if (math.abs(MainMenuBarArtFrame.RightEndCap:GetScale()-ClassicUI.db.profile.barsConfig.RightGargoyleFrame.scale) > SCALE_EPSILON) then
+					MainMenuBarArtFrame.RightEndCap:SetScale(ClassicUI.db.profile.barsConfig.RightGargoyleFrame.scale)
 				end
 			end
 		end
 		
-		-- Move Gargoyles and set their scale
+		-- Move Gargoyles
 		MainMenuBarArtFrame.LeftEndCap:SetPoint("BOTTOMLEFT", MainMenuBarArtFrame, "BOTTOMLEFT", 64 - BAGS_WIDTH + ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.xOffset, -10 + ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.yOffset);
 		MainMenuBarArtFrame.RightEndCap:SetPoint("BOTTOMRIGHT", MainMenuBarArtFrame, "BOTTOMRIGHT", 156 + BAGS_WIDTH + ClassicUI.db.profile.barsConfig.RightGargoyleFrame.xOffset + extraWidth, -10 + ClassicUI.db.profile.barsConfig.RightGargoyleFrame.yOffset);
-		if (math.abs(MainMenuBarArtFrame.LeftEndCap:GetScale()-ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.scale) > SCALE_EPSILON) then
-			MainMenuBarArtFrame.LeftEndCap:SetScale(ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.scale)
-		end
-		if (math.abs(MainMenuBarArtFrame.RightEndCap:GetScale()-ClassicUI.db.profile.barsConfig.RightGargoyleFrame.scale) > SCALE_EPSILON) then
-			MainMenuBarArtFrame.RightEndCap:SetScale(ClassicUI.db.profile.barsConfig.RightGargoyleFrame.scale)
-		end
 		
 		-- If OverrideActionBar or PetBattleFrame are showed, let the Blizzard code move the MicroButtons. If are hidden we must move the MicroButtons on our frame.
 		if ((not OverrideActionBar:IsShown()) and (not PetBattleFrame:IsShown())) then
@@ -1338,11 +1368,12 @@ function ClassicUI:MainFunction()
 		
 		-- Update the cached number of visible bars
 		ClassicUI.cached_NumberVisibleBars = StatusTrackingBarManager:GetNumberVisibleBars()
+		ClassicUI.cached_NumberRealVisibleBars = ClassicUI.cached_NumberVisibleBars
 		-- Set the offsetY for the MainMenuBarArtFrame and also show/hide StatusBars if needed
 		local offsetY;
 		if ( ClassicUI.cached_NumberVisibleBars == 2 ) then
 			-- Set offsetY
-			offsetY = -17 + ClassicUI.TitanPanelBottomBarsYOffset;
+			offsetY = -19 + ClassicUI.TitanPanelBottomBarsYOffset;
 			-- Show/Hide the DoubleStatusBar
 			if (ClassicUI.cached_DoubleStatusBar_hide) then
 				local hideDoubleStatusBar = false
@@ -1363,6 +1394,7 @@ function ClassicUI:MainFunction()
 					end
 				end
 				if ( hideDoubleStatusBar ) then
+					ClassicUI.cached_NumberRealVisibleBars = 0
 					if (StatusTrackingBarManager:IsShown()) then
 						StatusTrackingBarManager:Hide()
 					end
@@ -1370,6 +1402,10 @@ function ClassicUI:MainFunction()
 					if (not StatusTrackingBarManager:IsShown()) then
 						StatusTrackingBarManager:Show()
 					end
+				end
+			else
+				if (not StatusTrackingBarManager:IsShown()) then
+					StatusTrackingBarManager:Show()
 				end
 			end
 		elseif ( ClassicUI.cached_NumberVisibleBars == 1 ) then
@@ -1395,6 +1431,7 @@ function ClassicUI:MainFunction()
 					end
 				end
 				if ( hideSingleStatusBar ) then
+					ClassicUI.cached_NumberRealVisibleBars = 0
 					if (StatusTrackingBarManager:IsShown()) then
 						StatusTrackingBarManager:Hide()
 					end
@@ -1403,10 +1440,32 @@ function ClassicUI:MainFunction()
 						StatusTrackingBarManager:Show()
 					end
 				end
+			else
+				if (not StatusTrackingBarManager:IsShown()) then
+					StatusTrackingBarManager:Show()
+				end
 			end
 		else
 			-- Set offsetY
 			offsetY = 0 + ClassicUI.TitanPanelBottomBarsYOffset;
+		end
+		
+		-- Modify the MainMenuBarArtFrameBackground to show/hidde the background top border
+		local _, _, _, _, yPosMainMenuBL = MainMenuBarArtFrameBackground.BackgroundLarge:GetPoint();
+		if ( ClassicUI.cached_NumberRealVisibleBars > 0 ) then
+			if (yPosMainMenuBL ~= -7) then
+				MainMenuBarArtFrameBackground.BackgroundLarge:SetTexCoord(0, 1, 7/49, 1)
+				MainMenuBarArtFrameBackground.BackgroundSmall:SetTexCoord(0, 1, 7/49, 1)
+				MainMenuBarArtFrameBackground.BackgroundLarge:SetPoint("TOPLEFT", MainMenuBarArtFrameBackground, "TOPLEFT", 0, -7)
+				MainMenuBarArtFrameBackground.BackgroundSmall:SetPoint("TOPLEFT", MainMenuBarArtFrameBackground, "TOPLEFT", 0, -7)
+			end
+		else
+			if (yPosMainMenuBL ~= 0) then
+				MainMenuBarArtFrameBackground.BackgroundLarge:SetTexCoord(0, 1, 0, 1)
+				MainMenuBarArtFrameBackground.BackgroundSmall:SetTexCoord(0, 1, 0, 1)
+				MainMenuBarArtFrameBackground.BackgroundLarge:SetPoint("TOPLEFT", MainMenuBarArtFrameBackground, "TOPLEFT", 0, 0)
+				MainMenuBarArtFrameBackground.BackgroundSmall:SetPoint("TOPLEFT", MainMenuBarArtFrameBackground, "TOPLEFT", 0, 0)
+			end
 		end
 		
 		-- Detect and fix the unresponsive action bars issue caused by other addons that sets the MainMenuBar or the MicroButtonAndBagsBar as UserPlaced

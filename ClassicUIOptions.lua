@@ -255,11 +255,21 @@ ClassicUI.optionsTable = {
 								end
 							end,
 						},
-						Spacer1 = {
-							type = "description",
+						alphaLeftGargoyle = {
 							order = 6,
-							width = "normal",
-							name = ""
+							type = "range",
+							softMin = 0,
+							softMax = 1,
+							step = 0.01,
+							bigStep = 0.02,
+							name = L['Alpha'],
+							desc = L['Alpha'],
+							get = function() return ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.alpha end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.alpha = value
+								MainMenuBarArtFrame.LeftEndCap:SetAlpha(value)
+								ClassicUI.SetPositionForStatusBars_MainMenuBar()
+							end
 						},
 						scaleLeftGargoyle = {
 							order = 7,
@@ -273,6 +283,7 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.scale end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.scale = value
+								MainMenuBarArtFrame.LeftEndCap:SetScale(value)
 								ClassicUI.SetPositionForStatusBars_MainMenuBar()
 							end
 						},
@@ -351,11 +362,21 @@ ClassicUI.optionsTable = {
 								end
 							end,
 						},
-						Spacer3 = {
-							type = "description",
+						alphaRightGargoyle = {
 							order = 14,
-							width = "normal",
-							name = ""
+							type = "range",
+							softMin = 0,
+							softMax = 1,
+							step = 0.01,
+							bigStep = 0.02,
+							name = L['Alpha'],
+							desc = L['Alpha'],
+							get = function() return ClassicUI.db.profile.barsConfig.RightGargoyleFrame.alpha end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.RightGargoyleFrame.alpha = value
+								MainMenuBarArtFrame.RightEndCap:SetAlpha(value)
+								ClassicUI.SetPositionForStatusBars_MainMenuBar()
+							end
 						},
 						scaleRightGargoyle = {
 							order = 15,
@@ -369,6 +390,7 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.RightGargoyleFrame.scale end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.RightGargoyleFrame.scale = value
+								MainMenuBarArtFrame.RightEndCap:SetScale(value)
 								ClassicUI.SetPositionForStatusBars_MainMenuBar()
 							end
 						}
@@ -1094,13 +1116,28 @@ ClassicUI.optionsTable = {
 								ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
 							end
 						},
+						SingleStatusBarAlpha = {
+							order = 8,
+							type = "range",
+							softMin = 0,
+							softMax = 1,
+							step = 1,
+							bigStep = 0.02,
+							name = L['Alpha'],
+							desc = L['Alpha'],
+							get = function() return ClassicUI.db.profile.barsConfig.SingleStatusBar.alpha end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.SingleStatusBar.alpha = value
+								ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+							end
+						},
 						Spacer3 = {
 							type = "description",
-							order = 8,
+							order = 9,
 							name = ""
 						},
 						SingleStatusBarxSize = {
-							order = 9,
+							order = 10,
 							type = "range",
 							softMin = -500,
 							softMax = 500,
@@ -1116,7 +1153,7 @@ ClassicUI.optionsTable = {
 							end
 						},
 						SingleStatusBarySize = {
-							order = 10,
+							order = 11,
 							type = "range",
 							softMin = -500,
 							softMax = 500,
@@ -1132,7 +1169,7 @@ ClassicUI.optionsTable = {
 							end
 						},
 						SingleStatusBarArt = {
-							order = 11,
+							order = 12,
 							type = "group",
 							inline = true,
 							name = L['ArtFrame'],
@@ -1149,8 +1186,29 @@ ClassicUI.optionsTable = {
 										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
 									end,
 								},
-								xOffsetArt = {
+								alphaArt = {
 									order = 2,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.SingleStatusBar.artHide) end,
+									type = "range",
+									softMin = 0,
+									softMax = 1,
+									step = 1,
+									bigStep = 0.02,
+									name = L['alphaArt'],
+									desc = L['alphaArt'],
+									get = function() return ClassicUI.db.profile.barsConfig.SingleStatusBar.artAlpha end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.SingleStatusBar.artAlpha = value
+										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+									end
+								},
+								Spacer1 = {
+									type = "description",
+									order = 3,
+									name = ""
+								},
+								xOffsetArt = {
+									order = 4,
 									disabled = function() return (ClassicUI.db.profile.barsConfig.SingleStatusBar.artHide) end,
 									type = "range",
 									softMin = -500,
@@ -1166,7 +1224,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								yOffsetArt = {
-									order = 3,
+									order = 5,
 									disabled = function() return (ClassicUI.db.profile.barsConfig.SingleStatusBar.artHide) end,
 									type = "range",
 									softMin = -500,
@@ -1184,7 +1242,7 @@ ClassicUI.optionsTable = {
 							}
 						},
 						SingleStatusBarOverlay = {
-							order = 12,
+							order = 13,
 							type = "group",
 							inline = true,
 							name = L['OverlayFrame'],
@@ -1201,8 +1259,29 @@ ClassicUI.optionsTable = {
 										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
 									end,
 								},
-								xOffsetOverlay = {
+								alphaOverlay = {
 									order = 2,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.SingleStatusBar.overlayHide) end,
+									type = "range",
+									softMin = 0,
+									softMax = 1,
+									step = 0.01,
+									bigStep = 0.02,
+									name = L['alphaOverlay'],
+									desc = L['alphaOverlay'],
+									get = function() return ClassicUI.db.profile.barsConfig.SingleStatusBar.overlayAlpha end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.SingleStatusBar.overlayAlpha = value
+										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+									end
+								},
+								Spacer1 = {
+									type = "description",
+									order = 3,
+									name = ""
+								},
+								xOffsetOverlay = {
+									order = 4,
 									disabled = function() return (ClassicUI.db.profile.barsConfig.SingleStatusBar.overlayHide) end,
 									type = "range",
 									softMin = -500,
@@ -1218,7 +1297,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								yOffsetOverlay = {
-									order = 3,
+									order = 5,
 									disabled = function() return (ClassicUI.db.profile.barsConfig.SingleStatusBar.overlayHide) end,
 									type = "range",
 									softMin = -500,
@@ -1237,26 +1316,26 @@ ClassicUI.optionsTable = {
 						},
 						Spacer4 = {
 							type = "description",
-							order = 13,
+							order = 14,
 							name = ""
 						},
 						Header2 = {
 							type = 'header',
-							order = 14,
+							order = 15,
 							name = L['DoubleStatusBar']
 						},
 						Comment2 = {
 							type = 'description',
-							order = 15,
+							order = 16,
 							name = L['Configuration for 2 visible StatusBars']
 						},
 						Spacer5 = {
 							type = 'description',
-							order = 16,
+							order = 17,
 							name = ""
 						},
 						hideDoubleStatusBar = {
-							order = 17,
+							order = 18,
 							type = "multiselect",
 							name = L['Hide for:'],
 							desc = L['Hide DoubleStatusBar for the selected StatusBar types'],
@@ -1286,11 +1365,11 @@ ClassicUI.optionsTable = {
 						},
 						Spacer6 = {
 							type = 'description',
-							order = 18,
+							order = 19,
 							name = ""
 						},
 						UpperStatusBar = {
-							order = 19,
+							order = 20,
 							inline = true,
 							type = "group",
 							name = L['UpperStatusBar'],
@@ -1326,13 +1405,28 @@ ClassicUI.optionsTable = {
 										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
 									end
 								},
+								alpha = {
+									order = 3,
+									type = "range",
+									softMin = 0,
+									softMax = 1,
+									step = 1,
+									bigStep = 0.02,
+									name = L['Alpha'],
+									desc = L['Alpha'],
+									get = function() return ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.alpha end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.alpha = value
+										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+									end
+								},
 								Spacer1 = {
 									type = "description",
-									order = 3,
+									order = 4,
 									name = ""
 								},
 								xSize = {
-									order = 4,
+									order = 5,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -1348,7 +1442,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								ySize = {
-									order = 5,
+									order = 6,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -1364,7 +1458,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								DoubleUpperStatusBarArt = {
-									order = 6,
+									order = 7,
 									type = "group",
 									inline = true,
 									name = L['ArtFrame'],
@@ -1381,8 +1475,30 @@ ClassicUI.optionsTable = {
 												ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
 											end,
 										},
-										xOffsetArt = {
+										alphaArt = {
 											order = 2,
+											disabled = function() return (ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.artHide) end,
+											type = "range",
+											softMin = 0,
+											softMax = 1,
+											step = 1,
+											bigStep = 0.02,
+											name = L['alphaArt'],
+											desc = L['alphaArt'],
+											get = function() return ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.artAlpha end,
+											set = function(_,value)
+												ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.artAlpha = value
+												ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+											end
+										},
+										Spacer1 = {
+											type = "description",
+											order = 3,
+											name = ""
+										},
+										xOffsetArt = {
+											order = 4,
+											disabled = function() return (ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.artHide) end,
 											type = "range",
 											softMin = -500,
 											softMax = 500,
@@ -1397,7 +1513,8 @@ ClassicUI.optionsTable = {
 											end
 										},
 										yOffsetArt = {
-											order = 3,
+											order = 5,
+											disabled = function() return (ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.artHide) end,
 											type = "range",
 											softMin = -500,
 											softMax = 500,
@@ -1414,7 +1531,7 @@ ClassicUI.optionsTable = {
 									}
 								},
 								DoubleUpperStatusBarOverlay = {
-									order = 7,
+									order = 8,
 									type = "group",
 									inline = true,
 									name = L['OverlayFrame'],
@@ -1431,8 +1548,30 @@ ClassicUI.optionsTable = {
 												ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
 											end,
 										},
-										xOffsetOverlay = {
+										alphaOverlay = {
 											order = 2,
+											disabled = function() return (ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.overlayHide) end,
+											type = "range",
+											softMin = 0,
+											softMax = 1,
+											step = 0.01,
+											bigStep = 0.02,
+											name = L['alphaOverlay'],
+											desc = L['alphaOverlay'],
+											get = function() return ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.overlayAlpha end,
+											set = function(_,value)
+												ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.overlayAlpha = value
+												ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+											end
+										},
+										Spacer1 = {
+											type = "description",
+											order = 3,
+											name = ""
+										},
+										xOffsetOverlay = {
+											order = 4,
+											disabled = function() return (ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.overlayHide) end,
 											type = "range",
 											softMin = -500,
 											softMax = 500,
@@ -1447,7 +1586,8 @@ ClassicUI.optionsTable = {
 											end
 										},
 										yOffsetOverlay = {
-											order = 3,
+											order = 5,
+											disabled = function() return (ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.overlayHide) end,
 											type = "range",
 											softMin = -500,
 											softMax = 500,
@@ -1466,7 +1606,7 @@ ClassicUI.optionsTable = {
 							}
 						},
 						LowerStatusBar = {
-							order = 20,
+							order = 21,
 							inline = true,
 							type = "group",
 							name = L['LowerStatusBar'],
@@ -1502,13 +1642,28 @@ ClassicUI.optionsTable = {
 										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
 									end
 								},
+								alpha = {
+									order = 3,
+									type = "range",
+									softMin = 0,
+									softMax = 1,
+									step = 1,
+									bigStep = 0.02,
+									name = L['Alpha'],
+									desc = L['Alpha'],
+									get = function() return ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.alpha end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.alpha = value
+										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+									end
+								},
 								Spacer1 = {
 									type = "description",
-									order = 3,
+									order = 4,
 									name = ""
 								},
 								xSize = {
-									order = 4,
+									order = 5,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -1524,7 +1679,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								ySize = {
-									order = 5,
+									order = 6,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -1539,8 +1694,8 @@ ClassicUI.optionsTable = {
 										ClassicUI:ForceExpBarExhaustionTickUpdate()
 									end
 								},
-								DoubleUpperStatusBarArt = {
-									order = 6,
+								DoubleLowerStatusBarArt = {
+									order = 7,
 									type = "group",
 									inline = true,
 									name = L['ArtFrame'],
@@ -1557,8 +1712,30 @@ ClassicUI.optionsTable = {
 												ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
 											end,
 										},
-										xOffsetArt = {
+										alphaArt = {
 											order = 2,
+											disabled = function() return (ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.artHide) end,
+											type = "range",
+											softMin = 0,
+											softMax = 1,
+											step = 1,
+											bigStep = 0.02,
+											name = L['alphaArt'],
+											desc = L['alphaArt'],
+											get = function() return ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.artAlpha end,
+											set = function(_,value)
+												ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.artAlpha = value
+												ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+											end
+										},
+										Spacer1 = {
+											type = "description",
+											order = 3,
+											name = ""
+										},
+										xOffsetArt = {
+											order = 4,
+											disabled = function() return (ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.artHide) end,
 											type = "range",
 											softMin = -500,
 											softMax = 500,
@@ -1573,7 +1750,8 @@ ClassicUI.optionsTable = {
 											end
 										},
 										yOffsetArt = {
-											order = 3,
+											order = 5,
+											disabled = function() return (ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.artHide) end,
 											type = "range",
 											softMin = -500,
 											softMax = 500,
@@ -1589,8 +1767,8 @@ ClassicUI.optionsTable = {
 										}
 									}
 								},
-								DoubleUpperStatusBarOverlay = {
-									order = 7,
+								DoubleLowerStatusBarOverlay = {
+									order = 8,
 									type = "group",
 									inline = true,
 									name = L['OverlayFrame'],
@@ -1607,8 +1785,30 @@ ClassicUI.optionsTable = {
 												ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
 											end,
 										},
-										xOffsetOverlay = {
+										alphaOverlay = {
 											order = 2,
+											disabled = function() return (ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.overlayHide) end,
+											type = "range",
+											softMin = 0,
+											softMax = 1,
+											step = 0.01,
+											bigStep = 0.02,
+											name = L['alphaOverlay'],
+											desc = L['alphaOverlay'],
+											get = function() return ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.overlayAlpha end,
+											set = function(_,value)
+												ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.overlayAlpha = value
+												ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+											end
+										},
+										Spacer1 = {
+											type = "description",
+											order = 3,
+											name = ""
+										},
+										xOffsetOverlay = {
+											order = 4,
+											disabled = function() return (ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.overlayHide) end,
 											type = "range",
 											softMin = -500,
 											softMax = 500,
@@ -1623,7 +1823,8 @@ ClassicUI.optionsTable = {
 											end
 										},
 										yOffsetOverlay = {
-											order = 3,
+											order = 5,
+											disabled = function() return (ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.overlayHide) end,
 											type = "range",
 											softMin = -500,
 											softMax = 500,
