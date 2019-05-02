@@ -32,7 +32,7 @@ local SCALE_EPSILON = 0.0001
 ClassicUI.BAG_SIZE = 32
 ClassicUI.BAGS_WIDTH = (4*ClassicUI.BAG_SIZE+32)
 ClassicUI.ACTION_BAR_OFFSET = 48
-ClassicUI.VERSION = "1.0.9"
+ClassicUI.VERSION = "1.1.0"
 
 ClassicUI.cached_NumberVisibleBars = 0
 ClassicUI.cached_DoubleStatusBar_hide = nil
@@ -649,6 +649,9 @@ function ClassicUI:MainFunction()
 	-- Hide and resize the old MicroButtonAndBagsBar frame.
 	MicroButtonAndBagsBar:SetWidth(1);	-- This allow the UIParent code center the MainMenuBar frame correctly.
 	MicroButtonAndBagsBar:Hide();
+	
+	-- Disable clicks on MainMenuBar
+	MainMenuBar:EnableMouse(false);
 	
 	-- Move Latency and Ticket MicroButtons
 	MainMenuBarPerformanceBar:SetPoint("CENTER", MainMenuBarPerformanceBar:GetParent(), "CENTER", 0, 11);
