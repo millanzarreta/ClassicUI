@@ -29,6 +29,7 @@ L['Configure Frames'] = 'Configurar Frames'
 L['MainMenuBar'] = true
 L['GargoyleFrames'] = true
 L['OverrideActionBar'] = true
+L['PetBattleFrameBar'] = true
 L['MultiActionBar'] = true
 L['PetActionBar'] = true
 L['StanceBar'] = true

@@ -1,7 +1,7 @@
 -- ------------------------------------------------------------ --
 -- Addon: ClassicUI                                             --
 --                                                              --
--- Version: 1.0.6                                               --
+-- Version: 1.0.7                                               --
 -- Author: Millán - C'Thun                                      --
 --                                                              --
 -- License: GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007 --
@@ -31,10 +31,12 @@ local SCALE_EPSILON = 0.0001
 ClassicUI.BAG_SIZE = 32
 ClassicUI.BAGS_WIDTH = (4*ClassicUI.BAG_SIZE+32)
 ClassicUI.ACTION_BAR_OFFSET = 48
-ClassicUI.VERSION = "1.0.6"
+ClassicUI.VERSION = "1.0.7"
 
 ClassicUI.TitanPanelIsPresent = false
+ClassicUI.LibJostleIsPresent = false
 ClassicUI.TitanPanelBottomBarsYOffset = 0
+ClassicUI.MultiBarBottomRightButtonsBackgroundsCreated = false
 
 ClassicUI.Update_MultiActionBar = function() end
 ClassicUI.Update_PetActionBar = function() end
@@ -67,6 +69,9 @@ ClassicUI.defaults = {
 				scale = 1
 			},
 			['OverrideActionBar'] = {
+				scale = 1
+			},
+			['PetBattleFrameBar'] = {
 				scale = 1
 			},
 			['BottomMultiActionBars'] = {
@@ -225,6 +230,7 @@ function ClassicUI:RefreshConfig()
 		else
 			self.SetPositionForStatusBars_MainMenuBar()
 			ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+			ClassicUI:ForceExpBarExhaustionTickUpdate()
 		end
 	else
 		if (self.db.profile.enabled) then
@@ -233,6 +239,7 @@ function ClassicUI:RefreshConfig()
 			self:ExtraFunction()
 			self.SetPositionForStatusBars_MainMenuBar()
 			ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+			ClassicUI:ForceExpBarExhaustionTickUpdate()
 		else
 			ReloadUI()	--We do this ReloadUI because the old value of self.db.profile.forceExtraOptions could be true
 		end
@@ -260,6 +267,7 @@ function ClassicUI:SlashCommand(str)
 			ClassicUI:ExtraFunction()
 			ClassicUI.SetPositionForStatusBars_MainMenuBar()
 			ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+			ClassicUI:ForceExpBarExhaustionTickUpdate()
 		end
 	elseif (cmd == "disable") or (cmd == "off") then
 		if (ClassicUI:IsEnabled()) then
@@ -409,6 +417,46 @@ function ClassicUI:CheckTitanPanel()
 	end
 end
 
+-- Function to fast-check if Jostle addon library is present
+function ClassicUI:CheckLibJostle()
+	if (ClassicUI.LibJostleIsPresent) then
+		return true
+	else
+		local Jostle = LibStub:GetLibrary("LibJostle-3.0", true)
+		if (Jostle == nil) then
+			local ChocolateBar = LibStub("AceAddon-3.0"):GetAddon("ChocolateBar", true)
+			if (ChocolateBar) then
+				Jostle = ChocolateBar.Jostle
+			end
+		end
+		if (Jostle ~= nil) then
+			if (not Gypsy_HotBarCapsule) then
+				Gypsy_HotBarCapsule = {}
+			end
+			if (MainMenuBar:IsUserPlaced()) then
+				MainMenuBar:SetMovable(true)
+				MainMenuBar:SetUserPlaced(false)
+				MainMenuBar:SetMovable(false)
+			elseif (MainMenuBar:IsMovable()) then
+				MainMenuBar:SetMovable(false)
+			end
+			ClassicUI.LibJostleIsPresent = true
+			return true
+		else
+			return false
+		end
+	end
+end
+
+-- Function to force a Update of ExhaustionTick from ExpBar (StatusBar)
+function ClassicUI:ForceExpBarExhaustionTickUpdate()
+	for _, bar in pairs(StatusTrackingBarManager.bars) do
+		if ((bar:GetPriority() == 0) and (bar:ShouldBeVisible()) and (bar.ExhaustionTick)) then
+			bar.ExhaustionTick:UpdateTickPosition();
+		end
+	end
+end
+
 -- Function to update the status bars when requested
 function ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
 	if (ClassicUI:IsEnabled()) then
@@ -464,6 +512,7 @@ function ClassicUI:MainFunction()
 	local SetPositionForStatusBars_MainMenuBar
 	local TransferPetActionBarFrameChildrens
 	local StatusTrackingBarManager_LayoutBar
+	local CreateMultiBarBottomRightButtonsBackgrounds
 
 	-- Create the frame and the flag variables needed to execute protected functions after leave combat.
 	-- If a protected function tries to running while the player is in combat, a flag for the funcion is
@@ -474,7 +523,7 @@ function ClassicUI:MainFunction()
 	local delayFunc_Update_PossessBar = false
 	local delayFunc_Update_StanceBar = false
 	local delayFunc_Update_PetActionBar = false
-	local delayFunc_Create_PetActionBar = false
+	local delayFunc_TransferPetActionBarFrameChildrens = false
 	fclFrame:SetScript("OnEvent",function(self,event)
 		if event=="PLAYER_REGEN_ENABLED" then
 			fclFrame:UnregisterEvent("PLAYER_REGEN_ENABLED")
@@ -594,6 +643,92 @@ function ClassicUI:MainFunction()
 	TransferPetActionBarFrameChildrens = ClassicUI.TransferPetActionBarFrameChildrens
 	TransferPetActionBarFrameChildrens()
 	
+	-- Function to create the grid background for the MultiBarBottomRightButtons (1 to 6)
+	ClassicUI.CreateMultiBarBottomRightButtonsBackgrounds = function()
+		if (not ClassicUI.MultiBarBottomRightButtonsBackgroundsCreated) then
+			ClassicUI.MultiBarBottomRightButtonsBackgroundsCreated = true
+			-- Create the FloatingBG Texture for the normal MultiBarBottomRightButtons
+			for i = 1, 6 do
+				local buttonBack = _G["MultiBarBottomRightButton"..i.."FloatingBG"]
+				if (not buttonBack) then
+					local button = _G["MultiBarBottomRightButton"..i]
+					buttonBack = button:CreateTexture("MultiBarBottomRightButton"..i.."FloatingBG")
+					buttonBack:SetSize(66, 66);
+					buttonBack:SetDrawLayer("BACKGROUND", -1)
+					buttonBack:SetAlpha(0.4)
+					buttonBack:SetTexture("Interface\\Buttons\\UI-Quickslot");
+					buttonBack:SetPoint("TOPLEFT", button, "TOPLEFT", -15, 15);
+					buttonBack:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 15, -15);
+					buttonBack:SetTexCoord(0,0,0,1,1,0,1,1);
+				end
+			end
+			-- Create new background frames for the MultiBarBottomRightButtons
+			CUI_MultiBarBottomRightButton1Background = CreateFrame("Button", "CUI_MultiBarBottomRightButton1Background", MultiBarBottomRightButton1:GetParent(), "ActionButtonTemplate")
+			CUI_MultiBarBottomRightButton2Background = CreateFrame("Button", "CUI_MultiBarBottomRightButton2Background", MultiBarBottomRightButton2:GetParent(), "ActionButtonTemplate")
+			CUI_MultiBarBottomRightButton3Background = CreateFrame("Button", "CUI_MultiBarBottomRightButton3Background", MultiBarBottomRightButton3:GetParent(), "ActionButtonTemplate")
+			CUI_MultiBarBottomRightButton4Background = CreateFrame("Button", "CUI_MultiBarBottomRightButton4Background", MultiBarBottomRightButton4:GetParent(), "ActionButtonTemplate")
+			CUI_MultiBarBottomRightButton5Background = CreateFrame("Button", "CUI_MultiBarBottomRightButton5Background", MultiBarBottomRightButton5:GetParent(), "ActionButtonTemplate")
+			CUI_MultiBarBottomRightButton6Background = CreateFrame("Button", "CUI_MultiBarBottomRightButton6Background", MultiBarBottomRightButton6:GetParent(), "ActionButtonTemplate")
+			for i = 1, 6 do
+				-- Set properties of the new background frames and anchor it to the normal buttons
+				local button = _G["CUI_MultiBarBottomRightButton"..i.."Background"]
+				local origButton = _G["MultiBarBottomRightButton"..i]
+				button:SetParent(origButton:GetParent())
+				button.NormalTexture:SetVertexColor(1.0, 1.0, 1.0, 0.5);
+				button:SetPoint("TOPLEFT", origButton, "TOPLEFT", 0, 0)
+				button:SetFrameStrata("BACKGROUND")
+				button.FloatingBGTexture = button:CreateTexture("CUI_MultiBarBottomRightButton"..i.."BackgroundFloatingBG")
+				-- Create the FloatingBG Texture for the new background frames
+				local buttonBack = button.FloatingBGTexture
+				buttonBack:SetSize(66, 66);
+				buttonBack:SetDrawLayer("BACKGROUND", -1)
+				buttonBack:SetAlpha(0.4)
+				buttonBack:SetTexture("Interface\\Buttons\\UI-Quickslot");
+				buttonBack:SetPoint("TOPLEFT", button, "TOPLEFT", -15, 15);
+				buttonBack:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 15, -15);
+				buttonBack:SetTexCoord(0,0,0,1,1,0,1,1);
+				-- Set the background frames HotKey behaviour
+				button.HotKey:SetText(origButton.HotKey:GetText())
+				if (button.HotKey == RANGE_INDICATOR) then
+					button.HotKey:Hide()
+				end
+				button.HotKey:SetAlpha(origButton.HotKey:GetAlpha())
+				hooksecurefunc(origButton.HotKey, "SetText", function(self) button.HotKey:SetText(self:GetText()) end)
+				hooksecurefunc(origButton.HotKey, "SetAlpha", function(self) button.HotKey:SetAlpha(self:GetAlpha()) end)
+				hooksecurefunc(origButton.HotKey, "Show", function(self) button.HotKey:Show() end)
+				hooksecurefunc(origButton.HotKey, "Hide", function(self) button.HotKey:Hide() end)
+				-- Set the background frames Visibility behaviour
+				if ((ALWAYS_SHOW_MULTIBARS == 1) or (ALWAYS_SHOW_MULTIBARS == "1")) then
+					if (not button:IsShown()) then
+						button:Show()
+					end
+				else
+					if (button:IsShown()) then
+						button:Hide()
+					end
+				end
+				hooksecurefunc(origButton, "Show", function(self)
+					if (button:IsShown()) then
+						button:Hide()
+					end
+				end)
+				hooksecurefunc(origButton, "Hide", function(self)
+					if ((ALWAYS_SHOW_MULTIBARS == 1) or (ALWAYS_SHOW_MULTIBARS == "1")) then
+						if (not button:IsShown()) then
+							button:Show()
+						end
+					else
+						if (button:IsShown()) then
+							button:Hide()
+						end
+					end
+				end)
+			end
+		end
+	end
+	CreateMultiBarBottomRightButtonsBackgrounds = ClassicUI.CreateMultiBarBottomRightButtonsBackgrounds
+	CreateMultiBarBottomRightButtonsBackgrounds()
+	
 	--Function to set the position of MultiActionBars
 	ClassicUI.Update_MultiActionBar = function()
 		if InCombatLockdown() then
@@ -661,82 +796,6 @@ function ClassicUI:MainFunction()
 			end
 			if (math.abs(VerticalMultiBarsContainer:GetScale()-ClassicUI.db.profile.barsConfig.RightMultiActionBars.scale) > SCALE_EPSILON) then
 				VerticalMultiBarsContainer:SetScale(ClassicUI.db.profile.barsConfig.RightMultiActionBars.scale)
-			end
-		end
-		-- Set the grid background for MultiBarBottomRightButton1 to MultiBarBottomRightButton6 (is hidden by default)
-		if (SHOW_MULTI_ACTIONBAR_2) then
-			local showgrid = MultiBarBottomRightButton7:GetAttribute("showgrid");
-			if (MultiBarBottomRightButton1:GetAttribute("showgrid") ~= showgrid) then
-				MultiBarBottomRightButton1:SetAttribute("showgrid", showgrid);
-				if ((showgrid ~= nil) and (showgrid > 0)) then
-					if (not MultiBarBottomRightButton1:IsShown()) then
-						MultiBarBottomRightButton1:Show();
-					end
-				else
-					if (MultiBarBottomRightButton1:IsShown()) then
-						MultiBarBottomRightButton1:Hide();
-					end
-				end
-			end
-			if (MultiBarBottomRightButton2:GetAttribute("showgrid") ~= showgrid) then
-				MultiBarBottomRightButton2:SetAttribute("showgrid", showgrid);
-				if ((showgrid ~= nil) and (showgrid > 0)) then
-					if (not MultiBarBottomRightButton2:IsShown()) then
-						MultiBarBottomRightButton2:Show();
-					end
-				else
-					if (MultiBarBottomRightButton2:IsShown()) then
-						MultiBarBottomRightButton2:Hide();
-					end
-				end
-			end
-			if (MultiBarBottomRightButton3:GetAttribute("showgrid") ~= showgrid) then
-				MultiBarBottomRightButton3:SetAttribute("showgrid", showgrid);
-				if ((showgrid ~= nil) and (showgrid > 0)) then
-					if (not MultiBarBottomRightButton3:IsShown()) then
-						MultiBarBottomRightButton3:Show();
-					end
-				else
-					if (MultiBarBottomRightButton3:IsShown()) then
-						MultiBarBottomRightButton3:Hide();
-					end
-				end
-			end
-			if (MultiBarBottomRightButton4:GetAttribute("showgrid") ~= showgrid) then
-				MultiBarBottomRightButton4:SetAttribute("showgrid", showgrid);
-				if ((showgrid ~= nil) and (showgrid > 0)) then
-					if (not MultiBarBottomRightButton4:IsShown()) then
-						MultiBarBottomRightButton4:Show();
-					end
-				else
-					if (MultiBarBottomRightButton4:IsShown()) then
-						MultiBarBottomRightButton4:Hide();
-					end
-				end
-			end
-			if (MultiBarBottomRightButton5:GetAttribute("showgrid") ~= showgrid) then
-				MultiBarBottomRightButton5:SetAttribute("showgrid", showgrid);
-				if ((showgrid ~= nil) and (showgrid > 0)) then
-					if (not MultiBarBottomRightButton5:IsShown()) then
-						MultiBarBottomRightButton5:Show();
-					end
-				else
-					if (MultiBarBottomRightButton5:IsShown()) then
-						MultiBarBottomRightButton5:Hide();
-					end
-				end
-			end
-			if (MultiBarBottomRightButton6:GetAttribute("showgrid") ~= showgrid) then
-				MultiBarBottomRightButton6:SetAttribute("showgrid", showgrid);
-				if ((showgrid ~= nil) and (showgrid > 0)) then
-					if (not MultiBarBottomRightButton6:IsShown()) then
-						MultiBarBottomRightButton6:Show();
-					end
-				else
-					if (MultiBarBottomRightButton6:IsShown()) then
-						MultiBarBottomRightButton6:Hide();
-					end
-				end
 			end
 		end
 	end
@@ -997,6 +1056,9 @@ function ClassicUI:MainFunction()
 					self.SingleBarLarge:Hide()
 				end
 				bar.StatusBar:SetSize(width + ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xSize, 9 + ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.ySize);
+				if ((bar.priority == 0) and (bar.ExhaustionLevelFillBar)) then
+					bar.ExhaustionLevelFillBar:SetSize(width + ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xSize, 9 + ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.ySize)
+				end
 				bar:SetSize(width + ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xSize, 9 + ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.ySize);
 			else
 				bar:SetPoint("BOTTOMLEFT", MainMenuBarArtFrame, "TOPLEFT", 0 + ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xOffset, -18 + ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.yOffset);
@@ -1010,6 +1072,9 @@ function ClassicUI:MainFunction()
 					end
 				end
 				bar.StatusBar:SetSize(width + ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xSize, 11 + ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.ySize);
+				if ((bar.priority == 0) and (bar.ExhaustionLevelFillBar)) then
+					bar.ExhaustionLevelFillBar:SetSize(width + ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xSize, 11 + ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.ySize)
+				end
 				bar:SetSize(width + ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xSize, 12 + ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.ySize);
 			end
 		else 
@@ -1024,12 +1089,15 @@ function ClassicUI:MainFunction()
 					end
 			end
 			self:SetSingleBarSize(bar, width);
-			self.SingleBarLarge:SetSize(width + ClassicUI.db.profile.barsConfig.SingleStatusBar.xSize, 12 + ClassicUI.db.profile.barsConfig.SingleStatusBar.ySize); 
+			self.SingleBarLarge:SetSize(width + ClassicUI.db.profile.barsConfig.SingleStatusBar.xSize, 12 + ClassicUI.db.profile.barsConfig.SingleStatusBar.ySize);
 			self.SingleBarLarge:SetPoint("CENTER", bar, "CENTER", 0 + ClassicUI.db.profile.barsConfig.SingleStatusBar.xOffsetArt, 0 + ClassicUI.db.profile.barsConfig.SingleStatusBar.yOffsetArt)
 			if (ClassicUI.db.profile.barsConfig.SingleStatusBar.artHide) then
 				self.SingleBarLarge:Hide()
 			end
-			bar.StatusBar:SetSize(width + ClassicUI.db.profile.barsConfig.SingleStatusBar.xSize, 12 + ClassicUI.db.profile.barsConfig.SingleStatusBar.ySize); 
+			bar.StatusBar:SetSize(width + ClassicUI.db.profile.barsConfig.SingleStatusBar.xSize, 12 + ClassicUI.db.profile.barsConfig.SingleStatusBar.ySize);
+			if ((bar.priority == 0) and (bar.ExhaustionLevelFillBar)) then
+				bar.ExhaustionLevelFillBar:SetSize(width + ClassicUI.db.profile.barsConfig.SingleStatusBar.xSize, 12 + ClassicUI.db.profile.barsConfig.SingleStatusBar.ySize)
+			end
 			bar:SetSize(width + ClassicUI.db.profile.barsConfig.SingleStatusBar.xSize, 12 + ClassicUI.db.profile.barsConfig.SingleStatusBar.ySize);
 		end
 	end
@@ -1137,8 +1205,8 @@ function ClassicUI:MainFunction()
 			MainMenuBarArtFrame.RightEndCap:SetScale(ClassicUI.db.profile.barsConfig.RightGargoyleFrame.scale)
 		end
 		
-		-- If OverrideActionBar is showed, let the Blizzard code move the MicroButtons. If OverrideActionBar, is hidden we must move the MicroButtons on our frame.
-		if (not OverrideActionBar:IsShown()) then
+		-- If OverrideActionBar or PetBattleFrame are showed, let the Blizzard code move the MicroButtons. If are hidden we must move the MicroButtons on our frame.
+		if ((not OverrideActionBar:IsShown()) and (not PetBattleFrame:IsShown())) then
 			MoveMicroButtons("BOTTOMLEFT", MainMenuBarArtFrameBackground.MicroButtonArt, "BOTTOMLEFT", 45, 2, false);
 		end
 		
@@ -1251,6 +1319,9 @@ function ClassicUI:MainFunction()
 			end
 		end
 		
+		-- Compatibility with LibJostle library
+		ClassicUI:CheckLibJostle()
+		
 		-- Set the position and scale for MainMenuBarArtFrame
 		local menuBarBagsWidth = BAGS_WIDTH + 60 + extraWidth;
 		MainMenuBarArtFrame:SetPoint("TOPLEFT", MainMenuBarArtFrame:GetParent(), ((-menuBarBagsWidth)/2) + ClassicUI.db.profile.barsConfig.MainMenuBar.xOffset, 10 + offsetY + ClassicUI.db.profile.barsConfig.MainMenuBar.yOffset);
@@ -1264,6 +1335,12 @@ function ClassicUI:MainFunction()
 		OverrideActionBar:SetPoint("BOTTOM", OverrideActionBar:GetParent(), "BOTTOM", ClassicUI.db.profile.barsConfig.OverrideActionBar.xOffset, ClassicUI.db.profile.barsConfig.OverrideActionBar.yOffset + ClassicUI.TitanPanelBottomBarsYOffset)
 		if (math.abs(OverrideActionBar:GetScale()-ClassicUI.db.profile.barsConfig.OverrideActionBar.scale) > SCALE_EPSILON) then
 			OverrideActionBar:SetScale(ClassicUI.db.profile.barsConfig.OverrideActionBar.scale)
+		end
+		
+		-- Set the position and scale for PetBattleFrameBar
+		PetBattleFrame.BottomFrame:SetPoint("BOTTOM", PetBattleFrame.BottomFrame:GetParent(), "BOTTOM", ClassicUI.db.profile.barsConfig.PetBattleFrameBar.xOffset, ClassicUI.db.profile.barsConfig.PetBattleFrameBar.yOffset)
+		if (math.abs(PetBattleFrame.BottomFrame:GetScale()-ClassicUI.db.profile.barsConfig.PetBattleFrameBar.scale) > SCALE_EPSILON) then
+			PetBattleFrame.BottomFrame:SetScale(ClassicUI.db.profile.barsConfig.PetBattleFrameBar.scale)
 		end
 		
 		if ( IsPlayerInWorld() ) then
@@ -1284,7 +1361,7 @@ function ClassicUI:MainFunction()
 end
 
 -- Function to Show/Hide/OnlyShowDotRange keybinds text from ActionBars
--- Togle the visibilitity mode from 2 to another mode requires a ReloadUI
+-- Togle the visibilitity mode from 2 or 3 to another mode requires a ReloadUI
 function ClassicUI:ToggleVisibilityKeybinds(mode)
 	if (mode == 1) then
 		for i = 1, 12 do

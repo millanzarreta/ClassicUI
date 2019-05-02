@@ -48,6 +48,7 @@ ClassicUI.optionsTable = {
 								ClassicUI:ExtraFunction()
 								ClassicUI.SetPositionForStatusBars_MainMenuBar()
 								ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+								ClassicUI:ForceExpBarExhaustionTickUpdate()
 							end
 						else
 							if (ClassicUI:IsEnabled()) then
@@ -373,8 +374,66 @@ ClassicUI.optionsTable = {
 						}
 					},
 				},
-				MultiActionBarOptions = {
+				PetBattleFrameBarOptions = {
 					order = 9,
+					type = "group",
+					name = L['PetBattleFrameBar'],
+					desc = L['PetBattleFrameBar'],
+					args = {
+						Header1 = {
+							type = 'header',
+							order = 1,
+							name = L['PetBattleFrameBar']
+						},
+						xOffset = {
+							order = 2,
+							type = "range",
+							softMin = -500,
+							softMax = 500,
+							step = 1,
+							bigStep = 10,
+							name = L['xOffset'],
+							desc = L['xOffset'],
+							get = function() return ClassicUI.db.profile.barsConfig.PetBattleFrameBar.xOffset end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.PetBattleFrameBar.xOffset = value
+								ClassicUI.SetPositionForStatusBars_MainMenuBar()
+							end
+						},
+						yOffset = {
+							order = 3,
+							type = "range",
+							softMin = -500,
+							softMax = 500,
+							step = 1,
+							bigStep = 10,
+							name = L['yOffset'],
+							desc = L['yOffset'],
+							get = function() return ClassicUI.db.profile.barsConfig.PetBattleFrameBar.yOffset end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.PetBattleFrameBar.yOffset = value
+								ClassicUI.SetPositionForStatusBars_MainMenuBar()
+							end
+						},
+						scale = {
+							order = 4,
+							type = "range",
+							softMin = 0.01,
+							softMax = 4,
+							step = 0.01,
+							bigStep = 0.03,
+							name = L['Scale'],
+							desc = L['Scale'],
+							get = function() return ClassicUI.db.profile.barsConfig.PetBattleFrameBar.scale end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.PetBattleFrameBar.scale = value
+								ClassicUI.SetPositionForStatusBars_MainMenuBar()
+							end
+						}
+					}
+				},
+				MultiActionBarOptions = {
+					order = 10,
 					type = "group",
 					name = L['MultiActionBar'],
 					desc = L['MultiActionBar'],
@@ -596,7 +655,7 @@ ClassicUI.optionsTable = {
 					}
 				},
 				PetActionBarOptions = {
-					order = 10,
+					order = 11,
 					type = "group",
 					name = L['PetActionBar'],
 					desc = L['PetActionBar'],
@@ -726,7 +785,7 @@ ClassicUI.optionsTable = {
 					}
 				},
 				StanceBarOptions = {
-					order = 11,
+					order = 12,
 					type = "group",
 					name = L['StanceBar'],
 					desc = L['StanceBar'],
@@ -841,7 +900,7 @@ ClassicUI.optionsTable = {
 					}
 				},
 				PossessBarOptions = {
-					order = 12,
+					order = 13,
 					type = "group",
 					name = L['PossessBar'],
 					desc = L['PossessBar'],
@@ -956,7 +1015,7 @@ ClassicUI.optionsTable = {
 					}
 				},
 				StatusBarOptions = {
-					order = 13,
+					order = 14,
 					type = "group",
 					name = L['StatusBar'],
 					desc = L['StatusBar'],
@@ -1047,6 +1106,7 @@ ClassicUI.optionsTable = {
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.SingleStatusBar.xSize = value
 								ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+								ClassicUI:ForceExpBarExhaustionTickUpdate()
 							end
 						},
 						SingleStatusBarySize = {
@@ -1062,6 +1122,7 @@ ClassicUI.optionsTable = {
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.SingleStatusBar.ySize = value
 								ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+								ClassicUI:ForceExpBarExhaustionTickUpdate()
 							end
 						},
 						SingleStatusBarArt = {
@@ -1271,6 +1332,7 @@ ClassicUI.optionsTable = {
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xSize = value
 										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+										ClassicUI:ForceExpBarExhaustionTickUpdate()
 									end
 								},
 								ySize = {
@@ -1286,6 +1348,7 @@ ClassicUI.optionsTable = {
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.ySize = value
 										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+										ClassicUI:ForceExpBarExhaustionTickUpdate()
 									end
 								},
 								DoubleUpperStatusBarArt = {
@@ -1445,6 +1508,7 @@ ClassicUI.optionsTable = {
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xSize = value
 										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+										ClassicUI:ForceExpBarExhaustionTickUpdate()
 									end
 								},
 								ySize = {
@@ -1460,6 +1524,7 @@ ClassicUI.optionsTable = {
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.ySize = value
 										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+										ClassicUI:ForceExpBarExhaustionTickUpdate()
 									end
 								},
 								DoubleUpperStatusBarArt = {
