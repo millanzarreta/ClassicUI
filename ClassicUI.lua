@@ -1,7 +1,7 @@
 -- ------------------------------------------------------------ --
 -- Addon: ClassicUI                                             --
 --                                                              --
--- Version: 1.0.3                                               --
+-- Version: 1.0.4                                               --
 -- Author: Millán - C'Thun                                      --
 --                                                              --
 -- License: GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007 --
@@ -30,7 +30,7 @@ local _
 ClassicUI.BAG_SIZE = 32
 ClassicUI.BAGS_WIDTH = (4*ClassicUI.BAG_SIZE+32)
 ClassicUI.ACTION_BAR_OFFSET = 48
-ClassicUI.VERSION = "1.0.3"
+ClassicUI.VERSION = "1.0.4"
 
 ClassicUI.Update_MultiActionBar = function() end
 ClassicUI.Update_PetActionBar = function() end
@@ -1212,7 +1212,6 @@ function ClassicUI:HookLossOfControlUICCRemover()
 				self.cooldown:SetEdgeTexture("Interface\\Cooldown\\edge");
 				self.cooldown:SetSwipeColor(0, 0, 0);
 				self.cooldown:SetHideCountdownNumbers(false);
-				self.cooldown.currentCooldownType = COOLDOWN_TYPE_NORMAL;
 				if ( charges and maxCharges and maxCharges > 1 and charges < maxCharges ) then
 					StartChargeCooldown(self, chargeStart, chargeDuration, chargeModRate);
 				else
