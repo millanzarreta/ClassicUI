@@ -1,0 +1,35 @@
+## Interface: 80000
+## Title: ClassicUI
+## Author: millanzarreta
+## Version: 1.0.0
+## Notes: Restores the classic main interface pre-BFA
+## Notes-esES: Restaura la interfaz principal clasica pre-BFA
+## X-Category: Action Bars
+## X-Website: https://www.curseforge.com/wow/addons/ClassicUI
+## X-License: GNU General Public License version 3 (GPLv3)
+## DefaultState: Enabled
+## LoadOnDemand: 0
+## SavedVariables: ClassicUI_DB
+## OptionalDeps: Ace3
+## X-Curse-Packaged-Version: 1.0.0
+## X-Curse-Project-Name: ClassicUI
+## X-Curse-Project-ID: ClassicUI
+## X-Curse-Repository-ID: ClassicUI-mainline
+
+#@no-lib-strip@
+Libs\LibStub\LibStub.lua
+Libs\CallbackHandler-1.0\CallbackHandler-1.0.xml
+Libs\AceAddon-3.0\AceAddon-3.0.xml
+Libs\AceGUI-3.0\AceGUI-3.0.xml
+Libs\AceConfig-3.0\AceConfig-3.0.xml
+Libs\AceConsole-3.0\AceConsole-3.0.xml
+Libs\AceDB-3.0\AceDB-3.0.xml
+Libs\AceDBOptions-3.0\AceDBOptions-3.0.xml
+Libs\AceLocale-3.0\AceLocale-3.0.xml
+#@end-no-lib-strip@
+
+Locales\ClassicUI-enUS.lua
+Locales\ClassicUI-esES.lua
+
+ClassicUI.lua
+ClassicUIOptions.lua
