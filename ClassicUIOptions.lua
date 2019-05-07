@@ -2095,12 +2095,31 @@ ClassicUI.optionsTable = {
 									end
 								end
 							end
+						},
+						Spacer1 = {
+							type = "description",
+							order = 5,
+							name = ""
+						},
+						hideActionButtonName = {
+							order = 6,
+							type = "toggle",
+							name = L['Hide ActionButtons Name'],
+							desc = L['HIDE_ACTIONBUTTONS_NAME_DESC'],
+							width = "double",
+							get = function()
+								return ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideActionButtonName
+							end,
+							set = function(_,value)
+								ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideActionButtonName = value
+								ClassicUI:ToggleVisibilityActionButtonNames(value)
+							end
 						}
 					}
 				},
 				redRangeOptions = {
 					order = 11,
-					name = L['RedRange'],
+					name = L['RedRange & GreyOnCooldown'],
 					type = "group",
 					args = {
 						Header1 = {
@@ -2118,7 +2137,7 @@ ClassicUI.optionsTable = {
 							order = 3,
 							name = ""
 						},
-						enabled = {
+						enabled1 = {
 							order = 4,
 							type = "toggle",
 							name = L['Enable'],
@@ -2150,7 +2169,55 @@ ClassicUI.optionsTable = {
 									end
 								end
 							end
-						}
+						},
+						Header2 = {
+							type = 'header',
+							order = 5,
+							name = L['GreyOnCooldown']
+						},
+						Comment2 = {
+							type = 'description',
+							order = 6,
+							name = L['GREYONCOOLDOWN_OPTIONS_DESC']
+						},
+						Spacer2 = {
+							type = "description",
+							order = 7,
+							name = ""
+						},
+						enabled2 = {
+							order = 8,
+							type = "toggle",
+							name = L['Enable'],
+							desc = L['Enable GreyOnCooldown'],
+							confirm = function(_, newValue)
+								if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
+									if ((not newValue) and (ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.enabled)) then
+										return L['RELOADUI_MSG']
+									else
+										return false
+									end
+								else
+									return false
+								end
+							end,
+							get = function()
+								return ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.enabled
+							end,
+							set = function(_,value)
+								if ((not value) and (ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.enabled)) then
+									ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.enabled = value
+									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
+										ReloadUI()
+									end
+								else
+									ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.enabled = value
+									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
+										ClassicUI:HookGreyOnCooldownIcons()
+									end
+								end
+							end
+						},
 					}
 				},
 				LossOfControlUIOptions = {

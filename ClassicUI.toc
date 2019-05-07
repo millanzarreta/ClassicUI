@@ -1,7 +1,7 @@
 ## Interface: 80100
 ## Title: ClassicUI
 ## Author: millanzarreta
-## Version: 1.1.2
+## Version: 1.1.3
 ## Notes: Restores the classic main interface pre-BFA
 ## Notes-esES: Restaura la interfaz principal clasica pre-BFA
 ## X-Category: Action Bars
@@ -11,7 +11,7 @@
 ## LoadOnDemand: 0
 ## SavedVariables: ClassicUI_DB
 ## OptionalDeps: Ace3
-## X-Curse-Packaged-Version: 1.1.2
+## X-Curse-Packaged-Version: 1.1.3
 ## X-Curse-Project-Name: ClassicUI
 ## X-Curse-Project-ID: ClassicUI
 ## X-Curse-Repository-ID: ClassicUI-mainline

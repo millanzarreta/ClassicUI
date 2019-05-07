@@ -1,7 +1,7 @@
 -- ------------------------------------------------------------ --
 -- Addon: ClassicUI                                             --
 --                                                              --
--- Version: 1.1.2                                               --
+-- Version: 1.1.3                                               --
 -- Author: Millán - C'Thun                                      --
 --                                                              --
 -- License: GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007 --
@@ -32,7 +32,7 @@ local SCALE_EPSILON = 0.0001
 ClassicUI.BAG_SIZE = 32
 ClassicUI.BAGS_WIDTH = (4*ClassicUI.BAG_SIZE+32)
 ClassicUI.ACTION_BAR_OFFSET = 48
-ClassicUI.VERSION = "1.1.2"
+ClassicUI.VERSION = "1.1.3"
 
 ClassicUI.cached_NumberVisibleBars = 0
 ClassicUI.cached_NumberRealVisibleBars = 0
@@ -180,9 +180,13 @@ ClassicUI.defaults = {
 				rightClickMicroButtonOpenOldMenu = false
 			},
 			['KeybindsConfig'] = {
-				hideKeybindsMode = 0	--0 = show keybinds, 1 = hide keybinds, 2 = show range dots on keybinds, 3 = show permanent range dots on keybinds
+				hideKeybindsMode = 0,	--0 = show keybinds, 1 = hide keybinds, 2 = show range dots on keybinds, 3 = show permanent range dots on keybinds
+				hideActionButtonName = false
 			},
 			['RedRangeConfig'] = {
+				enabled = false
+			},
+			['GreyOnCooldownConfig'] = {
 				enabled = false
 			},
 			['LossOfControlUIConfig'] = {
@@ -266,8 +270,12 @@ function ClassicUI:RefreshConfig()
 		end
 	end
 	self:ToggleVisibilityKeybinds(self.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode)
+	self:ToggleVisibilityActionButtonNames(self.db.profile.extraConfigs.KeybindsConfig.hideActionButtonName)
 	-- We should do a ReloadUI if the old self.db.profile.extraConfigs..KeybindsConfig.hideKeybindsMode >= 2, but we have not the old value, so we don't do anything, who cares :)
 	if ((not self.db.profile.extraConfigs.RedRangeConfig.enabled) and (REDRANGEICONS_HOOKED)) then
+		ReloadUI()
+	end
+	if ((not self.db.profile.extraConfigs.GreyOnCooldownConfig.enabled) and (GREYONCOOLDOWN_HOOKED)) then
 		ReloadUI()
 	end
 	if ((not self.db.profile.extraConfigs.LossOfControlUIConfig.enabled) and (DISABLELOSSOFCONTROLUI_HOOKED)) then
@@ -557,9 +565,17 @@ function ClassicUI:ExtraFunction()
 	if (ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode > 0) then
 		self:ToggleVisibilityKeybinds(ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode)
 	end
+	--Extra Option: ActionBar Names Visibility
+	if (ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideActionButtonName) then
+		self:ToggleVisibilityActionButtonNames(ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideActionButtonName)
+	end
 	--Extra Option: RedRange
 	if (ClassicUI.db.profile.extraConfigs.RedRangeConfig.enabled) then
 		self:HookRedRangeIcons()
+	end
+	--Extra Option: GreyOnCooldown
+	if (ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.enabled) then
+		self:HookGreyOnCooldownIcons()
 	end
 	--Extra Option: LossOfControlUI
 	if (ClassicUI.db.profile.extraConfigs.LossOfControlUIConfig.enabled) then
@@ -1749,6 +1765,99 @@ function ClassicUI:HookPetBattleKeybindsVisibilityMode()
 	end
 end
 
+-- Function to Show/Hide name text from ActionBars
+function ClassicUI:ToggleVisibilityActionButtonNames(mode)
+	if (mode) then
+		for i = 1, 12 do
+			local actionButtonName
+			actionButtonName = _G["ExtraActionButton"..i.."Name"]
+			if (actionButtonName) then
+				actionButtonName:SetAlpha(0)
+			end
+			actionButtonName = _G["ActionButton"..i.."Name"]
+			if (actionButtonName) then
+				actionButtonName:SetAlpha(0)
+			end
+			actionButtonName = _G["MultiBarBottomLeftButton"..i.."Name"]
+			if (actionButtonName) then
+				actionButtonName:SetAlpha(0)
+			end
+			actionButtonName = _G["MultiBarBottomRightButton"..i.."Name"]
+			if (actionButtonName) then
+				actionButtonName:SetAlpha(0)
+			end
+			actionButtonName = _G["MultiBarLeftButton"..i.."Name"]
+			if (actionButtonName) then
+				actionButtonName:SetAlpha(0)
+			end
+			actionButtonName = _G["MultiBarRightButton"..i.."Name"]
+			if (actionButtonName) then
+				actionButtonName:SetAlpha(0)
+			end
+			actionButtonName = _G["PetActionButton"..i.."Name"]
+			if (actionButtonName) then
+				actionButtonName:SetAlpha(0)
+			end
+			actionButtonName = _G["StanceButton"..i.."Name"]
+			if (actionButtonName) then
+				actionButtonName:SetAlpha(0)
+			end
+			actionButtonName =  _G["PossessButton"..i.."Name"]
+			if (actionButtonName) then
+				actionButtonName:SetAlpha(0)
+			end
+			actionButtonName =  _G["OverrideActionBarButton"..i.."Name"]
+			if (actionButtonName) then
+				actionButtonName:SetAlpha(0)
+			end
+		end
+	else
+		for i = 1, 12 do
+			local actionButtonName
+			actionButtonName = _G["ExtraActionButton"..i.."Name"]
+			if (actionButtonName) then
+				actionButtonName:SetAlpha(1)
+			end
+			actionButtonName = _G["ActionButton"..i.."Name"]
+			if (actionButtonName) then
+				actionButtonName:SetAlpha(1)
+			end
+			actionButtonName = _G["MultiBarBottomLeftButton"..i.."Name"]
+			if (actionButtonName) then
+				actionButtonName:SetAlpha(1)
+			end
+			actionButtonName = _G["MultiBarBottomRightButton"..i.."Name"]
+			if (actionButtonName) then
+				actionButtonName:SetAlpha(1)
+			end
+			actionButtonName = _G["MultiBarLeftButton"..i.."Name"]
+			if (actionButtonName) then
+				actionButtonName:SetAlpha(1)
+			end
+			actionButtonName = _G["MultiBarRightButton"..i.."Name"]
+			if (actionButtonName) then
+				actionButtonName:SetAlpha(1)
+			end
+			actionButtonName = _G["PetActionButton"..i.."Name"]
+			if (actionButtonName) then
+				actionButtonName:SetAlpha(1)
+			end
+			actionButtonName = _G["StanceButton"..i.."Name"]
+			if (actionButtonName) then
+				actionButtonName:SetAlpha(1)
+			end
+			actionButtonName =  _G["PossessButton"..i.."Name"]
+			if (actionButtonName) then
+				actionButtonName:SetAlpha(1)
+			end
+			actionButtonName =  _G["OverrideActionBarButton"..i.."Name"]
+			if (actionButtonName) then
+				actionButtonName:SetAlpha(1)
+			end
+		end
+	end
+end
+
 -- Function to disable Cooldown effect on action bars caused by CC
 function ClassicUI:HookLossOfControlUICCRemover()
 	if (not DISABLELOSSOFCONTROLUI_HOOKED) then
@@ -1810,38 +1919,116 @@ function ClassicUI:HookRedRangeIcons()
 			elseif (self.redRangeRed) then
 				local icon = self.icon;
 				local normalTexture = self.NormalTexture;
-				icon:SetVertexColor(1.0, 1.0, 1.0);
-				if (normalTexture ~= nil) and (next(normalTexture) ~= nil) then
-					normalTexture:SetVertexColor(1.0, 1.0, 1.0);
+				local action = self.action;
+				if (action) then
+					local isUsable, notEnoughMana = IsUsableAction(action)
+					if (isUsable) then
+						icon:SetVertexColor(1.0, 1.0, 1.0);
+						if (normalTexture ~= nil) and (next(normalTexture) ~= nil) then
+							normalTexture:SetVertexColor(1.0, 1.0, 1.0);
+						end
+					elseif (notEnoughMana) then
+						icon:SetVertexColor(0.1, 0.3, 1.0);
+						if (normalTexture ~= nil) and (next(normalTexture) ~= nil) then
+							normalTexture:SetVertexColor(0.1, 0.3, 1.0);
+						end
+					else
+						icon:SetVertexColor(0.4, 0.4, 0.4);
+						if (normalTexture ~= nil) and (next(normalTexture) ~= nil) then
+							normalTexture:SetVertexColor(1.0, 1.0, 1.0);
+						end
+					end
+				else
+					icon:SetVertexColor(1.0, 1.0, 1.0);
+					if (normalTexture ~= nil) and (next(normalTexture) ~= nil) then
+						normalTexture:SetVertexColor(1.0, 1.0, 1.0);
+					end
 				end
 				self.redRangeRed = false;
 			end
 		end)
 		hooksecurefunc("ActionButton_UpdateUsable", function(self)
-			local id = self.action;
-			local isUsable, notEnoughMana = IsUsableAction(id)
-			if (isUsable) then
-				if (ActionHasRange(id) and IsActionInRange(id) == false) then
-					local icon = self.icon;
-					local normalTexture = self.NormalTexture;
-					icon:SetVertexColor(0.8, 0.1, 0.1);
-					normalTexture:SetVertexColor(0.8, 0.1, 0.1);
-					self.redRangeRed = true;
-				elseif (self.redRangeRed) then
-					local icon = self.icon;
-					local normalTexture = self.NormalTexture;
+			local action = self.action;
+			local icon = self.icon;
+			local isUsable, notEnoughMana = IsUsableAction(action)
+			local normalTexture = self.NormalTexture;
+			if ( not normalTexture ) then
+				return;
+			end
+			if (ActionHasRange(action) and IsActionInRange(action) == false) then
+				icon:SetVertexColor(0.8, 0.1, 0.1);
+				normalTexture:SetVertexColor(0.8, 0.1, 0.1);
+				self.redRangeRed = true;
+			elseif (self.redRangeRed) then
+				if (isUsable) then
 					icon:SetVertexColor(1.0, 1.0, 1.0);
 					normalTexture:SetVertexColor(1.0, 1.0, 1.0);
 					self.redRangeRed = false;
+				elseif (notEnoughMana) then
+					icon:SetVertexColor(0.1, 0.3, 1.0);
+					normalTexture:SetVertexColor(0.1, 0.3, 1.0);
+					self.redRangeRed = false;
+				else
+					icon:SetVertexColor(0.4, 0.4, 0.4);
+					normalTexture:SetVertexColor(1.0, 1.0, 1.0);
+					self.redRangeRed = false;
 				end
-			elseif (notEnoughMana) then
-				local icon = self.icon;
-				local normalTexture = self.NormalTexture;
-				icon:SetVertexColor(0.1, 0.3, 1.0);
-				normalTexture:SetVertexColor(0.1, 0.3, 1.0);
 			end
 		end)
 		REDRANGEICONS_HOOKED = true
+	end
+end
+
+-- Function to desaturate the entire action icon when the spell is on cooldown
+function ClassicUI:HookGreyOnCooldownIcons()
+	if (not GREYONCOOLDOWN_HOOKED) then
+		function ActionButtonGreyOnCooldown_UpdateCooldown(self, expectedUpdate)
+			local icon = self.icon;
+			if (icon) then
+				local start, duration = GetActionCooldown(self.action);
+				if (duration >= 1.51) then
+					if ((not self.onCooldown) or (self.onCooldown == 0)) then
+						local nextTime = start + duration - GetTime() - 1.0;
+						if (nextTime < -1.0) then
+							nextTime = 0.05;
+						elseif (nextTime < 0) then
+							nextTime = -nextTime / 2;
+						end
+						C_Timer.After(nextTime, function()
+							ActionButtonGreyOnCooldown_UpdateCooldown(self, true);
+						end);
+					elseif (expectedUpdate) then
+						if ((not self.onCooldown) or (self.onCooldown < start + duration)) then
+							self.onCooldown = start + duration;
+						end
+						local nextTime = 0.05;
+						local timeRemains = self.onCooldown-GetTime();
+						if (timeRemains > 0.31) then
+							nextTime = timeRemains / 5;
+						elseif (timeRemains < 0) then
+							nextTime = 0.05;
+						end
+						C_Timer.After(nextTime, function()
+							ActionButtonGreyOnCooldown_UpdateCooldown(self, true);
+						end);
+					end
+					if ((not self.onCooldown) or (self.onCooldown < start + duration)) then
+						self.onCooldown = start + duration;
+					end
+					if (not icon:IsDesaturated()) then
+						icon:SetDesaturated(true);
+					end
+				else
+					self.onCooldown = 0;
+					if (icon:IsDesaturated()) then
+						icon:SetDesaturated(false);
+					end
+				end
+			end
+		end
+		-- We hook to 'ActionButton_UpdateCooldown' instead of 'ActionButton_OnUpdate' because 'ActionButton_OnUpdate' is much more expensive. So, we need use C_Timer.After to trigger the function when cooldown ends.
+		hooksecurefunc('ActionButton_UpdateCooldown', ActionButtonGreyOnCooldown_UpdateCooldown)
+		GREYONCOOLDOWN_HOOKED = true
 	end
 end
 
