@@ -1,7 +1,7 @@
 -- ------------------------------------------------------------ --
 -- Addon: ClassicUI                                             --
 --                                                              --
--- Version: 1.1.3                                               --
+-- Version: 1.1.4                                               --
 -- Author: Millán - C'Thun                                      --
 --                                                              --
 -- License: GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007 --
@@ -32,7 +32,7 @@ local SCALE_EPSILON = 0.0001
 ClassicUI.BAG_SIZE = 32
 ClassicUI.BAGS_WIDTH = (4*ClassicUI.BAG_SIZE+32)
 ClassicUI.ACTION_BAR_OFFSET = 48
-ClassicUI.VERSION = "1.1.3"
+ClassicUI.VERSION = "1.1.4"
 
 ClassicUI.cached_NumberVisibleBars = 0
 ClassicUI.cached_NumberRealVisibleBars = 0
