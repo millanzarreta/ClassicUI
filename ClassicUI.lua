@@ -1,7 +1,7 @@
 -- ------------------------------------------------------------ --
 -- Addon: ClassicUI                                             --
 --                                                              --
--- Version: 1.1.4                                               --
+-- Version: 1.1.5                                               --
 -- Author: Millán - C'Thun                                      --
 --                                                              --
 -- License: GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007 --
@@ -32,7 +32,7 @@ local SCALE_EPSILON = 0.0001
 ClassicUI.BAG_SIZE = 32
 ClassicUI.BAGS_WIDTH = (4*ClassicUI.BAG_SIZE+32)
 ClassicUI.ACTION_BAR_OFFSET = 48
-ClassicUI.VERSION = "1.1.4"
+ClassicUI.VERSION = "1.1.5"
 
 ClassicUI.cached_NumberVisibleBars = 0
 ClassicUI.cached_NumberRealVisibleBars = 0
@@ -1984,8 +1984,9 @@ function ClassicUI:HookGreyOnCooldownIcons()
 	if (not GREYONCOOLDOWN_HOOKED) then
 		function ActionButtonGreyOnCooldown_UpdateCooldown(self, expectedUpdate)
 			local icon = self.icon;
-			if (icon) then
-				local start, duration = GetActionCooldown(self.action);
+			local action = self.action
+			if (icon and action) then
+				local start, duration = GetActionCooldown(action);
 				if (duration >= 1.51) then
 					if ((not self.onCooldown) or (self.onCooldown == 0)) then
 						local nextTime = start + duration - GetTime() - 1.0;
@@ -2061,7 +2062,7 @@ function ClassicUI:HookOpenGuildPanelMode()
 
 		-- Set hook to open new or old menu (this hook work on keybinds, guild alert click, ...)
 		hooksecurefunc("ToggleGuildFrame", function(self)
-			if (ClassicUI.db.profile.extraConfigs.GuildPanelMode.defauiltOpenOldMenu) then
+			if ((not InCombatLockdown()) and (ClassicUI.db.profile.extraConfigs.GuildPanelMode.defauiltOpenOldMenu)) then
 				ToggleNewGuildFrame()
 				ToggleOldGuildFrame()
 			end
@@ -2069,15 +2070,17 @@ function ClassicUI:HookOpenGuildPanelMode()
 
 		--Set GuildMicroButton click specific hook
 		GuildMicroButton:HookScript('OnClick', function(self, button)
-			if (button == 'RightButton') then
-				if (ClassicUI.db.profile.extraConfigs.GuildPanelMode.rightClickMicroButtonOpenOldMenu) then
-					ToggleNewGuildFrame()
-					ToggleOldGuildFrame()
-				end
-			else
-				if (ClassicUI.db.profile.extraConfigs.GuildPanelMode.leftClickMicroButtonOpenOldMenu) then
-					ToggleNewGuildFrame()
-					ToggleOldGuildFrame()
+			if not InCombatLockdown() then
+				if (button == 'RightButton') then
+					if (ClassicUI.db.profile.extraConfigs.GuildPanelMode.rightClickMicroButtonOpenOldMenu) then
+						ToggleNewGuildFrame()
+						ToggleOldGuildFrame()
+					end
+				else
+					if (ClassicUI.db.profile.extraConfigs.GuildPanelMode.leftClickMicroButtonOpenOldMenu) then
+						ToggleNewGuildFrame()
+						ToggleOldGuildFrame()
+					end
 				end
 			end
 		end)

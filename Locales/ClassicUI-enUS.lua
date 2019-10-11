@@ -109,7 +109,7 @@ L['Enable LossOfControlUI Remover'] = true
 
 L['RELOADUI_MSG'] = '|cffffd200ClassicUI|r\n\n|cffff0000ReloadUI:|r To apply this action an interface reload is needed. If you wish to continue with this operation, push \'Accept\', otherwise push \'Cancel\' or the \'Escape\' key'
 L['EXTRA_OPTIONS_DESC'] = 'Some Addons already incorporate these extra features. Before activating any extra functionality in ClassicUI check that no other Addon already performs the same function, otherwise some errors or unexpected behaviours could occur.'
-L['GUILD_PANEL_MODE_OPTIONS_DESC'] = 'This additional functionality allows you to recover the old guild panel. You can select open the old guild panel by means of some access modes (keybind, left or right click on the guild microbutton, ...) and conserve other access modes to continue accessing the new social guild panel'
+L['GUILD_PANEL_MODE_OPTIONS_DESC'] = 'This additional functionality allows you to recover the old guild panel. You can select open the old guild panel by means of some access modes (keybind, left or right click on the guild microbutton, ...) and conserve other access modes to continue accessing the new social guild panel. If we are in combat the new social guild panel is always opened because the old guild panel frame is protected by Blizzard and can not be opened in combat.'
 L['OPEN_GUILD_PANEL_NORMAL'] = 'Default mode to open guild panel...'
 L['OPEN_GUILD_PANEL_NORMAL_DESC'] = 'Select how the default guild panel is opened (when open it with keybind for example)'
 L['OPEN_GUILD_PANEL_LEFT_MICROBUTTON_CLICK'] = 'By left clicking the guild microbutton...'
@@ -119,8 +119,8 @@ L['OPEN_GUILD_PANEL_RIGHT_MICROBUTTON_CLICK_DESC'] = 'Select how the guild panel
 L['KEYBINDS_VISIBILITY_OPTIONS_DESC'] = 'This extra option allows hide the Keybinds Text from Action Buttons. You can hide keybinds but show the dot range or hide completly all keybinds. You can also select hide the ActionButtons Names.'
 L['KEYBINDS_VISIBILITY_OPTIONS_SELECT_DESC'] = 'Select if you want hide the keybinds from action bars'
 L['HIDE_ACTIONBUTTONS_NAME_DESC'] = 'Select if you want hide the ActionButtons Names, which is usually shown when a macro is assigned to an ActionButton'
-L['REDRANGE_OPTIONS_DESC'] = 'Enable this option to show the entire icon in red when the spell is not at range instead of only show in red the keybind text'
-L['GREYONCOOLDOWN_OPTIONS_DESC'] = 'Enable this option to show the icon desaturated when the spell is on cooldown'
+L['REDRANGE_OPTIONS_DESC'] = 'Enable this option to show the entire icon in red when the spell is not at range instead of only show in red the keybind text.'
+L['GREYONCOOLDOWN_OPTIONS_DESC'] = 'Enable this option to show the icon desaturated when the spell is on cooldown.'
 L['LOSSOFCONTROLUI_OPTION_DESC'] = 'When you suffer a CC effect, the default behaviour of your action bars is to establish a Cooldown according to the time of the CC. This can be annoying for some players. You can enable this extra option to remove the cooldown on bars for CC effects.'
 
 L['CLASSICUI_HELP_LINE1'] = 'Available slash commands:'
