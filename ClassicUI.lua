@@ -1,7 +1,7 @@
 -- ------------------------------------------------------------ --
 -- Addon: ClassicUI                                             --
 --                                                              --
--- Version: 1.1.5                                               --
+-- Version: 1.1.6                                               --
 -- Author: Millán - C'Thun                                      --
 --                                                              --
 -- License: GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007 --
@@ -32,7 +32,7 @@ local SCALE_EPSILON = 0.0001
 ClassicUI.BAG_SIZE = 32
 ClassicUI.BAGS_WIDTH = (4*ClassicUI.BAG_SIZE+32)
 ClassicUI.ACTION_BAR_OFFSET = 48
-ClassicUI.VERSION = "1.1.5"
+ClassicUI.VERSION = "1.1.6"
 
 ClassicUI.cached_NumberVisibleBars = 0
 ClassicUI.cached_NumberRealVisibleBars = 0
@@ -187,7 +187,8 @@ ClassicUI.defaults = {
 				enabled = false
 			},
 			['GreyOnCooldownConfig'] = {
-				enabled = false
+				enabled = false,
+				minDuration = 1.51
 			},
 			['LossOfControlUIConfig'] = {
 				enabled = false
@@ -1983,46 +1984,46 @@ end
 function ClassicUI:HookGreyOnCooldownIcons()
 	if (not GREYONCOOLDOWN_HOOKED) then
 		function ActionButtonGreyOnCooldown_UpdateCooldown(self, expectedUpdate)
-			local icon = self.icon;
+			local icon = self.icon
 			local action = self.action
 			if (icon and action) then
-				local start, duration = GetActionCooldown(action);
-				if (duration >= 1.51) then
+				local start, duration = GetActionCooldown(action)
+				if (duration >= ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.minDuration) then
 					if ((not self.onCooldown) or (self.onCooldown == 0)) then
-						local nextTime = start + duration - GetTime() - 1.0;
+						local nextTime = start + duration - GetTime() - 1.0
 						if (nextTime < -1.0) then
-							nextTime = 0.05;
+							nextTime = 0.05
 						elseif (nextTime < 0) then
-							nextTime = -nextTime / 2;
+							nextTime = -nextTime / 2
 						end
 						C_Timer.After(nextTime, function()
-							ActionButtonGreyOnCooldown_UpdateCooldown(self, true);
-						end);
+							ActionButtonGreyOnCooldown_UpdateCooldown(self, action)
+						end)
 					elseif (expectedUpdate) then
 						if ((not self.onCooldown) or (self.onCooldown < start + duration)) then
-							self.onCooldown = start + duration;
+							self.onCooldown = start + duration
 						end
-						local nextTime = 0.05;
-						local timeRemains = self.onCooldown-GetTime();
+						local nextTime = 0.05
+						local timeRemains = self.onCooldown-GetTime()
 						if (timeRemains > 0.31) then
-							nextTime = timeRemains / 5;
+							nextTime = timeRemains / 5
 						elseif (timeRemains < 0) then
-							nextTime = 0.05;
+							nextTime = 0.05
 						end
 						C_Timer.After(nextTime, function()
-							ActionButtonGreyOnCooldown_UpdateCooldown(self, true);
-						end);
+							ActionButtonGreyOnCooldown_UpdateCooldown(self, action)
+						end)
 					end
 					if ((not self.onCooldown) or (self.onCooldown < start + duration)) then
-						self.onCooldown = start + duration;
+						self.onCooldown = start + duration
 					end
 					if (not icon:IsDesaturated()) then
-						icon:SetDesaturated(true);
+						icon:SetDesaturated(true)
 					end
 				else
-					self.onCooldown = 0;
+					self.onCooldown = 0
 					if (icon:IsDesaturated()) then
-						icon:SetDesaturated(false);
+						icon:SetDesaturated(false)
 					end
 				end
 			end

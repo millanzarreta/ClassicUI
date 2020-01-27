@@ -26,6 +26,8 @@ L['yOffset'] = 'yOffset'
 L['xSize'] = 'xSize'
 L['ySize'] = 'ySize'
 
+L["Default"] = 'Por defecto'
+L['DefaultDesc'] = 'Establece la opción a su valor por defecto'
 L['Configure Frames'] = 'Configurar Frames'
 L['MainMenuBar'] = true
 L['GargoyleFrames'] = true
@@ -104,6 +106,8 @@ L['RedRange'] = 'RedRange'
 L['Enable RedRange'] = 'Activar RedRange'
 L['GreyOnCooldown'] = 'GreyOnCooldown'
 L['Enable GreyOnCooldown'] = 'Activar GreyOnCooldown'
+L['minDuration'] = 'minDuration'
+L['minDurationDesc'] = 'Establece el valor mínimo (en segundos) del cooldown para ser desaturado'
 L['LossOfControlUI CC Remover'] = 'LossOfControlUI CC Remover'
 L['Enable LossOfControlUI Remover'] = 'Activar LossOfControlUI Remover'
 

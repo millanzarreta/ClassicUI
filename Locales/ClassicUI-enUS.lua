@@ -26,6 +26,8 @@ L['yOffset'] = true
 L['xSize'] = true
 L['ySize'] = true
 
+L["Default"] = true
+L['DefaultDesc'] = 'Set option to the default value'
 L['Configure Frames'] = true
 L['MainMenuBar'] = true
 L['GargoyleFrames'] = true
@@ -104,6 +106,8 @@ L['RedRange'] = true
 L['Enable RedRange'] = true
 L['GreyOnCooldown'] = true
 L['Enable GreyOnCooldown'] = true
+L['minDuration'] = true
+L['minDurationDesc'] = 'Set the minimum value (in seconds) of the cooldown to be desaturated'
 L['LossOfControlUI CC Remover'] = true
 L['Enable LossOfControlUI Remover'] = true
 

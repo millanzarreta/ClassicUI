@@ -2228,6 +2228,34 @@ ClassicUI.optionsTable = {
 								end
 							end
 						},
+						Spacer3 = {
+							type = "description",
+							order = 9,
+							name = ""
+						},
+						minDuration = {
+							order = 10,
+							type = "range",
+							width = "double",
+							min = 0.01,
+							softMin = 0.01,
+							softMax = 12,
+							step = 0.01,
+							bigStep = 0.05,
+							name = L['minDuration'],
+							desc = L['minDurationDesc'],
+							get = function() return ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.minDuration end,
+							set = function(_,value)
+								ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.minDuration = value
+							end
+						},
+						minDurationToDefault = {
+							order = 11,
+							type = "execute",
+							name = L["Default"],
+							desc = L["DefaultDesc"],
+							func  = function() ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.minDuration = ClassicUI.defaults.profile.extraConfigs.GreyOnCooldownConfig.minDuration end
+						}
 					}
 				},
 				LossOfControlUIOptions = {
