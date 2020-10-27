@@ -1,7 +1,7 @@
 -- ------------------------------------------------------------ --
 -- Addon: ClassicUI                                             --
 --                                                              --
--- Version: 1.1.6                                               --
+-- Version: 1.1.7                                               --
 -- Author: Millán - C'Thun                                      --
 --                                                              --
 -- License: GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007 --
@@ -27,12 +27,21 @@ local _G = _G
 local _
 local STANDARD_EPSILON = 0.0001
 local SCALE_EPSILON = 0.0001
+local tblinsert = table.insert
+local tblsort = table.sort
+local mathfloor = math.floor
+local mathabs = math.abs
+local strfind = string.find
+local strgsub = string.gsub
+local type = type
+local GetAddOnInfo = GetAddOnInfo
+local IsEquippedAction = IsEquippedAction
 
 -- Global variables
 ClassicUI.BAG_SIZE = 32
 ClassicUI.BAGS_WIDTH = (4*ClassicUI.BAG_SIZE+32)
 ClassicUI.ACTION_BAR_OFFSET = 48
-ClassicUI.VERSION = "1.1.6"
+ClassicUI.VERSION = "1.1.7"
 
 ClassicUI.cached_NumberVisibleBars = 0
 ClassicUI.cached_NumberRealVisibleBars = 0
@@ -41,6 +50,7 @@ ClassicUI.cached_SingleStatusBar_hide = nil
 ClassicUI.cached_LastMainMenuBarPoint = { "BOTTOM", UIParent, "BOTTOM", 0, MainMenuBar and MainMenuBar:GetYOffset() or 14 }
 ClassicUI.TitanPanelIsPresent = false
 ClassicUI.LibJostleIsPresent = false
+ClassicUI.LortiUIIsPresent = false
 ClassicUI.TitanPanelBottomBarsYOffset = 0
 ClassicUI.MultiBarBottomRightButtonsBackgroundsCreated = false
 
@@ -74,7 +84,8 @@ ClassicUI.defaults = {
 				model = 0	-- 0 = Gryphon, 1 = Lion
 			},
 			['MainMenuBar'] = {
-				scale = 1
+				scale = 1,
+				hideLatencyBar = false
 			},
 			['OverrideActionBar'] = {
 				scale = 1
@@ -175,7 +186,7 @@ ClassicUI.defaults = {
 		extraConfigs = {
 			['forceExtraOptions'] = false,
 			['GuildPanelMode'] = {
-				defauiltOpenOldMenu = false,
+				defaultOpenOldMenu = false,
 				leftClickMicroButtonOpenOldMenu = false, 
 				rightClickMicroButtonOpenOldMenu = false
 			},
@@ -377,8 +388,8 @@ end
 -- This function gets the extra width needed to some frames when the MultiBarBottomRight is hidden
 function ClassicUI:GetExtraWidth()
 	local extraWidth
-	if (math.floor(MainMenuBar:GetWidth()+0.5) < 804) then
-		extraWidth = 804 - math.floor(MainMenuBar:GetWidth()+0.5)
+	if (mathfloor(MainMenuBar:GetWidth()+0.5) < 804) then
+		extraWidth = 804 - mathfloor(MainMenuBar:GetWidth()+0.5)
 	else
 		extraWidth = 0
 	end
@@ -388,17 +399,95 @@ end
 -- Function to move the MicroButtons but only when needed
 function ClassicUI:MoveMicroButtons(point, relativeFrame, relativePoint, ofsx, ofsy, isStacked)
 	local anchor, anchorTo, relAnchor, x, y = CharacterMicroButton:GetPoint()
-	if ((anchor ~= point) or (anchorTo ~= relativeFrame) or (relAnchor ~= relativePoint) or (math.abs(x-ofsx) > STANDARD_EPSILON) or (math.abs(y-ofsy) > STANDARD_EPSILON)) then
+	if ((anchor ~= point) or (anchorTo ~= relativeFrame) or (relAnchor ~= relativePoint) or (mathabs(x-ofsx) > STANDARD_EPSILON) or (mathabs(y-ofsy) > STANDARD_EPSILON)) then
 		MoveMicroButtons(point, relativeFrame, relativePoint, ofsx, ofsy, isStacked);
 	else
 		local anchor2, anchorTo2, relAnchor2, x2, y2 = LFDMicroButton:GetPoint()
 		if (isStacked) then
-			if ((anchor2 ~= "TOPLEFT") or (anchorTo2 ~= CharacterMicroButton) or (relAnchor2 ~= "BOTTOMLEFT") or (math.abs(x2) > STANDARD_EPSILON) or (math.abs(y2+1) > STANDARD_EPSILON)) then
+			if ((anchor2 ~= "TOPLEFT") or (anchorTo2 ~= CharacterMicroButton) or (relAnchor2 ~= "BOTTOMLEFT") or (mathabs(x2) > STANDARD_EPSILON) or (mathabs(y2+1) > STANDARD_EPSILON)) then
 				MoveMicroButtons(point, relativeFrame, relativePoint, ofsx, ofsy, true);
 			end
 		else
-			if ((anchor2 ~= "BOTTOMLEFT") or (anchorTo2 ~= GuildMicroButton) or (relAnchor2 ~= "BOTTOMRIGHT") or (math.abs(x2+2) > STANDARD_EPSILON) or (math.abs(y2) > STANDARD_EPSILON)) then
+			if ((anchor2 ~= "BOTTOMLEFT") or (anchorTo2 ~= GuildMicroButton) or (relAnchor2 ~= "BOTTOMRIGHT") or (mathabs(x2+2) > STANDARD_EPSILON) or (mathabs(y2) > STANDARD_EPSILON)) then
 				MoveMicroButtons(point, relativeFrame, relativePoint, ofsx, ofsy, false);
+			end
+		end
+	end
+end
+
+-- Function to set a new alpha value to all ActionButtonsNormalTexture
+function ClassicUI:SetActionButtonNormalTextureAlphaValue(newAlphaValue)
+	local LFUNC_EPSILON = 0.0025
+	for i = 1, 12 do
+		local actionButtonNormalTexture
+		actionButtonNormalTexture = _G["ExtraActionButton"..i.."NormalTexture"]
+		if (actionButtonNormalTexture) then
+			local actionButtonNormalTextureAlpha = actionButtonNormalTexture:GetAlpha()
+			if (actionButtonNormalTextureAlpha ~= nil and mathabs(newAlphaValue-actionButtonNormalTextureAlpha) > LFUNC_EPSILON) then
+				actionButtonNormalTexture:SetAlpha(newAlphaValue)
+			end
+		end
+		actionButtonNormalTexture = _G["ActionButton"..i.."NormalTexture"]
+		if (actionButtonNormalTexture) then
+			local actionButtonNormalTextureAlpha = actionButtonNormalTexture:GetAlpha()
+			if (actionButtonNormalTextureAlpha ~= nil and mathabs(newAlphaValue-actionButtonNormalTextureAlpha) > LFUNC_EPSILON) then
+				actionButtonNormalTexture:SetAlpha(newAlphaValue)
+			end
+		end
+		actionButtonNormalTexture = _G["MultiBarBottomLeftButton"..i.."NormalTexture"]
+		if (actionButtonNormalTexture) then
+			local actionButtonNormalTextureAlpha = actionButtonNormalTexture:GetAlpha()
+			if (actionButtonNormalTextureAlpha ~= nil and mathabs(newAlphaValue-actionButtonNormalTextureAlpha) > LFUNC_EPSILON) then
+				actionButtonNormalTexture:SetAlpha(newAlphaValue)
+			end
+		end
+		actionButtonNormalTexture = _G["MultiBarBottomRightButton"..i.."NormalTexture"]
+		if (actionButtonNormalTexture) then
+			local actionButtonNormalTextureAlpha = actionButtonNormalTexture:GetAlpha()
+			if (actionButtonNormalTextureAlpha ~= nil and mathabs(newAlphaValue-actionButtonNormalTextureAlpha) > LFUNC_EPSILON) then
+				actionButtonNormalTexture:SetAlpha(newAlphaValue)
+			end
+		end
+		actionButtonNormalTexture = _G["MultiBarLeftButton"..i.."NormalTexture"]
+		if (actionButtonNormalTexture) then
+			local actionButtonNormalTextureAlpha = actionButtonNormalTexture:GetAlpha()
+			if (actionButtonNormalTextureAlpha ~= nil and mathabs(newAlphaValue-actionButtonNormalTextureAlpha) > LFUNC_EPSILON) then
+				actionButtonNormalTexture:SetAlpha(newAlphaValue)
+			end
+		end
+		actionButtonNormalTexture = _G["MultiBarRightButton"..i.."NormalTexture"]
+		if (actionButtonNormalTexture) then
+			local actionButtonNormalTextureAlpha = actionButtonNormalTexture:GetAlpha()
+			if (actionButtonNormalTextureAlpha ~= nil and mathabs(newAlphaValue-actionButtonNormalTextureAlpha) > LFUNC_EPSILON) then
+				actionButtonNormalTexture:SetAlpha(newAlphaValue)
+			end
+		end
+		actionButtonNormalTexture = _G["PetActionButton"..i.."NormalTexture"]
+		if (actionButtonNormalTexture) then
+			local actionButtonNormalTextureAlpha = actionButtonNormalTexture:GetAlpha()
+			if (actionButtonNormalTextureAlpha ~= nil and mathabs(newAlphaValue-actionButtonNormalTextureAlpha) > LFUNC_EPSILON) then
+				actionButtonNormalTexture:SetAlpha(newAlphaValue)
+			end
+		end
+		actionButtonNormalTexture = _G["StanceButton"..i.."NormalTexture"]
+		if (actionButtonNormalTexture) then
+			local actionButtonNormalTextureAlpha = actionButtonNormalTexture:GetAlpha()
+			if (actionButtonNormalTextureAlpha ~= nil and mathabs(newAlphaValue-actionButtonNormalTextureAlpha) > LFUNC_EPSILON) then
+				actionButtonNormalTexture:SetAlpha(newAlphaValue)
+			end
+		end
+		actionButtonNormalTexture =  _G["PossessButton"..i.."NormalTexture"]
+		if (actionButtonNormalTexture) then
+			local actionButtonNormalTextureAlpha = actionButtonNormalTexture:GetAlpha()
+			if (actionButtonNormalTextureAlpha ~= nil and mathabs(newAlphaValue-actionButtonNormalTextureAlpha) > LFUNC_EPSILON) then
+				actionButtonNormalTexture:SetAlpha(newAlphaValue)
+			end
+		end
+		actionButtonNormalTexture =  _G["OverrideActionBarButton"..i.."NormalTexture"]
+		if (actionButtonNormalTexture) then
+			local actionButtonNormalTextureAlpha = actionButtonNormalTexture:GetAlpha()
+			if (actionButtonNormalTextureAlpha ~= nil and mathabs(newAlphaValue-actionButtonNormalTextureAlpha) > LFUNC_EPSILON) then
+				actionButtonNormalTexture:SetAlpha(newAlphaValue)
 			end
 		end
 	end
@@ -460,6 +549,254 @@ function ClassicUI:CheckLibJostle()
 	end
 end
 
+--  LortiUI Configuration presets
+ClassicUI.LortiUI_cfg = {
+	textures = {
+		normal = "Interface\\AddOns\\Lorti-UI\\textures\\gloss",
+		flash = "Interface\\AddOns\\Lorti-UI\\textures\\flash",
+		pushed = "Interface\\AddOns\\Lorti-UI\\textures\\pushed",
+		buttonback = "Interface\\AddOns\\Lorti-UI\\textures\\button_background",
+		buttonbackflat = "Interface\\AddOns\\Lorti-UI\\textures\\button_background_flat",
+		outer_shadow = "Interface\\AddOns\\Lorti-UI\\textures\\outer_shadow",
+	},
+	background = {
+		showbg = true,
+		showshadow = true,
+		useflatbackground = false,
+		backgroundcolor = { r = 0.2, g = 0.2, b = 0.2, a = 0.3},
+		shadowcolor = { r = 0, g = 0, b = 0, a = 0.9},
+		classcolored = false,
+		inset = 5,
+	},
+	color = {
+		normal = { r = 0.37, g = 0.3, b = 0.3, },
+		equipped = { r = 0.1, g = 0.5, b = 0.1, },
+	},
+	hotkeys = {
+		show = true,
+		fontsize = 12,
+		pos1 = { a1 = "TOPRIGHT", x = 0, y = 0 },
+		pos2 = { a1 = "TOPLEFT", x = 0, y = 0 },
+	},
+	macroname = {
+		show = false,
+		fontsize = 12,
+		pos1 = { a1 = "BOTTOMLEFT", x = 0, y = 0 },
+		pos2 = { a1 = "BOTTOMRIGHT", x = 0, y = 0 },
+	},
+	itemcount = {
+		show = true,
+		fontsize = 12,
+		pos1 = { a1 = "BOTTOMRIGHT", x = 0, y = 0 },
+	},
+	cooldown = {
+		spacing = 0,
+	},
+	font = STANDARD_TEXT_FONT
+}
+
+-- LortiUI function to apply the addon background to an actionButton
+function ClassicUI:LortiUI_applyBackground(bu)
+	if not bu or (bu and bu.bg) then return end
+	-- LortiUI: shadows+background
+	if bu:GetFrameLevel() < 1 then bu:SetFrameLevel(1) end
+	if ClassicUI.LortiUI_cfg.background.showbg or ClassicUI.LortiUI_cfg.background.showshadow then
+		bu.bg = CreateFrame("Frame", nil, bu, BackdropTemplateMixin and "BackdropTemplate" or nil)
+		bu.bg:SetPoint("TOPLEFT", bu, "TOPLEFT", -4, 4)
+		bu.bg:SetPoint("BOTTOMRIGHT", bu, "BOTTOMRIGHT", 4, -4)
+		bu.bg:SetFrameLevel(bu:GetFrameLevel()-1)
+		if ClassicUI.LortiUI_cfg.background.classcolored then
+			ClassicUI.LortiUI_cfg.background.backgroundcolor = classcolor
+			ClassicUI.LortiUI_cfg.background.shadowcolor = classcolor
+		end
+		if ClassicUI.LortiUI_cfg.background.showbg and not ClassicUI.LortiUI_cfg.background.useflatbackground then
+			local t = bu.bg:CreateTexture(nil,"BACKGROUND",-8)
+			t:SetTexture(ClassicUI.LortiUI_cfg.textures.buttonback)
+			t:SetVertexColor(ClassicUI.LortiUI_cfg.background.backgroundcolor.r,ClassicUI.LortiUI_cfg.background.backgroundcolor.g,ClassicUI.LortiUI_cfg.background.backgroundcolor.b,ClassicUI.LortiUI_cfg.background.backgroundcolor.a)
+		end
+		-- LortiUI: create and set backdrop
+		local bgfile, edgefile = "", ""
+		if ClassicUI.LortiUI_cfg.background.showshadow then edgefile = ClassicUI.LortiUI_cfg.textures.outer_shadow end
+		if ClassicUI.LortiUI_cfg.background.useflatbackground and ClassicUI.LortiUI_cfg.background.showbg then bgfile = ClassicUI.LortiUI_cfg.textures.buttonbackflat end
+		local backdrop = {
+			bgFile = bgfile,
+			edgeFile = edgefile,
+			tile = false,
+			tileSize = 32,
+			edgeSize = ClassicUI.LortiUI_cfg.background.inset,
+			insets = {
+				left = ClassicUI.LortiUI_cfg.background.inset,
+				right = ClassicUI.LortiUI_cfg.background.inset,
+				top = ClassicUI.LortiUI_cfg.background.inset,
+				bottom = ClassicUI.LortiUI_cfg.background.inset,
+			},
+		}
+		bu.bg:SetBackdrop(backdrop)
+		if ClassicUI.LortiUI_cfg.background.useflatbackground then
+			bu.bg:SetBackdropColor(ClassicUI.LortiUI_cfg.background.backgroundcolor.r,ClassicUI.LortiUI_cfg.background.backgroundcolor.g,ClassicUI.LortiUI_cfg.background.backgroundcolor.b,ClassicUI.LortiUI_cfg.background.backgroundcolor.a)
+		end
+		if ClassicUI.LortiUI_cfg.background.showshadow then
+			bu.bg:SetBackdropBorderColor(ClassicUI.LortiUI_cfg.background.shadowcolor.r,ClassicUI.LortiUI_cfg.background.shadowcolor.g,ClassicUI.LortiUI_cfg.background.shadowcolor.b,ClassicUI.LortiUI_cfg.background.shadowcolor.a)
+		end
+	end
+end
+ 
+-- LortiUI function to apply the addon style to an actionButton
+function ClassicUI:LortiUI_styleActionButton(bu)
+	if not bu or (bu and bu.rabs_styled) then return end
+	local action = bu.action
+	local name = bu:GetName()
+	local ic  = _G[name.."Icon"]
+	local co  = _G[name.."Count"]
+	local bo  = _G[name.."Border"]
+	local ho  = _G[name.."HotKey"]
+	local cd  = _G[name.."Cooldown"]
+	local na  = _G[name.."Name"]
+	local fl  = _G[name.."Flash"]
+	local nt  = _G[name.."NormalTexture"]
+	local fbg  = _G[name.."FloatingBG"]
+	local fob = _G[name.."FlyoutBorder"]
+	local fobs = _G[name.."FlyoutBorderShadow"]
+	-- LortiUI: floating background
+	if fbg then fbg:Hide() end
+	-- LortiUI: flyout border stuff
+	if fob then fob:SetTexture(nil) end
+	if fobs then fobs:SetTexture(nil) end
+	-- LortiUI: hide the border (plain ugly, sry blizz)
+	bo:SetTexture(nil)
+	-- LortiUI: hotkey
+	ho:SetFont(ClassicUI.LortiUI_cfg.font, ClassicUI.LortiUI_cfg.hotkeys.fontsize, "OUTLINE")
+	ho:ClearAllPoints()
+	ho:SetPoint(ClassicUI.LortiUI_cfg.hotkeys.pos1.a1,bu,ClassicUI.LortiUI_cfg.hotkeys.pos1.x,ClassicUI.LortiUI_cfg.hotkeys.pos1.y)
+	ho:SetPoint(ClassicUI.LortiUI_cfg.hotkeys.pos2.a1,bu,ClassicUI.LortiUI_cfg.hotkeys.pos2.x,ClassicUI.LortiUI_cfg.hotkeys.pos2.y)
+
+	-- LortiUI: macro name
+	na:SetFont(ClassicUI.LortiUI_cfg.font, ClassicUI.LortiUI_cfg.macroname.fontsize, "OUTLINE")
+	na:ClearAllPoints()
+	na:SetPoint(ClassicUI.LortiUI_cfg.macroname.pos1.a1,bu,ClassicUI.LortiUI_cfg.macroname.pos1.x,ClassicUI.LortiUI_cfg.macroname.pos1.y)
+	na:SetPoint(ClassicUI.LortiUI_cfg.macroname.pos2.a1,bu,ClassicUI.LortiUI_cfg.macroname.pos2.x,ClassicUI.LortiUI_cfg.macroname.pos2.y)
+
+	-- LortiUI: item stack count
+	co:SetFont(ClassicUI.LortiUI_cfg.font, ClassicUI.LortiUI_cfg.itemcount.fontsize, "OUTLINE")
+	co:ClearAllPoints()
+	co:SetPoint(ClassicUI.LortiUI_cfg.itemcount.pos1.a1,bu,ClassicUI.LortiUI_cfg.itemcount.pos1.x,ClassicUI.LortiUI_cfg.itemcount.pos1.y)
+	if not dominos and not bartender4 and not ClassicUI.LortiUI_cfg.itemcount.show then
+		co:Hide()
+	end
+	-- LortiUI: applying the textures
+	fl:SetTexture(ClassicUI.LortiUI_cfg.textures.flash)
+	bu:SetPushedTexture(ClassicUI.LortiUI_cfg.textures.pushed)
+	bu:SetNormalTexture(ClassicUI.LortiUI_cfg.textures.normal)
+	if not nt then
+		-- LortiUI: fix the non existent texture problem (no clue what is causing this)
+		nt = bu:GetNormalTexture()
+	end
+	-- LortiUI: cut the default border of the icons and make them shiny
+	ic:SetTexCoord(0.1,0.9,0.1,0.9)
+	ic:SetPoint("TOPLEFT", bu, "TOPLEFT", 2, -2)
+	ic:SetPoint("BOTTOMRIGHT", bu, "BOTTOMRIGHT", -2, 2)
+	-- LortiUI: adjust the cooldown frame
+	cd:SetPoint("TOPLEFT", bu, "TOPLEFT", ClassicUI.LortiUI_cfg.cooldown.spacing, -ClassicUI.LortiUI_cfg.cooldown.spacing)
+	cd:SetPoint("BOTTOMRIGHT", bu, "BOTTOMRIGHT", -ClassicUI.LortiUI_cfg.cooldown.spacing, ClassicUI.LortiUI_cfg.cooldown.spacing)
+	-- LortiUI: apply the normaltexture
+	if action and  IsEquippedAction(action) then
+		nt:SetVertexColor(ClassicUI.LortiUI_cfg.color.equipped.r,ClassicUI.LortiUI_cfg.color.equipped.g,ClassicUI.LortiUI_cfg.color.equipped.b,1)
+	else
+		bu:SetNormalTexture(ClassicUI.LortiUI_cfg.textures.normal)
+		nt:SetVertexColor(ClassicUI.LortiUI_cfg.color.normal.r,ClassicUI.LortiUI_cfg.color.normal.g,ClassicUI.LortiUI_cfg.color.normal.b,1)
+	end
+	-- LortiUI: make the normaltexture match the buttonsize
+	nt:SetAllPoints(bu)
+	-- LortiUI: hook to prevent Blizzard from reseting our colors
+	hooksecurefunc(nt, "SetVertexColor", function(nt, r, g, b, a)
+		local bu = nt:GetParent()
+		local action = bu.action
+		if r==1 and g==1 and b==1 and action and (IsEquippedAction(action)) then
+			if ClassicUI.LortiUI_cfg.color.equipped.r == 1 and  ClassicUI.LortiUI_cfg.color.equipped.g == 1 and  ClassicUI.LortiUI_cfg.color.equipped.b == 1 then
+				nt:SetVertexColor(0.999,0.999,0.999,1)
+			else
+				nt:SetVertexColor(ClassicUI.LortiUI_cfg.color.equipped.r,ClassicUI.LortiUI_cfg.color.equipped.g,ClassicUI.LortiUI_cfg.color.equipped.b,1)
+			end
+		elseif r==0.5 and g==0.5 and b==1 then
+			-- LortiUI: blizzard oom color
+			if ClassicUI.LortiUI_cfg.color.normal.r == 0.5 and  ClassicUI.LortiUI_cfg.color.normal.g == 0.5 and  ClassicUI.LortiUI_cfg.color.normal.b == 1 then
+				nt:SetVertexColor(0.499,0.499,0.999,1)
+			else
+				nt:SetVertexColor(ClassicUI.LortiUI_cfg.color.normal.r,ClassicUI.LortiUI_cfg.color.normal.g,ClassicUI.LortiUI_cfg.color.normal.b,1)
+			end
+		elseif r==1 and g==1 and b==1 then
+			if ClassicUI.LortiUI_cfg.color.normal.r == 1 and  ClassicUI.LortiUI_cfg.color.normal.g == 1 and  ClassicUI.LortiUI_cfg.color.normal.b == 1 then
+				nt:SetVertexColor(0.999,0.999,0.999,1)
+			else
+				nt:SetVertexColor(ClassicUI.LortiUI_cfg.color.normal.r,ClassicUI.LortiUI_cfg.color.normal.g,ClassicUI.LortiUI_cfg.color.normal.b,1)
+			end
+		end
+	end)
+	-- LortiUI: shadows+background
+	if not bu.bg then ClassicUI:LortiUI_applyBackground(bu) end
+	bu.rabs_styled = true
+end
+
+-- Function to fast-check if Lorti UI addon is present
+function ClassicUI:CheckLortiUI()
+	if (ClassicUI.LortiUIIsPresent) then
+		return true
+	else
+		if ((LortiUI == nil) and (not ActionButton1.rabs_styled)) then
+			return false
+		else
+			local _, _, _, deprecatedLortiUIEnabled = GetAddOnInfo("Lorti UI")
+			if ((LortiUI ~= nil) or (deprecatedLortiUIEnabled)) then
+				C_Timer.After(8, function()	-- delay checking to make sure all variables of the other addons are loaded
+					local ib = MultiBarBottomRightButton7
+					if ib and ib:GetNormalTexture() then
+						local normalTextureTxt = ib:GetNormalTexture():GetTexture()
+						if ((type(normalTextureTxt) == "string") and (normalTextureTxt ~= "")) then
+							if strfind(normalTextureTxt, "Lorti UI") then
+								for k, v in pairs(ClassicUI.LortiUI_cfg.textures) do
+									ClassicUI.LortiUI_cfg.textures[k] = strgsub(v, "Lorti%-UI", "Lorti UI", 1)
+								end
+							end
+						end
+					end
+					for i = 1, 6 do
+						local multiButton = _G["CUI_MultiBarBottomRightButton"..i.."Background"]
+						if (multiButton ~= nil) then
+							ClassicUI:LortiUI_styleActionButton(multiButton)
+						end
+					end
+					if (MainMenuBarArtFrameBackground.BackgroundLarge:GetVertexColor() < 0.95) then
+						local r, g, b = MainMenuBarArtFrameBackground.BackgroundLarge:GetVertexColor()
+						if (MainMenuBarArtFrameBackground.BackgroundLarge2 ~= nil) then
+							MainMenuBarArtFrameBackground.BackgroundLarge2:SetVertexColor(r, g, b)
+						end
+						if (MainMenuBarArtFrameBackground.MicroButtonArt ~= nil) then
+							MainMenuBarArtFrameBackground.MicroButtonArt:SetVertexColor(r, g, b)
+						end
+						if (MainMenuBarArtFrameBackground.BagsArt ~= nil) then
+							MainMenuBarArtFrameBackground.BagsArt:SetVertexColor(r, g, b)
+						end
+					end
+				end)
+				if (MainMenuBarArtFrameBackground.BackgroundLarge:GetVertexColor() < 0.95) then
+					local r, g, b = MainMenuBarArtFrameBackground.BackgroundLarge:GetVertexColor()
+					if (MainMenuBarArtFrameBackground.BackgroundLarge2 ~= nil) then
+						MainMenuBarArtFrameBackground.BackgroundLarge2:SetVertexColor(r, g, b)
+					end
+					if (MainMenuBarArtFrameBackground.MicroButtonArt ~= nil) then
+						MainMenuBarArtFrameBackground.MicroButtonArt:SetVertexColor(r, g, b)
+					end
+					if (MainMenuBarArtFrameBackground.BagsArt ~= nil) then
+						MainMenuBarArtFrameBackground.BagsArt:SetVertexColor(r, g, b)
+					end
+				end
+				ClassicUI.LortiUIIsPresent = true
+				return true
+			end
+		end
+	end
+end
+
 -- Function to get the identifier of SingleStatusBars for our 'n' config number
 function ClassicUI:GetSingleBarToHide(n)
 	if (n == 0) then		-- ExpBar (priority = 3)
@@ -513,7 +850,7 @@ function ClassicUI:UpdateStatusBarCache()
 			if (ClassicUI.cached_DoubleStatusBar_hide == nil) then
 				ClassicUI.cached_DoubleStatusBar_hide = {}
 			end
-			table.insert(ClassicUI.cached_DoubleStatusBar_hide, k)
+			tblinsert(ClassicUI.cached_DoubleStatusBar_hide, k)
 		end
 	end
 	for k, v in pairs(ClassicUI.db.profile.barsConfig.SingleStatusBar.hide) do
@@ -521,7 +858,7 @@ function ClassicUI:UpdateStatusBarCache()
 			if (ClassicUI.cached_SingleStatusBar_hide == nil) then
 				ClassicUI.cached_SingleStatusBar_hide = {}
 			end
-			table.insert(ClassicUI.cached_SingleStatusBar_hide, k)
+			tblinsert(ClassicUI.cached_SingleStatusBar_hide, k)
 		end
 	end
 end
@@ -541,10 +878,10 @@ function ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
 		local visBars = {};
 		for i, bar in ipairs(StatusTrackingBarManager.bars) do
 			if ( bar:ShouldBeVisible() ) then
-				table.insert(visBars, bar);
+				tblinsert(visBars, bar);
 			end
 		end
-		table.sort(visBars, function(left, right) return left:GetPriority() < right:GetPriority() end);
+		tblsort(visBars, function(left, right) return left:GetPriority() < right:GetPriority() end);
 		local width = StatusTrackingBarManager:GetParent():GetSize();
 		local TOP_BAR = true;
 		local IS_DOUBLE = true;
@@ -559,7 +896,7 @@ end
 
 function ClassicUI:ExtraFunction()
 	--Extra Option: Guild Panel Mode
-	if ((ClassicUI.db.profile.extraConfigs.GuildPanelMode.defauiltOpenOldMenu) or (ClassicUI.db.profile.extraConfigs.GuildPanelMode.rightClickMicroButtonOpenOldMenu) or (ClassicUI.db.profile.extraConfigs.GuildPanelMode.leftClickMicroButtonOpenOldMenu)) then
+	if ((ClassicUI.db.profile.extraConfigs.GuildPanelMode.defaultOpenOldMenu) or (ClassicUI.db.profile.extraConfigs.GuildPanelMode.rightClickMicroButtonOpenOldMenu) or (ClassicUI.db.profile.extraConfigs.GuildPanelMode.leftClickMicroButtonOpenOldMenu)) then
 		ClassicUI:HookOpenGuildPanelMode()
 	end
 	--Extra Option: Keybinds Visibility
@@ -687,9 +1024,22 @@ function ClassicUI:MainFunction()
 	MainMenuBar:EnableMouse(false);
 	
 	-- Move Latency and Ticket MicroButtons
-	MainMenuBarPerformanceBar:SetPoint("CENTER", MainMenuBarPerformanceBar:GetParent(), "CENTER", 0, 11);
-	HelpOpenTicketButton:SetPoint("CENTER", HelpOpenTicketButton:GetParent(), "TOPRIGHT", -3, -4);
-	HelpOpenWebTicketButton:SetPoint("CENTER", HelpOpenWebTicketButton:GetParent(), "TOPRIGHT", -3, -4);
+	if (MainMenuBarPerformanceBar ~= nil) then
+		MainMenuBarPerformanceBar:SetPoint("CENTER", MainMenuBarPerformanceBar:GetParent(), "CENTER", 0, 11);
+		if (ClassicUI.db.profile.barsConfig.MainMenuBar.hideLatencyBar) then
+			MainMenuBarPerformanceBar:SetAlpha(0)
+			MainMenuBarPerformanceBar:Hide()
+		end
+	end
+	if (HelpOpenTicketButton ~= nil) then
+		HelpOpenTicketButton:SetPoint("CENTER", HelpOpenTicketButton:GetParent(), "TOPRIGHT", -3, -4);
+	end
+	if (HelpOpenWebTicketButton ~= nil) then
+		HelpOpenWebTicketButton:SetPoint("CENTER", HelpOpenWebTicketButton:GetParent(), "TOPRIGHT", -3, -4);
+	end
+	
+	-- Set the proper alpha value to the ActionButtons Normal Texture (needed by a change (or maybe a bug) introduced in Shadowlands)
+	ClassicUI:SetActionButtonNormalTextureAlphaValue(0.5)
 	
 	-- Hide the Gargoyles (will be processed later)
 	MainMenuBarArtFrame.LeftEndCap:Hide()
@@ -703,6 +1053,7 @@ function ClassicUI:MainFunction()
 	CUI_PetActionBarFrame:SetSize(PetActionBarFrame:GetSize())
 	CUI_PetActionBarFrame:SetPoint(PetActionBarFrame:GetPoint())
 	CUI_PetActionBarFrame:SetFrameStrata(PetActionBarFrame:GetFrameStrata())
+	CUI_PetActionBarFrame:SetFrameLevel(PetActionBarFrame:GetFrameLevel())
 	CUI_PetActionBarFrame:EnableMouse(false)
 	
 	-- Function to set the new parent (CUI_PetActionBarFrame) for the PetActionBarFrame childrens and anchor they to CUI_PetActionBarFrame
@@ -857,7 +1208,7 @@ function ClassicUI:MainFunction()
 			MultiBarBottomLeft:SetPoint("BOTTOMLEFT", ActionButton1, "TOPLEFT", xPos, yPos);
 			MultiBarBottomRightButton1:SetPoint("TOPLEFT", MultiBarBottomLeftButton12, "TOPLEFT", 48, 0);
 			MultiBarBottomRightButton7:SetPoint("TOPLEFT", MultiBarBottomRightButton6, "TOPLEFT", 42, 0);
-			if ((math.abs(MultiBarBottomLeft:GetScale()-ClassicUI.db.profile.barsConfig.BottomMultiActionBars.scale) > SCALE_EPSILON) or (math.abs(MultiBarBottomRight:GetScale()-ClassicUI.db.profile.barsConfig.BottomMultiActionBars.scale) > SCALE_EPSILON)) then
+			if ((mathabs(MultiBarBottomLeft:GetScale()-ClassicUI.db.profile.barsConfig.BottomMultiActionBars.scale) > SCALE_EPSILON) or (mathabs(MultiBarBottomRight:GetScale()-ClassicUI.db.profile.barsConfig.BottomMultiActionBars.scale) > SCALE_EPSILON)) then
 				MultiBarBottomLeft:SetScale(ClassicUI.db.profile.barsConfig.BottomMultiActionBars.scale)
 				MultiBarBottomRight:SetScale(ClassicUI.db.profile.barsConfig.BottomMultiActionBars.scale)
 			end
@@ -886,7 +1237,7 @@ function ClassicUI:MainFunction()
 			if (MultiBarLeft:GetParent() ~= VerticalMultiBarsContainer) then
 				MultiBarLeft:SetParent(VerticalMultiBarsContainer)
 			end
-			if (math.abs(VerticalMultiBarsContainer:GetScale()-ClassicUI.db.profile.barsConfig.RightMultiActionBars.scale) > SCALE_EPSILON) then
+			if (mathabs(VerticalMultiBarsContainer:GetScale()-ClassicUI.db.profile.barsConfig.RightMultiActionBars.scale) > SCALE_EPSILON) then
 				VerticalMultiBarsContainer:SetScale(ClassicUI.db.profile.barsConfig.RightMultiActionBars.scale)
 			end
 		end
@@ -925,7 +1276,7 @@ function ClassicUI:MainFunction()
 				if ( SHOW_MULTI_ACTIONBAR_1 ) then
 					yPos = 138 - 4 + ClassicUI.db.profile.barsConfig.PetActionBarFrame.yOffset2StatusBar;
 				else
-					yPos = 138 - 4 - ACTION_BAR_OFFSET + ClassicUI.db.profile.barsConfig.PetActionBarFrame.yOffset2StatusBar;
+					yPos = 138 - 5 - ACTION_BAR_OFFSET + ClassicUI.db.profile.barsConfig.PetActionBarFrame.yOffset2StatusBar;
 				end
 			elseif ( ClassicUI.cached_NumberVisibleBars == 1 ) then
 				if ( SHOW_MULTI_ACTIONBAR_1 ) then
@@ -939,7 +1290,7 @@ function ClassicUI:MainFunction()
 				if ( SHOW_MULTI_ACTIONBAR_1 ) then
 					yPos = 138 - 4 + ClassicUI.db.profile.barsConfig.PetActionBarFrame.yOffset;
 				else
-					yPos = 138 - 4 - ACTION_BAR_OFFSET + ClassicUI.db.profile.barsConfig.PetActionBarFrame.yOffset;
+					yPos = 138 - 5 - ACTION_BAR_OFFSET + ClassicUI.db.profile.barsConfig.PetActionBarFrame.yOffset;
 				end
 			elseif ( ClassicUI.cached_NumberVisibleBars == 1 ) then
 				if ( SHOW_MULTI_ACTIONBAR_1 ) then
@@ -951,9 +1302,9 @@ function ClassicUI:MainFunction()
 		end
 		if ( ClassicUI.cached_NumberVisibleBars < 1 ) then
 			if ( SHOW_MULTI_ACTIONBAR_1 ) then
-				yPos = 137 + ClassicUI.db.profile.barsConfig.PetActionBarFrame.yOffset;
+				yPos = 139 + ClassicUI.db.profile.barsConfig.PetActionBarFrame.yOffset;
 			else
-				yPos = 137 - ACTION_BAR_OFFSET + ClassicUI.db.profile.barsConfig.PetActionBarFrame.yOffset;
+				yPos = 139 - ACTION_BAR_OFFSET + ClassicUI.db.profile.barsConfig.PetActionBarFrame.yOffset;
 			end
 		end
 		if (not StatusTrackingBarManager:IsShown()) then
@@ -969,7 +1320,7 @@ function ClassicUI:MainFunction()
 		-- Set position for PetActionBarFrame to xPos, yPos
 		CUI_PetActionBarFrame:SetPoint("TOPLEFT", PetActionBarFrame:GetParent(), "BOTTOMLEFT", xPos, yPos);
 		-- Set scale for PetActionBar
-		if (math.abs(PetActionBarFrame:GetScale()-ClassicUI.db.profile.barsConfig.PetActionBarFrame.scale) > SCALE_EPSILON) then
+		if (mathabs(PetActionBarFrame:GetScale()-ClassicUI.db.profile.barsConfig.PetActionBarFrame.scale) > SCALE_EPSILON) then
 			PetActionBarFrame:SetScale(ClassicUI.db.profile.barsConfig.PetActionBarFrame.scale)
 		end
 	end
@@ -994,29 +1345,29 @@ function ClassicUI:MainFunction()
 		if (ClassicUI.db.profile.barsConfig.StanceBarFrame.ignoreyOffsetStatusBar and StatusTrackingBarManager:IsShown()) then
 			if ( ClassicUI.cached_NumberVisibleBars == 2 ) then
 				if ( SHOW_MULTI_ACTIONBAR_1 ) then
-					yPos = 41 + ClassicUI.db.profile.barsConfig.StanceBarFrame.yOffset2StatusBar
+					yPos = 40 + ClassicUI.db.profile.barsConfig.StanceBarFrame.yOffset2StatusBar
 				else
-					yPos = 41 - ACTION_BAR_OFFSET + ClassicUI.db.profile.barsConfig.StanceBarFrame.yOffset2StatusBar
+					yPos = 40 - ACTION_BAR_OFFSET + ClassicUI.db.profile.barsConfig.StanceBarFrame.yOffset2StatusBar
 				end
 			elseif ( ClassicUI.cached_NumberVisibleBars == 1 ) then
 				if ( SHOW_MULTI_ACTIONBAR_1 ) then
 					yPos = 35 + ClassicUI.db.profile.barsConfig.StanceBarFrame.yOffset1StatusBar
 				else
-					yPos = 35 - ACTION_BAR_OFFSET + ClassicUI.db.profile.barsConfig.StanceBarFrame.yOffset1StatusBar
+					yPos = 38 - ACTION_BAR_OFFSET + ClassicUI.db.profile.barsConfig.StanceBarFrame.yOffset1StatusBar
 				end
 			end
 		else
 			if ( ClassicUI.cached_NumberVisibleBars == 2 ) then
 				if ( SHOW_MULTI_ACTIONBAR_1 ) then
-					yPos = 41 + ClassicUI.db.profile.barsConfig.StanceBarFrame.yOffset
+					yPos = 40 + ClassicUI.db.profile.barsConfig.StanceBarFrame.yOffset
 				else
-					yPos = 41 - ACTION_BAR_OFFSET + ClassicUI.db.profile.barsConfig.StanceBarFrame.yOffset
+					yPos = 40 - ACTION_BAR_OFFSET + ClassicUI.db.profile.barsConfig.StanceBarFrame.yOffset
 				end
 			elseif ( ClassicUI.cached_NumberVisibleBars == 1 ) then
 				if ( SHOW_MULTI_ACTIONBAR_1 ) then
 					yPos = 35 + ClassicUI.db.profile.barsConfig.StanceBarFrame.yOffset
 				else
-					yPos = 35 - ACTION_BAR_OFFSET + ClassicUI.db.profile.barsConfig.StanceBarFrame.yOffset
+					yPos = 38 - ACTION_BAR_OFFSET + ClassicUI.db.profile.barsConfig.StanceBarFrame.yOffset
 				end
 			end
 		end
@@ -1040,7 +1391,7 @@ function ClassicUI:MainFunction()
 		-- Set position for StanceBarFrame to xPos, yPos
 		StanceBarFrame:SetPoint("BOTTOMLEFT", StanceBarFrame:GetParent(), "TOPLEFT", xPos, yPos)
 		-- Set scale for StanceBarFrame
-		if (math.abs(StanceBarFrame:GetScale()-ClassicUI.db.profile.barsConfig.StanceBarFrame.scale) > SCALE_EPSILON) then
+		if (mathabs(StanceBarFrame:GetScale()-ClassicUI.db.profile.barsConfig.StanceBarFrame.scale) > SCALE_EPSILON) then
 			StanceBarFrame:SetScale(ClassicUI.db.profile.barsConfig.StanceBarFrame.scale)
 		end
 	end
@@ -1065,29 +1416,29 @@ function ClassicUI:MainFunction()
 		if (ClassicUI.db.profile.barsConfig.PossessBarFrame.ignoreyOffsetStatusBar and StatusTrackingBarManager:IsShown()) then
 			if ( ClassicUI.cached_NumberVisibleBars == 2 ) then
 				if ( SHOW_MULTI_ACTIONBAR_1 ) then
-					yPos = 41 + ClassicUI.db.profile.barsConfig.PossessBarFrame.yOffset2StatusBar
+					yPos = 40 + ClassicUI.db.profile.barsConfig.PossessBarFrame.yOffset2StatusBar
 				else
-					yPos = 41 - ACTION_BAR_OFFSET + ClassicUI.db.profile.barsConfig.PossessBarFrame.yOffset2StatusBar
+					yPos = 40 - ACTION_BAR_OFFSET + ClassicUI.db.profile.barsConfig.PossessBarFrame.yOffset2StatusBar
 				end
 			elseif ( ClassicUI.cached_NumberVisibleBars == 1 ) then
 				if ( SHOW_MULTI_ACTIONBAR_1 ) then
 					yPos = 35 + ClassicUI.db.profile.barsConfig.PossessBarFrame.yOffset1StatusBar
 				else
-					yPos = 35 - ACTION_BAR_OFFSET + ClassicUI.db.profile.barsConfig.PossessBarFrame.yOffset1StatusBar
+					yPos = 38 - ACTION_BAR_OFFSET + ClassicUI.db.profile.barsConfig.PossessBarFrame.yOffset1StatusBar
 				end
 			end
 		else
 			if ( ClassicUI.cached_NumberVisibleBars == 2 ) then
 				if ( SHOW_MULTI_ACTIONBAR_1 ) then
-					yPos = 41 + ClassicUI.db.profile.barsConfig.PossessBarFrame.yOffset
+					yPos = 40 + ClassicUI.db.profile.barsConfig.PossessBarFrame.yOffset
 				else
-					yPos = 41 - ACTION_BAR_OFFSET + ClassicUI.db.profile.barsConfig.PossessBarFrame.yOffset
+					yPos = 40 - ACTION_BAR_OFFSET + ClassicUI.db.profile.barsConfig.PossessBarFrame.yOffset
 				end
 			elseif ( ClassicUI.cached_NumberVisibleBars == 1 ) then
 				if ( SHOW_MULTI_ACTIONBAR_1 ) then
 					yPos = 35 + ClassicUI.db.profile.barsConfig.PossessBarFrame.yOffset
 				else
-					yPos = 35 - ACTION_BAR_OFFSET + ClassicUI.db.profile.barsConfig.PossessBarFrame.yOffset
+					yPos = 38 - ACTION_BAR_OFFSET + ClassicUI.db.profile.barsConfig.PossessBarFrame.yOffset
 				end
 			end
 		end
@@ -1111,7 +1462,7 @@ function ClassicUI:MainFunction()
 		-- Set position for PossessBarFrame to xPos, yPos
 		PossessBarFrame:SetPoint("BOTTOMLEFT", PossessBarFrame:GetParent(), "TOPLEFT", xPos, yPos)
 		-- Set scale for PossessBarFrame
-		if (math.abs(PossessBarFrame:GetScale()-ClassicUI.db.profile.barsConfig.PossessBarFrame.scale) > SCALE_EPSILON) then
+		if (mathabs(PossessBarFrame:GetScale()-ClassicUI.db.profile.barsConfig.PossessBarFrame.scale) > SCALE_EPSILON) then
 			PossessBarFrame:SetScale(ClassicUI.db.profile.barsConfig.PossessBarFrame.scale)
 		end
 	end
@@ -1277,6 +1628,9 @@ function ClassicUI:MainFunction()
 	ClassicUI.SetPositionForStatusBars_MainMenuBar = function()
 		local extraWidth = ClassicUI:GetExtraWidth()
 		
+		-- Compatibility with Lorti UI addon
+		ClassicUI:CheckLortiUI()
+		
 		-- Show/Hide Gargoyles and set their scale and alpha
 		if (ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.hide) then
 			if (MainMenuBarArtFrame.LeftEndCap:IsShown()) then
@@ -1290,7 +1644,7 @@ function ClassicUI:MainFunction()
 					MainMenuBarArtFrame.LeftEndCap:SetTexture("Interface\\MAINMENUBAR\\UI-MainMenuBar-EndCap-Human.blp")
 					MainMenuBarArtFrame.LeftEndCap:SetTexCoord(0/128, 128/128, 42/128, 128/128)
 				end
-				if (math.abs(MainMenuBarArtFrame.LeftEndCap:GetScale()-ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.scale) > SCALE_EPSILON) then
+				if (mathabs(MainMenuBarArtFrame.LeftEndCap:GetScale()-ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.scale) > SCALE_EPSILON) then
 					MainMenuBarArtFrame.LeftEndCap:SetScale(ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.scale)
 				end
 				MainMenuBarArtFrame.LeftEndCap:SetAlpha(ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.alpha)
@@ -1309,7 +1663,7 @@ function ClassicUI:MainFunction()
 					MainMenuBarArtFrame.RightEndCap:SetTexCoord(128/128, 0/128, 42/128, 128/128)
 				end
 				MainMenuBarArtFrame.RightEndCap:SetAlpha(ClassicUI.db.profile.barsConfig.RightGargoyleFrame.alpha)
-				if (math.abs(MainMenuBarArtFrame.RightEndCap:GetScale()-ClassicUI.db.profile.barsConfig.RightGargoyleFrame.scale) > SCALE_EPSILON) then
+				if (mathabs(MainMenuBarArtFrame.RightEndCap:GetScale()-ClassicUI.db.profile.barsConfig.RightGargoyleFrame.scale) > SCALE_EPSILON) then
 					MainMenuBarArtFrame.RightEndCap:SetScale(ClassicUI.db.profile.barsConfig.RightGargoyleFrame.scale)
 				end
 			end
@@ -1397,10 +1751,10 @@ function ClassicUI:MainFunction()
 				local barsShown = {}
 				for _, v in pairs(StatusTrackingBarManager.bars) do
 					if (v:ShouldBeVisible()) then
-						table.insert(barsShown, v:GetPriority())
+						tblinsert(barsShown, v:GetPriority())
 					end
 				end
-				table.sort(barsShown)
+				tblsort(barsShown)
 				if (#barsShown > 1) then
 					for _, v in pairs(ClassicUI.cached_DoubleStatusBar_hide) do
 						local barToHide1, barToHide2 = ClassicUI:GetDoubleBarsToHide(v)
@@ -1434,10 +1788,10 @@ function ClassicUI:MainFunction()
 				local barsShown = {}
 				for _, v in pairs(StatusTrackingBarManager.bars) do
 					if (v:ShouldBeVisible()) then
-						table.insert(barsShown, v:GetPriority())
+						tblinsert(barsShown, v:GetPriority())
 					end
 				end
-				table.sort(barsShown)
+				tblsort(barsShown)
 				if (#barsShown > 0) then
 					for _, v in pairs(ClassicUI.cached_SingleStatusBar_hide) do
 						local barToHide = ClassicUI:GetSingleBarToHide(v)
@@ -1496,20 +1850,20 @@ function ClassicUI:MainFunction()
 		local menuBarBagsWidth = BAGS_WIDTH + 60 + extraWidth;
 		MainMenuBarArtFrame:SetPoint("TOPLEFT", MainMenuBarArtFrame:GetParent(), ((-menuBarBagsWidth)/2) + ClassicUI.db.profile.barsConfig.MainMenuBar.xOffset, 10 + offsetY + ClassicUI.db.profile.barsConfig.MainMenuBar.yOffset);
 		MainMenuBarArtFrame:SetPoint("BOTTOMRIGHT", MainMenuBarArtFrame:GetParent(), ((-menuBarBagsWidth)/2) + ClassicUI.db.profile.barsConfig.MainMenuBar.xOffset, 10 + offsetY + ClassicUI.db.profile.barsConfig.MainMenuBar.yOffset);
-		if ((math.abs(MainMenuBarArtFrame:GetScale()-ClassicUI.db.profile.barsConfig.MainMenuBar.scale) > SCALE_EPSILON) or (math.abs(StatusTrackingBarManager:GetScale()-ClassicUI.db.profile.barsConfig.MainMenuBar.scale) > SCALE_EPSILON)) then
+		if ((mathabs(MainMenuBarArtFrame:GetScale()-ClassicUI.db.profile.barsConfig.MainMenuBar.scale) > SCALE_EPSILON) or (mathabs(StatusTrackingBarManager:GetScale()-ClassicUI.db.profile.barsConfig.MainMenuBar.scale) > SCALE_EPSILON)) then
 			MainMenuBarArtFrame:SetScale(ClassicUI.db.profile.barsConfig.MainMenuBar.scale)
 			StatusTrackingBarManager:SetScale(ClassicUI.db.profile.barsConfig.MainMenuBar.scale)
 		end
 		
 		-- Set the position and scale for OverrideActionBar
 		OverrideActionBar:SetPoint("BOTTOM", OverrideActionBar:GetParent(), "BOTTOM", ClassicUI.db.profile.barsConfig.OverrideActionBar.xOffset, ClassicUI.db.profile.barsConfig.OverrideActionBar.yOffset + ClassicUI.TitanPanelBottomBarsYOffset)
-		if (math.abs(OverrideActionBar:GetScale()-ClassicUI.db.profile.barsConfig.OverrideActionBar.scale) > SCALE_EPSILON) then
+		if (mathabs(OverrideActionBar:GetScale()-ClassicUI.db.profile.barsConfig.OverrideActionBar.scale) > SCALE_EPSILON) then
 			OverrideActionBar:SetScale(ClassicUI.db.profile.barsConfig.OverrideActionBar.scale)
 		end
 		
 		-- Set the position and scale for PetBattleFrameBar
 		PetBattleFrame.BottomFrame:SetPoint("BOTTOM", PetBattleFrame.BottomFrame:GetParent(), "BOTTOM", ClassicUI.db.profile.barsConfig.PetBattleFrameBar.xOffset, ClassicUI.db.profile.barsConfig.PetBattleFrameBar.yOffset)
-		if (math.abs(PetBattleFrame.BottomFrame:GetScale()-ClassicUI.db.profile.barsConfig.PetBattleFrameBar.scale) > SCALE_EPSILON) then
+		if (mathabs(PetBattleFrame.BottomFrame:GetScale()-ClassicUI.db.profile.barsConfig.PetBattleFrameBar.scale) > SCALE_EPSILON) then
 			PetBattleFrame.BottomFrame:SetScale(ClassicUI.db.profile.barsConfig.PetBattleFrameBar.scale)
 		end
 		if ( IsPlayerInWorld() ) then
@@ -1589,60 +1943,90 @@ function ClassicUI:ToggleVisibilityKeybinds(mode)
 		PetBattleFrame.BottomFrame.CatchButton.HotKey:SetAlpha(0);
 		PetBattleFrame.BottomFrame.CatchButton.HotKey:Hide();
 	elseif (mode == 2) or (mode == 3) then
-		ClassicUI:HookKeybindsVisibilityMode()
 		for i = 1, 12 do
 			local actionButton
 			actionButton = _G["ExtraActionButton"..i]
 			if (actionButton) then
 				actionButton.HotKey:SetAlpha(1)
-				ActionButton_UpdateHotkeys(actionButton)
+				if (actionButton.UpdateHotkeys ~= nil) then
+					ClassicUI:HookKeybindsVisibilityMode(actionButton)
+					actionButton:UpdateHotkeys()
+				end
 			end
 			actionButton = _G["ActionButton"..i]
 			if (actionButton) then
 				actionButton.HotKey:SetAlpha(1)
-				ActionButton_UpdateHotkeys(actionButton)
+				if (actionButton.UpdateHotkeys ~= nil) then
+					ClassicUI:HookKeybindsVisibilityMode(actionButton)
+					actionButton:UpdateHotkeys()
+				end
 			end
 			actionButton = _G["MultiBarBottomLeftButton"..i]
 			if (actionButton) then
 				actionButton.HotKey:SetAlpha(1)
-				ActionButton_UpdateHotkeys(actionButton)
+				if (actionButton.UpdateHotkeys ~= nil) then
+					ClassicUI:HookKeybindsVisibilityMode(actionButton)
+					actionButton:UpdateHotkeys()
+				end
 			end
 			actionButton = _G["MultiBarBottomRightButton"..i]
 			if (actionButton) then
 				actionButton.HotKey:SetAlpha(1)
-				ActionButton_UpdateHotkeys(actionButton)
+				if (actionButton.UpdateHotkeys ~= nil) then
+					ClassicUI:HookKeybindsVisibilityMode(actionButton)
+					actionButton:UpdateHotkeys()
+				end
 			end
 			actionButton = _G["MultiBarLeftButton"..i]
 			if (actionButton) then
 				actionButton.HotKey:SetAlpha(1)
-				ActionButton_UpdateHotkeys(actionButton)
+				if (actionButton.UpdateHotkeys ~= nil) then
+					ClassicUI:HookKeybindsVisibilityMode(actionButton)
+					actionButton:UpdateHotkeys()
+				end
 			end
 			actionButton = _G["MultiBarRightButton"..i]
 			if (actionButton) then
 				actionButton.HotKey:SetAlpha(1)
-				ActionButton_UpdateHotkeys(actionButton)
+				if (actionButton.UpdateHotkeys ~= nil) then
+					ClassicUI:HookKeybindsVisibilityMode(actionButton)
+					actionButton:UpdateHotkeys()
+				end
 			end
 			actionButton = _G["PetActionButton"..i]
 			if (actionButton) then
 				actionButton.HotKey:SetAlpha(1)
-				ActionButton_UpdateHotkeys(actionButton)
+				if (actionButton.UpdateHotkeys ~= nil) then
+					ClassicUI:HookKeybindsVisibilityMode(actionButton)
+					actionButton:UpdateHotkeys()
+				end
 			end
 			actionButton = _G["StanceButton"..i]
 			if (actionButton) then
 				actionButton.HotKey:SetAlpha(1)
-				ActionButton_UpdateHotkeys(actionButton)
+				if (actionButton.UpdateHotkeys ~= nil) then
+					ClassicUI:HookKeybindsVisibilityMode(actionButton)
+					actionButton:UpdateHotkeys()
+				end
 			end
 			actionButton =  _G["PossessButton"..i]
 			if (actionButton) then
 				actionButton.HotKey:SetAlpha(1)
-				ActionButton_UpdateHotkeys(actionButton)
+				if (actionButton.UpdateHotkeys ~= nil) then
+					ClassicUI:HookKeybindsVisibilityMode(actionButton)
+					actionButton:UpdateHotkeys()
+				end
 			end
 			actionButton =  _G["OverrideActionBarButton"..i]
 			if (actionButton) then
 				actionButton.HotKey:SetAlpha(1)
-				ActionButton_UpdateHotkeys(actionButton)
+				if (actionButton.UpdateHotkeys ~= nil) then
+					ClassicUI:HookKeybindsVisibilityMode(actionButton)
+					actionButton:UpdateHotkeys()
+				end
 			end
 		end
+		ACTIONBUTTON_UPDATEHOTKEYS_HOOKED = true
 		ClassicUI:HookPetBattleKeybindsVisibilityMode()
 		if (mode == 2) then
 			for i=1, #PetBattleFrame.BottomFrame.abilityButtons do
@@ -1734,16 +2118,15 @@ function ClassicUI:ToggleVisibilityKeybinds(mode)
 end
 
 -- The OnlyShowDotRange or OnlyShowPermanentDotRange keybind options require a Hook
-function ClassicUI:HookKeybindsVisibilityMode()
+function ClassicUI:HookKeybindsVisibilityMode(actionBarButton)
 	if (not ACTIONBUTTON_UPDATEHOTKEYS_HOOKED) then
-		hooksecurefunc("ActionButton_UpdateHotkeys", function(self, actionButtonType)
+		hooksecurefunc(actionBarButton, "UpdateHotkeys", function(self, actionButtonType)
 			if (ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode == 2) then
 				self.HotKey:SetText(RANGE_INDICATOR);
 			else
 				self.HotKey:SetText(' '..RANGE_INDICATOR);
 			end
 		end)
-		ACTIONBUTTON_UPDATEHOTKEYS_HOOKED = true
 	end
 end
 
@@ -1908,6 +2291,38 @@ end
 -- Function to show the entire icon in red when the spell is not at range instead of only show in red the keybind text
 function ClassicUI:HookRedRangeIcons()
 	if (not REDRANGEICONS_HOOKED) then
+		local function HookActionBarButtonUpdateUsable(actionBarButton)
+			if (actionBarButton.UpdateUsable ~= nil) then
+				hooksecurefunc(actionBarButton, "UpdateUsable", function(self)
+					local action = self.action;
+					local icon = self.icon;
+					local isUsable, notEnoughMana = IsUsableAction(action)
+					local normalTexture = self.NormalTexture;
+					if ( not normalTexture ) then
+						return;
+					end
+					if (ActionHasRange(action) and IsActionInRange(action) == false) then
+						icon:SetVertexColor(0.8, 0.1, 0.1);
+						normalTexture:SetVertexColor(0.8, 0.1, 0.1);
+						self.redRangeRed = true;
+					elseif (self.redRangeRed) then
+						if (isUsable) then
+							icon:SetVertexColor(1.0, 1.0, 1.0);
+							normalTexture:SetVertexColor(1.0, 1.0, 1.0);
+							self.redRangeRed = false;
+						elseif (notEnoughMana) then
+							icon:SetVertexColor(0.1, 0.3, 1.0);
+							normalTexture:SetVertexColor(0.1, 0.3, 1.0);
+							self.redRangeRed = false;
+						else
+							icon:SetVertexColor(0.4, 0.4, 0.4);
+							normalTexture:SetVertexColor(1.0, 1.0, 1.0);
+							self.redRangeRed = false;
+						end
+					end
+				end)
+			end
+		end
 		hooksecurefunc("ActionButton_UpdateRangeIndicator", function(self, checksRange, inRange)
 			if ( checksRange and not inRange ) then
 				local icon = self.icon;
@@ -1948,34 +2363,49 @@ function ClassicUI:HookRedRangeIcons()
 				self.redRangeRed = false;
 			end
 		end)
-		hooksecurefunc("ActionButton_UpdateUsable", function(self)
-			local action = self.action;
-			local icon = self.icon;
-			local isUsable, notEnoughMana = IsUsableAction(action)
-			local normalTexture = self.NormalTexture;
-			if ( not normalTexture ) then
-				return;
+		for i = 1, 12 do
+			local actionButton
+			actionButton = _G["ExtraActionButton"..i]
+			if (actionButton) then
+				HookActionBarButtonUpdateUsable(actionButton)
 			end
-			if (ActionHasRange(action) and IsActionInRange(action) == false) then
-				icon:SetVertexColor(0.8, 0.1, 0.1);
-				normalTexture:SetVertexColor(0.8, 0.1, 0.1);
-				self.redRangeRed = true;
-			elseif (self.redRangeRed) then
-				if (isUsable) then
-					icon:SetVertexColor(1.0, 1.0, 1.0);
-					normalTexture:SetVertexColor(1.0, 1.0, 1.0);
-					self.redRangeRed = false;
-				elseif (notEnoughMana) then
-					icon:SetVertexColor(0.1, 0.3, 1.0);
-					normalTexture:SetVertexColor(0.1, 0.3, 1.0);
-					self.redRangeRed = false;
-				else
-					icon:SetVertexColor(0.4, 0.4, 0.4);
-					normalTexture:SetVertexColor(1.0, 1.0, 1.0);
-					self.redRangeRed = false;
-				end
+			actionButton = _G["ActionButton"..i]
+			if (actionButton) then
+				HookActionBarButtonUpdateUsable(actionButton)
 			end
-		end)
+			actionButton = _G["MultiBarBottomLeftButton"..i]
+			if (actionButton) then
+				HookActionBarButtonUpdateUsable(actionButton)
+			end
+			actionButton = _G["MultiBarBottomRightButton"..i]
+			if (actionButton) then
+				HookActionBarButtonUpdateUsable(actionButton)
+			end
+			actionButton = _G["MultiBarLeftButton"..i]
+			if (actionButton) then
+				HookActionBarButtonUpdateUsable(actionButton)
+			end
+			actionButton = _G["MultiBarRightButton"..i]
+			if (actionButton) then
+				HookActionBarButtonUpdateUsable(actionButton)
+			end
+			actionButton = _G["PetActionButton"..i]
+			if (actionButton) then
+				HookActionBarButtonUpdateUsable(actionButton)
+			end
+			actionButton = _G["StanceButton"..i]
+			if (actionButton) then
+				HookActionBarButtonUpdateUsable(actionButton)
+			end
+			actionButton =  _G["PossessButton"..i]
+			if (actionButton) then
+				HookActionBarButtonUpdateUsable(actionButton)
+			end
+			actionButton =  _G["OverrideActionBarButton"..i]
+			if (actionButton) then
+				HookActionBarButtonUpdateUsable(actionButton)
+			end
+		end
 		REDRANGEICONS_HOOKED = true
 	end
 end
@@ -1989,6 +2419,9 @@ function ClassicUI:HookGreyOnCooldownIcons()
 			if (icon and action) then
 				local start, duration = GetActionCooldown(action)
 				if (duration >= ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.minDuration) then
+					if start > 3085367 and start <= 4294967.295 then
+						start = start - 4294967.296
+					end
 					if ((not self.onCooldown) or (self.onCooldown == 0)) then
 						local nextTime = start + duration - GetTime() - 1.0
 						if (nextTime < -1.0) then
@@ -1996,9 +2429,11 @@ function ClassicUI:HookGreyOnCooldownIcons()
 						elseif (nextTime < 0) then
 							nextTime = -nextTime / 2
 						end
-						C_Timer.After(nextTime, function()
-							ActionButtonGreyOnCooldown_UpdateCooldown(self, action)
-						end)
+						if nextTime <= 4294967.295 then
+							C_Timer.After(nextTime, function()
+								ActionButtonGreyOnCooldown_UpdateCooldown(self, action)
+							end)
+						end
 					elseif (expectedUpdate) then
 						if ((not self.onCooldown) or (self.onCooldown < start + duration)) then
 							self.onCooldown = start + duration
@@ -2010,9 +2445,11 @@ function ClassicUI:HookGreyOnCooldownIcons()
 						elseif (timeRemains < 0) then
 							nextTime = 0.05
 						end
-						C_Timer.After(nextTime, function()
-							ActionButtonGreyOnCooldown_UpdateCooldown(self, action)
-						end)
+						if nextTime <= 4294967.295 then
+							C_Timer.After(nextTime, function()
+								ActionButtonGreyOnCooldown_UpdateCooldown(self, action)
+							end)
+						end
 					end
 					if ((not self.onCooldown) or (self.onCooldown < start + duration)) then
 						self.onCooldown = start + duration
@@ -2040,7 +2477,7 @@ function ClassicUI:HookOpenGuildPanelMode()
 		-- New global functions ToggleOldGuildFrame and ToggleNewGuildFrame to toggle the old and the new menu frame respectively
 		ToggleNewGuildFrame = ToggleGuildFrame;
 		function ToggleOldGuildFrame()
-			if (IsKioskModeEnabled()) then
+			if (Kiosk.IsEnabled()) then
 				return;
 			end
 			local factionGroup = UnitFactionGroup("player");
@@ -2063,7 +2500,7 @@ function ClassicUI:HookOpenGuildPanelMode()
 
 		-- Set hook to open new or old menu (this hook work on keybinds, guild alert click, ...)
 		hooksecurefunc("ToggleGuildFrame", function(self)
-			if ((not InCombatLockdown()) and (ClassicUI.db.profile.extraConfigs.GuildPanelMode.defauiltOpenOldMenu)) then
+			if ((not InCombatLockdown()) and (ClassicUI.db.profile.extraConfigs.GuildPanelMode.defaultOpenOldMenu)) then
 				ToggleNewGuildFrame()
 				ToggleOldGuildFrame()
 			end
@@ -2074,13 +2511,23 @@ function ClassicUI:HookOpenGuildPanelMode()
 			if not InCombatLockdown() then
 				if (button == 'RightButton') then
 					if (ClassicUI.db.profile.extraConfigs.GuildPanelMode.rightClickMicroButtonOpenOldMenu) then
-						ToggleNewGuildFrame()
+						if not(ClassicUI.db.profile.extraConfigs.GuildPanelMode.defaultOpenOldMenu) then
+							ToggleNewGuildFrame()
+							ToggleOldGuildFrame()
+						end
+					elseif (ClassicUI.db.profile.extraConfigs.GuildPanelMode.defaultOpenOldMenu) then
 						ToggleOldGuildFrame()
+						ToggleNewGuildFrame()
 					end
 				else
 					if (ClassicUI.db.profile.extraConfigs.GuildPanelMode.leftClickMicroButtonOpenOldMenu) then
-						ToggleNewGuildFrame()
+						if not(ClassicUI.db.profile.extraConfigs.GuildPanelMode.defaultOpenOldMenu) then
+							ToggleNewGuildFrame()
+							ToggleOldGuildFrame()
+						end
+					elseif (ClassicUI.db.profile.extraConfigs.GuildPanelMode.defaultOpenOldMenu) then
 						ToggleOldGuildFrame()
+						ToggleNewGuildFrame()
 					end
 				end
 			end

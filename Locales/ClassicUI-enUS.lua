@@ -44,6 +44,7 @@ L['SingleStatusBar'] = true
 L['DoubleStatusBar'] = true
 L['UpperStatusBar'] = true
 L['LowerStatusBar'] = true
+L['Hide Latency Bar'] = true
 L['Left Gargoyle'] = true
 L['Hide Left Gargoyle'] = true
 L['Left Gargoyle Model'] = true

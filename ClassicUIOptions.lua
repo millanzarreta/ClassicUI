@@ -119,6 +119,24 @@ ClassicUI.optionsTable = {
 								ClassicUI.db.profile.barsConfig.MainMenuBar.scale = value
 								ClassicUI.SetPositionForStatusBars_MainMenuBar()
 							end
+						},
+						hideLatencyBar = {
+							order = 5,
+							type = "toggle",
+							name = L['Hide Latency Bar'],
+							desc = L['Hide Latency Bar'],
+							width = "double",
+							get = function() return ClassicUI.db.profile.barsConfig.MainMenuBar.hideLatencyBar end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.MainMenuBar.hideLatencyBar = value
+								if value then
+									MainMenuBarPerformanceBar:SetAlpha(0)
+									MainMenuBarPerformanceBar:Hide()
+								else
+									MainMenuBarPerformanceBar:SetAlpha(1)
+									MainMenuBarPerformanceBar:Show()
+								end
+							end,
 						}
 					}
 				},
@@ -1982,16 +2000,16 @@ ClassicUI.optionsTable = {
 								[1] = L['Show the old guild panel']
 							},
 							get = function()
-								return (ClassicUI.db.profile.extraConfigs.GuildPanelMode.defauiltOpenOldMenu and 1 or 0)
+								return (ClassicUI.db.profile.extraConfigs.GuildPanelMode.defaultOpenOldMenu and 1 or 0)
 							end,
 							set = function(_, value)
 								if (value == 1) then
-									ClassicUI.db.profile.extraConfigs.GuildPanelMode.defauiltOpenOldMenu = true
+									ClassicUI.db.profile.extraConfigs.GuildPanelMode.defaultOpenOldMenu = true
 									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
 										ClassicUI:HookOpenGuildPanelMode()
 									end
 								else
-									ClassicUI.db.profile.extraConfigs.GuildPanelMode.defauiltOpenOldMenu = false
+									ClassicUI.db.profile.extraConfigs.GuildPanelMode.defaultOpenOldMenu = false
 								end
 							end
 						},
@@ -2254,7 +2272,7 @@ ClassicUI.optionsTable = {
 							type = "execute",
 							name = L["Default"],
 							desc = L["DefaultDesc"],
-							func  = function() ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.minDuration = ClassicUI.defaults.profile.extraConfigs.GreyOnCooldownConfig.minDuration end
+							func  = function() ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.minDuration = ClassicUI.db.defaults.profile.extraConfigs.GreyOnCooldownConfig.minDuration end
 						}
 					}
 				},
