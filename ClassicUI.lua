@@ -1,8 +1,8 @@
 -- ------------------------------------------------------------ --
 -- Addon: ClassicUI                                             --
 --                                                              --
--- Version: 1.1.7                                               --
--- Author: Millán - C'Thun                                      --
+-- Version: 1.1.8                                               --
+-- Author: Millán - Sanguino                                    --
 --                                                              --
 -- License: GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007 --
 -- ------------------------------------------------------------ --
@@ -33,15 +33,17 @@ local mathfloor = math.floor
 local mathabs = math.abs
 local strfind = string.find
 local strgsub = string.gsub
+local strbyte = string.byte
 local type = type
-local GetAddOnInfo = GetAddOnInfo
+local IsAddOnLoaded = IsAddOnLoaded
 local IsEquippedAction = IsEquippedAction
+local GetAtlasInfo = C_Texture.GetAtlasInfo
 
 -- Global variables
 ClassicUI.BAG_SIZE = 32
 ClassicUI.BAGS_WIDTH = (4*ClassicUI.BAG_SIZE+32)
 ClassicUI.ACTION_BAR_OFFSET = 48
-ClassicUI.VERSION = "1.1.7"
+ClassicUI.VERSION = "1.1.8"
 
 ClassicUI.cached_NumberVisibleBars = 0
 ClassicUI.cached_NumberRealVisibleBars = 0
@@ -51,6 +53,7 @@ ClassicUI.cached_LastMainMenuBarPoint = { "BOTTOM", UIParent, "BOTTOM", 0, MainM
 ClassicUI.TitanPanelIsPresent = false
 ClassicUI.LibJostleIsPresent = false
 ClassicUI.LortiUIIsPresent = false
+ClassicUI.UberUIIsPresent = false
 ClassicUI.TitanPanelBottomBarsYOffset = 0
 ClassicUI.MultiBarBottomRightButtonsBackgroundsCreated = false
 
@@ -246,8 +249,14 @@ function ClassicUI:RefreshConfig()
 		MainMenuBarArtFrame.LeftEndCap:Hide()
 	else
 		MainMenuBarArtFrame.LeftEndCap:SetSize(128, 76)
-		MainMenuBarArtFrame.LeftEndCap:SetTexture("Interface\\MAINMENUBAR\\UI-MainMenuBar-EndCap-Dwarf.blp")
-		MainMenuBarArtFrame.LeftEndCap:SetTexCoord(0/128, 128/128, 52/128, 128/128);
+		if (not ClassicUI.UberUIIsPresent) then
+			MainMenuBarArtFrame.LeftEndCap:SetTexture("Interface\\MAINMENUBAR\\UI-MainMenuBar-EndCap-Dwarf.blp")
+			MainMenuBarArtFrame.LeftEndCap:SetTexCoord(0/128, 128/128, 52/128, 128/128)
+		else
+			local txInfo = C_Texture.GetAtlasInfo(MainMenuBarArtFrame.LeftEndCap:GetAtlas() or "hud-MainMenuBar-gryphon")
+			MainMenuBarArtFrame.LeftEndCap:SetTexture("Interface\\AddOns\\Uber UI\\textures\\MainMenuBar.blp")
+			MainMenuBarArtFrame.LeftEndCap:SetTexCoord(txInfo.leftTexCoord, txInfo.rightTexCoord, txInfo.topTexCoord, txInfo.bottomTexCoord)
+		end
 		MainMenuBarArtFrame.LeftEndCap:SetScale(1)
 		MainMenuBarArtFrame.LeftEndCap:SetAlpha(1)
 	end
@@ -255,8 +264,14 @@ function ClassicUI:RefreshConfig()
 		MainMenuBarArtFrame.RightEndCap:Hide()
 	else
 		MainMenuBarArtFrame.RightEndCap:SetSize(128, 76)
-		MainMenuBarArtFrame.RightEndCap:SetTexture("Interface\\MAINMENUBAR\\UI-MainMenuBar-EndCap-Dwarf.blp")
-		MainMenuBarArtFrame.RightEndCap:SetTexCoord(128/128, 0/128, 52/128, 128/128);
+		if (not ClassicUI.UberUIIsPresent) then
+			MainMenuBarArtFrame.RightEndCap:SetTexture("Interface\\MAINMENUBAR\\UI-MainMenuBar-EndCap-Dwarf.blp")
+			MainMenuBarArtFrame.RightEndCap:SetTexCoord(128/128, 0/128, 52/128, 128/128)
+		else
+			local txInfo = C_Texture.GetAtlasInfo(MainMenuBarArtFrame.RightEndCap:GetAtlas() or "hud-MainMenuBar-gryphon")
+			MainMenuBarArtFrame.RightEndCap:SetTexture("Interface\\AddOns\\Uber UI\\textures\\MainMenuBar.blp")
+			MainMenuBarArtFrame.RightEndCap:SetTexCoord(txInfo.rightTexCoord, txInfo.leftTexCoord, txInfo.topTexCoord, txInfo.bottomTexCoord)
+		end
 		MainMenuBarArtFrame.RightEndCap:SetScale(1)
 		MainMenuBarArtFrame.RightEndCap:SetAlpha(1)
 	end
@@ -745,8 +760,7 @@ function ClassicUI:CheckLortiUI()
 		if ((LortiUI == nil) and (not ActionButton1.rabs_styled)) then
 			return false
 		else
-			local _, _, _, deprecatedLortiUIEnabled = GetAddOnInfo("Lorti UI")
-			if ((LortiUI ~= nil) or (deprecatedLortiUIEnabled)) then
+			if ((LortiUI ~= nil) or (IsAddOnLoaded("Lorti UI"))) then
 				C_Timer.After(8, function()	-- delay checking to make sure all variables of the other addons are loaded
 					local ib = MultiBarBottomRightButton7
 					if ib and ib:GetNormalTexture() then
@@ -793,6 +807,299 @@ function ClassicUI:CheckLortiUI()
 				ClassicUI.LortiUIIsPresent = true
 				return true
 			end
+		end
+	end
+end
+
+--  UberUI Configuration presets
+ClassicUI.UberUI_cfg = uuidb
+
+-- UberUI function to apply the addon background to an actionButton
+function ClassicUI:UberUI_applyBackground(bu)
+	local backgroundcolor, shadowcolor
+	if ClassicUI.UberUI_cfg.general.customcolor or ClassicUI.UberUI_cfg.general.classcolorframes then
+		backgroundcolor = ClassicUI.UberUI_cfg.general.customcolorval
+		shadowcolor = ClassicUI.UberUI_cfg.general.customcolorval
+	else
+		backgroundcolor = ClassicUI.UberUI_cfg.actionbars.backgroundcolor
+		shadowcolor = ClassicUI.UberUI_cfg.actionbars.shadowcolor
+	end
+	if bu and bu.bg then
+		bu.bg:SetBackdropBorderColor(shadowcolor.r,shadowcolor.g,shadowcolor.b,.9)
+	end
+	if not bu or (bu and bu.bg) then return end
+	-- UberUI: shadows+background
+	if bu:GetFrameLevel() < 1 then bu:SetFrameLevel(1) end
+	if ClassicUI.UberUI_cfg.actionbars.showbg or ClassicUI.UberUI_cfg.actionbars.showshadow then
+		bu.bg = CreateFrame("Frame", nil, bu, BackdropTemplateMixin and "BackdropTemplate" or nil)
+		bu.bg:SetPoint("TOPLEFT", bu, "TOPLEFT", -4, 4)
+		bu.bg:SetPoint("BOTTOMRIGHT", bu, "BOTTOMRIGHT", 4, -4)
+		bu.bg:SetFrameLevel(bu:GetFrameLevel()-1)
+	end
+	if ClassicUI.UberUI_cfg.actionbars.showbg and not ClassicUI.UberUI_cfg.actionbars.useflatbackground then
+		local t = bu.bg:CreateTexture(nil,"BACKGROUND",-8)
+		t:SetTexture(nil)
+		t:SetTexture(ClassicUI.UberUI_cfg.textures.buttons.buttonback)
+		t:SetVertexColor(backgroundcolor.r,backgroundcolor.g,backgroundcolor.b,backgroundcolor.a)
+	end
+	-- UberUI: create and set backdrop
+	local bgfile, edgefile = "", ""
+	if ClassicUI.UberUI_cfg.actionbars.showshadow then edgefile = ClassicUI.UberUI_cfg.textures.buttons.outer_shadow end
+	if ClassicUI.UberUI_cfg.actionbars.useflatbackground and ClassicUI.UberUI_cfg.actionbars.showbg then bgfile = ClassicUI.UberUI_cfg.textures.buttons.buttonbackflat end
+	if ClassicUI.UberUI_cfg.actionbars.overridecol  then
+		edgefile = nil
+	end
+	local backdrop = {
+		bgFile = bgfile,
+		edgeFile = edgefile,
+		tile = false,
+		tileSize = 32,
+		edgeSize = ClassicUI.UberUI_cfg.actionbars.inset,
+		insets = {
+			left = ClassicUI.UberUI_cfg.actionbars.inset,
+			right = ClassicUI.UberUI_cfg.actionbars.inset,
+			top = ClassicUI.UberUI_cfg.actionbars.inset,
+			bottom = ClassicUI.UberUI_cfg.actionbars.inset,
+		}
+	}
+	bu.bg:SetBackdrop(backdrop)
+	if ClassicUI.UberUI_cfg.actionbars.useflatbackground then
+		bu.bg:SetBackdropColor(backgroundcolor.r,backgroundcolor.g,backgroundcolor.b,backgroundcolor.a)
+	end
+	if ClassicUI.UberUI_cfg.actionbars.showshadow then
+		bu.bg:SetBackdropBorderColor(shadowcolor.r,shadowcolor.g,shadowcolor.b,.9)
+	end
+end
+
+-- UberUI function to apply the addon style to an actionButton
+function ClassicUI:UberUI_styleActionButton(bu, color)
+	if not(color) then
+		if ClassicUI.UberUI_cfg.general.customcolor or ClassicUI.UberUI_cfg.general.classcolorframes then
+			color = ClassicUI.UberUI_cfg.general.customcolorval
+		else
+			color = ClassicUI.UberUI_cfg.actionbars.color.normal
+		end
+	end
+	
+	local butex
+	if ClassicUI.UberUI_cfg.actionbars.gloss then
+		butex = ClassicUI.UberUI_cfg.textures.buttons.normal
+	else
+		butex = ClassicUI.UberUI_cfg.textures.buttons.light
+	end
+
+	local overridecol = ClassicUI.UberUI_cfg.actionbars.overridecol
+
+	if not bu or (bu and bu.rabs_styled and not ClassicUI.UberUI_cfg.actionbars.overridecol) then return end
+	local action = bu.action
+	local name = bu:GetName()
+	local ic  = _G[name.."Icon"]
+	local co  = _G[name.."Count"]
+	local bo  = _G[name.."Border"]
+	local ho  = _G[name.."HotKey"]
+	local cd  = _G[name.."Cooldown"]
+	local na  = _G[name.."Name"]
+	local fl  = _G[name.."Flash"]
+	local nt  = _G[name.."NormalTexture"]
+	local fbg  = _G[name.."FloatingBG"]
+	local fob = _G[name.."FlyoutBorder"]
+	local fobs = _G[name.."FlyoutBorderShadow"]
+	-- UberUI: floating background
+	if fbg then fbg:Hide() end
+	-- UberUI: flyout border stuff
+	if fob then fob:SetTexture(nil) end
+	if fobs then fobs:SetTexture(nil) end
+	-- UberUI: hide the border (plain ugly, sry blizz)
+	bo:SetTexture(nil)
+	-- UberUI: hotkey
+	if (ho:GetText() ~= nil and strbyte(ho:GetText())) == 226 then
+		ho:SetFont("Fonts\\ARIALN.ttf", ClassicUI.UberUI_cfg.actionbars.hotkeys.fontsize, "OUTLINE")
+	else
+		ho:SetFont(ClassicUI.UberUI_cfg.general.font, ClassicUI.UberUI_cfg.actionbars.hotkeys.fontsize, "OUTLINE")
+	end
+
+	ho:ClearAllPoints()
+	ho:SetPoint(ClassicUI.UberUI_cfg.actionbars.hotkeys.pos1.a1,bu,ClassicUI.UberUI_cfg.actionbars.hotkeys.pos1.x,ClassicUI.UberUI_cfg.actionbars.hotkeys.pos1.y)
+	ho:SetPoint(ClassicUI.UberUI_cfg.actionbars.hotkeys.pos2.a1,bu,ClassicUI.UberUI_cfg.actionbars.hotkeys.pos2.x,ClassicUI.UberUI_cfg.actionbars.hotkeys.pos2.y)
+	if not dominos and not bartender4 and not ClassicUI.UberUI_cfg.actionbars.hotkeys.show then
+		ho:Hide()
+	end
+	-- UberUI: macro name
+	na:SetFont(ClassicUI.UberUI_cfg.general.font, ClassicUI.UberUI_cfg.actionbars.macroname.fontsize, "OUTLINE")
+	na:ClearAllPoints()
+	na:SetPoint(ClassicUI.UberUI_cfg.actionbars.macroname.pos1.a1,bu,ClassicUI.UberUI_cfg.actionbars.macroname.pos1.x,ClassicUI.UberUI_cfg.actionbars.macroname.pos1.y)
+	na:SetPoint(ClassicUI.UberUI_cfg.actionbars.macroname.pos2.a1,bu,ClassicUI.UberUI_cfg.actionbars.macroname.pos2.x,ClassicUI.UberUI_cfg.actionbars.macroname.pos2.y)
+	if not dominos and not bartender4 and not ClassicUI.UberUI_cfg.actionbars.macroname.show then
+		na:Hide()
+	end
+	-- UberUI: item stack count
+	co:SetFont(ClassicUI.UberUI_cfg.general.font, ClassicUI.UberUI_cfg.actionbars.count.fontsize, "OUTLINE")
+	co:ClearAllPoints()
+	co:SetPoint(ClassicUI.UberUI_cfg.actionbars.count.pos.a1,bu,ClassicUI.UberUI_cfg.actionbars.count.pos.x,ClassicUI.UberUI_cfg.actionbars.count.pos.y)
+	if not dominos and not bartender4 and not ClassicUI.UberUI_cfg.actionbars.count.show then
+		co:Hide()
+	end
+	-- UberUI: applying the textures
+	fl:SetTexture(ClassicUI.UberUI_cfg.textures.buttons.flash)
+	bu:SetPushedTexture(ClassicUI.UberUI_cfg.textures.buttons.pushed)
+	bu:SetNormalTexture(butex)
+	if not nt then
+		-- UberUI: fix the non existent texture problem (no clue what is causing this)
+		nt = bu:GetNormalTexture()
+	end
+	-- UberUI: cut the default border of the icons and make them shiny
+	ic:SetTexCoord(0.1,0.9,0.1,0.9)
+	ic:SetPoint("TOPLEFT", bu, "TOPLEFT", 2, -2)
+	ic:SetPoint("BOTTOMRIGHT", bu, "BOTTOMRIGHT", -2, 2)
+	-- UberUI: adjust the cooldown frame
+	cd:SetPoint("TOPLEFT", bu, "TOPLEFT", ClassicUI.UberUI_cfg.actionbars.cooldown.spacing, -ClassicUI.UberUI_cfg.actionbars.cooldown.spacing)
+	cd:SetPoint("BOTTOMRIGHT", bu, "BOTTOMRIGHT", -ClassicUI.UberUI_cfg.actionbars.cooldown.spacing, ClassicUI.UberUI_cfg.actionbars.cooldown.spacing)
+	-- UberUI: apply the normaltexture
+	if action and (IsEquippedAction(action)) then
+		bu:SetNormalTexture(ClassicUI.UberUI_cfg.textures.buttons.equipped)
+	else
+		bu:SetNormalTexture(butex)
+	end
+	-- UberUI: make the normaltexture match the buttonsize
+	nt:SetAllPoints(bu)
+	-- UberUI: hook to prevent Blizzard from reseting our colors
+	hooksecurefunc(nt, "SetVertexColor", function(nt, r, g, b, a)
+		local color
+		if ClassicUI.UberUI_cfg.general.customcolor or ClassicUI.UberUI_cfg.general.classcolorframes then
+			color = ClassicUI.UberUI_cfg.general.customcolorval
+		else
+			color = ClassicUI.UberUI_cfg.actionbars.color.normal
+		end
+
+		local butex
+		if ClassicUI.UberUI_cfg.actionbars.gloss then
+			butex = ClassicUI.UberUI_cfg.textures.buttons.normal
+		else
+			butex = ClassicUI.UberUI_cfg.textures.buttons.light
+		end
+
+		local bu = nt:GetParent()
+
+		local action = bu.action
+		local curR, curG, curB, curA = nt:GetVertexColor()
+		local mult = 10^(2)
+		local curRR = mathfloor(curR*mult+0.5)/mult
+		local curGG = mathfloor(curG*mult+0.5)/mult
+		local curBB = mathfloor(curB*mult+0.5)/mult
+		local curAA = mathfloor(curA*mult+0.5)/mult
+		if (curRR ~= color.r and curGG ~= color.g and curBB ~= color.b and curAA ~= color.a) then
+			if r==1 and g==1 and b==1 and action and (IsEquippedAction(action)) then
+				if ClassicUI.UberUI_cfg.actionbars.color.equipped.r == 1 and  ClassicUI.UberUI_cfg.actionbars.color.equipped.g == 1 and  ClassicUI.UberUI_cfg.actionbars.color.equipped.b == 1 then
+					nt:SetVertexColor(0.999,0.999,0.999,1)
+				else
+					bu:SetNormalTexture(ClassicUI.UberUI_cfg.textures.buttons.equipped)
+					nt:SetVertexColor(ClassicUI.UberUI_cfg.actionbars.color.equipped.r, ClassicUI.UberUI_cfg.actionbars.color.equipped.g, ClassicUI.UberUI_cfg.actionbars.color.equipped.b, ClassicUI.UberUI_cfg.actionbars.color.equipped.a)
+				end
+			elseif r==0.5 and g==0.5 and b==1 then
+				-- UberUI: blizzard oom color
+				if color.r == 0.5 and  color.g == 0.5 and  color.b == 1 then
+					nt:SetVertexColor(0.499,0.499,0.999,1)
+				else
+					bu:SetNormalTexture(butex)
+					nt:SetVertexColor(color.r, color.g, color.b, color.a)
+				end
+			elseif r==1 and g==1 and b==1 then
+				if color.r == 1 and  color.g == 1 and  color.b == 1 then
+					bu:SetNormalTexture(butex)
+					nt:SetVertexColor(0.999,0.999,0.999,1)
+				else
+					bu:SetNormalTexture(butex)
+					nt:SetVertexColor(color.r, color.g, color.b, color.a)
+				end
+			end
+		end
+	end)
+	-- UberUI: shadows+backgroundr
+	if not bu.bg or ClassicUI.UberUI_cfg.actionbars.overridecol then ClassicUI:UberUI_applyBackground(bu) end
+	bu.rabs_styled = true
+	-- UberUI: fix the normaltexture
+	if bartender4 then
+		nt:SetTexCoord(0,1,0,1)
+		nt.SetTexCoord = function() return end
+		bu.SetNormalTexture = function() return end
+	end
+end
+
+-- Function to fast-check if Uber UI addon is present
+function ClassicUI:CheckUberUI()
+	if (ClassicUI.UberUIIsPresent) then
+		return true
+	else
+		if (UberUI == nil) then
+			return false
+		else
+			C_Timer.After(8, function()	-- delay checking to make sure all variables of the other addons are loaded
+				MainMenuBarArtFrameBackground.BackgroundLarge2:SetTexture(MicroButtonAndBagsBar.MicroBagBar:GetTexture())
+				MainMenuBarArtFrameBackground.MicroButtonArt:SetTexture("Interface\\AddOns\\ClassicUI\\Textures\\UberUI-UI-MainMenuBar-Dwarf.blp")
+				MainMenuBarArtFrameBackground.BagsArt:SetTexture("Interface\\AddOns\\ClassicUI\\Textures\\UberUI-UI-MainMenuBar-Dwarf.blp")
+				if (ClassicUI.UberUI_cfg == nil) then
+					ClassicUI.UberUI_cfg = uuidb
+				end
+				if (ClassicUI.UberUI_cfg ~= nil) then
+					for i = 1, 6 do
+						local multiButton = _G["CUI_MultiBarBottomRightButton"..i.."Background"]
+						if (multiButton ~= nil) then
+							ClassicUI:UberUI_styleActionButton(multiButton)
+						end
+					end
+					if (UberUI.actionbars ~= nil) then
+						hooksecurefunc(UberUI.actionbars, "EditColors", function(color)
+							if not(color) then
+								color = ClassicUI.UberUI_cfg.actionbars.shadowcolor
+							end
+							for i = 1, 6 do
+								local multiButton = _G["CUI_MultiBarBottomRightButton"..i.."Background"]
+								if (multiButton ~= nil) then
+									multiButton.bg:SetBackdropBorderColor(color.r, color.g, color.b, color.a)
+								end
+							end
+							local r, g, b = MainMenuBarArtFrameBackground.BackgroundLarge:GetVertexColor()
+							if (MainMenuBarArtFrameBackground.BackgroundLarge2 ~= nil) then
+								MainMenuBarArtFrameBackground.BackgroundLarge2:SetVertexColor(r, g, b)
+							end
+							if (MainMenuBarArtFrameBackground.MicroButtonArt ~= nil) then
+								MainMenuBarArtFrameBackground.MicroButtonArt:SetVertexColor(r, g, b)
+							end
+							if (MainMenuBarArtFrameBackground.BagsArt ~= nil) then
+								MainMenuBarArtFrameBackground.BagsArt:SetVertexColor(r, g, b)
+							end
+						end)
+					end
+				end
+				local r, g, b = MainMenuBarArtFrameBackground.BackgroundLarge:GetVertexColor()
+				if (MainMenuBarArtFrameBackground.BackgroundLarge2 ~= nil) then
+					MainMenuBarArtFrameBackground.BackgroundLarge2:SetVertexColor(r, g, b)
+				end
+				if (MainMenuBarArtFrameBackground.MicroButtonArt ~= nil) then
+					MainMenuBarArtFrameBackground.MicroButtonArt:SetVertexColor(r, g, b)
+				end
+				if (MainMenuBarArtFrameBackground.BagsArt ~= nil) then
+					MainMenuBarArtFrameBackground.BagsArt:SetVertexColor(r, g, b)
+				end
+			end)
+			if (ClassicUI.UberUI_cfg == nil) then
+				ClassicUI.UberUI_cfg = uuidb
+			end
+			MainMenuBarArtFrameBackground.BackgroundLarge2:SetTexture(MicroButtonAndBagsBar.MicroBagBar:GetTexture())
+			MainMenuBarArtFrameBackground.MicroButtonArt:SetTexture("Interface\\AddOns\\ClassicUI\\Textures\\UberUI-UI-MainMenuBar-Dwarf.blp")
+			MainMenuBarArtFrameBackground.BagsArt:SetTexture("Interface\\AddOns\\ClassicUI\\Textures\\UberUI-UI-MainMenuBar-Dwarf.blp")
+			local r, g, b = MainMenuBarArtFrameBackground.BackgroundLarge:GetVertexColor()
+			if (MainMenuBarArtFrameBackground.BackgroundLarge2 ~= nil) then
+				MainMenuBarArtFrameBackground.BackgroundLarge2:SetVertexColor(r, g, b)
+			end
+			if (MainMenuBarArtFrameBackground.MicroButtonArt ~= nil) then
+				MainMenuBarArtFrameBackground.MicroButtonArt:SetVertexColor(r, g, b)
+			end
+			if (MainMenuBarArtFrameBackground.BagsArt ~= nil) then
+				MainMenuBarArtFrameBackground.BagsArt:SetVertexColor(r, g, b)
+			end
+			ClassicUI.UberUIIsPresent = true
+			return true
 		end
 	end
 end
@@ -1030,9 +1337,6 @@ function ClassicUI:MainFunction()
 			MainMenuBarPerformanceBar:SetAlpha(0)
 			MainMenuBarPerformanceBar:Hide()
 		end
-	end
-	if (HelpOpenTicketButton ~= nil) then
-		HelpOpenTicketButton:SetPoint("CENTER", HelpOpenTicketButton:GetParent(), "TOPRIGHT", -3, -4);
 	end
 	if (HelpOpenWebTicketButton ~= nil) then
 		HelpOpenWebTicketButton:SetPoint("CENTER", HelpOpenWebTicketButton:GetParent(), "TOPRIGHT", -3, -4);
@@ -1631,6 +1935,9 @@ function ClassicUI:MainFunction()
 		-- Compatibility with Lorti UI addon
 		ClassicUI:CheckLortiUI()
 		
+		-- Compatibility with Uber UI addon
+		ClassicUI:CheckUberUI()
+		
 		-- Show/Hide Gargoyles and set their scale and alpha
 		if (ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.hide) then
 			if (MainMenuBarArtFrame.LeftEndCap:IsShown()) then
@@ -1641,7 +1948,11 @@ function ClassicUI:MainFunction()
 				MainMenuBarArtFrame.LeftEndCap:Show()
 				if (ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.model == 1) then
 					MainMenuBarArtFrame.LeftEndCap:SetSize(128, 86)
-					MainMenuBarArtFrame.LeftEndCap:SetTexture("Interface\\MAINMENUBAR\\UI-MainMenuBar-EndCap-Human.blp")
+					if (not ClassicUI.UberUIIsPresent) then
+						MainMenuBarArtFrame.LeftEndCap:SetTexture("Interface\\MAINMENUBAR\\UI-MainMenuBar-EndCap-Human.blp")
+					else
+						MainMenuBarArtFrame.LeftEndCap:SetTexture("Interface\\AddOns\\ClassicUI\\Textures\\UberUI-UI-MainMenuBar-EndCap-Human.blp")
+					end
 					MainMenuBarArtFrame.LeftEndCap:SetTexCoord(0/128, 128/128, 42/128, 128/128)
 				end
 				if (mathabs(MainMenuBarArtFrame.LeftEndCap:GetScale()-ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.scale) > SCALE_EPSILON) then
@@ -1659,7 +1970,11 @@ function ClassicUI:MainFunction()
 				MainMenuBarArtFrame.RightEndCap:Show()
 				if (ClassicUI.db.profile.barsConfig.RightGargoyleFrame.model == 1) then
 					MainMenuBarArtFrame.RightEndCap:SetSize(128, 86)
-					MainMenuBarArtFrame.RightEndCap:SetTexture("Interface\\MAINMENUBAR\\UI-MainMenuBar-EndCap-Human.blp")
+					if (not ClassicUI.UberUIIsPresent) then
+						MainMenuBarArtFrame.RightEndCap:SetTexture("Interface\\MAINMENUBAR\\UI-MainMenuBar-EndCap-Human.blp")
+					else
+						MainMenuBarArtFrame.RightEndCap:SetTexture("Interface\\Addons\\ClassicUI\\Textures\\UberUI-UI-MainMenuBar-EndCap-Human.blp")
+					end
 					MainMenuBarArtFrame.RightEndCap:SetTexCoord(128/128, 0/128, 42/128, 128/128)
 				end
 				MainMenuBarArtFrame.RightEndCap:SetAlpha(ClassicUI.db.profile.barsConfig.RightGargoyleFrame.alpha)
@@ -1825,16 +2140,30 @@ function ClassicUI:MainFunction()
 		local _, _, _, _, yPosMainMenuBL = MainMenuBarArtFrameBackground.BackgroundLarge:GetPoint();
 		if ( ClassicUI.cached_NumberRealVisibleBars > 0 ) then
 			if (yPosMainMenuBL ~= -7) then
-				MainMenuBarArtFrameBackground.BackgroundLarge:SetTexCoord(0, 1, 7/49, 1)
-				MainMenuBarArtFrameBackground.BackgroundSmall:SetTexCoord(0, 1, 7/49, 1)
+				if (not ClassicUI.UberUIIsPresent) then
+					MainMenuBarArtFrameBackground.BackgroundLarge:SetTexCoord(0, 1, 7/49, 1)
+					MainMenuBarArtFrameBackground.BackgroundSmall:SetTexCoord(0, 1, 7/49, 1)
+				else
+					local txInfo = GetAtlasInfo(MainMenuBarArtFrameBackground.BackgroundLarge:GetAtlas() or "hud-MainMenuBar-large");
+					MainMenuBarArtFrameBackground.BackgroundLarge:SetTexCoord(txInfo.leftTexCoord, txInfo.rightTexCoord, txInfo.topTexCoord+7/256, txInfo.bottomTexCoord)
+					local txInfoS = GetAtlasInfo(MainMenuBarArtFrameBackground.BackgroundSmall:GetAtlas() or "hud-MainMenuBar-small")
+					MainMenuBarArtFrameBackground.BackgroundSmall:SetTexCoord(txInfoS.leftTexCoord, txInfoS.rightTexCoord, txInfoS.topTexCoord, txInfoS.bottomTexCoord)
+				end
 				MainMenuBarArtFrameBackground.BackgroundLarge:SetPoint("TOPLEFT", MainMenuBarArtFrameBackground, "TOPLEFT", 0, -7)
 				MainMenuBarArtFrameBackground.BackgroundSmall:SetPoint("TOPLEFT", MainMenuBarArtFrameBackground, "TOPLEFT", 0, -7)
 				MainMenuBarArtFrameBackground.BackgroundLarge2:Hide()
 			end
 		else
 			if (yPosMainMenuBL ~= 0) then
-				MainMenuBarArtFrameBackground.BackgroundLarge:SetTexCoord(0, 1, 0, 1)
-				MainMenuBarArtFrameBackground.BackgroundSmall:SetTexCoord(0, 1, 0, 1)
+				if (not ClassicUI.UberUIIsPresent) then
+					MainMenuBarArtFrameBackground.BackgroundLarge:SetTexCoord(0, 1, 0, 1)
+					MainMenuBarArtFrameBackground.BackgroundSmall:SetTexCoord(0, 1, 0, 1)
+				else
+					local txInfo = GetAtlasInfo(MainMenuBarArtFrameBackground.BackgroundLarge:GetAtlas() or "hud-MainMenuBar-large")
+					MainMenuBarArtFrameBackground.BackgroundLarge:SetTexCoord(txInfo.leftTexCoord, txInfo.rightTexCoord, txInfo.topTexCoord, txInfo.bottomTexCoord)
+					local txInfoS = GetAtlasInfo(MainMenuBarArtFrameBackground.BackgroundSmall:GetAtlas() or "hud-MainMenuBar-small")
+					MainMenuBarArtFrameBackground.BackgroundSmall:SetTexCoord(txInfoS.leftTexCoord, txInfoS.rightTexCoord, txInfoS.topTexCoord, txInfoS.bottomTexCoord)
+				end
 				MainMenuBarArtFrameBackground.BackgroundLarge:SetPoint("TOPLEFT", MainMenuBarArtFrameBackground, "TOPLEFT", 0, 0)
 				MainMenuBarArtFrameBackground.BackgroundSmall:SetPoint("TOPLEFT", MainMenuBarArtFrameBackground, "TOPLEFT", 0, 0)
 				MainMenuBarArtFrameBackground.BackgroundLarge2:Show()

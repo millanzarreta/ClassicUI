@@ -1,7 +1,7 @@
-## Interface: 90001
+## Interface: 90002
 ## Title: ClassicUI
 ## Author: millanzarreta
-## Version: 1.1.7
+## Version: 1.1.8
 ## Notes: Restores the classic main interface pre-BFA
 ## Notes-esES: Restaura la interfaz principal clasica pre-BFA
 ## X-Category: Action Bars
@@ -10,8 +10,8 @@
 ## DefaultState: Enabled
 ## LoadOnDemand: 0
 ## SavedVariables: ClassicUI_DB
-## OptionalDeps: Ace3, LibStub, CallbackHandler-1.0, LibJostle-3.0, Titan, Bazooka, ChocolateBar, Lorti UI, Lorti-UI
-## X-Curse-Packaged-Version: 1.1.7
+## OptionalDeps: Ace3, LibStub, CallbackHandler-1.0, LibJostle-3.0, Titan, Bazooka, ChocolateBar, Lorti UI, Lorti-UI, UberUI
+## X-Curse-Packaged-Version: 1.1.8
 ## X-Curse-Project-Name: ClassicUI
 ## X-Curse-Project-ID: ClassicUI
 ## X-Curse-Repository-ID: ClassicUI-mainline

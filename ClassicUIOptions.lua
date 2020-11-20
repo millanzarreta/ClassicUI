@@ -19,7 +19,7 @@ ClassicUI.optionsTable = {
 				authorD = {
 					order = 2,
 					type = "description",
-					name = '\124cfffb5e26' .. L['Author: Millán-C\'Thun'] .. '\124r'
+					name = '\124cfffb5e26' .. L['Author: Millán-Sanguino'] .. '\124r'
 				},
 				Spacer1 = {
 					type = "description",
@@ -268,8 +268,14 @@ ClassicUI.optionsTable = {
 										MainMenuBarArtFrame.LeftEndCap:Hide()
 									else
 										MainMenuBarArtFrame.LeftEndCap:SetSize(128, 76)
-										MainMenuBarArtFrame.LeftEndCap:SetTexture("Interface\\MAINMENUBAR\\UI-MainMenuBar-EndCap-Dwarf.blp")
-										MainMenuBarArtFrame.LeftEndCap:SetTexCoord(0/128, 128/128, 52/128, 128/128);
+										if (not ClassicUI.UberUIIsPresent) then
+											MainMenuBarArtFrame.LeftEndCap:SetTexture("Interface\\MAINMENUBAR\\UI-MainMenuBar-EndCap-Dwarf.blp")
+											MainMenuBarArtFrame.LeftEndCap:SetTexCoord(0/128, 128/128, 52/128, 128/128)
+										else
+											local txInfo = C_Texture.GetAtlasInfo(MainMenuBarArtFrame.LeftEndCap:GetAtlas() or "hud-MainMenuBar-gryphon")
+											MainMenuBarArtFrame.LeftEndCap:SetTexture("Interface\\AddOns\\Uber UI\\textures\\MainMenuBar.blp")
+											MainMenuBarArtFrame.LeftEndCap:SetTexCoord(txInfo.leftTexCoord, txInfo.rightTexCoord, txInfo.topTexCoord, txInfo.bottomTexCoord)
+										end
 									end
 									ClassicUI.SetPositionForStatusBars_MainMenuBar()
 								end
@@ -376,8 +382,14 @@ ClassicUI.optionsTable = {
 										MainMenuBarArtFrame.RightEndCap:Hide()
 									else
 										MainMenuBarArtFrame.RightEndCap:SetSize(128, 76)
-										MainMenuBarArtFrame.RightEndCap:SetTexture("Interface\\MAINMENUBAR\\UI-MainMenuBar-EndCap-Dwarf.blp")
-										MainMenuBarArtFrame.RightEndCap:SetTexCoord(128/128, 0/128, 52/128, 128/128);
+										if (not ClassicUI.UberUIIsPresent) then
+											MainMenuBarArtFrame.RightEndCap:SetTexture("Interface\\MAINMENUBAR\\UI-MainMenuBar-EndCap-Dwarf.blp")
+											MainMenuBarArtFrame.RightEndCap:SetTexCoord(128/128, 0/128, 52/128, 128/128)
+										else
+											local txInfo = C_Texture.GetAtlasInfo(MainMenuBarArtFrame.RightEndCap:GetAtlas() or "hud-MainMenuBar-gryphon")
+											MainMenuBarArtFrame.RightEndCap:SetTexture("Interface\\AddOns\\Uber UI\\textures\\MainMenuBar.blp")
+											MainMenuBarArtFrame.RightEndCap:SetTexCoord(txInfo.rightTexCoord, txInfo.leftTexCoord, txInfo.topTexCoord, txInfo.bottomTexCoord)
+										end
 									end
 									ClassicUI.SetPositionForStatusBars_MainMenuBar()
 								end
@@ -1889,7 +1901,7 @@ ClassicUI.optionsTable = {
 				authorD = {
 					order = 2,
 					type = "description",
-					name = '\124cfffb5e26' .. L['Author: Millán-C\'Thun'] .. '\124r'
+					name = '\124cfffb5e26' .. L['Author: Millán-Sanguino'] .. '\124r'
 				},
 				Spacer1 = {
 					type = "description",
