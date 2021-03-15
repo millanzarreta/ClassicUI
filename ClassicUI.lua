@@ -1,7 +1,7 @@
 -- ------------------------------------------------------------ --
 -- Addon: ClassicUI                                             --
 --                                                              --
--- Version: 1.1.8                                               --
+-- Version: 1.1.9                                               --
 -- Author: Millán - Sanguino                                    --
 --                                                              --
 -- License: GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007 --
@@ -43,7 +43,7 @@ local GetAtlasInfo = C_Texture.GetAtlasInfo
 ClassicUI.BAG_SIZE = 32
 ClassicUI.BAGS_WIDTH = (4*ClassicUI.BAG_SIZE+32)
 ClassicUI.ACTION_BAR_OFFSET = 48
-ClassicUI.VERSION = "1.1.8"
+ClassicUI.VERSION = "1.1.9"
 
 ClassicUI.cached_NumberVisibleBars = 0
 ClassicUI.cached_NumberRealVisibleBars = 0
@@ -2742,6 +2742,7 @@ end
 -- Function to desaturate the entire action icon when the spell is on cooldown
 function ClassicUI:HookGreyOnCooldownIcons()
 	if (not GREYONCOOLDOWN_HOOKED) then
+		local UpdateFuncCache = {}
 		function ActionButtonGreyOnCooldown_UpdateCooldown(self, expectedUpdate)
 			local icon = self.icon
 			local action = self.action
@@ -2759,9 +2760,12 @@ function ClassicUI:HookGreyOnCooldownIcons()
 							nextTime = -nextTime / 2
 						end
 						if nextTime <= 4294967.295 then
-							C_Timer.After(nextTime, function()
-								ActionButtonGreyOnCooldown_UpdateCooldown(self, action)
-							end)
+							local func = UpdateFuncCache[self]
+							if not func then
+								func = function() ActionButtonGreyOnCooldown_UpdateCooldown(self, true) end
+								UpdateFuncCache[self] = func
+							end
+							C_Timer.After(nextTime, func)
 						end
 					elseif (expectedUpdate) then
 						if ((not self.onCooldown) or (self.onCooldown < start + duration)) then
@@ -2775,9 +2779,12 @@ function ClassicUI:HookGreyOnCooldownIcons()
 							nextTime = 0.05
 						end
 						if nextTime <= 4294967.295 then
-							C_Timer.After(nextTime, function()
-								ActionButtonGreyOnCooldown_UpdateCooldown(self, action)
-							end)
+							local func = UpdateFuncCache[self]
+							if not func then
+								func = function() ActionButtonGreyOnCooldown_UpdateCooldown(self, true) end
+								UpdateFuncCache[self] = func
+							end
+							C_Timer.After(nextTime, func)
 						end
 					end
 					if ((not self.onCooldown) or (self.onCooldown < start + duration)) then
