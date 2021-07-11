@@ -4,7 +4,7 @@ if not L then return end
 L[''] = true
 L['ClassicUI'] = true
 L['Version'] = 'Version'
-L['Author: Millán-C\'Thun'] = 'Autor: Millán-Sanguino'
+L['Author: Millán-Sanguino'] = 'Autor: Millán-Sanguino'
 L['Enable'] = 'Activar'
 L['Enable ClassicUI'] = 'Activar ClassicUI'
 L['Force Extra Options'] = 'Forzar las Opciones Adicionales'

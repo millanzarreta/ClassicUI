@@ -1,7 +1,7 @@
 -- ------------------------------------------------------------ --
 -- Addon: ClassicUI                                             --
 --                                                              --
--- Version: 1.1.9                                               --
+-- Version: 1.2.0                                               --
 -- Author: Millán - Sanguino                                    --
 --                                                              --
 -- License: GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007 --
@@ -43,7 +43,7 @@ local GetAtlasInfo = C_Texture.GetAtlasInfo
 ClassicUI.BAG_SIZE = 32
 ClassicUI.BAGS_WIDTH = (4*ClassicUI.BAG_SIZE+32)
 ClassicUI.ACTION_BAR_OFFSET = 48
-ClassicUI.VERSION = "1.1.9"
+ClassicUI.VERSION = "1.2.0"
 
 ClassicUI.cached_NumberVisibleBars = 0
 ClassicUI.cached_NumberRealVisibleBars = 0
@@ -2177,8 +2177,10 @@ function ClassicUI:MainFunction()
 		
 		-- Set the position and scale for MainMenuBarArtFrame
 		local menuBarBagsWidth = BAGS_WIDTH + 60 + extraWidth;
-		MainMenuBarArtFrame:SetPoint("TOPLEFT", MainMenuBarArtFrame:GetParent(), ((-menuBarBagsWidth)/2) + ClassicUI.db.profile.barsConfig.MainMenuBar.xOffset, 10 + offsetY + ClassicUI.db.profile.barsConfig.MainMenuBar.yOffset);
-		MainMenuBarArtFrame:SetPoint("BOTTOMRIGHT", MainMenuBarArtFrame:GetParent(), ((-menuBarBagsWidth)/2) + ClassicUI.db.profile.barsConfig.MainMenuBar.xOffset, 10 + offsetY + ClassicUI.db.profile.barsConfig.MainMenuBar.yOffset);
+		local menuBarPoint1, menuBarAnchor1 = MainMenuBarArtFrame:GetPoint(1)
+		local menuBarPoint2, menuBarAnchor2 = MainMenuBarArtFrame:GetPoint(2)
+		MainMenuBarArtFrame:SetPoint("TOPLEFT", ((menuBarPoint1 == "TOPLEFT") and menuBarAnchor1) or ((menuBarPoint2 == "TOPLEFT") and menuBarAnchor2) or MainMenuBarArtFrame:GetParent(), ((-menuBarBagsWidth)/2) + ClassicUI.db.profile.barsConfig.MainMenuBar.xOffset, 10 + offsetY + ClassicUI.db.profile.barsConfig.MainMenuBar.yOffset);
+		MainMenuBarArtFrame:SetPoint("BOTTOMRIGHT", ((menuBarPoint2 == "BOTTOMRIGHT") and menuBarAnchor2) or ((menuBarPoint1 == "BOTTOMRIGHT") and menuBarAnchor1) or MainMenuBarArtFrame:GetParent(), ((-menuBarBagsWidth)/2) + ClassicUI.db.profile.barsConfig.MainMenuBar.xOffset, 10 + offsetY + ClassicUI.db.profile.barsConfig.MainMenuBar.yOffset);
 		if ((mathabs(MainMenuBarArtFrame:GetScale()-ClassicUI.db.profile.barsConfig.MainMenuBar.scale) > SCALE_EPSILON) or (mathabs(StatusTrackingBarManager:GetScale()-ClassicUI.db.profile.barsConfig.MainMenuBar.scale) > SCALE_EPSILON)) then
 			MainMenuBarArtFrame:SetScale(ClassicUI.db.profile.barsConfig.MainMenuBar.scale)
 			StatusTrackingBarManager:SetScale(ClassicUI.db.profile.barsConfig.MainMenuBar.scale)
@@ -2574,43 +2576,33 @@ end
 -- Function to disable Cooldown effect on action bars caused by CC
 function ClassicUI:HookLossOfControlUICCRemover()
 	if (not DISABLELOSSOFCONTROLUI_HOOKED) then
-		hooksecurefunc('CooldownFrame_Set', function(self)
-			if self.currentCooldownType == COOLDOWN_TYPE_LOSS_OF_CONTROL then
-				self:SetDrawBling(false)
-				self:SetCooldown(0, 0)
-			else
-				if not self:GetDrawBling() then
-					self:SetDrawBling(true)
-				end
-			end
-		end)
 		hooksecurefunc('ActionButton_UpdateCooldown', function(self)
 			if ( self.cooldown.currentCooldownType == COOLDOWN_TYPE_LOSS_OF_CONTROL ) then
-				local start, duration, enable, charges, maxCharges, chargeStart, chargeDuration;
-				local modRate = 1.0;
-				local chargeModRate = 1.0;
+				local start, duration, enable, charges, maxCharges, chargeStart, chargeDuration
+				local modRate = 1.0
+				local chargeModRate = 1.0
 				if ( self.spellID ) then
-					start, duration, enable, modRate = GetSpellCooldown(self.spellID);
-					charges, maxCharges, chargeStart, chargeDuration, chargeModRate = GetSpellCharges(self.spellID);
+					start, duration, enable, modRate = GetSpellCooldown(self.spellID)
+					charges, maxCharges, chargeStart, chargeDuration, chargeModRate = GetSpellCharges(self.spellID)
 				else
-					start, duration, enable, modRate = GetActionCooldown(self.action);
-					charges, maxCharges, chargeStart, chargeDuration, chargeModRate = GetActionCharges(self.action);
+					start, duration, enable, modRate = GetActionCooldown(self.action)
+					charges, maxCharges, chargeStart, chargeDuration, chargeModRate = GetActionCharges(self.action)
 				end
-				self.cooldown:SetEdgeTexture("Interface\\Cooldown\\edge");
-				self.cooldown:SetSwipeColor(0, 0, 0);
-				self.cooldown:SetHideCountdownNumbers(false);
+				self.cooldown:SetEdgeTexture("Interface\\Cooldown\\edge")
+				self.cooldown:SetSwipeColor(0, 0, 0)
+				self.cooldown:SetHideCountdownNumbers(false)
 				if ( charges and maxCharges and maxCharges > 1 and charges < maxCharges ) then
 					if chargeStart == 0 then
-						ClearChargeCooldown(self);
+						ClearChargeCooldown(self)
 					else
 						if self.chargeCooldown then
-							CooldownFrame_Set(self.chargeCooldown, chargeStart, chargeDuration, true, true, chargeModRate);
+							CooldownFrame_Set(self.chargeCooldown, chargeStart, chargeDuration, true, true, chargeModRate)
 						end
 					end
 				else
-					ClearChargeCooldown(self);
+					ClearChargeCooldown(self)
 				end
-				CooldownFrame_Set(self.cooldown, start, duration, enable, false, modRate);
+				CooldownFrame_Set(self.cooldown, start, duration, enable, false, modRate)
 			end
 		end)
 		DISABLELOSSOFCONTROLUI_HOOKED = true
@@ -2745,9 +2737,15 @@ function ClassicUI:HookGreyOnCooldownIcons()
 		local UpdateFuncCache = {}
 		function ActionButtonGreyOnCooldown_UpdateCooldown(self, expectedUpdate)
 			local icon = self.icon
+			local spellID = self.spellID
 			local action = self.action
-			if (icon and action) then
-				local start, duration = GetActionCooldown(action)
+			if (icon and ((action and type(action)~="table" and type(action)~="string") or (spellID and type(spellID)~="table" and type(spellID)~="string"))) then
+				local start, duration
+				if (spellID) then
+					start, duration = GetSpellCooldown(spellID)
+				else
+					start, duration = GetActionCooldown(action)
+				end
 				if (duration >= ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.minDuration) then
 					if start > 3085367 and start <= 4294967.295 then
 						start = start - 4294967.296
