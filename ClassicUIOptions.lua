@@ -123,8 +123,8 @@ ClassicUI.optionsTable = {
 						hideLatencyBar = {
 							order = 5,
 							type = "toggle",
-							name = L['Hide Latency Bar'],
-							desc = L['Hide Latency Bar'],
+							name = L['Hide Small Latency Bar'],
+							desc = L['Hide Small Latency Bar'],
 							width = "double",
 							get = function() return ClassicUI.db.profile.barsConfig.MainMenuBar.hideLatencyBar end,
 							set = function(_,value)
@@ -546,7 +546,7 @@ ClassicUI.optionsTable = {
 									order = 1,
 									type = "toggle",
 									name = L['Disable auto-yOffset [*]'],
-									desc = L['Disable auto-yOffset when StatusBar are showed'],
+									desc = L['Disable auto-yOffset when StatusBar are shown'],
 									get = function() return ClassicUI.db.profile.barsConfig.BottomMultiActionBars.ignoreyOffsetStatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.BottomMultiActionBars.ignoreyOffsetStatusBar = value
@@ -561,8 +561,8 @@ ClassicUI.optionsTable = {
 									softMax = 500,
 									step = 1,
 									bigStep = 10,
-									name = L['yOffset - 1 StatusBar Showed'],
-									desc = L['yOffset when One Status Bar is showed'],
+									name = L['yOffset - 1 StatusBar Shown'],
+									desc = L['yOffset when One Status Bar is shown'],
 									get = function() return ClassicUI.db.profile.barsConfig.BottomMultiActionBars.yOffset1StatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.BottomMultiActionBars.yOffset1StatusBar = value
@@ -577,8 +577,8 @@ ClassicUI.optionsTable = {
 									softMax = 500,
 									step = 1,
 									bigStep = 10,
-									name = L['yOffset - 2 StatusBar Showed'],
-									desc = L['yOffset when Two Status Bars are showed'],
+									name = L['yOffset - 2 StatusBar Shown'],
+									desc = L['yOffset when Two Status Bars are shown'],
 									get = function() return ClassicUI.db.profile.barsConfig.BottomMultiActionBars.yOffset2StatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.BottomMultiActionBars.yOffset2StatusBar = value
@@ -613,8 +613,55 @@ ClassicUI.optionsTable = {
 							order = 8,
 							name = L['RightMultiActionBars']
 						},
-						xOffsetRightMultiActionBars = {
+						autoAdjustmentRightMultiActionBarsGroup = {
 							order = 9,
+							inline = true,
+							type = "group",
+							name = " ",
+							desc = "",
+							args = {
+								useBlizzardPostBFAAutoAdjustmentRightMultiActionBars = {
+									order = 1,
+									type = "toggle",
+									name = L['UseBlizzardPostBFAAutoAdjustment'],
+									desc = L['UseBlizzardPostBFAAutoAdjustmentDesc'],
+									width = "full",
+									get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.useBlizzardPostBFAAutoAdjustment end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.RightMultiActionBars.useBlizzardPostBFAAutoAdjustment = value
+										ClassicUI.Update_MultiActionBar()
+									end,
+								},
+								useMinimapFrameAsTopMarginRightMultiActionBars = {
+									order = 2,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.useBlizzardPostBFAAutoAdjustment) end,
+									type = "toggle",
+									name = L['UseMinimapFrameAsTopMargin'],
+									desc = L['UseMinimapFrameAsTopMarginDesc'],
+									width = "full",
+									get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.useMinimapFrameAsTopMargin end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.RightMultiActionBars.useMinimapFrameAsTopMargin = value
+										ClassicUI.Update_MultiActionBar()
+									end,
+								},
+								allowExceedTopMarginWithTwoStatusBarsRightMultiActionBars = {
+									order = 3,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.useBlizzardPostBFAAutoAdjustment) end,
+									type = "toggle",
+									name = L['AllowExceedTopMarginWithTwoStatusBars'],
+									desc = L['AllowExceedTopMarginWithTwoStatusBarsDesc'],
+									width = "full",
+									get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.allowExceedTopMarginWithTwoStatusBars end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.RightMultiActionBars.allowExceedTopMarginWithTwoStatusBars = value
+										ClassicUI.Update_MultiActionBar()
+									end,
+								},
+							},
+						},
+						xOffsetRightMultiActionBars = {
+							order = 10,
 							type = "range",
 							softMin = -500,
 							softMax = 500,
@@ -629,7 +676,7 @@ ClassicUI.optionsTable = {
 							end
 						},
 						yOffsetRightMultiActionBars = {
-							order = 10,
+							order = 11,
 							type = "range",
 							softMin = -500,
 							softMax = 500,
@@ -644,7 +691,7 @@ ClassicUI.optionsTable = {
 							end
 						},
 						OffsetsStatusBar2 = {
-							order = 11,
+							order = 12,
 							inline = true,
 							type = "group",
 							name = " ",
@@ -654,7 +701,7 @@ ClassicUI.optionsTable = {
 									order = 1,
 									type = "toggle",
 									name = L['Disable auto-yOffset [*]'],
-									desc = L['Disable auto-yOffset when StatusBar are showed'],
+									desc = L['Disable auto-yOffset when StatusBar are shown'],
 									get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.ignoreyOffsetStatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.RightMultiActionBars.ignoreyOffsetStatusBar = value
@@ -669,8 +716,8 @@ ClassicUI.optionsTable = {
 									softMax = 500,
 									step = 1,
 									bigStep = 10,
-									name = L['yOffset - 1 StatusBar Showed'],
-									desc = L['yOffset when One Status Bar is showed'],
+									name = L['yOffset - 1 StatusBar Shown'],
+									desc = L['yOffset when One Status Bar is shown'],
 									get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.yOffset1StatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.RightMultiActionBars.yOffset1StatusBar = value
@@ -685,8 +732,8 @@ ClassicUI.optionsTable = {
 									softMax = 500,
 									step = 1,
 									bigStep = 10,
-									name = L['yOffset - 2 StatusBar Showed'],
-									desc = L['yOffset when Two Status Bars are showed'],
+									name = L['yOffset - 2 StatusBar Shown'],
+									desc = L['yOffset when Two Status Bars are shown'],
 									get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.yOffset2StatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.RightMultiActionBars.yOffset2StatusBar = value
@@ -696,7 +743,7 @@ ClassicUI.optionsTable = {
 							}
 						},
 						scaleRightMultiActionBars = {
-							order = 12,
+							order = 13,
 							type = "range",
 							min = 0.0001,
 							softMin = 0.01,
@@ -761,8 +808,8 @@ ClassicUI.optionsTable = {
 							softMax = 500,
 							step = 1,
 							bigStep = 10,
-							name = L['xOffset - StanceBar Showed'],
-							desc = L['xOffset when StanceBar is showed'],
+							name = L['xOffset - StanceBar Shown'],
+							desc = L['xOffset when StanceBar is shown'],
 							get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.xOffsetIfStanceBar end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.PetActionBarFrame.xOffsetIfStanceBar = value
@@ -785,7 +832,7 @@ ClassicUI.optionsTable = {
 									order = 1,
 									type = "toggle",
 									name = L['Disable auto-yOffset [*]'],
-									desc = L['Disable auto-yOffset when StatusBar are showed'],
+									desc = L['Disable auto-yOffset when StatusBar are shown'],
 									get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.ignoreyOffsetStatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.PetActionBarFrame.ignoreyOffsetStatusBar = value
@@ -800,8 +847,8 @@ ClassicUI.optionsTable = {
 									softMax = 500,
 									step = 1,
 									bigStep = 10,
-									name = L['yOffset - 1 StatusBar Showed'],
-									desc = L['yOffset when One Status Bar is showed'],
+									name = L['yOffset - 1 StatusBar Shown'],
+									desc = L['yOffset when One Status Bar is shown'],
 									get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.yOffset1StatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.PetActionBarFrame.yOffset1StatusBar = value
@@ -816,8 +863,8 @@ ClassicUI.optionsTable = {
 									softMax = 500,
 									step = 1,
 									bigStep = 10,
-									name = L['yOffset - 2 StatusBar Showed'],
-									desc = L['yOffset when Two Status Bars are showed'],
+									name = L['yOffset - 2 StatusBar Shown'],
+									desc = L['yOffset when Two Status Bars are shown'],
 									get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.yOffset2StatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.PetActionBarFrame.yOffset2StatusBar = value
@@ -901,7 +948,7 @@ ClassicUI.optionsTable = {
 									order = 1,
 									type = "toggle",
 									name = L['Disable auto-yOffset [*]'],
-									desc = L['Disable auto-yOffset when StatusBar are showed'],
+									desc = L['Disable auto-yOffset when StatusBar are shown'],
 									get = function() return ClassicUI.db.profile.barsConfig.StanceBarFrame.ignoreyOffsetStatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.StanceBarFrame.ignoreyOffsetStatusBar = value
@@ -916,8 +963,8 @@ ClassicUI.optionsTable = {
 									softMax = 500,
 									step = 1,
 									bigStep = 10,
-									name = L['yOffset - 1 StatusBar Showed'],
-									desc = L['yOffset when One Status Bar is showed'],
+									name = L['yOffset - 1 StatusBar Shown'],
+									desc = L['yOffset when One Status Bar is shown'],
 									get = function() return ClassicUI.db.profile.barsConfig.StanceBarFrame.yOffset1StatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.StanceBarFrame.yOffset1StatusBar = value
@@ -932,8 +979,8 @@ ClassicUI.optionsTable = {
 									softMax = 500,
 									step = 1,
 									bigStep = 10,
-									name = L['yOffset - 2 StatusBar Showed'],
-									desc = L['yOffset when Two Status Bars are showed'],
+									name = L['yOffset - 2 StatusBar Shown'],
+									desc = L['yOffset when Two Status Bars are shown'],
 									get = function() return ClassicUI.db.profile.barsConfig.StanceBarFrame.yOffset2StatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.StanceBarFrame.yOffset2StatusBar = value
@@ -1017,7 +1064,7 @@ ClassicUI.optionsTable = {
 									order = 1,
 									type = "toggle",
 									name = L['Disable auto-yOffset [*]'],
-									desc = L['Disable auto-yOffset when StatusBar are showed'],
+									desc = L['Disable auto-yOffset when StatusBar are shown'],
 									get = function() return ClassicUI.db.profile.barsConfig.PossessBarFrame.ignoreyOffsetStatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.PossessBarFrame.ignoreyOffsetStatusBar = value
@@ -1032,8 +1079,8 @@ ClassicUI.optionsTable = {
 									softMax = 500,
 									step = 1,
 									bigStep = 10,
-									name = L['yOffset - 1 StatusBar Showed'],
-									desc = L['yOffset when One Status Bar is showed'],
+									name = L['yOffset - 1 StatusBar Shown'],
+									desc = L['yOffset when One Status Bar is shown'],
 									get = function() return ClassicUI.db.profile.barsConfig.PossessBarFrame.yOffset1StatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.PossessBarFrame.yOffset1StatusBar = value
@@ -1048,8 +1095,8 @@ ClassicUI.optionsTable = {
 									softMax = 500,
 									step = 1,
 									bigStep = 10,
-									name = L['yOffset - 2 StatusBar Showed'],
-									desc = L['yOffset when Two Status Bars are showed'],
+									name = L['yOffset - 2 StatusBar Shown'],
+									desc = L['yOffset when Two Status Bars are shown'],
 									get = function() return ClassicUI.db.profile.barsConfig.PossessBarFrame.yOffset2StatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.PossessBarFrame.yOffset2StatusBar = value
@@ -2006,7 +2053,7 @@ ClassicUI.optionsTable = {
 							type = "select",
 							name = L['OPEN_GUILD_PANEL_NORMAL'],
 							desc = L['OPEN_GUILD_PANEL_NORMAL_DESC'],
-							width = "double",
+							width = 2.25,
 							values = {
 								[0] = L['Defauilt - Show the new social guild panel'],
 								[1] = L['Show the old guild panel']
@@ -2030,7 +2077,7 @@ ClassicUI.optionsTable = {
 							type = "select",
 							name = L['OPEN_GUILD_PANEL_LEFT_MICROBUTTON_CLICK'],
 							desc = L['OPEN_GUILD_PANEL_LEFT_MICROBUTTON_CLICK_DESC'],
-							width = "double",
+							width = 2.25,
 							values = {
 								[0] = L['Defauilt - Show the new social guild panel'],
 								[1] = L['Show the old guild panel']
@@ -2054,7 +2101,7 @@ ClassicUI.optionsTable = {
 							type = "select",
 							name = L['OPEN_GUILD_PANEL_RIGHT_MICROBUTTON_CLICK'],
 							desc = L['OPEN_GUILD_PANEL_RIGHT_MICROBUTTON_CLICK_DESC'],
-							width = "double",
+							width = 2.25,
 							values = {
 								[0] = L['Defauilt - Show the new social guild panel'],
 								[1] = L['Show the old guild panel']
@@ -2070,6 +2117,30 @@ ClassicUI.optionsTable = {
 									end
 								else
 									ClassicUI.db.profile.extraConfigs.GuildPanelMode.rightClickMicroButtonOpenOldMenu = false
+								end
+							end
+						},
+						openGuildPanelMiddleClickMicroButton = {
+							order = 7,
+							type = "select",
+							name = L['OPEN_GUILD_PANEL_MIDDLE_MICROBUTTON_CLICK'],
+							desc = L['OPEN_GUILD_PANEL_MIDDLE_MICROBUTTON_CLICK_DESC'],
+							width = 2.25,
+							values = {
+								[0] = L['Defauilt - Show the new social guild panel'],
+								[1] = L['Show the old guild panel']
+							},
+							get = function()
+								return (ClassicUI.db.profile.extraConfigs.GuildPanelMode.middleClickMicroButtonOpenOldMenu and 1 or 0)
+							end,
+							set = function(_, value)
+								if (value == 1) then
+									ClassicUI.db.profile.extraConfigs.GuildPanelMode.middleClickMicroButtonOpenOldMenu = true
+									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
+										ClassicUI:HookOpenGuildPanelMode()
+									end
+								else
+									ClassicUI.db.profile.extraConfigs.GuildPanelMode.middleClickMicroButtonOpenOldMenu = false
 								end
 							end
 						}
@@ -2100,7 +2171,7 @@ ClassicUI.optionsTable = {
 							type = "select",
 							name = L['Keybinds Visibility'],
 							desc = L['KEYBINDS_VISIBILITY_OPTIONS_SELECT_DESC'],
-							width = "double",
+							width = 2.25,
 							confirm = function(_, newValue)
 								if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
 									if ((ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode >= 2) and (newValue < 2)) then
@@ -2284,7 +2355,7 @@ ClassicUI.optionsTable = {
 							type = "execute",
 							name = L["Default"],
 							desc = L["DefaultDesc"],
-							func  = function() ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.minDuration = ClassicUI.db.defaults.profile.extraConfigs.GreyOnCooldownConfig.minDuration end
+							func = function() ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.minDuration = ClassicUI.db.defaults.profile.extraConfigs.GreyOnCooldownConfig.minDuration end
 						}
 					}
 				},

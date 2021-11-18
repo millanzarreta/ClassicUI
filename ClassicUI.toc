@@ -1,7 +1,7 @@
-## Interface: 90100
+## Interface: 90105
 ## Title: ClassicUI
 ## Author: millanzarreta
-## Version: 1.2.0
+## Version: 1.2.1
 ## Notes: Restores the classic main interface pre-BFA
 ## Notes-esES: Restaura la interfaz principal clasica pre-BFA
 ## X-Category: Action Bars
