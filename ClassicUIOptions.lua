@@ -44,11 +44,8 @@ ClassicUI.optionsTable = {
 						if value then
 							if (not ClassicUI:IsEnabled()) then
 								ClassicUI:Enable()
-								ClassicUI:MainFunction() 
-								ClassicUI:ExtraFunction()
-								ClassicUI.SetPositionForStatusBars_MainMenuBar()
-								ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
-								ClassicUI:ForceExpBarExhaustionTickUpdate()
+								ClassicUI:MainFunction()
+								ClassicUI:ExtraOptionsFunc()
 							end
 						else
 							if (ClassicUI:IsEnabled()) then
@@ -86,7 +83,9 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.MainMenuBar.xOffset end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.MainMenuBar.xOffset = value
-								ClassicUI.SetPositionForStatusBars_MainMenuBar()
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI:ReloadMainFramesSettings()
+								end
 							end
 						},
 						yOffset = {
@@ -101,13 +100,15 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.MainMenuBar.yOffset end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.MainMenuBar.yOffset = value
-								ClassicUI.SetPositionForStatusBars_MainMenuBar()
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI:ReloadMainFramesSettings()
+								end
 							end
 						},
 						scale = {
 							order = 4,
 							type = "range",
-							min = 0.0001,
+							min = 0.01,
 							softMin = 0.01,
 							softMax = 4,
 							step = 0.01,
@@ -117,11 +118,190 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.MainMenuBar.scale end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.MainMenuBar.scale = value
-								ClassicUI.SetPositionForStatusBars_MainMenuBar()
+								ClassicUI.cached_db_profile.barsConfig_MainMenuBar_scale = value
+								if (ClassicUI:IsEnabled()) then
+									CUI_MainMenuBar.oldOrigScale = value
+									ClassicUI:ReloadMainFramesSettings()
+								end
 							end
 						},
-						hideLatencyBar = {
+						Spacer1 = {
+							type = "description",
 							order = 5,
+							name = ""
+						},
+						ActionButtonsLayoutGroup1 = {
+							order = 6,
+							type = "group",
+							inline = true,
+							name = L['ActionButtons Layout'],
+							desc = "",
+							args = {
+								BLStyle = {
+									order = 1,
+									type = "select",
+									name = L['BLStyle0'],
+									desc = L['BLStyleDesc0'],
+									width = 1.5,
+									values = {
+										[0] = L['Default - Classic Layout'],
+										[1] = L['Dragonflight Layout']
+									},
+									get = function() return ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle end,
+									set = function(_,value)
+										if (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle ~= value) then
+											ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle = value
+											if (ClassicUI:IsEnabled()) then
+												ClassicUI.LayoutGroupActionButtons({[0]=true})
+											end
+										end
+									end,
+								},
+								Spacer1 = {
+									type = "description",
+									order = 2,
+									name = " ",
+									width = 0.45
+								},
+								BLNormalTextureAlpha = {
+									order = 3,
+									type = "range",
+									softMin = 0,
+									softMax = 1,
+									step = 0.01,
+									bigStep = 0.02,
+									name = L['NormalTexture Alpha'],
+									desc = L['NormalTexture Alpha'],
+									get = function()
+										return (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle == 1) and ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle1NormalTextureAlpha or ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0NormalTextureAlpha
+									end,
+									set = function(_,value)
+										if (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle == 1) then
+											ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle1NormalTextureAlpha = value
+										else
+											ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0NormalTextureAlpha = value
+										end
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[0]=true})
+										end
+									end
+								},
+								BLStyle0AllowNewBackgroundArt = {
+									order = 4,
+									type = "toggle",
+									name = L['BLStyle0AllowNewBackgroundArt'],
+									desc = L['BLStyle0AllowNewBackgroundArtDesc'],
+									width = 2.40,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle ~= 0) end,
+									get = function() return ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0AllowNewBackgroundArt end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0AllowNewBackgroundArt = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[0]=true})
+										end
+									end
+								},
+								BLStyle0UseOldHotKeyTextStyle = {
+									order = 5,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseOldHotKeyTextStyle'],
+									desc = L['BLStyle0UseOldHotKeyTextStyleDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0UseOldHotKeyTextStyle end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0UseOldHotKeyTextStyle = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[0]=true})
+										end
+									end
+								},
+								BLStyle0UseNewPushedTexture = {
+									order = 6,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewPushedTexture'],
+									desc = L['BLStyle0UseNewPushedTextureDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0UseNewPushedTexture end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0UseNewPushedTexture = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[0]=true})
+										end
+									end
+								},
+								BLStyle0UseNewCheckedTexture = {
+									order = 7,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewCheckedTexture'],
+									desc = L['BLStyle0UseNewCheckedTextureDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0UseNewCheckedTexture end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0UseNewCheckedTexture = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[0]=true})
+										end
+									end
+								},
+								BLStyle0UseNewHighlightTexture = {
+									order = 8,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewHighlightTexture'],
+									desc = L['BLStyle0UseNewHighlightTextureDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0UseNewHighlightTexture end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0UseNewHighlightTexture = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[0]=true})
+										end
+									end
+								},
+								BLStyle0UseNewSpellHighlightTexture = {
+									order = 9,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewSpellHighlightTexture'],
+									desc = L['BLStyle0UseNewSpellHighlightTextureDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0UseNewSpellHighlightTexture end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0UseNewSpellHighlightTexture = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[0]=true})
+										end
+									end
+								},
+								BLStyle0UseNewFlyoutBorder = {
+									order = 10,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewFlyoutBorder'],
+									desc = L['BLStyle0UseNewFlyoutBorderDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0UseNewFlyoutBorder end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0UseNewFlyoutBorder = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[0]=true})
+										end
+									end
+								}
+							}
+						},
+						hideLatencyBar = {
+							order = 7,
 							type = "toggle",
 							name = L['Hide Small Latency Bar'],
 							desc = L['Hide Small Latency Bar'],
@@ -129,14 +309,388 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.MainMenuBar.hideLatencyBar end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.MainMenuBar.hideLatencyBar = value
-								if value then
-									MainMenuBarPerformanceBar:SetAlpha(0)
-									MainMenuBarPerformanceBar:Hide()
-								else
-									MainMenuBarPerformanceBar:SetAlpha(1)
-									MainMenuBarPerformanceBar:Show()
+								if (ClassicUI:IsEnabled()) then
+									if value then
+										if (MainMenuMicroButton.MainMenuBarPerformanceBar ~= nil) then
+											MainMenuMicroButton.MainMenuBarPerformanceBar:SetAlpha(0)
+											MainMenuMicroButton.MainMenuBarPerformanceBar:Hide()
+										end
+									else
+										if (MainMenuMicroButton.MainMenuBarPerformanceBar ~= nil) then
+											MainMenuMicroButton.MainMenuBarPerformanceBar:SetAlpha(1)
+											MainMenuMicroButton.MainMenuBarPerformanceBar:Show()
+										end
+									end
 								end
-							end,
+							end
+						},
+						Spacer2 = {
+							type = "description",
+							order = 8,
+							name = ""
+						},
+						Header2 = {
+							type = 'header',
+							order = 9,
+							name = L['MicroButtons']
+						},
+						xOffsetMicroButtons = {
+							order = 10,
+							type = "range",
+							softMin = -500,
+							softMax = 500,
+							step = 1,
+							bigStep = 10,
+							name = L['xOffset'],
+							desc = L['xOffset'],
+							get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.xOffset end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.MicroButtons.xOffset = value
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI:ReloadMainFramesSettings()
+								end
+							end
+						},
+						yOffsetMicroButtons = {
+							order = 11,
+							type = "range",
+							softMin = -500,
+							softMax = 500,
+							step = 1,
+							bigStep = 10,
+							name = L['yOffset'],
+							desc = L['yOffset'],
+							get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.yOffset end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.MicroButtons.yOffset = value
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI:ReloadMainFramesSettings()
+								end
+							end
+						},
+						scaleMicroButtons = {
+							order = 12,
+							type = "range",
+							min = 0.01,
+							softMin = 0.01,
+							softMax = 4,
+							step = 0.01,
+							bigStep = 0.03,
+							name = L['Scale'],
+							desc = L['Scale'],
+							get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.scale end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.MicroButtons.scale = value
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI:ReloadMainFramesSettings()
+								end
+							end
+						},
+						Spacer3 = {
+							type = "description",
+							order = 13,
+							name = ""
+						},
+						useClassicQuestIconMicroButtons = {
+							order = 14,
+							type = "toggle",
+							name = L['Use the classic Quest MicroButton Icon'],
+							desc = L['Replaces the Quest MicroButton icon with its classic texture'],
+							width = 2.5,
+							get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.useClassicQuestIcon end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.MicroButtons.useClassicQuestIcon = value
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI:ReloadMainFramesSettings()
+								end
+							end
+						},
+						useClassicGuildIconMicroButtons = {
+							order = 15,
+							type = "toggle",
+							name = L['Use the classic Guild MicroButton Icon'],
+							desc = L['Replaces the dynamic Guild MicroButton (with its emblem) with its classic static texture'],
+							width = 2.5,
+							get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.useClassicGuildIcon end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.MicroButtons.useClassicGuildIcon = value
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI:ReloadMainFramesSettings()
+								end
+							end
+						},
+						useBiggerGuildEmblemMicroButtons = {
+							order = 16,
+							disabled = function() return (ClassicUI.db.profile.barsConfig.MicroButtons.useClassicGuildIcon) end,
+							type = "toggle",
+							name = L['Make Guild Emblem bigger'],
+							desc = L['Enlarges the Guild Emblem on the MicroButton to make it bigger and more visible'],
+							width = 2.5,
+							get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.useBiggerGuildEmblem end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.MicroButtons.useBiggerGuildEmblem = value
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI:ReloadMainFramesSettings()
+								end
+							end
+						},
+						useClassicMainMenuIconMicroButtons = {
+							order = 17,
+							type = "toggle",
+							name = L['Use the classic MainMenu MicroButton Icon'],
+							desc = L['Replaces the Quest Main Menu icon with its classic texture'],
+							width = 2.5,
+							get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.useClassicMainMenuIcon end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.MicroButtons.useClassicMainMenuIcon = value
+								ClassicUI.cached_db_profile.barsConfig_MicroButtons_useClassicMainMenuIcon = value
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI:ReloadMainFramesSettings()
+								end
+							end
+						},
+						Spacer4 = {
+							type = "description",
+							order = 18,
+							name = ""
+						},
+						Header3 = {
+							type = 'header',
+							order = 19,
+							name = L['BagsIcons']
+						},
+						iconBorderAlphaBags = {
+							order = 20,
+							type = "range",
+							softMin = 0,
+							softMax = 1,
+							step = 0.01,
+							bigStep = 0.02,
+							name = L['IconBorder Alpha'],
+							desc = L['IconBorder Alpha'],
+							get = function() return ClassicUI.db.profile.barsConfig.BagsIcons.iconBorderAlpha end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.BagsIcons.iconBorderAlpha = value
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI:ReloadMainFramesSettings()
+								end
+							end
+						},
+						xOffsetReagentBag = {
+							order = 21,
+							type = "range",
+							softMin = -500,
+							softMax = 500,
+							step = 1,
+							bigStep = 10,
+							name = L['xOffsetReagentBag'],
+							desc = L['xOffsetReagentBag'],
+							get = function() return ClassicUI.db.profile.barsConfig.BagsIcons.xOffsetReagentBag end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.BagsIcons.xOffsetReagentBag = value
+								ClassicUI.cached_db_profile.barsConfig_BagsIcons_xOffsetReagentBag = value
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI:ReloadMainFramesSettings()
+								end
+							end
+						},
+						yOffsetReagentBag = {
+							order = 22,
+							type = "range",
+							softMin = -500,
+							softMax = 500,
+							step = 1,
+							bigStep = 10,
+							name = L['yOffsetReagentBag'],
+							desc = L['yOffsetReagentBag'],
+							get = function() return ClassicUI.db.profile.barsConfig.BagsIcons.yOffsetReagentBag end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.BagsIcons.yOffsetReagentBag = value
+								ClassicUI.cached_db_profile.barsConfig_BagsIcons_yOffsetReagentBag = value
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI:ReloadMainFramesSettings()
+								end
+							end
+						},
+						Spacer5 = {
+							type = "description",
+							order = 23,
+							name = ""
+						},
+						Header4 = {
+							type = 'header',
+							order = 24,
+							name = L['SpellFlyoutButtons']
+						},
+						ActionButtonsLayoutGroup2 = {
+							order = 25,
+							type = "group",
+							inline = true,
+							name = L['ActionButtons Layout'],
+							desc = "",
+							args = {
+								BLStyle = {
+									order = 1,
+									type = "select",
+									name = L['BLStyle6'],
+									desc = L['BLStyleDesc6'],
+									width = 1.5,
+									values = {
+										[0] = L['Default - Classic Layout'],
+										[1] = L['Dragonflight Layout']
+									},
+									get = function() return ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle end,
+									set = function(_,value)
+										if (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle ~= value) then
+											ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle = value
+											if (ClassicUI:IsEnabled()) then
+												ClassicUI.LayoutGroupActionButtons({[6]=true})
+											end
+										end
+									end,
+								},
+								Spacer1 = {
+									type = "description",
+									order = 2,
+									name = " ",
+									width = 0.45
+								},
+								BLNormalTextureAlpha = {
+									order = 3,
+									type = "range",
+									softMin = 0,
+									softMax = 1,
+									step = 0.01,
+									bigStep = 0.02,
+									name = L['NormalTexture Alpha'],
+									desc = L['NormalTexture Alpha'],
+									get = function()
+										return (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle == 1) and ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle1NormalTextureAlpha or ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0NormalTextureAlpha
+									end,
+									set = function(_,value)
+										if (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle == 1) then
+											ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle1NormalTextureAlpha = value
+										else
+											ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0NormalTextureAlpha = value
+										end
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[6]=true})
+										end
+									end
+								},
+								BLStyle0AllowNewBackgroundArt = {
+									order = 4,
+									type = "toggle",
+									name = L['BLStyle0AllowNewBackgroundArt'],
+									desc = L['BLStyle0AllowNewBackgroundArtDesc'],
+									width = 2.40,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle ~= 0) end,
+									get = function() return ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0AllowNewBackgroundArt end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0AllowNewBackgroundArt = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[6]=true})
+										end
+									end
+								},
+								BLStyle0UseOldHotKeyTextStyle = {
+									order = 5,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseOldHotKeyTextStyle'],
+									desc = L['BLStyle0UseOldHotKeyTextStyleDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0UseOldHotKeyTextStyle end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0UseOldHotKeyTextStyle = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[6]=true})
+										end
+									end
+								},
+								BLStyle0UseNewPushedTexture = {
+									order = 6,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewPushedTexture'],
+									desc = L['BLStyle0UseNewPushedTextureDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0UseNewPushedTexture end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0UseNewPushedTexture = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[6]=true})
+										end
+									end
+								},
+								BLStyle0UseNewCheckedTexture = {
+									order = 7,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewCheckedTexture'],
+									desc = L['BLStyle0UseNewCheckedTextureDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0UseNewCheckedTexture end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0UseNewCheckedTexture = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[6]=true})
+										end
+									end
+								},
+								BLStyle0UseNewHighlightTexture = {
+									order = 8,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewHighlightTexture'],
+									desc = L['BLStyle0UseNewHighlightTextureDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0UseNewHighlightTexture end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0UseNewHighlightTexture = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[6]=true})
+										end
+									end
+								},
+								BLStyle0UseNewSpellHighlightTexture = {
+									order = 9,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewSpellHighlightTexture'],
+									desc = L['BLStyle0UseNewSpellHighlightTextureDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0UseNewSpellHighlightTexture end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0UseNewSpellHighlightTexture = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[6]=true})
+										end
+									end
+								},
+								BLStyle0UseNewFlyoutBorder = {
+									order = 10,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewFlyoutBorder'],
+									desc = L['BLStyle0UseNewFlyoutBorderDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0UseNewFlyoutBorder end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0UseNewFlyoutBorder = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[6]=true})
+										end
+									end
+								}
+							}
 						}
 					}
 				},
@@ -163,7 +717,9 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.OverrideActionBar.xOffset end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.OverrideActionBar.xOffset = value
-								ClassicUI.SetPositionForStatusBars_MainMenuBar()
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI:ReloadMainFramesSettings()
+								end
 							end
 						},
 						yOffset = {
@@ -178,13 +734,15 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.OverrideActionBar.yOffset end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.OverrideActionBar.yOffset = value
-								ClassicUI.SetPositionForStatusBars_MainMenuBar()
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI:ReloadMainFramesSettings()
+								end
 							end
 						},
 						scale = {
 							order = 4,
 							type = "range",
-							min = 0.0001,
+							min = 0.01,
 							softMin = 0.01,
 							softMax = 4,
 							step = 0.01,
@@ -194,8 +752,185 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.OverrideActionBar.scale end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.OverrideActionBar.scale = value
-								ClassicUI.SetPositionForStatusBars_MainMenuBar()
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI:ReloadMainFramesSettings()
+								end
 							end
+						},
+						Spacer1 = {
+							type = "description",
+							order = 5,
+							name = ""
+						},
+						ActionButtonsLayoutGroup = {
+							order = 6,
+							type = "group",
+							inline = true,
+							name = L['ActionButtons Layout'],
+							desc = "",
+							args = {
+								BLStyle = {
+									order = 1,
+									type = "select",
+									name = L['BLStyle7'],
+									desc = L['BLStyleDesc7'],
+									width = 1.5,
+									values = {
+										[0] = L['Default - Classic Layout'],
+										[1] = L['Dragonflight Layout']
+									},
+									get = function() return ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle end,
+									set = function(_,value)
+										if (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle ~= value) then
+											ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle = value
+											if (ClassicUI:IsEnabled()) then
+												ClassicUI.LayoutGroupActionButtons({[7]=true})
+											end
+										end
+									end,
+								},
+								Spacer1 = {
+									type = "description",
+									order = 2,
+									name = " ",
+									width = 0.45
+								},
+								BLNormalTextureAlpha = {
+									order = 3,
+									type = "range",
+									softMin = 0,
+									softMax = 1,
+									step = 0.01,
+									bigStep = 0.02,
+									name = L['NormalTexture Alpha'],
+									desc = L['NormalTexture Alpha'],
+									get = function()
+										return (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle == 1) and ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle1NormalTextureAlpha or ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0NormalTextureAlpha
+									end,
+									set = function(_,value)
+										if (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle == 1) then
+											ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle1NormalTextureAlpha = value
+										else
+											ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0NormalTextureAlpha = value
+										end
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[7]=true})
+										end
+									end
+								},
+								BLStyle0AllowNewBackgroundArt = {
+									order = 4,
+									type = "toggle",
+									name = L['BLStyle0AllowNewBackgroundArt'],
+									desc = L['BLStyle0AllowNewBackgroundArtDesc'],
+									width = 2.40,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle ~= 0) end,
+									get = function() return ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0AllowNewBackgroundArt end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0AllowNewBackgroundArt = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[7]=true})
+										end
+									end
+								},
+								BLStyle0UseOldHotKeyTextStyle = {
+									order = 5,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseOldHotKeyTextStyle'],
+									desc = L['BLStyle0UseOldHotKeyTextStyleDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0UseOldHotKeyTextStyle end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0UseOldHotKeyTextStyle = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[7]=true})
+										end
+									end
+								},
+								BLStyle0UseNewPushedTexture = {
+									order = 6,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewPushedTexture'],
+									desc = L['BLStyle0UseNewPushedTextureDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0UseNewPushedTexture end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0UseNewPushedTexture = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[7]=true})
+										end
+									end
+								},
+								BLStyle0UseNewCheckedTexture = {
+									order = 7,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewCheckedTexture'],
+									desc = L['BLStyle0UseNewCheckedTextureDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0UseNewCheckedTexture end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0UseNewCheckedTexture = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[7]=true})
+										end
+									end
+								},
+								BLStyle0UseNewHighlightTexture = {
+									order = 8,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewHighlightTexture'],
+									desc = L['BLStyle0UseNewHighlightTextureDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0UseNewHighlightTexture end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0UseNewHighlightTexture = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[7]=true})
+										end
+									end
+								},
+								BLStyle0UseNewSpellHighlightTexture = {
+									order = 9,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewSpellHighlightTexture'],
+									desc = L['BLStyle0UseNewSpellHighlightTextureDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0UseNewSpellHighlightTexture end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0UseNewSpellHighlightTexture = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[7]=true})
+										end
+									end
+								},
+								BLStyle0UseNewFlyoutBorder = {
+									order = 10,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewFlyoutBorder'],
+									desc = L['BLStyle0UseNewFlyoutBorderDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0UseNewFlyoutBorder end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0UseNewFlyoutBorder = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[7]=true})
+										end
+									end
+								}
+							}
 						}
 					}
 				},
@@ -218,7 +953,13 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.hide end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.hide = value
-								ClassicUI.SetPositionForStatusBars_MainMenuBar()
+								if (ClassicUI:IsEnabled()) then
+									if (value) then
+										CUI_MainMenuBarLeftEndCap:Hide()
+									else
+										CUI_MainMenuBarLeftEndCap:Show()
+									end
+								end
 							end,
 						},
 						xOffsetLeftGargoyle = {
@@ -233,7 +974,9 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.xOffset end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.xOffset = value
-								ClassicUI.SetPositionForStatusBars_MainMenuBar()
+								if (ClassicUI:IsEnabled()) then
+									CUI_MainMenuBarLeftEndCap:Init()
+								end
 							end
 						},
 						yOffsetLeftGargoyle = {
@@ -248,7 +991,9 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.yOffset end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.yOffset = value
-								ClassicUI.SetPositionForStatusBars_MainMenuBar()
+								if (ClassicUI:IsEnabled()) then
+									CUI_MainMenuBarLeftEndCap:Init()
+								end
 							end
 						},
 						modelLeftGargoyle = {
@@ -258,26 +1003,15 @@ ClassicUI.optionsTable = {
 							desc = L['Select the model of the Left Gargoyle'],
 							values = {
 								[0] = L['Default - Gryphon'],
-								[1] = L['Lion']
+								[1] = L['Lion'],
+								[2] = L['New Gryphon'],
+								[3] = L['New Wyvern']
 							},
 							get = function() return ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.model end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.model = value
 								if (ClassicUI:IsEnabled()) then
-									if (value == 1) then
-										MainMenuBarArtFrame.LeftEndCap:Hide()
-									else
-										MainMenuBarArtFrame.LeftEndCap:SetSize(128, 76)
-										if (not ClassicUI.UberUIIsPresent) then
-											MainMenuBarArtFrame.LeftEndCap:SetTexture("Interface\\MAINMENUBAR\\UI-MainMenuBar-EndCap-Dwarf.blp")
-											MainMenuBarArtFrame.LeftEndCap:SetTexCoord(0/128, 128/128, 52/128, 128/128)
-										else
-											local txInfo = C_Texture.GetAtlasInfo(MainMenuBarArtFrame.LeftEndCap:GetAtlas() or "hud-MainMenuBar-gryphon")
-											MainMenuBarArtFrame.LeftEndCap:SetTexture("Interface\\AddOns\\Uber UI\\textures\\MainMenuBar.blp")
-											MainMenuBarArtFrame.LeftEndCap:SetTexCoord(txInfo.leftTexCoord, txInfo.rightTexCoord, txInfo.topTexCoord, txInfo.bottomTexCoord)
-										end
-									end
-									ClassicUI.SetPositionForStatusBars_MainMenuBar()
+									CUI_MainMenuBarLeftEndCap:Init()
 								end
 							end,
 						},
@@ -293,14 +1027,15 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.alpha end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.alpha = value
-								MainMenuBarArtFrame.LeftEndCap:SetAlpha(value)
-								ClassicUI.SetPositionForStatusBars_MainMenuBar()
+								if (ClassicUI:IsEnabled()) then
+									CUI_MainMenuBarLeftEndCap:SetAlpha(value)
+								end
 							end
 						},
 						scaleLeftGargoyle = {
 							order = 7,
 							type = "range",
-							min = 0.0001,
+							min = 0.01,
 							softMin = 0.01,
 							softMax = 4,
 							step = 0.01,
@@ -310,11 +1045,12 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.scale end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.scale = value
-								MainMenuBarArtFrame.LeftEndCap:SetScale(value)
-								ClassicUI.SetPositionForStatusBars_MainMenuBar()
+								if (ClassicUI:IsEnabled()) then
+									CUI_MainMenuBarLeftEndCap:SetScale(value)
+								end
 							end
 						},
-						Spacer2 = {
+						Spacer1 = {
 							type = "description",
 							order = 8,
 							name = ""
@@ -332,7 +1068,13 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.RightGargoyleFrame.hide end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.RightGargoyleFrame.hide = value
-								ClassicUI.SetPositionForStatusBars_MainMenuBar()
+								if (ClassicUI:IsEnabled()) then
+									if (value) then
+										CUI_MainMenuBarRightEndCap:Hide()
+									else
+										CUI_MainMenuBarRightEndCap:Show()
+									end
+								end
 							end,
 						},
 						xOffsetRightGargoyle = {
@@ -347,7 +1089,9 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.RightGargoyleFrame.xOffset end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.RightGargoyleFrame.xOffset = value
-								ClassicUI.SetPositionForStatusBars_MainMenuBar()
+								if (ClassicUI:IsEnabled()) then
+									CUI_MainMenuBarRightEndCap:Init()
+								end
 							end
 						},
 						yOffsetRightGargoyle = {
@@ -362,7 +1106,9 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.RightGargoyleFrame.yOffset end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.RightGargoyleFrame.yOffset = value
-								ClassicUI.SetPositionForStatusBars_MainMenuBar()
+								if (ClassicUI:IsEnabled()) then
+									CUI_MainMenuBarRightEndCap:Init()
+								end
 							end
 						},
 						modelRightGargoyle = {
@@ -372,26 +1118,15 @@ ClassicUI.optionsTable = {
 							desc = L['Select the model of the Right Gargoyle'],
 							values = {
 								[0] = L['Default - Gryphon'],
-								[1] = L['Lion']
+								[1] = L['Lion'],
+								[2] = L['New Gryphon'],
+								[3] = L['New Wyvern']
 							},
 							get = function() return ClassicUI.db.profile.barsConfig.RightGargoyleFrame.model end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.RightGargoyleFrame.model = value
 								if (ClassicUI:IsEnabled()) then
-									if (value == 1) then
-										MainMenuBarArtFrame.RightEndCap:Hide()
-									else
-										MainMenuBarArtFrame.RightEndCap:SetSize(128, 76)
-										if (not ClassicUI.UberUIIsPresent) then
-											MainMenuBarArtFrame.RightEndCap:SetTexture("Interface\\MAINMENUBAR\\UI-MainMenuBar-EndCap-Dwarf.blp")
-											MainMenuBarArtFrame.RightEndCap:SetTexCoord(128/128, 0/128, 52/128, 128/128)
-										else
-											local txInfo = C_Texture.GetAtlasInfo(MainMenuBarArtFrame.RightEndCap:GetAtlas() or "hud-MainMenuBar-gryphon")
-											MainMenuBarArtFrame.RightEndCap:SetTexture("Interface\\AddOns\\Uber UI\\textures\\MainMenuBar.blp")
-											MainMenuBarArtFrame.RightEndCap:SetTexCoord(txInfo.rightTexCoord, txInfo.leftTexCoord, txInfo.topTexCoord, txInfo.bottomTexCoord)
-										end
-									end
-									ClassicUI.SetPositionForStatusBars_MainMenuBar()
+									CUI_MainMenuBarRightEndCap:Init()
 								end
 							end,
 						},
@@ -407,14 +1142,15 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.RightGargoyleFrame.alpha end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.RightGargoyleFrame.alpha = value
-								MainMenuBarArtFrame.RightEndCap:SetAlpha(value)
-								ClassicUI.SetPositionForStatusBars_MainMenuBar()
+								if (ClassicUI:IsEnabled()) then
+									CUI_MainMenuBarRightEndCap:SetAlpha(value)
+								end
 							end
 						},
 						scaleRightGargoyle = {
 							order = 15,
 							type = "range",
-							min = 0.0001,
+							min = 0.01,
 							softMin = 0.01,
 							softMax = 4,
 							step = 0.01,
@@ -424,8 +1160,9 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.RightGargoyleFrame.scale end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.RightGargoyleFrame.scale = value
-								MainMenuBarArtFrame.RightEndCap:SetScale(value)
-								ClassicUI.SetPositionForStatusBars_MainMenuBar()
+								if (ClassicUI:IsEnabled()) then
+									CUI_MainMenuBarRightEndCap:SetScale(value)
+								end
 							end
 						}
 					},
@@ -453,7 +1190,9 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.PetBattleFrameBar.xOffset end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.PetBattleFrameBar.xOffset = value
-								ClassicUI.SetPositionForStatusBars_MainMenuBar()
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI:ReloadMainFramesSettings()
+								end
 							end
 						},
 						yOffset = {
@@ -468,13 +1207,15 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.PetBattleFrameBar.yOffset end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.PetBattleFrameBar.yOffset = value
-								ClassicUI.SetPositionForStatusBars_MainMenuBar()
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI:ReloadMainFramesSettings()
+								end
 							end
 						},
 						scale = {
 							order = 4,
 							type = "range",
-							min = 0.0001,
+							min = 0.01,
 							softMin = 0.01,
 							softMax = 4,
 							step = 0.01,
@@ -484,7 +1225,9 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.PetBattleFrameBar.scale end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.PetBattleFrameBar.scale = value
-								ClassicUI.SetPositionForStatusBars_MainMenuBar()
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI:ReloadMainFramesSettings()
+								end
 							end
 						}
 					}
@@ -512,7 +1255,9 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.BottomMultiActionBars.xOffset end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.BottomMultiActionBars.xOffset = value
-								ClassicUI.Update_MultiActionBar()
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI:UpdatedStatusBarsEvent()
+								end
 							end
 						},
 						yOffsetBottomMultiActionBars = {
@@ -527,7 +1272,9 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.BottomMultiActionBars.yOffset end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.BottomMultiActionBars.yOffset = value
-								ClassicUI.Update_MultiActionBar()
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI:UpdatedStatusBarsEvent()
+								end
 							end
 						},
 						Spacer1 = {
@@ -550,7 +1297,9 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.BottomMultiActionBars.ignoreyOffsetStatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.BottomMultiActionBars.ignoreyOffsetStatusBar = value
-										ClassicUI.Update_MultiActionBar()
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI:UpdatedStatusBarsEvent()
+										end
 									end,
 								},
 								yOffset1StatusBar = {
@@ -566,7 +1315,9 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.BottomMultiActionBars.yOffset1StatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.BottomMultiActionBars.yOffset1StatusBar = value
-										ClassicUI.Update_MultiActionBar()
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI:UpdatedStatusBarsEvent()
+										end
 									end
 								},
 								yOffset2StatusBar = {
@@ -582,7 +1333,9 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.BottomMultiActionBars.yOffset2StatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.BottomMultiActionBars.yOffset2StatusBar = value
-										ClassicUI.Update_MultiActionBar()
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI:UpdatedStatusBarsEvent()
+										end
 									end
 								}
 							}
@@ -590,7 +1343,7 @@ ClassicUI.optionsTable = {
 						scaleBottomMultiActionBars = {
 							order = 6,
 							type = "range",
-							min = 0.0001,
+							min = 0.01,
 							softMin = 0.01,
 							softMax = 4,
 							step = 0.01,
@@ -600,7 +1353,12 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.BottomMultiActionBars.scale end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.BottomMultiActionBars.scale = value
-								ClassicUI.Update_MultiActionBar()
+								ClassicUI.cached_db_profile.barsConfig_BottomMultiActionBars_scale = value
+								if (ClassicUI:IsEnabled()) then
+									CUI_MultiBarBottomLeft.oldOrigScale = value
+									CUI_MultiBarBottomRight.oldOrigScale = value
+									ClassicUI:ReloadMainFramesSettings()
+								end
 							end
 						},
 						Spacer2 = {
@@ -608,57 +1366,180 @@ ClassicUI.optionsTable = {
 							order = 7,
 							name = ""
 						},
-						Header2 = {
-							type = 'header',
+						ActionButtonsLayoutGroup1 = {
 							order = 8,
-							name = L['RightMultiActionBars']
-						},
-						autoAdjustmentRightMultiActionBarsGroup = {
-							order = 9,
-							inline = true,
 							type = "group",
-							name = " ",
+							inline = true,
+							name = L['ActionButtons Layout'],
 							desc = "",
 							args = {
-								useBlizzardPostBFAAutoAdjustmentRightMultiActionBars = {
+								BLStyle = {
 									order = 1,
-									type = "toggle",
-									name = L['UseBlizzardPostBFAAutoAdjustment'],
-									desc = L['UseBlizzardPostBFAAutoAdjustmentDesc'],
-									width = "full",
-									get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.useBlizzardPostBFAAutoAdjustment end,
+									type = "select",
+									name = L['BLStyle1'],
+									desc = L['BLStyleDesc1'],
+									width = 1.5,
+									values = {
+										[0] = L['Default - Classic Layout'],
+										[1] = L['Dragonflight Layout']
+									},
+									get = function() return ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle end,
 									set = function(_,value)
-										ClassicUI.db.profile.barsConfig.RightMultiActionBars.useBlizzardPostBFAAutoAdjustment = value
-										ClassicUI.Update_MultiActionBar()
+										if (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle ~= value) then
+											ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle = value
+											if (ClassicUI:IsEnabled()) then
+												ClassicUI.LayoutGroupActionButtons({[1]=true})
+											end
+										end
 									end,
 								},
-								useMinimapFrameAsTopMarginRightMultiActionBars = {
+								Spacer1 = {
+									type = "description",
 									order = 2,
-									disabled = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.useBlizzardPostBFAAutoAdjustment) end,
-									type = "toggle",
-									name = L['UseMinimapFrameAsTopMargin'],
-									desc = L['UseMinimapFrameAsTopMarginDesc'],
-									width = "full",
-									get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.useMinimapFrameAsTopMargin end,
-									set = function(_,value)
-										ClassicUI.db.profile.barsConfig.RightMultiActionBars.useMinimapFrameAsTopMargin = value
-										ClassicUI.Update_MultiActionBar()
-									end,
+									name = " ",
+									width = 0.45
 								},
-								allowExceedTopMarginWithTwoStatusBarsRightMultiActionBars = {
+								BLNormalTextureAlpha = {
 									order = 3,
-									disabled = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.useBlizzardPostBFAAutoAdjustment) end,
-									type = "toggle",
-									name = L['AllowExceedTopMarginWithTwoStatusBars'],
-									desc = L['AllowExceedTopMarginWithTwoStatusBarsDesc'],
-									width = "full",
-									get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.allowExceedTopMarginWithTwoStatusBars end,
-									set = function(_,value)
-										ClassicUI.db.profile.barsConfig.RightMultiActionBars.allowExceedTopMarginWithTwoStatusBars = value
-										ClassicUI.Update_MultiActionBar()
+									type = "range",
+									softMin = 0,
+									softMax = 1,
+									step = 0.01,
+									bigStep = 0.02,
+									name = L['NormalTexture Alpha'],
+									desc = L['NormalTexture Alpha'],
+									get = function()
+										return (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle == 1) and ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle1NormalTextureAlpha or ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0NormalTextureAlpha
 									end,
+									set = function(_,value)
+										if (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle == 1) then
+											ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle1NormalTextureAlpha = value
+										else
+											ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0NormalTextureAlpha = value
+										end
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[1]=true})
+										end
+									end
 								},
-							},
+								BLStyle0AllowNewBackgroundArt = {
+									order = 4,
+									type = "toggle",
+									name = L['BLStyle0AllowNewBackgroundArt'],
+									desc = L['BLStyle0AllowNewBackgroundArtDesc'],
+									width = 2.40,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle ~= 0) end,
+									get = function() return ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0AllowNewBackgroundArt end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0AllowNewBackgroundArt = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[1]=true})
+										end
+									end
+								},
+								BLStyle0UseOldHotKeyTextStyle = {
+									order = 5,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseOldHotKeyTextStyle'],
+									desc = L['BLStyle0UseOldHotKeyTextStyleDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0UseOldHotKeyTextStyle end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0UseOldHotKeyTextStyle = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[1]=true})
+										end
+									end
+								},
+								BLStyle0UseNewPushedTexture = {
+									order = 6,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewPushedTexture'],
+									desc = L['BLStyle0UseNewPushedTextureDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0UseNewPushedTexture end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0UseNewPushedTexture = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[1]=true})
+										end
+									end
+								},
+								BLStyle0UseNewCheckedTexture = {
+									order = 7,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewCheckedTexture'],
+									desc = L['BLStyle0UseNewCheckedTextureDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0UseNewCheckedTexture end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0UseNewCheckedTexture = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[1]=true})
+										end
+									end
+								},
+								BLStyle0UseNewHighlightTexture = {
+									order = 8,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewHighlightTexture'],
+									desc = L['BLStyle0UseNewHighlightTextureDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0UseNewHighlightTexture end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0UseNewHighlightTexture = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[1]=true})
+										end
+									end
+								},
+								BLStyle0UseNewSpellHighlightTexture = {
+									order = 9,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewSpellHighlightTexture'],
+									desc = L['BLStyle0UseNewSpellHighlightTextureDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0UseNewSpellHighlightTexture end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0UseNewSpellHighlightTexture = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[1]=true})
+										end
+									end
+								},
+								BLStyle0UseNewFlyoutBorder = {
+									order = 10,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewFlyoutBorder'],
+									desc = L['BLStyle0UseNewFlyoutBorderDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0UseNewFlyoutBorder end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0UseNewFlyoutBorder = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[1]=true})
+										end
+									end
+								}
+							}
+						},
+						Header2 = {
+							type = 'header',
+							order = 9,
+							name = L['RightMultiActionBars']
 						},
 						xOffsetRightMultiActionBars = {
 							order = 10,
@@ -672,7 +1553,9 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.xOffset end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.RightMultiActionBars.xOffset = value
-								ClassicUI.Update_MultiActionBar()
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI:UpdatedStatusBarsEvent()
+								end
 							end
 						},
 						yOffsetRightMultiActionBars = {
@@ -687,7 +1570,9 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.yOffset end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.RightMultiActionBars.yOffset = value
-								ClassicUI.Update_MultiActionBar()
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI:UpdatedStatusBarsEvent()
+								end
 							end
 						},
 						OffsetsStatusBar2 = {
@@ -705,7 +1590,9 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.ignoreyOffsetStatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.RightMultiActionBars.ignoreyOffsetStatusBar = value
-										ClassicUI.Update_MultiActionBar()
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI:UpdatedStatusBarsEvent()
+										end
 									end,
 								},
 								yOffset1StatusBar = {
@@ -721,7 +1608,9 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.yOffset1StatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.RightMultiActionBars.yOffset1StatusBar = value
-										ClassicUI.Update_MultiActionBar()
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI:UpdatedStatusBarsEvent()
+										end
 									end
 								},
 								yOffset2StatusBar = {
@@ -737,7 +1626,9 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.yOffset2StatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.RightMultiActionBars.yOffset2StatusBar = value
-										ClassicUI.Update_MultiActionBar()
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI:UpdatedStatusBarsEvent()
+										end
 									end
 								}
 							}
@@ -745,7 +1636,7 @@ ClassicUI.optionsTable = {
 						scaleRightMultiActionBars = {
 							order = 13,
 							type = "range",
-							min = 0.0001,
+							min = 0.01,
 							softMin = 0.01,
 							softMax = 4,
 							step = 0.01,
@@ -755,8 +1646,188 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.scale end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.RightMultiActionBars.scale = value
-								ClassicUI.Update_MultiActionBar()
+								ClassicUI.cached_db_profile.barsConfig_RightMultiActionBars_scale = value
+								if (ClassicUI:IsEnabled()) then
+									CUI_MultiBarLeft.oldOrigScale = value
+									CUI_MultiBarRight.oldOrigScale = value
+									ClassicUI:ReloadMainFramesSettings()
+								end
 							end
+						},
+						Spacer3 = {
+							type = "description",
+							order = 14,
+							name = ""
+						},
+						ActionButtonsLayoutGroup2 = {
+							order = 15,
+							type = "group",
+							inline = true,
+							name = L['ActionButtons Layout'],
+							desc = "",
+							args = {
+								BLStyle = {
+									order = 1,
+									type = "select",
+									name = L['BLStyle2'],
+									desc = L['BLStyleDesc2'],
+									width = 1.5,
+									values = {
+										[0] = L['Default - Classic Layout'],
+										[1] = L['Dragonflight Layout']
+									},
+									get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle end,
+									set = function(_,value)
+										if (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle ~= value) then
+											ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle = value
+											if (ClassicUI:IsEnabled()) then
+												ClassicUI.LayoutGroupActionButtons({[2]=true})
+											end
+										end
+									end,
+								},
+								Spacer1 = {
+									type = "description",
+									order = 2,
+									name = " ",
+									width = 0.45
+								},
+								BLNormalTextureAlpha = {
+									order = 3,
+									type = "range",
+									softMin = 0,
+									softMax = 1,
+									step = 0.01,
+									bigStep = 0.02,
+									name = L['NormalTexture Alpha'],
+									desc = L['NormalTexture Alpha'],
+									get = function()
+										return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle == 1) and ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle1NormalTextureAlpha or ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0NormalTextureAlpha
+									end,
+									set = function(_,value)
+										if (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle == 1) then
+											ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle1NormalTextureAlpha = value
+										else
+											ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0NormalTextureAlpha = value
+										end
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[2]=true})
+										end
+									end
+								},
+								BLStyle0AllowNewBackgroundArt = {
+									order = 4,
+									type = "toggle",
+									name = L['BLStyle0AllowNewBackgroundArt'],
+									desc = L['BLStyle0AllowNewBackgroundArtDesc'],
+									width = 2.40,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle ~= 0) end,
+									get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0AllowNewBackgroundArt end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0AllowNewBackgroundArt = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[2]=true})
+										end
+									end
+								},
+								BLStyle0UseOldHotKeyTextStyle = {
+									order = 5,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseOldHotKeyTextStyle'],
+									desc = L['BLStyle0UseOldHotKeyTextStyleDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0UseOldHotKeyTextStyle end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0UseOldHotKeyTextStyle = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[2]=true})
+										end
+									end
+								},
+								BLStyle0UseNewPushedTexture = {
+									order = 6,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewPushedTexture'],
+									desc = L['BLStyle0UseNewPushedTextureDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0UseNewPushedTexture end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0UseNewPushedTexture = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[2]=true})
+										end
+									end
+								},
+								BLStyle0UseNewCheckedTexture = {
+									order = 7,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewCheckedTexture'],
+									desc = L['BLStyle0UseNewCheckedTextureDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0UseNewCheckedTexture end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0UseNewCheckedTexture = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[2]=true})
+										end
+									end
+								},
+								BLStyle0UseNewHighlightTexture = {
+									order = 8,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewHighlightTexture'],
+									desc = L['BLStyle0UseNewHighlightTextureDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0UseNewHighlightTexture end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0UseNewHighlightTexture = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[2]=true})
+										end
+									end
+								},
+								BLStyle0UseNewSpellHighlightTexture = {
+									order = 9,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewSpellHighlightTexture'],
+									desc = L['BLStyle0UseNewSpellHighlightTextureDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0UseNewSpellHighlightTexture end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0UseNewSpellHighlightTexture = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[2]=true})
+										end
+									end
+								},
+								BLStyle0UseNewFlyoutBorder = {
+									order = 10,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewFlyoutBorder'],
+									desc = L['BLStyle0UseNewFlyoutBorderDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0UseNewFlyoutBorder end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0UseNewFlyoutBorder = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[2]=true})
+										end
+									end
+								}
+							}
 						}
 					}
 				},
@@ -783,7 +1854,9 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.xOffset end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.PetActionBarFrame.xOffset = value
-								ClassicUI.Update_PetActionBar()
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI:UpdatedStatusBarsEvent()
+								end
 							end
 						},
 						yOffset = {
@@ -798,7 +1871,9 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.yOffset end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.PetActionBarFrame.yOffset = value
-								ClassicUI.Update_PetActionBar()
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI:UpdatedStatusBarsEvent()
+								end
 							end
 						},
 						xOffsetIfStanceBar = {
@@ -813,7 +1888,9 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.xOffsetIfStanceBar end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.PetActionBarFrame.xOffsetIfStanceBar = value
-								ClassicUI.Update_PetActionBar()
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI:UpdatedStatusBarsEvent()
+								end
 							end
 						},
 						Spacer1 = {
@@ -836,7 +1913,9 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.ignoreyOffsetStatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.PetActionBarFrame.ignoreyOffsetStatusBar = value
-										ClassicUI.Update_PetActionBar()
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI:UpdatedStatusBarsEvent()
+										end
 									end,
 								},
 								yOffset1StatusBar = {
@@ -852,7 +1931,9 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.yOffset1StatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.PetActionBarFrame.yOffset1StatusBar = value
-										ClassicUI.Update_PetActionBar()
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI:UpdatedStatusBarsEvent()
+										end
 									end
 								},
 								yOffset2StatusBar = {
@@ -868,7 +1949,9 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.yOffset2StatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.PetActionBarFrame.yOffset2StatusBar = value
-										ClassicUI.Update_PetActionBar()
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI:UpdatedStatusBarsEvent()
+										end
 									end
 								}
 							}
@@ -876,7 +1959,7 @@ ClassicUI.optionsTable = {
 						scale = {
 							order = 7,
 							type = "range",
-							min = 0.0001,
+							min = 0.01,
 							softMin = 0.01,
 							softMax = 4,
 							step = 0.01,
@@ -886,8 +1969,236 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.scale end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.PetActionBarFrame.scale = value
-								ClassicUI.Update_PetActionBar()
+								ClassicUI.cached_db_profile.barsConfig_PetActionBarFrame_scale = value
+								if (ClassicUI:IsEnabled()) then
+									CUI_PetActionBarFrame.oldOrigScale = value
+									ClassicUI:ReloadMainFramesSettings()
+								end
 							end
+						},
+						Spacer2 = {
+							type = "description",
+							order = 8,
+							name = ""
+						},
+						ActionButtonsLayoutGroup = {
+							order = 9,
+							type = "group",
+							inline = true,
+							name = L['ActionButtons Layout'],
+							desc = "",
+							args = {
+								BLStyle = {
+									order = 1,
+									type = "select",
+									name = L['BLStyle3'],
+									desc = L['BLStyleDesc3'],
+									width = 1.5,
+									values = {
+										[0] = L['Default - Classic Layout'],
+										[1] = L['Dragonflight Layout']
+									},
+									get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle end,
+									set = function(_,value)
+										if (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle ~= value) then
+											ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle = value
+											if (ClassicUI:IsEnabled()) then
+												ClassicUI.LayoutGroupActionButtons({[3]=true})
+											end
+										end
+									end,
+								},
+								Spacer1 = {
+									type = "description",
+									order = 2,
+									name = " ",
+									width = 0.45
+								},
+								BLNormalTextureAlpha = {
+									order = 3,
+									type = "range",
+									softMin = 0,
+									softMax = 1,
+									step = 0.01,
+									bigStep = 0.02,
+									name = L['NormalTexture Alpha'],
+									desc = L['NormalTexture Alpha'],
+									get = function()
+										return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle == 1) and ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle1NormalTextureAlpha or ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0NormalTextureAlpha
+									end,
+									set = function(_,value)
+										if (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle == 1) then
+											ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle1NormalTextureAlpha = value
+										else
+											ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0NormalTextureAlpha = value
+										end
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[3]=true})
+										end
+									end
+								},
+								BLStyle0AllowNewBackgroundArt = {
+									order = 4,
+									type = "toggle",
+									name = L['BLStyle0AllowNewBackgroundArt'],
+									desc = L['BLStyle0AllowNewBackgroundArtDesc'],
+									width = 2.40,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle ~= 0) end,
+									get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0AllowNewBackgroundArt end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0AllowNewBackgroundArt = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[3]=true})
+										end
+									end
+								},
+								BLStyle0UseOldHotKeyTextStyle = {
+									order = 5,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseOldHotKeyTextStyle'],
+									desc = L['BLStyle0UseOldHotKeyTextStyleDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0UseOldHotKeyTextStyle end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0UseOldHotKeyTextStyle = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[3]=true})
+										end
+									end
+								},
+								BLStyle0UseNewPushedTexture = {
+									order = 6,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewPushedTexture'],
+									desc = L['BLStyle0UseNewPushedTextureDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0UseNewPushedTexture end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0UseNewPushedTexture = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[3]=true})
+										end
+									end
+								},
+								BLStyle0UseNewCheckedTexture = {
+									order = 7,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewCheckedTexture'],
+									desc = L['BLStyle0UseNewCheckedTextureDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0UseNewCheckedTexture end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0UseNewCheckedTexture = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[3]=true})
+										end
+									end
+								},
+								BLStyle0UseNewHighlightTexture = {
+									order = 8,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewHighlightTexture'],
+									desc = L['BLStyle0UseNewHighlightTextureDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0UseNewHighlightTexture end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0UseNewHighlightTexture = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[3]=true})
+										end
+									end
+								},
+								BLStyle0UseNewSpellHighlightTexture = {
+									order = 9,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewSpellHighlightTexture'],
+									desc = L['BLStyle0UseNewSpellHighlightTextureDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0UseNewSpellHighlightTexture end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0UseNewSpellHighlightTexture = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[3]=true})
+										end
+									end
+								},
+								BLStyle0UseNewFlyoutBorder = {
+									order = 10,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewFlyoutBorder'],
+									desc = L['BLStyle0UseNewFlyoutBorderDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0UseNewFlyoutBorder end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0UseNewFlyoutBorder = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[3]=true})
+										end
+									end
+								}
+							}
+						},
+						Spacer3 = {
+							type = "description",
+							order = 10,
+							name = ""
+						},
+						normalizeButtonsSpacing = {
+							order = 11,
+							type = "toggle",
+							name = L['Normalize spacing of PetActionButtons'],
+							desc = L['Select this option to make the spacing of all PetActionButtons the same, since by default the spacing between button 6 and 7 is 1px less than the rest'],
+							width = "double",
+							get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.normalizeButtonsSpacing end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.PetActionBarFrame.normalizeButtonsSpacing = value
+								if (ClassicUI:IsEnabled()) then
+									if not(InCombatLockdown()) then
+										CUI_PetActionBarFrame:RelocateButtons()
+									end
+								end
+							end,
+						},
+						hideOnOverrideActionBar = {
+							order = 12,
+							type = "toggle",
+							name = L['Hide on OverrideActionBar'],
+							desc = L['Hide the PetActionBar when the OverrideActionBar is shown instead of moving it to a new spot'],
+							width = "double",
+							get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.hideOnOverrideActionBar end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.PetActionBarFrame.hideOnOverrideActionBar = value
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI:UpdatedStatusBarsEvent()
+								end
+							end,
+						},
+						hideOnPetBattleFrameBar = {
+							order = 13,
+							type = "toggle",
+							name = L['Hide on PetBattleFrameBar'],
+							desc = L['Hide the PetActionBar when the PetBattleFrameBar is shown instead of moving it to a new spot'],
+							width = "double",
+							get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.hideOnPetBattleFrameBar end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.PetActionBarFrame.hideOnPetBattleFrameBar = value
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI:UpdatedStatusBarsEvent()
+								end
+							end,
 						}
 					}
 				},
@@ -914,7 +2225,9 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.StanceBarFrame.xOffset end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.StanceBarFrame.xOffset = value
-								ClassicUI.Update_StanceBar()
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI:UpdatedStatusBarsEvent()
+								end
 							end
 						},
 						yOffset = {
@@ -929,7 +2242,9 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.StanceBarFrame.yOffset end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.StanceBarFrame.yOffset = value
-								ClassicUI.Update_StanceBar()
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI:UpdatedStatusBarsEvent()
+								end
 							end
 						},
 						Spacer1 = {
@@ -952,7 +2267,9 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.StanceBarFrame.ignoreyOffsetStatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.StanceBarFrame.ignoreyOffsetStatusBar = value
-										ClassicUI.Update_StanceBar()
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI:UpdatedStatusBarsEvent()
+										end
 									end,
 								},
 								yOffset1StatusBar = {
@@ -968,7 +2285,9 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.StanceBarFrame.yOffset1StatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.StanceBarFrame.yOffset1StatusBar = value
-										ClassicUI.Update_StanceBar()
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI:UpdatedStatusBarsEvent()
+										end
 									end
 								},
 								yOffset2StatusBar = {
@@ -984,7 +2303,9 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.StanceBarFrame.yOffset2StatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.StanceBarFrame.yOffset2StatusBar = value
-										ClassicUI.Update_StanceBar()
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI:UpdatedStatusBarsEvent()
+										end
 									end
 								}
 							}
@@ -992,7 +2313,7 @@ ClassicUI.optionsTable = {
 						scale = {
 							order = 6,
 							type = "range",
-							min = 0.0001,
+							min = 0.01,
 							softMin = 0.01,
 							softMax = 4,
 							step = 0.01,
@@ -1002,8 +2323,187 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.StanceBarFrame.scale end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.StanceBarFrame.scale = value
-								ClassicUI.Update_StanceBar()
+								ClassicUI.cached_db_profile.barsConfig_StanceBarFrame_scale = value
+								if (ClassicUI:IsEnabled()) then
+									CUI_StanceBarFrame.oldOrigScale = value
+									ClassicUI:ReloadMainFramesSettings()
+								end
 							end
+						},
+						Spacer2 = {
+							type = "description",
+							order = 7,
+							name = ""
+						},
+						ActionButtonsLayoutGroup = {
+							order = 8,
+							type = "group",
+							inline = true,
+							name = L['ActionButtons Layout'],
+							desc = "",
+							args = {
+								BLStyle = {
+									order = 1,
+									type = "select",
+									name = L['BLStyle4'],
+									desc = L['BLStyleDesc4'],
+									width = 1.5,
+									values = {
+										[0] = L['Default - Classic Layout'],
+										[1] = L['Dragonflight Layout']
+									},
+									get = function() return ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle end,
+									set = function(_,value)
+										if (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle ~= value) then
+											ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle = value
+											if (ClassicUI:IsEnabled()) then
+												ClassicUI.LayoutGroupActionButtons({[4]=true})
+											end
+										end
+									end,
+								},
+								Spacer1 = {
+									type = "description",
+									order = 2,
+									name = " ",
+									width = 0.45
+								},
+								BLNormalTextureAlpha = {
+									order = 3,
+									type = "range",
+									softMin = 0,
+									softMax = 1,
+									step = 0.01,
+									bigStep = 0.02,
+									name = L['NormalTexture Alpha'],
+									desc = L['NormalTexture Alpha'],
+									get = function()
+										return (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle == 1) and ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle1NormalTextureAlpha or ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0NormalTextureAlpha
+									end,
+									set = function(_,value)
+										if (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle == 1) then
+											ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle1NormalTextureAlpha = value
+										else
+											ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0NormalTextureAlpha = value
+										end
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[4]=true})
+										end
+									end
+								},
+								BLStyle0AllowNewBackgroundArt = {
+									order = 4,
+									type = "toggle",
+									name = L['BLStyle0AllowNewBackgroundArt'],
+									desc = L['BLStyle0AllowNewBackgroundArtDesc'],
+									width = 2.40,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle ~= 0) end,
+									get = function() return ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0AllowNewBackgroundArt end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0AllowNewBackgroundArt = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[4]=true})
+										end
+									end
+								},
+								BLStyle0UseOldHotKeyTextStyle = {
+									order = 5,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseOldHotKeyTextStyle'],
+									desc = L['BLStyle0UseOldHotKeyTextStyleDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0UseOldHotKeyTextStyle end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0UseOldHotKeyTextStyle = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[4]=true})
+										end
+									end
+								},
+								BLStyle0UseNewPushedTexture = {
+									order = 6,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewPushedTexture'],
+									desc = L['BLStyle0UseNewPushedTextureDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0UseNewPushedTexture end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0UseNewPushedTexture = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[4]=true})
+										end
+									end
+								},
+								BLStyle0UseNewCheckedTexture = {
+									order = 7,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewCheckedTexture'],
+									desc = L['BLStyle0UseNewCheckedTextureDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0UseNewCheckedTexture end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0UseNewCheckedTexture = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[4]=true})
+										end
+									end
+								},
+								BLStyle0UseNewHighlightTexture = {
+									order = 8,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewHighlightTexture'],
+									desc = L['BLStyle0UseNewHighlightTextureDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0UseNewHighlightTexture end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0UseNewHighlightTexture = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[4]=true})
+										end
+									end
+								},
+								BLStyle0UseNewSpellHighlightTexture = {
+									order = 9,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewSpellHighlightTexture'],
+									desc = L['BLStyle0UseNewSpellHighlightTextureDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0UseNewSpellHighlightTexture end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0UseNewSpellHighlightTexture = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[4]=true})
+										end
+									end
+								},
+								BLStyle0UseNewFlyoutBorder = {
+									order = 10,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewFlyoutBorder'],
+									desc = L['BLStyle0UseNewFlyoutBorderDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0UseNewFlyoutBorder end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0UseNewFlyoutBorder = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[4]=true})
+										end
+									end
+								}
+							}
 						}
 					}
 				},
@@ -1030,7 +2530,9 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.PossessBarFrame.xOffset end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.PossessBarFrame.xOffset = value
-								ClassicUI.Update_PossessBar()
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI:UpdatedStatusBarsEvent()
+								end
 							end
 						},
 						yOffset = {
@@ -1045,7 +2547,9 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.PossessBarFrame.yOffset end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.PossessBarFrame.yOffset = value
-								ClassicUI.Update_PossessBar()
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI:UpdatedStatusBarsEvent()
+								end
 							end
 						},
 						Spacer1 = {
@@ -1068,7 +2572,9 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.PossessBarFrame.ignoreyOffsetStatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.PossessBarFrame.ignoreyOffsetStatusBar = value
-										ClassicUI.Update_PossessBar()
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI:UpdatedStatusBarsEvent()
+										end
 									end,
 								},
 								yOffset1StatusBar = {
@@ -1084,7 +2590,9 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.PossessBarFrame.yOffset1StatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.PossessBarFrame.yOffset1StatusBar = value
-										ClassicUI.Update_PossessBar()
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI:UpdatedStatusBarsEvent()
+										end
 									end
 								},
 								yOffset2StatusBar = {
@@ -1100,7 +2608,9 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.PossessBarFrame.yOffset2StatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.PossessBarFrame.yOffset2StatusBar = value
-										ClassicUI.Update_PossessBar()
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI:UpdatedStatusBarsEvent()
+										end
 									end
 								}
 							}
@@ -1108,7 +2618,7 @@ ClassicUI.optionsTable = {
 						scale = {
 							order = 6,
 							type = "range",
-							min = 0.0001,
+							min = 0.01,
 							softMin = 0.01,
 							softMax = 4,
 							step = 0.01,
@@ -1118,8 +2628,187 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.PossessBarFrame.scale end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.PossessBarFrame.scale = value
-								ClassicUI.Update_PossessBar()
+								ClassicUI.cached_db_profile.barsConfig_PossessBarFrame_scale = value
+								if (ClassicUI:IsEnabled()) then
+									CUI_PossessBarFrame.oldOrigScale = value
+									ClassicUI:ReloadMainFramesSettings()
+								end
 							end
+						},
+						Spacer2 = {
+							type = "description",
+							order = 7,
+							name = ""
+						},
+						ActionButtonsLayoutGroup = {
+							order = 8,
+							type = "group",
+							inline = true,
+							name = L['ActionButtons Layout'],
+							desc = "",
+							args = {
+								BLStyle = {
+									order = 1,
+									type = "select",
+									name = L['BLStyle5'],
+									desc = L['BLStyleDesc5'],
+									width = 1.5,
+									values = {
+										[0] = L['Default - Classic Layout'],
+										[1] = L['Dragonflight Layout']
+									},
+									get = function() return ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle end,
+									set = function(_,value)
+										if (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle ~= value) then
+											ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle = value
+											if (ClassicUI:IsEnabled()) then
+												ClassicUI.LayoutGroupActionButtons({[5]=true})
+											end
+										end
+									end,
+								},
+								Spacer1 = {
+									type = "description",
+									order = 2,
+									name = " ",
+									width = 0.45
+								},
+								BLNormalTextureAlpha = {
+									order = 3,
+									type = "range",
+									softMin = 0,
+									softMax = 1,
+									step = 0.01,
+									bigStep = 0.02,
+									name = L['NormalTexture Alpha'],
+									desc = L['NormalTexture Alpha'],
+									get = function()
+										return (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle == 1) and ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle1NormalTextureAlpha or ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0NormalTextureAlpha
+									end,
+									set = function(_,value)
+										if (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle == 1) then
+											ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle1NormalTextureAlpha = value
+										else
+											ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0NormalTextureAlpha = value
+										end
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[5]=true})
+										end
+									end
+								},
+								BLStyle0AllowNewBackgroundArt = {
+									order = 4,
+									type = "toggle",
+									name = L['BLStyle0AllowNewBackgroundArt'],
+									desc = L['BLStyle0AllowNewBackgroundArtDesc'],
+									width = 2.40,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle ~= 0) end,
+									get = function() return ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0AllowNewBackgroundArt end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0AllowNewBackgroundArt = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[5]=true})
+										end
+									end
+								},
+								BLStyle0UseOldHotKeyTextStyle = {
+									order = 5,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseOldHotKeyTextStyle'],
+									desc = L['BLStyle0UseOldHotKeyTextStyleDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0UseOldHotKeyTextStyle end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0UseOldHotKeyTextStyle = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[5]=true})
+										end
+									end
+								},
+								BLStyle0UseNewPushedTexture = {
+									order = 6,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewPushedTexture'],
+									desc = L['BLStyle0UseNewPushedTextureDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0UseNewPushedTexture end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0UseNewPushedTexture = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[5]=true})
+										end
+									end
+								},
+								BLStyle0UseNewCheckedTexture = {
+									order = 7,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewCheckedTexture'],
+									desc = L['BLStyle0UseNewCheckedTextureDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0UseNewCheckedTexture end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0UseNewCheckedTexture = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[5]=true})
+										end
+									end
+								},
+								BLStyle0UseNewHighlightTexture = {
+									order = 8,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewHighlightTexture'],
+									desc = L['BLStyle0UseNewHighlightTextureDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0UseNewHighlightTexture end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0UseNewHighlightTexture = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[5]=true})
+										end
+									end
+								},
+								BLStyle0UseNewSpellHighlightTexture = {
+									order = 9,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewSpellHighlightTexture'],
+									desc = L['BLStyle0UseNewSpellHighlightTextureDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0UseNewSpellHighlightTexture end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0UseNewSpellHighlightTexture = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[5]=true})
+										end
+									end
+								},
+								BLStyle0UseNewFlyoutBorder = {
+									order = 10,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewFlyoutBorder'],
+									desc = L['BLStyle0UseNewFlyoutBorderDesc'],
+									width = 2.40,
+									get = function() return ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0UseNewFlyoutBorder end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0UseNewFlyoutBorder = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[5]=true})
+										end
+									end
+								}
+							}
 						}
 					}
 				},
@@ -1132,20 +2821,61 @@ ClassicUI.optionsTable = {
 						Header1 = {
 							type = 'header',
 							order = 1,
-							name = L['SingleStatusBar']
+							name = L['StatusBar General Configuration']
 						},
 						Comment1 = {
 							type = 'description',
 							order = 2,
-							name = L['Configuration for 1 visible StatusBar']
+							name = L['General configuration of StatusBar that applies regardless of how many StatusBars are visible']
 						},
 						Spacer1 = {
 							type = "description",
 							order = 3,
 							name = ""
 						},
-						hideSingleStatusBar = {
+						expBarAlwaysShowRestedBar = {
 							order = 4,
+							type = "toggle",
+							name = L['expBarAlwaysShowRestedBar'],
+							desc = L['expBarAlwaysShowRestedBarDesc'],
+							width = 2.5,
+							get = function() return ClassicUI.db.profile.barsConfig.SingleStatusBar.expBarAlwaysShowRestedBar end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.SingleStatusBar.expBarAlwaysShowRestedBar = value
+								ClassicUI.cached_db_profile.barsConfig_SingleStatusBar_expBarAlwaysShowRestedBar = value
+								ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.expBarAlwaysShowRestedBar = value
+								ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.expBarAlwaysShowRestedBar = value
+								if (ClassicUI:IsEnabled()) then
+									for _, bar in pairs(StatusTrackingBarManager.bars) do
+										if (bar.priority == 3 and bar.ExhaustionTick and bar.ExhaustionTick.UpdateTickPosition) then
+											bar.ExhaustionTick:UpdateTickPosition()
+										end
+									end
+								end
+							end,
+						},
+						Spacer2 = {
+							type = "description",
+							order = 5,
+							name = ""
+						},
+						Header2 = {
+							type = 'header',
+							order = 6,
+							name = L['SingleStatusBar']
+						},
+						Comment2 = {
+							type = 'description',
+							order = 7,
+							name = L['Configuration for 1 visible StatusBar']
+						},
+						Spacer3 = {
+							type = "description",
+							order = 8,
+							name = ""
+						},
+						hideSingleStatusBar = {
+							order = 9,
 							type = "multiselect",
 							name = L['Hide for:'],
 							desc = L['Hide SingleStatusBar for the selected StatusBar types'],
@@ -1159,22 +2889,25 @@ ClassicUI.optionsTable = {
 							get = function(_, keyname) return ClassicUI.db.profile.barsConfig.SingleStatusBar.hide[keyname] end,
 							set = function(_, keyname, value)
 								ClassicUI.db.profile.barsConfig.SingleStatusBar.hide[keyname] = value
-								ClassicUI:UpdateStatusBarCache()
-								if (not ClassicUI.cached_SingleStatusBar_hide) then
-									if (not StatusTrackingBarManager:IsShown()) then
-										StatusTrackingBarManager:Show()
+								ClassicUI:UpdateStatusBarOptionsCache()
+								if (ClassicUI:IsEnabled()) then
+									if (not ClassicUI.cached_SingleStatusBar_hide) then
+										if (not StatusTrackingBarManager:IsShown()) then
+											StatusTrackingBarManager:Show()
+										end
 									end
+									ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+									ClassicUI:UpdatedStatusBarsEvent()
 								end
-								ClassicUI:SetPositionForStatusBars_MainMenuBar()
 							end,
 						},
-						Spacer2 = {
+						Spacer4 = {
 							type = "description",
-							order = 5,
+							order = 10,
 							name = ""
 						},
 						SingleStatusBarxOffset = {
-							order = 6,
+							order = 11,
 							type = "range",
 							softMin = -500,
 							softMax = 500,
@@ -1185,11 +2918,13 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.SingleStatusBar.xOffset end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.SingleStatusBar.xOffset = value
-								ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+								end
 							end
 						},
 						SingleStatusBaryOffset = {
-							order = 7,
+							order = 12,
 							type = "range",
 							softMin = -500,
 							softMax = 500,
@@ -1200,11 +2935,13 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.SingleStatusBar.yOffset end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.SingleStatusBar.yOffset = value
-								ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+								end
 							end
 						},
 						SingleStatusBarAlpha = {
-							order = 8,
+							order = 13,
 							type = "range",
 							softMin = 0,
 							softMax = 1,
@@ -1215,16 +2952,18 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.SingleStatusBar.alpha end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.SingleStatusBar.alpha = value
-								ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+								end
 							end
 						},
-						Spacer3 = {
+						Spacer5 = {
 							type = "description",
-							order = 9,
+							order = 14,
 							name = ""
 						},
 						SingleStatusBarxSize = {
-							order = 10,
+							order = 15,
 							type = "range",
 							softMin = -500,
 							softMax = 500,
@@ -1235,12 +2974,13 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.SingleStatusBar.xSize end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.SingleStatusBar.xSize = value
-								ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
-								ClassicUI:ForceExpBarExhaustionTickUpdate()
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+								end
 							end
 						},
 						SingleStatusBarySize = {
-							order = 11,
+							order = 16,
 							type = "range",
 							softMin = -500,
 							softMax = 500,
@@ -1251,12 +2991,13 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.SingleStatusBar.ySize end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.SingleStatusBar.ySize = value
-								ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
-								ClassicUI:ForceExpBarExhaustionTickUpdate()
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+								end
 							end
 						},
 						SingleStatusBarArt = {
-							order = 12,
+							order = 17,
 							type = "group",
 							inline = true,
 							name = L['ArtFrame'],
@@ -1270,7 +3011,9 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.SingleStatusBar.artHide end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.SingleStatusBar.artHide = value
-										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+										end
 									end,
 								},
 								alphaArt = {
@@ -1286,7 +3029,9 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.SingleStatusBar.artAlpha end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.SingleStatusBar.artAlpha = value
-										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+										end
 									end
 								},
 								Spacer1 = {
@@ -1307,7 +3052,9 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.SingleStatusBar.xOffsetArt end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.SingleStatusBar.xOffsetArt = value
-										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+										end
 									end
 								},
 								yOffsetArt = {
@@ -1323,13 +3070,54 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.SingleStatusBar.yOffsetArt end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.SingleStatusBar.yOffsetArt = value
-										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+										end
+									end
+								},
+								Spacer2 = {
+									type = "description",
+									order = 6,
+									name = ""
+								},
+								xSizeArt = {
+									order = 7,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['xSizeArt'],
+									desc = L['xSizeArt'],
+									get = function() return ClassicUI.db.profile.barsConfig.SingleStatusBar.xSizeArt end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.SingleStatusBar.xSizeArt = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+										end
+									end
+								},
+								ySizeArt = {
+									order = 8,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['ySizeArt'],
+									desc = L['ySizeArt'],
+									get = function() return ClassicUI.db.profile.barsConfig.SingleStatusBar.ySizeArt end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.SingleStatusBar.ySizeArt = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+										end
 									end
 								}
 							}
 						},
 						SingleStatusBarOverlay = {
-							order = 13,
+							order = 18,
 							type = "group",
 							inline = true,
 							name = L['OverlayFrame'],
@@ -1343,7 +3131,9 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.SingleStatusBar.overlayHide end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.SingleStatusBar.overlayHide = value
-										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+										end
 									end,
 								},
 								alphaOverlay = {
@@ -1359,7 +3149,9 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.SingleStatusBar.overlayAlpha end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.SingleStatusBar.overlayAlpha = value
-										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+										end
 									end
 								},
 								Spacer1 = {
@@ -1380,7 +3172,9 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.SingleStatusBar.xOffsetOverlay end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.SingleStatusBar.xOffsetOverlay = value
-										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+										end
 									end
 								},
 								yOffsetOverlay = {
@@ -1396,33 +3190,35 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.SingleStatusBar.yOffsetOverlay end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.SingleStatusBar.yOffsetOverlay = value
-										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+										end
 									end
 								}
 							}
 						},
-						Spacer4 = {
+						Spacer6 = {
 							type = "description",
-							order = 14,
+							order = 19,
 							name = ""
 						},
-						Header2 = {
+						Header3 = {
 							type = 'header',
-							order = 15,
+							order = 20,
 							name = L['DoubleStatusBar']
 						},
-						Comment2 = {
+						Comment3 = {
 							type = 'description',
-							order = 16,
+							order = 21,
 							name = L['Configuration for 2 visible StatusBars']
 						},
-						Spacer5 = {
+						Spacer7 = {
 							type = 'description',
-							order = 17,
+							order = 22,
 							name = ""
 						},
 						hideDoubleStatusBar = {
-							order = 18,
+							order = 23,
 							type = "multiselect",
 							name = L['Hide for:'],
 							desc = L['Hide DoubleStatusBar for the selected StatusBar types'],
@@ -1441,22 +3237,25 @@ ClassicUI.optionsTable = {
 							get = function(_, keyname) return ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.hide[keyname] end,
 							set = function(_, keyname, value)
 								ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.hide[keyname] = value
-								ClassicUI:UpdateStatusBarCache()
-								if (not ClassicUI.cached_DoubleStatusBar_hide) then
-									if (not StatusTrackingBarManager:IsShown()) then
-										StatusTrackingBarManager:Show()
+								ClassicUI:UpdateStatusBarOptionsCache()
+								if (ClassicUI:IsEnabled()) then
+									if (not ClassicUI.cached_DoubleStatusBar_hide) then
+										if (not StatusTrackingBarManager:IsShown()) then
+											StatusTrackingBarManager:Show()
+										end
 									end
+									ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+									ClassicUI:UpdatedStatusBarsEvent()
 								end
-								ClassicUI:SetPositionForStatusBars_MainMenuBar()
 							end,
 						},
-						Spacer6 = {
+						Spacer8 = {
 							type = 'description',
-							order = 19,
+							order = 24,
 							name = ""
 						},
 						UpperStatusBar = {
-							order = 20,
+							order = 25,
 							inline = true,
 							type = "group",
 							name = L['UpperStatusBar'],
@@ -1474,7 +3273,9 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xOffset end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xOffset = value
-										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+										end
 									end
 								},
 								yOffset = {
@@ -1489,7 +3290,9 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.yOffset end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.yOffset = value
-										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+										end
 									end
 								},
 								alpha = {
@@ -1504,7 +3307,9 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.alpha end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.alpha = value
-										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+										end
 									end
 								},
 								Spacer1 = {
@@ -1524,8 +3329,9 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xSize end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xSize = value
-										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
-										ClassicUI:ForceExpBarExhaustionTickUpdate()
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+										end
 									end
 								},
 								ySize = {
@@ -1540,8 +3346,9 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.ySize end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.ySize = value
-										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
-										ClassicUI:ForceExpBarExhaustionTickUpdate()
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+										end
 									end
 								},
 								DoubleUpperStatusBarArt = {
@@ -1559,7 +3366,9 @@ ClassicUI.optionsTable = {
 											get = function() return ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.artHide end,
 											set = function(_,value)
 												ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.artHide = value
-												ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+												if (ClassicUI:IsEnabled()) then
+													ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+												end
 											end,
 										},
 										alphaArt = {
@@ -1575,7 +3384,9 @@ ClassicUI.optionsTable = {
 											get = function() return ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.artAlpha end,
 											set = function(_,value)
 												ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.artAlpha = value
-												ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+												if (ClassicUI:IsEnabled()) then
+													ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+												end
 											end
 										},
 										Spacer1 = {
@@ -1596,7 +3407,9 @@ ClassicUI.optionsTable = {
 											get = function() return ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xOffsetArt end,
 											set = function(_,value)
 												ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xOffsetArt = value
-												ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+												if (ClassicUI:IsEnabled()) then
+													ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+												end
 											end
 										},
 										yOffsetArt = {
@@ -1612,9 +3425,50 @@ ClassicUI.optionsTable = {
 											get = function() return ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.yOffsetArt end,
 											set = function(_,value)
 												ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.yOffsetArt = value
-												ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+												if (ClassicUI:IsEnabled()) then
+													ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+												end
 											end
-										}
+										},
+										Spacer2 = {
+											type = "description",
+											order = 6,
+											name = ""
+										},
+										xSizeArt = {
+											order = 7,
+											type = "range",
+											softMin = -500,
+											softMax = 500,
+											step = 1,
+											bigStep = 10,
+											name = L['xSizeArt'],
+											desc = L['xSizeArt'],
+											get = function() return ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xSizeArt end,
+											set = function(_,value)
+												ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xSizeArt = value
+												if (ClassicUI:IsEnabled()) then
+													ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+												end
+											end
+										},
+										ySizeArt = {
+											order = 8,
+											type = "range",
+											softMin = -500,
+											softMax = 500,
+											step = 1,
+											bigStep = 10,
+											name = L['ySizeArt'],
+											desc = L['ySizeArt'],
+											get = function() return ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.ySizeArt end,
+											set = function(_,value)
+												ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.ySizeArt = value
+												if (ClassicUI:IsEnabled()) then
+													ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+												end
+											end
+										},
 									}
 								},
 								DoubleUpperStatusBarOverlay = {
@@ -1632,7 +3486,9 @@ ClassicUI.optionsTable = {
 											get = function() return ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.overlayHide end,
 											set = function(_,value)
 												ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.overlayHide = value
-												ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+												if (ClassicUI:IsEnabled()) then
+													ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+												end
 											end,
 										},
 										alphaOverlay = {
@@ -1648,7 +3504,9 @@ ClassicUI.optionsTable = {
 											get = function() return ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.overlayAlpha end,
 											set = function(_,value)
 												ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.overlayAlpha = value
-												ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+												if (ClassicUI:IsEnabled()) then
+													ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+												end
 											end
 										},
 										Spacer1 = {
@@ -1669,7 +3527,9 @@ ClassicUI.optionsTable = {
 											get = function() return ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xOffsetOverlay end,
 											set = function(_,value)
 												ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xOffsetOverlay = value
-												ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+												if (ClassicUI:IsEnabled()) then
+													ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+												end
 											end
 										},
 										yOffsetOverlay = {
@@ -1685,7 +3545,9 @@ ClassicUI.optionsTable = {
 											get = function() return ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.yOffsetOverlay end,
 											set = function(_,value)
 												ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.yOffsetOverlay = value
-												ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+												if (ClassicUI:IsEnabled()) then
+													ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+												end
 											end
 										}
 									}
@@ -1693,7 +3555,7 @@ ClassicUI.optionsTable = {
 							}
 						},
 						LowerStatusBar = {
-							order = 21,
+							order = 26,
 							inline = true,
 							type = "group",
 							name = L['LowerStatusBar'],
@@ -1711,7 +3573,9 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xOffset end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xOffset = value
-										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+										end
 									end
 								},
 								yOffset = {
@@ -1726,7 +3590,9 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.yOffset end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.yOffset = value
-										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+										end
 									end
 								},
 								alpha = {
@@ -1741,7 +3607,9 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.alpha end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.alpha = value
-										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+										end
 									end
 								},
 								Spacer1 = {
@@ -1761,8 +3629,9 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xSize end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xSize = value
-										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
-										ClassicUI:ForceExpBarExhaustionTickUpdate()
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+										end
 									end
 								},
 								ySize = {
@@ -1777,8 +3646,9 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.ySize end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.ySize = value
-										ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
-										ClassicUI:ForceExpBarExhaustionTickUpdate()
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+										end
 									end
 								},
 								DoubleLowerStatusBarArt = {
@@ -1796,7 +3666,9 @@ ClassicUI.optionsTable = {
 											get = function() return ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.artHide end,
 											set = function(_,value)
 												ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.artHide = value
-												ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+												if (ClassicUI:IsEnabled()) then
+													ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+												end
 											end,
 										},
 										alphaArt = {
@@ -1812,7 +3684,9 @@ ClassicUI.optionsTable = {
 											get = function() return ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.artAlpha end,
 											set = function(_,value)
 												ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.artAlpha = value
-												ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+												if (ClassicUI:IsEnabled()) then
+													ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+												end
 											end
 										},
 										Spacer1 = {
@@ -1833,7 +3707,9 @@ ClassicUI.optionsTable = {
 											get = function() return ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xOffsetArt end,
 											set = function(_,value)
 												ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xOffsetArt = value
-												ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+												if (ClassicUI:IsEnabled()) then
+													ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+												end
 											end
 										},
 										yOffsetArt = {
@@ -1849,9 +3725,50 @@ ClassicUI.optionsTable = {
 											get = function() return ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.yOffsetArt end,
 											set = function(_,value)
 												ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.yOffsetArt = value
-												ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+												if (ClassicUI:IsEnabled()) then
+													ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+												end
 											end
-										}
+										},
+										Spacer2 = {
+											type = "description",
+											order = 6,
+											name = ""
+										},
+										xSizeArt = {
+											order = 7,
+											type = "range",
+											softMin = -500,
+											softMax = 500,
+											step = 1,
+											bigStep = 10,
+											name = L['xSizeArt'],
+											desc = L['xSizeArt'],
+											get = function() return ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xSizeArt end,
+											set = function(_,value)
+												ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xSizeArt = value
+												if (ClassicUI:IsEnabled()) then
+													ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+												end
+											end
+										},
+										ySizeArt = {
+											order = 8,
+											type = "range",
+											softMin = -500,
+											softMax = 500,
+											step = 1,
+											bigStep = 10,
+											name = L['ySizeArt'],
+											desc = L['ySizeArt'],
+											get = function() return ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.ySizeArt end,
+											set = function(_,value)
+												ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.ySizeArt = value
+												if (ClassicUI:IsEnabled()) then
+													ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+												end
+											end
+										},
 									}
 								},
 								DoubleLowerStatusBarOverlay = {
@@ -1869,7 +3786,9 @@ ClassicUI.optionsTable = {
 											get = function() return ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.overlayHide end,
 											set = function(_,value)
 												ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.overlayHide = value
-												ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+												if (ClassicUI:IsEnabled()) then
+													ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+												end
 											end,
 										},
 										alphaOverlay = {
@@ -1885,7 +3804,9 @@ ClassicUI.optionsTable = {
 											get = function() return ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.overlayAlpha end,
 											set = function(_,value)
 												ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.overlayAlpha = value
-												ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+												if (ClassicUI:IsEnabled()) then
+													ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+												end
 											end
 										},
 										Spacer1 = {
@@ -1906,7 +3827,9 @@ ClassicUI.optionsTable = {
 											get = function() return ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xOffsetOverlay end,
 											set = function(_,value)
 												ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xOffsetOverlay = value
-												ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+												if (ClassicUI:IsEnabled()) then
+													ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+												end
 											end
 										},
 										yOffsetOverlay = {
@@ -1922,7 +3845,9 @@ ClassicUI.optionsTable = {
 											get = function() return ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.yOffsetOverlay end,
 											set = function(_,value)
 												ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.yOffsetOverlay = value
-												ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+												if (ClassicUI:IsEnabled()) then
+													ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+												end
 											end
 										}
 									}
@@ -1933,8 +3858,428 @@ ClassicUI.optionsTable = {
 				}
 			}
 		},
-		extraOptions = {
+		extraFrames = {
 			order = 2,
+			type = 'group',
+			childGroups = "tab",
+			icon = '',
+			name = L['Extra Frames'],
+			args = {
+				versionD = {
+					order = 1,
+					type = "description",
+					name = '\124cfffb5e26' .. L['Version'] .. ': v' .. ClassicUI.VERSION .. '\124r'
+				},
+				authorD = {
+					order = 2,
+					type = "description",
+					name = '\124cfffb5e26' .. L['Author: Millán-Sanguino'] .. '\124r'
+				},
+				Spacer1 = {
+					type = "description",
+					order = 3,
+					name = " "
+				},
+				enabled = {
+					order = 4,
+					type = "toggle",
+					name = L['Enable ClassicUI'],
+					desc = L['Enable ClassicUI'],
+					confirm = function(_, newValue)
+						if (not newValue) then
+							return L['RELOADUI_MSG']
+						else
+							return false
+						end
+					end,
+					get = function() return ClassicUI.db.profile.enabled end,
+					set = function(_,value)
+						ClassicUI.db.profile.enabled = value
+						if value then
+							if (not ClassicUI:IsEnabled()) then
+								ClassicUI:Enable()
+								ClassicUI:MainFunction()
+								ClassicUI:ExtraOptionsFunc()
+							end
+						else
+							if (ClassicUI:IsEnabled()) then
+								ClassicUI:Disable()
+								ReloadUI()
+							end
+						end
+					end
+				},
+				Header1 = {
+					type = 'header',
+					order = 5,
+					name = L['Extra Frames']
+				},
+				Comment1 = {
+					type = 'description',
+					order = 6,
+					name = L['EXTRA_FRAMES_DESC']
+				},
+				Spacer2 = {
+					type = "description",
+					order = 7,
+					name = ""
+				},
+				Minimap = {
+					order = 8,
+					name = L['Minimap'],
+					type = "group",
+					args = {
+						Header1 = {
+							type = 'header',
+							order = 1,
+							name = L['Minimap']
+						},
+						Comment1 = {
+							type = 'description',
+							order = 2,
+							name = L['MINIMAP_OPTIONS_DESC']
+						},
+						Spacer1 = {
+							type = "description",
+							order = 3,
+							name = ""
+						},
+						enabled1 = {
+							order = 4,
+							type = "toggle",
+							name = L['Enable'],
+							desc = L['Restore the old Minimap'],
+							confirm = function(_, newValue)
+								if (not newValue) then
+									return L['RELOADUI_MSG']
+								else
+									return false
+								end
+							end,
+							get = function()
+								return ClassicUI.db.profile.extraFrames.Minimap.enabled
+							end,
+							set = function(_,value)
+								ClassicUI.db.profile.extraFrames.Minimap.enabled = value
+								if (value) then
+									ClassicUI:EnableOldMinimap()
+									QueueStatusButton:SetPoint("TOPLEFT", MinimapBackdrop, "TOPLEFT", 22 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetQueueButton, -100 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetQueueButton)
+								else
+									QueueStatusButton:SetPoint("TOPLEFT", MinimapBackdrop, "TOPLEFT", -7 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetQueueButton, -135 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetQueueButton)
+									ReloadUI()
+								end
+							end
+						},
+						Spacer2 = {
+							type = "description",
+							order = 5,
+							name = ""
+						},
+						xOffset = {
+							order = 6,
+							disabled = function() return not(ClassicUI.db.profile.extraFrames.Minimap.enabled) end,
+							type = "range",
+							softMin = -700,
+							softMax = 700,
+							step = 1,
+							bigStep = 10,
+							name = L['xOffset'],
+							desc = L['xOffset'],
+							get = function() return ClassicUI.db.profile.extraFrames.Minimap.xOffset end,
+							set = function(_,value)
+								ClassicUI.db.profile.extraFrames.Minimap.xOffset = value
+								if (ClassicUI.db.profile.extraFrames.Minimap.enabled) then
+									MinimapCluster:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", value, ClassicUI.db.profile.extraFrames.Minimap.yOffset)
+									MinimapBorderTop:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", value, ClassicUI.db.profile.extraFrames.Minimap.yOffset)
+								end
+							end
+						},
+						yOffset = {
+							order = 7,
+							disabled = function() return not(ClassicUI.db.profile.extraFrames.Minimap.enabled) end,
+							type = "range",
+							softMin = -700,
+							softMax = 700,
+							step = 1,
+							bigStep = 10,
+							name = L['yOffset'],
+							desc = L['yOffset'],
+							get = function() return ClassicUI.db.profile.extraFrames.Minimap.yOffset end,
+							set = function(_,value)
+								ClassicUI.db.profile.extraFrames.Minimap.yOffset = value
+								if (ClassicUI.db.profile.extraFrames.Minimap.enabled) then
+									MinimapCluster:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", ClassicUI.db.profile.extraFrames.Minimap.xOffset, value)
+									MinimapBorderTop:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", ClassicUI.db.profile.extraFrames.Minimap.xOffset, value)
+								end
+							end
+						},
+						scale = {
+							order = 8,
+							disabled = function() return not(ClassicUI.db.profile.extraFrames.Minimap.enabled) end,
+							type = "range",
+							min = 0.01,
+							softMin = 0.01,
+							softMax = 4,
+							step = 0.01,
+							bigStep = 0.03,
+							name = L['Scale'],
+							desc = L['Scale'],
+							get = function() return ClassicUI.db.profile.extraFrames.Minimap.scale end,
+							set = function(_,value)
+								ClassicUI.db.profile.extraFrames.Minimap.scale = value
+								if (ClassicUI.db.profile.extraFrames.Minimap.enabled) then
+									MinimapCluster:SetScale(ClassicUI.db.profile.extraFrames.Minimap.scale)
+									MinimapCluster:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", ClassicUI.db.profile.extraFrames.Minimap.xOffset, ClassicUI.db.profile.extraFrames.Minimap.yOffset)
+								end
+							end
+						},
+						Spacer3 = {
+							type = "description",
+							order = 9,
+							name = ""
+						},
+						Header2 = {
+							type = 'header',
+							order = 10,
+							name = L['QueueButton (LFG)']
+						},
+						enabled2 = {
+							order = 11,
+							type = "toggle",
+							name = L['Anchor QueueButton (LFG) to Minimap'],
+							desc = L['Anchor QueueButton (LFG) to Minimap'],
+							width = "double",
+							get = function()
+								return ClassicUI.db.profile.extraFrames.Minimap.anchorQueueButtonToMinimap
+							end,
+							set = function(_,value)
+								ClassicUI.db.profile.extraFrames.Minimap.anchorQueueButtonToMinimap = value
+								QueueStatusButton:ClearAllPoints()
+								if (value) then
+									QueueStatusButton:SetParent(MinimapBackdrop)
+									QueueStatusButton:SetFrameStrata("LOW")
+									QueueStatusButton:SetFrameLevel(5)
+									if (ClassicUI.db.profile.extraFrames.Minimap.enabled) then
+										QueueStatusButton:SetPoint("TOPLEFT", MinimapBackdrop, "TOPLEFT", 22 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetQueueButton, -100 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetQueueButton)
+									else
+										QueueStatusButton:SetPoint("TOPLEFT", MinimapBackdrop, "TOPLEFT", -7 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetQueueButton, -135 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetQueueButton)
+									end
+								else
+									if (ClassicUI:IsEnabled()) then
+										QueueStatusButton:SetParent(UIParent)
+									else
+										QueueStatusButton:SetParent(MicroButtonAndBagsBar)
+									end
+									QueueStatusButton:SetFrameStrata("MEDIUM")
+									QueueStatusButton:SetFrameLevel(53)
+									QueueStatusButton:SetPoint("BOTTOMLEFT", MicroButtonAndBagsBar, "BOTTOMLEFT", -45 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetQueueButton, 4 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetQueueButton)
+								end
+							end
+						},
+						Spacer4 = {
+							type = "description",
+							order = 12,
+							name = ""
+						},
+						xOffsetQueueButton = {
+							order = 13,
+							type = "range",
+							softMin = -500,
+							softMax = 500,
+							step = 1,
+							bigStep = 10,
+							name = L['xOffsetQueueButton'],
+							desc = L['xOffsetQueueButton'],
+							get = function() return ClassicUI.db.profile.extraFrames.Minimap.xOffsetQueueButton end,
+							set = function(_,value)
+								ClassicUI.db.profile.extraFrames.Minimap.xOffsetQueueButton = value
+								QueueStatusButton:ClearAllPoints()
+								if (ClassicUI.db.profile.extraFrames.Minimap.anchorQueueButtonToMinimap) then
+									if (ClassicUI.db.profile.extraFrames.Minimap.enabled) then
+										QueueStatusButton:SetPoint("TOPLEFT", MinimapBackdrop, "TOPLEFT", 22 + value, -100 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetQueueButton)
+									else
+										QueueStatusButton:SetPoint("TOPLEFT", MinimapBackdrop, "TOPLEFT", -7 + value, -135 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetQueueButton)
+									end
+								else
+									QueueStatusButton:SetPoint("BOTTOMLEFT", MicroButtonAndBagsBar, "BOTTOMLEFT", -45 + value, 4 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetQueueButton)
+								end
+							end
+						},
+						yOffsetQueueButton = {
+							order = 14,
+							type = "range",
+							softMin = -500,
+							softMax = 500,
+							step = 1,
+							bigStep = 10,
+							name = L['yOffsetQueueButton'],
+							desc = L['yOffsetQueueButton'],
+							get = function() return ClassicUI.db.profile.extraFrames.Minimap.yOffsetQueueButton end,
+							set = function(_,value)
+								ClassicUI.db.profile.extraFrames.Minimap.yOffsetQueueButton = value
+								QueueStatusButton:ClearAllPoints()
+								if (ClassicUI.db.profile.extraFrames.Minimap.anchorQueueButtonToMinimap) then
+									if (ClassicUI.db.profile.extraFrames.Minimap.enabled) then
+										QueueStatusButton:SetPoint("TOPLEFT", MinimapBackdrop, "TOPLEFT", 22 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetQueueButton, -100 + value)
+									else
+										QueueStatusButton:SetPoint("TOPLEFT", MinimapBackdrop, "TOPLEFT", -7 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetQueueButton, -135 + value)
+									end
+								else
+									QueueStatusButton:SetPoint("BOTTOMLEFT", MicroButtonAndBagsBar, "BOTTOMLEFT", -45 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetQueueButton, 4 + value)
+								end
+							end
+						},
+						Spacer5 = {
+							type = "description",
+							order = 15,
+							name = ""
+						},
+						bigQueueButton = {
+							order = 16,
+							type = "toggle",
+							name = L['Use a big QueueButton (LFG)'],
+							desc = L['Use the default Big QueueButton (LFG) introduced in Dragonflight'],
+							width = "double",
+							get = function()
+								return ClassicUI.db.profile.extraFrames.Minimap.bigQueueButton
+							end,
+							set = function(_,value)
+								ClassicUI.db.profile.extraFrames.Minimap.bigQueueButton = value
+								if (value) then
+									ClassicUI:QueueButtonSetBigSize()
+								else
+									ClassicUI:QueueButtonSetSmallSize()
+								end
+							end
+						}
+					}
+				},
+				Bags = {
+					order = 9,
+					name = L['Bags'],
+					type = "group",
+					args = {
+						Header1 = {
+							type = 'header',
+							order = 1,
+							name = L['Bags']
+						},
+						Spacer1 = {
+							type = "description",
+							order = 2,
+							name = ""
+						},
+						FreeSlowCounterGroup = {
+							order = 3,
+							inline = true,
+							type = "group",
+							name = L["FreeSlots Counter"],
+							desc = "",
+							args = {
+								freeSlotCounterMod = {
+									order = 1,
+									type = "select",
+									name = L['FreeSlots Counter Mod'],
+									desc = L['Select what text is shown in the FreeSlots Counter in the bag'],
+									width = 3.25,
+									values = {
+										[0] = L['Blizzard-Default - Free slots of All Bags'],
+										[1] = L['ClassicUI-Default - Free slots of All Bags excluding the Reagent Bag'],
+										[2] = L['Free slots of Normal Bags in one number and free slots of reagent bag in another']
+									},
+									get = function() return ClassicUI.db.profile.extraFrames.Bags.freeSlotCounterMod end,
+									set = function(_,value)
+										ClassicUI.db.profile.extraFrames.Bags.freeSlotCounterMod = value
+										ClassicUI.cached_db_profile.extraFrames_Bags_freeSlotCounterMod = value
+										ClassicUI:BagsFreeSlotsCounterMod()
+									end,
+								},
+								Spacer1 = {
+									type = "description",
+									order = 2,
+									width = 3.25,
+									name = ""
+								},
+								xOffsetFreeSlotsCounter = {
+									order = 3,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['xOffsetFreeSlotsCounter'],
+									desc = L['xOffsetFreeSlotsCounter'],
+									get = function() return ClassicUI.db.profile.extraFrames.Bags.xOffsetFreeSlotsCounter end,
+									set = function(_,value)
+										ClassicUI.db.profile.extraFrames.Bags.xOffsetFreeSlotsCounter = value
+										MainMenuBarBackpackButton.Count:SetPoint("CENTER", MainMenuBarBackpackButton, "CENTER", 0 + value, -10 + ClassicUI.db.profile.extraFrames.Bags.yOffsetFreeSlotsCounter)
+									end
+								},
+								yOffsetFreeSlotsCounter = {
+									order = 4,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['yOffsetFreeSlotsCounter'],
+									desc = L['yOffsetFreeSlotsCounter'],
+									get = function() return ClassicUI.db.profile.extraFrames.Bags.yOffsetFreeSlotsCounter end,
+									set = function(_,value)
+										ClassicUI.db.profile.extraFrames.Bags.yOffsetFreeSlotsCounter = value
+										MainMenuBarBackpackButton.Count:SetPoint("CENTER", MainMenuBarBackpackButton, "CENTER", 0 + ClassicUI.db.profile.extraFrames.Bags.xOffsetFreeSlotsCounter, -10 + value)
+									end
+								}
+							}
+						}
+					}
+				},
+				BuffAndDebuffFrames = {
+					order = 10,
+					name = L['BuffAndDebuffFrames'],
+					type = "group",
+					args = {
+						Header1 = {
+							type = 'header',
+							order = 1,
+							name = L['BuffAndDebuffFrames']
+						},
+						Spacer1 = {
+							type = "description",
+							order = 2,
+							name = ""
+						},
+						hideCollapseAndExpandButton = {
+							order = 3,
+							type = "toggle",
+							name = L['Hide the CollapseAndExpandButton'],
+							desc = L['Hide the arrow button to the right of the Buffs that allows to show/hide these Buffs and keeps the Buffs always visible'],
+							width = "double",
+							confirm = function(_, newValue)
+								if (not newValue) then
+									return L['RELOADUI_MSG']
+								else
+									return false
+								end
+							end,
+							get = function()
+								return ClassicUI.db.profile.extraFrames.BuffAndDebuffFrames.hideCollapseAndExpandButton
+							end,
+							set = function(_,value)
+								ClassicUI.db.profile.extraFrames.BuffAndDebuffFrames.hideCollapseAndExpandButton = value
+								if (value) then
+									ClassicUI:BuffFrameHideCollapseAndExpandButton()
+								else
+									ReloadUI()
+								end
+							end
+						}
+					}
+				}
+			}
+		},
+		extraOptions = {
+			order = 3,
 			type = 'group',
 			childGroups = "tab",
 			icon = '',
@@ -1973,10 +4318,8 @@ ClassicUI.optionsTable = {
 						if value then
 							if (not ClassicUI:IsEnabled()) then
 								ClassicUI:Enable()
-								ClassicUI:MainFunction() 
-								ClassicUI:ExtraFunction()
-								ClassicUI.SetPositionForStatusBars_MainMenuBar()
-								ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+								ClassicUI:MainFunction()
+								ClassicUI:ExtraOptionsFunc()
 							end
 						else
 							if (ClassicUI:IsEnabled()) then
@@ -2004,7 +4347,7 @@ ClassicUI.optionsTable = {
 						ClassicUI.db.profile.forceExtraOptions = value
 						if value then
 							if (not ClassicUI:IsEnabled()) then
-								ClassicUI:ExtraFunction()
+								ClassicUI:ExtraOptionsFunc()
 							end
 						else
 							if (not ClassicUI:IsEnabled()) then
@@ -2064,11 +4407,13 @@ ClassicUI.optionsTable = {
 							set = function(_, value)
 								if (value == 1) then
 									ClassicUI.db.profile.extraConfigs.GuildPanelMode.defaultOpenOldMenu = true
+									ClassicUI.cached_db_profile.extraConfigs_GuildPanelMode_defaultOpenOldMenu = true
 									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
 										ClassicUI:HookOpenGuildPanelMode()
 									end
 								else
 									ClassicUI.db.profile.extraConfigs.GuildPanelMode.defaultOpenOldMenu = false
+									ClassicUI.cached_db_profile.extraConfigs_GuildPanelMode_defaultOpenOldMenu = false
 								end
 							end
 						},
@@ -2088,11 +4433,13 @@ ClassicUI.optionsTable = {
 							set = function(_, value)
 								if (value == 1) then
 									ClassicUI.db.profile.extraConfigs.GuildPanelMode.leftClickMicroButtonOpenOldMenu = true
+									ClassicUI.cached_db_profile.extraConfigs_GuildPanelMode_leftClickMicroButtonOpenOldMenu = true
 									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
 										ClassicUI:HookOpenGuildPanelMode()
 									end
 								else
 									ClassicUI.db.profile.extraConfigs.GuildPanelMode.leftClickMicroButtonOpenOldMenu = false
+									ClassicUI.cached_db_profile.extraConfigs_GuildPanelMode_leftClickMicroButtonOpenOldMenu = false
 								end
 							end
 						},
@@ -2112,11 +4459,13 @@ ClassicUI.optionsTable = {
 							set = function(_, value)
 								if (value == 1) then
 									ClassicUI.db.profile.extraConfigs.GuildPanelMode.rightClickMicroButtonOpenOldMenu = true
+									ClassicUI.cached_db_profile.extraConfigs_GuildPanelMode_rightClickMicroButtonOpenOldMenu = true
 									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
 										ClassicUI:HookOpenGuildPanelMode()
 									end
 								else
 									ClassicUI.db.profile.extraConfigs.GuildPanelMode.rightClickMicroButtonOpenOldMenu = false
+									ClassicUI.cached_db_profile.extraConfigs_GuildPanelMode_rightClickMicroButtonOpenOldMenu = false
 								end
 							end
 						},
@@ -2136,11 +4485,13 @@ ClassicUI.optionsTable = {
 							set = function(_, value)
 								if (value == 1) then
 									ClassicUI.db.profile.extraConfigs.GuildPanelMode.middleClickMicroButtonOpenOldMenu = true
+									ClassicUI.cached_db_profile.extraConfigs_GuildPanelMode_middleClickMicroButtonOpenOldMenu = true
 									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
 										ClassicUI:HookOpenGuildPanelMode()
 									end
 								else
 									ClassicUI.db.profile.extraConfigs.GuildPanelMode.middleClickMicroButtonOpenOldMenu = false
+									ClassicUI.cached_db_profile.extraConfigs_GuildPanelMode_middleClickMicroButtonOpenOldMenu = false
 								end
 							end
 						}
@@ -2195,19 +4546,21 @@ ClassicUI.optionsTable = {
 							set = function(_, value)
 								if ((ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode >= 2) and (value < 2)) then
 									ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode = value
+									ClassicUI.cached_db_profile.extraConfigs_KeybindsConfig_hideKeybindsMode = value
 									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
 										ClassicUI:ToggleVisibilityKeybinds(value)
 										ReloadUI()
 									end
 								else
 									ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode = value
+									ClassicUI.cached_db_profile.extraConfigs_KeybindsConfig_hideKeybindsMode = value
 									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
 										ClassicUI:ToggleVisibilityKeybinds(value)
 									end
 								end
 							end
 						},
-						Spacer1 = {
+						Spacer2 = {
 							type = "description",
 							order = 5,
 							name = ""
@@ -2348,6 +4701,7 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.minDuration end,
 							set = function(_,value)
 								ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.minDuration = value
+								ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_minDuration = value
 							end
 						},
 						minDurationToDefault = {
@@ -2355,7 +4709,10 @@ ClassicUI.optionsTable = {
 							type = "execute",
 							name = L["Default"],
 							desc = L["DefaultDesc"],
-							func = function() ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.minDuration = ClassicUI.db.defaults.profile.extraConfigs.GreyOnCooldownConfig.minDuration end
+							func = function()
+								ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.minDuration = ClassicUI.db.defaults.profile.extraConfigs.GreyOnCooldownConfig.minDuration
+								ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_minDuration = ClassicUI.db.defaults.profile.extraConfigs.GreyOnCooldownConfig.minDuration
+							end
 						}
 					}
 				},
