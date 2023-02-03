@@ -29,8 +29,9 @@ ClassicUI.optionsTable = {
 				enabled = {
 					order = 4,
 					type = "toggle",
-					name = L['Enable ClassicUI'],
-					desc = L['Enable ClassicUI'],
+					name = L['Enable ClassicUI core'],
+					desc = L['EnableClassicUICoreDesc'],
+					width = 1.25,
 					confirm = function(_, newValue)
 						if (not newValue) then
 							return L['RELOADUI_MSG']
@@ -3883,8 +3884,9 @@ ClassicUI.optionsTable = {
 				enabled = {
 					order = 4,
 					type = "toggle",
-					name = L['Enable ClassicUI'],
-					desc = L['Enable ClassicUI'],
+					name = L['Enable ClassicUI core'],
+					desc = L['EnableClassicUICoreDesc'],
+					width = 1.25,
 					confirm = function(_, newValue)
 						if (not newValue) then
 							return L['RELOADUI_MSG']
@@ -3988,6 +3990,7 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.extraFrames.Minimap.xOffset end,
 							set = function(_,value)
 								ClassicUI.db.profile.extraFrames.Minimap.xOffset = value
+								ClassicUI.cached_db_profile.extraFrames_Minimap_xOffset = value
 								if (ClassicUI.db.profile.extraFrames.Minimap.enabled) then
 									MinimapCluster:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", value, ClassicUI.db.profile.extraFrames.Minimap.yOffset)
 									MinimapBorderTop:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", value, ClassicUI.db.profile.extraFrames.Minimap.yOffset)
@@ -4007,6 +4010,7 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.extraFrames.Minimap.yOffset end,
 							set = function(_,value)
 								ClassicUI.db.profile.extraFrames.Minimap.yOffset = value
+								ClassicUI.cached_db_profile.extraFrames_Minimap_yOffset = value
 								if (ClassicUI.db.profile.extraFrames.Minimap.enabled) then
 									MinimapCluster:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", ClassicUI.db.profile.extraFrames.Minimap.xOffset, value)
 									MinimapBorderTop:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", ClassicUI.db.profile.extraFrames.Minimap.xOffset, value)
@@ -4038,13 +4042,134 @@ ClassicUI.optionsTable = {
 							order = 9,
 							name = ""
 						},
+						MailIconPriority = {
+							order = 10,
+							disabled = function() return not(ClassicUI.db.profile.extraFrames.Minimap.enabled) end,
+							type = "select",
+							name = L['MailIconPriority'],
+							desc = L['MailIconPriorityDesc'],
+							width = 2.25,
+							values = {
+								[0] = L['Default - Crafting Order Icon > Mail Icon'],
+								[1] = L['Mail Icon > Crafting Order Icon']
+							},
+							get = function() return ClassicUI.db.profile.extraFrames.Minimap.mailIconPriority end,
+							set = function(_,value)
+								if (ClassicUI.db.profile.extraFrames.Minimap.mailIconPriority ~= value) then
+									ClassicUI.db.profile.extraFrames.Minimap.mailIconPriority = value
+									if (ClassicUI.db.profile.extraFrames.Minimap.enabled) then
+										if (value == 1) then
+											MinimapCluster.IndicatorFrame.MailFrame:SetFrameLevel(6)
+											MinimapCluster.IndicatorFrame.CraftingOrderFrame:SetFrameLevel(5)
+										else
+											MinimapCluster.IndicatorFrame.MailFrame:SetFrameLevel(5)
+											MinimapCluster.IndicatorFrame.CraftingOrderFrame:SetFrameLevel(6)
+										end
+									end
+								end
+							end,
+						},
+						Spacer4 = {
+							type = "description",
+							order = 11,
+							name = ""
+						},
+						ExpansionLandingPageButtonGroup = {
+							order = 12,
+							disabled = function() return not(ClassicUI.db.profile.extraFrames.Minimap.enabled) end,
+							inline = true,
+							type = "group",
+							name = L["ExpansionLandingPage (ELP) Button"],
+							desc = "",
+							args = {
+								xOffsetExpansionLandingPage = {
+									order = 1,
+									disabled = function() return not(ClassicUI.db.profile.extraFrames.Minimap.enabled) end,
+									type = "range",
+									softMin = -700,
+									softMax = 700,
+									step = 1,
+									bigStep = 10,
+									name = L['xOffsetELPButton'],
+									desc = L['xOffsetELPButton'],
+									get = function() return ClassicUI.db.profile.extraFrames.Minimap.xOffsetExpansionLandingPage end,
+									set = function(_,value)
+										ClassicUI.db.profile.extraFrames.Minimap.xOffsetExpansionLandingPage = value
+										ClassicUI.cached_db_profile.extraFrames_Minimap_xOffsetExpansionLandingPage = value
+										if (ClassicUI.db.profile.extraFrames.Minimap.enabled) then
+											ExpansionLandingPageMinimapButton:ClearAllPoints()
+											if (ExpansionLandingPageMinimapButton:GetNormalTexture():GetAtlas() == "dragonflight-landingbutton-up") then
+												ExpansionLandingPageMinimapButton:SetPoint("CENTER", MinimapBackdrop, "TOPLEFT", 32 + 4 + 26.5 + value, -105 - 6 - 26.5 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetExpansionLandingPage)
+											else
+												ExpansionLandingPageMinimapButton:SetPoint("CENTER", MinimapBackdrop, "TOPLEFT", 32 + 6 + 26.5 + value, -105 - 7 - 26.5 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetExpansionLandingPage)
+											end
+										end
+									end
+								},
+								yOffsetExpansionLandingPage = {
+									order = 2,
+									disabled = function() return not(ClassicUI.db.profile.extraFrames.Minimap.enabled) end,
+									type = "range",
+									softMin = -700,
+									softMax = 700,
+									step = 1,
+									bigStep = 10,
+									name = L['yOffsetELPButton'],
+									desc = L['yOffsetELPButton'],
+									get = function() return ClassicUI.db.profile.extraFrames.Minimap.yOffsetExpansionLandingPage end,
+									set = function(_,value)
+										ClassicUI.db.profile.extraFrames.Minimap.yOffsetExpansionLandingPage = value
+										ClassicUI.cached_db_profile.extraFrames_Minimap_yOffsetExpansionLandingPage = value
+										if (ClassicUI.db.profile.extraFrames.Minimap.enabled) then
+											ExpansionLandingPageMinimapButton:ClearAllPoints()
+											if (ExpansionLandingPageMinimapButton:GetNormalTexture():GetAtlas() == "dragonflight-landingbutton-up") then
+												ExpansionLandingPageMinimapButton:SetPoint("CENTER", MinimapBackdrop, "TOPLEFT", 32 + 4 + 26.5 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetExpansionLandingPage, -105 - 6 - 26.5 + value)
+											else
+												ExpansionLandingPageMinimapButton:SetPoint("CENTER", MinimapBackdrop, "TOPLEFT", 32 + 6 + 26.5 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetExpansionLandingPage, -105 - 7 - 26.5 + value)
+											end
+										end
+									end
+								},
+								scaleExpansionLandingPageDragonflight = {
+									order = 3,
+									disabled = function() return not(ClassicUI.db.profile.extraFrames.Minimap.enabled) end,
+									type = "range",
+									min = 0.01,
+									softMin = 0.01,
+									softMax = 4,
+									step = 0.01,
+									bigStep = 0.03,
+									name = L['ScaleELP-DF-Button'],
+									desc = L['ScaleELP-DF-ButtonDesc'],
+									get = function() return ClassicUI.db.profile.extraFrames.Minimap.scaleExpansionLandingPageDragonflight end,
+									set = function(_,value)
+										ClassicUI.db.profile.extraFrames.Minimap.scaleExpansionLandingPageDragonflight = value
+										ClassicUI.cached_db_profile.extraFrames_Minimap_scaleExpansionLandingPageDragonflight = value
+										if (ClassicUI.db.profile.extraFrames.Minimap.enabled) then
+											if (ExpansionLandingPageMinimapButton:GetNormalTexture():GetAtlas() == "dragonflight-landingbutton-up") then
+												if (ClassicUI.elpmbSizeW == 0 or ClassicUI.elpmbSizeH == 0) then
+													ClassicUI.elpmbSizeW = ExpansionLandingPageMinimapButton:GetWidth()
+													ClassicUI.elpmbSizeH = ExpansionLandingPageMinimapButton:GetHeight()
+												end
+												ExpansionLandingPageMinimapButton:SetSize(math.floor(ClassicUI.elpmbSizeW * value + 0.5), math.floor(ClassicUI.elpmbSizeH * value + 0.5))
+											end
+										end
+									end
+								}
+							}
+						},
+						Spacer5 = {
+							type = "description",
+							order = 13,
+							name = ""
+						},
 						Header2 = {
 							type = 'header',
-							order = 10,
+							order = 14,
 							name = L['QueueButton (LFG)']
 						},
 						enabled2 = {
-							order = 11,
+							order = 15,
 							type = "toggle",
 							name = L['Anchor QueueButton (LFG) to Minimap'],
 							desc = L['Anchor QueueButton (LFG) to Minimap'],
@@ -4076,13 +4201,13 @@ ClassicUI.optionsTable = {
 								end
 							end
 						},
-						Spacer4 = {
+						Spacer6 = {
 							type = "description",
-							order = 12,
+							order = 16,
 							name = ""
 						},
 						xOffsetQueueButton = {
-							order = 13,
+							order = 17,
 							type = "range",
 							softMin = -500,
 							softMax = 500,
@@ -4106,7 +4231,7 @@ ClassicUI.optionsTable = {
 							end
 						},
 						yOffsetQueueButton = {
-							order = 14,
+							order = 18,
 							type = "range",
 							softMin = -500,
 							softMax = 500,
@@ -4129,13 +4254,13 @@ ClassicUI.optionsTable = {
 								end
 							end
 						},
-						Spacer5 = {
+						Spacer7 = {
 							type = "description",
-							order = 15,
+							order = 19,
 							name = ""
 						},
 						bigQueueButton = {
-							order = 16,
+							order = 20,
 							type = "toggle",
 							name = L['Use a big QueueButton (LFG)'],
 							desc = L['Use the default Big QueueButton (LFG) introduced in Dragonflight'],
@@ -4169,7 +4294,7 @@ ClassicUI.optionsTable = {
 							order = 2,
 							name = ""
 						},
-						FreeSlowCounterGroup = {
+						FreeSlotsCounterGroup = {
 							order = 3,
 							inline = true,
 							type = "group",
@@ -4229,6 +4354,23 @@ ClassicUI.optionsTable = {
 										ClassicUI.db.profile.extraFrames.Bags.yOffsetFreeSlotsCounter = value
 										MainMenuBarBackpackButton.Count:SetPoint("CENTER", MainMenuBarBackpackButton, "CENTER", 0 + ClassicUI.db.profile.extraFrames.Bags.xOffsetFreeSlotsCounter, -10 + value)
 									end
+								},
+								freeSlotsCounterFontSize = {
+									order = 5,
+									type = "range",
+									min = 0.05,
+									softMin = 0.25,
+									softMax = 28,
+									step = 0.05,
+									bigStep = 0.25,
+									name = L['freeSlotsCounterFontSize'],
+									desc = L['freeSlotsCounterFontSizeDesc'],
+									get = function() return ClassicUI.db.profile.extraFrames.Bags.freeSlotsCounterFontSize end,
+									set = function(_,value)
+										ClassicUI.db.profile.extraFrames.Bags.freeSlotsCounterFontSize = value
+										local font, _, flags = MainMenuBarBackpackButton.Count:GetFont()
+										MainMenuBarBackpackButton.Count:SetFont(font, value, flags)
+									end
 								}
 							}
 						}
@@ -4275,6 +4417,95 @@ ClassicUI.optionsTable = {
 							end
 						}
 					}
+				},
+				Chat = {
+					order = 11,
+					name = L['Chat'],
+					type = "group",
+					args = {
+						Header1 = {
+							type = 'header',
+							order = 1,
+							name = L['Chat']
+						},
+						Comment1 = {
+							type = "description",
+							order = 2,
+							name = L['CHAT_OPTIONS_DESC']
+						},
+						Spacer1 = {
+							type = "description",
+							order = 3,
+							name = ""
+						},
+						restoreScrollButtons = {
+							order = 4,
+							type = "toggle",
+							name = L['restoreScrollButtons'],
+							desc = L['restoreScrollButtonsDesc'],
+							width = 2.25,
+							get = function()
+								return ClassicUI.db.profile.extraFrames.Chat.restoreScrollButtons
+							end,
+							set = function(_,value)
+								ClassicUI.db.profile.extraFrames.Chat.restoreScrollButtons = value
+								if (value) then
+									ClassicUI:RestoreChatScrollButtons()
+								else
+									if CUI_ChatFrame1ButtonFrameBottomButton and CUI_ChatFrame1ButtonFrameBottomButton:IsShown() then
+										CUI_ChatFrame1ButtonFrameBottomButton.allowShow = false
+										CUI_ChatFrame1ButtonFrameBottomButton:Hide()
+									end
+									if CUI_ChatFrame1ButtonFrameDownButton and CUI_ChatFrame1ButtonFrameDownButton:IsShown() then
+										CUI_ChatFrame1ButtonFrameDownButton.allowShow = false
+										CUI_ChatFrame1ButtonFrameDownButton:Hide()
+									end
+									if CUI_ChatFrame1ButtonFrameUpButton and CUI_ChatFrame1ButtonFrameUpButton:IsShown() then
+										CUI_ChatFrame1ButtonFrameUpButton.allowShow = false
+										CUI_ChatFrame1ButtonFrameUpButton:Hide()
+									end
+									ChatFrameMenuButton:ClearAllPoints()
+									ChatFrameMenuButton:SetPoint("BOTTOM", ChatFrameMenuButton:GetParent(), "BOTTOM", 0, 0)
+								end
+							end
+						},
+						restoreBottomScrollButton = {
+							order = 5,
+							disabled = function() return not(ClassicUI.db.profile.extraFrames.Chat.restoreScrollButtons) end,
+							type = "toggle",
+							name = L['restoreBottomScrollButton'],
+							desc = L['restoreBottomScrollButtonDesc'],
+							width = 2.25,
+							get = function()
+								return ClassicUI.db.profile.extraFrames.Chat.restoreBottomScrollButton
+							end,
+							set = function(_,value)
+								ClassicUI.db.profile.extraFrames.Chat.restoreBottomScrollButton = value
+								ClassicUI.cached_db_profile.extraFrames_Chat_restoreBottomScrollButton = value
+								if (ClassicUI.db.profile.extraFrames.Chat.restoreScrollButtons) then
+									ClassicUI:RestoreChatScrollButtons()
+								end
+							end
+						},
+						socialButtonToBottom = {
+							order = 6,
+							disabled = function() return not(ClassicUI.db.profile.extraFrames.Chat.restoreScrollButtons) end,
+							type = "toggle",
+							name = L['socialButtonToBottom'],
+							desc = L['socialButtonToBottomDesc'],
+							width = 2.25,
+							get = function()
+								return ClassicUI.db.profile.extraFrames.Chat.socialButtonToBottom
+							end,
+							set = function(_,value)
+								ClassicUI.db.profile.extraFrames.Chat.socialButtonToBottom = value
+								ClassicUI.cached_db_profile.extraFrames_Chat_socialButtonToBottom = value
+								if (ClassicUI.db.profile.extraFrames.Chat.restoreScrollButtons) then
+									ClassicUI:RestoreChatScrollButtons()
+								end
+							end
+						},
+					}
 				}
 			}
 		},
@@ -4303,8 +4534,9 @@ ClassicUI.optionsTable = {
 				enabled = {
 					order = 4,
 					type = "toggle",
-					name = L['Enable ClassicUI'],
-					desc = L['Enable ClassicUI'],
+					name = L['Enable ClassicUI core'],
+					desc = L['EnableClassicUICoreDesc'],
+					width = 1.25,
 					confirm = function(_, newValue)
 						if (not newValue) then
 							return L['RELOADUI_MSG']
@@ -4333,7 +4565,7 @@ ClassicUI.optionsTable = {
 					order = 5,
 					type = "toggle",
 					name = L['Force Extra Options'],
-					desc = L['Enable Extra Options even ClassicUI is disabled'],
+					desc = L['Enable Extra Options even ClassicUI core is disabled'],
 					width = "double",
 					confirm = function(_, newValue)
 						if ((not newValue) and (not ClassicUI:IsEnabled())) then

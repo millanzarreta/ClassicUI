@@ -1,7 +1,7 @@
 -- ------------------------------------------------------------ --
 -- Addon: ClassicUI                                             --
 --                                                              --
--- Version: 2.0.0                                               --
+-- Version: 2.0.1                                               --
 -- Author: Millán - Sanguino                                    --
 --                                                              --
 -- License: GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007 --
@@ -33,6 +33,7 @@ local tblwipe = table.wipe
 local mathabs = math.abs
 local mathmin = math.min
 local mathmax = math.max
+local mathfloor = math.floor
 local strformat = string.format
 local type = type
 local pairs = pairs
@@ -41,6 +42,9 @@ local next = next
 local SetPortraitTexture = SetPortraitTexture
 local SetClampedTextureRotation = SetClampedTextureRotation
 local InCombatLockdown = InCombatLockdown
+local ActionHasRange = ActionHasRange
+local IsActionInRange = IsActionInRange
+local IsUsableAction = IsUsableAction
 local ActionBarController_GetCurrentActionBarState = ActionBarController_GetCurrentActionBarState
 local BNConnected = BNConnected
 local C_DateAndTime_GetCurrentCalendarTime = C_DateAndTime.GetCurrentCalendarTime
@@ -74,7 +78,7 @@ local GetGuildInfo = GetGuildInfo
 local InGuildParty = InGuildParty
 
 -- Global constants
-ClassicUI.VERSION = "2.0.0"
+ClassicUI.VERSION = "2.0.1"
 ClassicUI.ACTIONBUTTON_NEWLAYOUT_SCALE = 0.826
 ClassicUI.ACTION_BAR_OFFSET = 45
 ClassicUI.SPELLFLYOUT_DEFAULT_SPACING = 4
@@ -83,10 +87,13 @@ ClassicUI.SPELLFLYOUT_FINAL_SPACING = 4
 
 -- Global variables
 ClassicUI.databaseCleaned = false
+ClassicUI.elpmbSizeW = 0
+ClassicUI.elpmbSizeH = 0
 
 -- Cache variables
 ClassicUI.cached_NumberVisibleBars = 0
 ClassicUI.cached_NumberRealVisibleBars = 0
+ClassicUI.cached_UpdateCacheVisibleBarsFunc_Timestamp = 0
 ClassicUI.cached_DoubleStatusBar_hide = nil
 ClassicUI.cached_SingleStatusBar_hide = nil
 ClassicUI.cached_ActionButtonInfo = {
@@ -333,15 +340,25 @@ ClassicUI.defaults = {
 				xOffset = 0,
 				yOffset = 0,
 				scale = 1,
+				mailIconPriority = 0,		-- 0 = Crafting Order Icon > Mail Icon (default), 1 = Mail Icon > Crafting Order Icon
+				xOffsetExpansionLandingPage = 0,
+				yOffsetExpansionLandingPage = 0,
+				scaleExpansionLandingPageDragonflight = 0.82,
 				anchorQueueButtonToMinimap = true,
 				xOffsetQueueButton = 0,
 				yOffsetQueueButton = 0,
 				bigQueueButton = false
 			},
+			['Chat'] = {
+				restoreScrollButtons = true,
+				restoreBottomScrollButton = true,
+				socialButtonToBottom = false
+			},
 			['Bags'] = {
 				freeSlotCounterMod = 1,		-- 0 = AllItems (default), 1 = AllItems-ReagentItems (addon default), 2 = NormalItems and ReagentItems in two different numbers
 				xOffsetFreeSlotsCounter = 0,
-				yOffsetFreeSlotsCounter = 0
+				yOffsetFreeSlotsCounter = 0,
+				freeSlotsCounterFontSize = 14	-- Game Default is 14
 			},
 			['BuffAndDebuffFrames'] = {
 				hideCollapseAndExpandButton = true
@@ -378,6 +395,7 @@ ClassicUI.defaults = {
 -- activated and when the player leaves the combat the function is executed.
 local fclFrame = CreateFrame("Frame")
 local delayFunc_MainFunction = false
+local delayFunc_MF_PLAYER_ENTERING_WORLD = false
 local delayFunc_SetStrataForMainFrames = false
 local delayFunc_ReloadMainFramesSettings = false
 local delayFunc_UpdatedStatusBarsEvent = false
@@ -390,6 +408,10 @@ fclFrame:SetScript("OnEvent",function(self,event)
 		if (delayFunc_MainFunction) then
 			delayFunc_MainFunction = false
 			ClassicUI:MainFunction()
+		end
+		if (delayFunc_MF_PLAYER_ENTERING_WORLD) then
+			delayFunc_MF_PLAYER_ENTERING_WORLD = false
+			ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		end
 		if (delayFunc_SetStrataForMainFrames) then
 			delayFunc_SetStrataForMainFrames = false
@@ -665,6 +687,13 @@ function ClassicUI:UpdateDBValuesCache()
 	self.cached_db_profile.barsConfig_MicroButtons_useClassicMainMenuIcon = self.db.profile.barsConfig.MicroButtons.useClassicMainMenuIcon
 	self.cached_db_profile.barsConfig_BagsIcons_xOffsetReagentBag = self.db.profile.barsConfig.BagsIcons.xOffsetReagentBag
 	self.cached_db_profile.barsConfig_BagsIcons_yOffsetReagentBag = self.db.profile.barsConfig.BagsIcons.yOffsetReagentBag
+	self.cached_db_profile.extraFrames_Minimap_xOffset = self.db.profile.extraFrames.Minimap.xOffset
+	self.cached_db_profile.extraFrames_Minimap_yOffset = self.db.profile.extraFrames.Minimap.yOffset
+	self.cached_db_profile.extraFrames_Minimap_xOffsetExpansionLandingPage = self.db.profile.extraFrames.Minimap.xOffsetExpansionLandingPage
+	self.cached_db_profile.extraFrames_Minimap_yOffsetExpansionLandingPage = self.db.profile.extraFrames.Minimap.yOffsetExpansionLandingPage
+	self.cached_db_profile.extraFrames_Minimap_scaleExpansionLandingPageDragonflight = self.db.profile.extraFrames.Minimap.scaleExpansionLandingPageDragonflight
+	self.cached_db_profile.extraFrames_Chat_restoreBottomScrollButton = self.db.profile.extraFrames.Chat.restoreBottomScrollButton
+	self.cached_db_profile.extraFrames_Chat_socialButtonToBottom = self.db.profile.extraFrames.Chat.socialButtonToBottom
 	self.cached_db_profile.extraConfigs_KeybindsConfig_hideKeybindsMode = self.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode
 	self.cached_db_profile.extraConfigs_GreyOnCooldownConfig_minDuration = self.db.profile.extraConfigs.GreyOnCooldownConfig.minDuration
 	self.cached_db_profile.extraConfigs_GuildPanelMode_defaultOpenOldMenu = self.db.profile.extraConfigs.GuildPanelMode.defaultOpenOldMenu
@@ -795,6 +824,232 @@ function ClassicUI:BuffFrameHideCollapseAndExpandButton()
 	BuffFrame.CollapseAndExpandButton:Hide()
 end
 
+-- Function to update the visibility and position of scroll buttons from the Chat Frame
+function ClassicUI:UpdateScrollButtonsVisibilityAndPosition(cftvmb)
+	local but = cftvmb or ChatFrameToggleVoiceMuteButton
+	local voiceButtonsVisible
+	if not(but) or not(but.isVisible) then
+		voiceButtonsVisible = true
+	else
+		voiceButtonsVisible = but.isVisible and but:isVisible()
+	end
+	local hiddenMode = 0	-- 0 = three buttons shown; 1 = two buttons shown; 2 = three buttons hidden
+	local chH = ChatFrame1ButtonFrame:GetHeight()
+	if (voiceButtonsVisible) then
+		if (chH == nil or chH >= 200) then
+			-- Show the 3 scroll buttons
+			if (CUI_ChatFrame1ButtonFrameBottomButton and not(CUI_ChatFrame1ButtonFrameBottomButton:IsShown()) and CUI_ChatFrame1ButtonFrameBottomButton.allowShow) then
+				if not(CUI_ChatFrame1ButtonFrameBottomButton.hooked_ChatFrame_OnUpdate) then
+					hooksecurefunc("ChatFrame_OnUpdate", CUI_ChatFrame1ButtonFrameBottomButton.func_ChatFrame_OnUpdate)
+					CUI_ChatFrame1ButtonFrameBottomButton.hooked_ChatFrame_OnUpdate = true
+				end
+				CUI_ChatFrame1ButtonFrameBottomButton:Show()
+			end
+			if (CUI_ChatFrame1ButtonFrameDownButton and not(CUI_ChatFrame1ButtonFrameDownButton:IsShown()) and CUI_ChatFrame1ButtonFrameDownButton.allowShow) then
+				CUI_ChatFrame1ButtonFrameDownButton:Show()
+			end
+			if (CUI_ChatFrame1ButtonFrameUpButton and not(CUI_ChatFrame1ButtonFrameUpButton:IsShown()) and CUI_ChatFrame1ButtonFrameUpButton.allowShow) then
+				CUI_ChatFrame1ButtonFrameUpButton:Show()
+			end
+		elseif (chH >= 168) then
+			-- Show the 2 main scroll buttons, hide the bottom scroll button
+			if (CUI_ChatFrame1ButtonFrameBottomButton and CUI_ChatFrame1ButtonFrameBottomButton:IsShown()) then
+				CUI_ChatFrame1ButtonFrameBottomButton:Hide()
+			end
+			if (CUI_ChatFrame1ButtonFrameDownButton and not(CUI_ChatFrame1ButtonFrameDownButton:IsShown()) and CUI_ChatFrame1ButtonFrameDownButton.allowShow) then
+				CUI_ChatFrame1ButtonFrameDownButton:Show()
+			end
+			if (CUI_ChatFrame1ButtonFrameUpButton and not(CUI_ChatFrame1ButtonFrameUpButton:IsShown()) and CUI_ChatFrame1ButtonFrameUpButton.allowShow) then
+				CUI_ChatFrame1ButtonFrameUpButton:Show()
+			end
+			hiddenMode = 1
+		else
+			-- Hide the 3 scroll buttons
+			if (CUI_ChatFrame1ButtonFrameBottomButton and CUI_ChatFrame1ButtonFrameBottomButton:IsShown()) then
+				CUI_ChatFrame1ButtonFrameBottomButton:Hide()
+			end
+			if (CUI_ChatFrame1ButtonFrameDownButton and CUI_ChatFrame1ButtonFrameDownButton:IsShown()) then
+				CUI_ChatFrame1ButtonFrameDownButton:Hide()
+			end
+			if (CUI_ChatFrame1ButtonFrameUpButton and CUI_ChatFrame1ButtonFrameUpButton:IsShown()) then
+				CUI_ChatFrame1ButtonFrameUpButton:Hide()
+			end
+			hiddenMode = 2
+		end
+	else
+		if (chH == nil or chH >= 142) then
+			-- Show the 3 scroll buttons
+			if (CUI_ChatFrame1ButtonFrameBottomButton and not(CUI_ChatFrame1ButtonFrameBottomButton:IsShown()) and CUI_ChatFrame1ButtonFrameBottomButton.allowShow) then
+				if not(CUI_ChatFrame1ButtonFrameBottomButton.hooked_ChatFrame_OnUpdate) then
+					hooksecurefunc("ChatFrame_OnUpdate", CUI_ChatFrame1ButtonFrameBottomButton.func_ChatFrame_OnUpdate)
+					CUI_ChatFrame1ButtonFrameBottomButton.hooked_ChatFrame_OnUpdate = true
+				end
+				CUI_ChatFrame1ButtonFrameBottomButton:Show()
+			end
+			if (CUI_ChatFrame1ButtonFrameDownButton and not(CUI_ChatFrame1ButtonFrameDownButton:IsShown()) and CUI_ChatFrame1ButtonFrameDownButton.allowShow) then
+				CUI_ChatFrame1ButtonFrameDownButton:Show()
+			end
+			if (CUI_ChatFrame1ButtonFrameUpButton and not(CUI_ChatFrame1ButtonFrameUpButton:IsShown()) and CUI_ChatFrame1ButtonFrameUpButton.allowShow) then
+				CUI_ChatFrame1ButtonFrameUpButton:Show()
+			end
+		else
+			-- Show the 2 main scroll buttons, hide the bottom scroll button
+			if (CUI_ChatFrame1ButtonFrameBottomButton and CUI_ChatFrame1ButtonFrameBottomButton:IsShown()) then
+				CUI_ChatFrame1ButtonFrameBottomButton:Hide()
+			end
+			if (CUI_ChatFrame1ButtonFrameDownButton and not(CUI_ChatFrame1ButtonFrameDownButton:IsShown()) and CUI_ChatFrame1ButtonFrameDownButton.allowShow) then
+				CUI_ChatFrame1ButtonFrameDownButton:Show()
+			end
+			if (CUI_ChatFrame1ButtonFrameUpButton and not(CUI_ChatFrame1ButtonFrameUpButton:IsShown()) and CUI_ChatFrame1ButtonFrameUpButton.allowShow) then
+				CUI_ChatFrame1ButtonFrameUpButton:Show()
+			end
+			hiddenMode = 1
+		end
+	end
+	CUI_ChatFrame1ButtonFrameDownButton:ClearAllPoints()
+	ChatFrameMenuButton:ClearAllPoints()
+	if (ClassicUI.cached_db_profile.extraFrames_Chat_restoreBottomScrollButton) then	-- cached db value
+		CUI_ChatFrame1ButtonFrameBottomButton:ClearAllPoints()
+		if (ClassicUI.cached_db_profile.extraFrames_Chat_socialButtonToBottom) then	-- cached db value
+			CUI_ChatFrame1ButtonFrameBottomButton:SetPoint("BOTTOM", ChatFrameMenuButton, "TOP", 0, -2)
+			if (hiddenMode ~= 1) then
+				CUI_ChatFrame1ButtonFrameDownButton:SetPoint("BOTTOM", CUI_ChatFrame1ButtonFrameBottomButton, "TOP", 0, -2)
+			else
+				CUI_ChatFrame1ButtonFrameDownButton:SetPoint("BOTTOM", ChatFrameMenuButton, "TOP", 0, -2)
+			end
+		else
+			CUI_ChatFrame1ButtonFrameBottomButton:SetPoint("BOTTOM", ChatFrame1ButtonFrame, "BOTTOM", 0, -7)
+			if (hiddenMode ~= 1) then
+				CUI_ChatFrame1ButtonFrameDownButton:SetPoint("BOTTOM", CUI_ChatFrame1ButtonFrameBottomButton, "TOP", 0, -2)
+			else
+				CUI_ChatFrame1ButtonFrameDownButton:SetPoint("BOTTOM", ChatFrame1ButtonFrame, "BOTTOM", 0, -7)
+			end
+		end
+	else
+		if (ClassicUI.cached_db_profile.extraFrames_Chat_socialButtonToBottom) then	-- cached db value
+			CUI_ChatFrame1ButtonFrameDownButton:SetPoint("BOTTOM", ChatFrameMenuButton, "TOP", 0, -2)
+		else
+			CUI_ChatFrame1ButtonFrameDownButton:SetPoint("BOTTOM", ChatFrame1ButtonFrame, "BOTTOM", 0, -7)
+		end
+	end
+	if (ClassicUI.cached_db_profile.extraFrames_Chat_socialButtonToBottom or (hiddenMode == 2)) then	-- cached db value
+		ChatFrameMenuButton:SetPoint("BOTTOM", ChatFrameMenuButton:GetParent(), "BOTTOM", 0, -7)
+	else
+		ChatFrameMenuButton:SetPoint("BOTTOM", CUI_ChatFrame1ButtonFrameUpButton, "TOP", 0, 0)
+	end
+end
+
+-- Function to restore some old buttons from the Chat Frame
+function ClassicUI:RestoreChatScrollButtons()
+	local cFrameStrata = ChatFrameMenuButton:GetFrameStrata() or "LOW"
+	local cFrameLevel = ChatFrameMenuButton:GetFrameLevel() or 7
+	local CUI_ChatFrame1ButtonFrameBottomButton = _G["CUI_ChatFrame1ButtonFrameBottomButton"]
+	if (ClassicUI.db.profile.extraFrames.Chat.restoreBottomScrollButton) then
+		if (CUI_ChatFrame1ButtonFrameBottomButton == nil) then
+			CUI_ChatFrame1ButtonFrameBottomButton = CreateFrame("Button", "CUI_ChatFrame1ButtonFrameBottomButton", ChatFrame1ButtonFrame)
+			CUI_ChatFrame1ButtonFrameBottomButton:SetFrameStrata(cFrameStrata)
+			CUI_ChatFrame1ButtonFrameBottomButton:SetFrameLevel(cFrameLevel)
+			CUI_ChatFrame1ButtonFrameBottomButton:SetSize(32, 32)
+			CUI_ChatFrame1ButtonFrameBottomButton:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollEnd-Up")
+			CUI_ChatFrame1ButtonFrameBottomButton:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollEnd-Down")
+			CUI_ChatFrame1ButtonFrameBottomButton:SetDisabledTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollEnd-Disabled")
+			CUI_ChatFrame1ButtonFrameBottomButton:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
+			local CUI_ChatFrame1ButtonFrameBottomButtonFlash = CUI_ChatFrame1ButtonFrameBottomButton:CreateTexture("CUI_ChatFrame1ButtonFrameBottomButtonFlash", "OVERLAY")
+			CUI_ChatFrame1ButtonFrameBottomButtonFlash:SetTexture("Interface\\ChatFrame\\UI-ChatIcon-BlinkHilight")
+			CUI_ChatFrame1ButtonFrameBottomButtonFlash:SetAllPoints(CUI_ChatFrame1ButtonFrameBottomButton)
+			CUI_ChatFrame1ButtonFrameBottomButtonFlash:Hide()
+			MessageFrameScrollButton_OnLoad(CUI_ChatFrame1ButtonFrameBottomButton)
+			CUI_ChatFrame1ButtonFrameBottomButton:SetScript("OnUpdate", MessageFrameScrollButton_OnUpdate)
+			CUI_ChatFrame1ButtonFrameBottomButton:SetScript("OnClick", function(self, button)
+				PlaySound(SOUNDKIT.IG_CHAT_BOTTOM)
+				self:GetParent():GetParent():ScrollToBottom()
+			end)
+			CUI_ChatFrame1ButtonFrameBottomButton.func_ChatFrame_OnUpdate = function(self, elapsed)	
+				local flash = CUI_ChatFrame1ButtonFrameBottomButtonFlash
+				local cflash = self.ScrollToBottomButton.Flash
+				if flash and cflash then
+					if (self:AtBottom()) then
+						if (flash:IsShown()) then
+							flash:Hide()
+						end
+						return
+					end
+					if cflash:IsShown() then
+						flash:SetAlpha(cflash:GetAlpha())
+						if (not flash:IsShown()) then
+							flash:Show()
+						end
+					else
+						if (flash:IsShown()) then
+							flash:Hide()
+						end
+					end
+				end
+			end
+			CUI_ChatFrame1ButtonFrameBottomButton:Hide()
+		end
+		CUI_ChatFrame1ButtonFrameBottomButton.allowShow = true
+	else
+		if CUI_ChatFrame1ButtonFrameBottomButton ~= nil then
+			CUI_ChatFrame1ButtonFrameBottomButton.allowShow = false
+		end
+	end
+	local CUI_ChatFrame1ButtonFrameDownButton = _G["CUI_ChatFrame1ButtonFrameDownButton"]
+	if (CUI_ChatFrame1ButtonFrameDownButton == nil) then
+		CUI_ChatFrame1ButtonFrameDownButton = CreateFrame("Button", "CUI_ChatFrame1ButtonFrameDownButton", ChatFrame1ButtonFrame)
+		CUI_ChatFrame1ButtonFrameDownButton:SetFrameStrata(cFrameStrata)
+		CUI_ChatFrame1ButtonFrameDownButton:SetFrameLevel(cFrameLevel)
+		CUI_ChatFrame1ButtonFrameDownButton:SetSize(32, 32)
+		CUI_ChatFrame1ButtonFrameDownButton:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollDown-Up")
+		CUI_ChatFrame1ButtonFrameDownButton:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollDown-Down")
+		CUI_ChatFrame1ButtonFrameDownButton:SetDisabledTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollDown-Disabled")
+		CUI_ChatFrame1ButtonFrameDownButton:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
+		MessageFrameScrollButton_OnLoad(CUI_ChatFrame1ButtonFrameDownButton)
+		CUI_ChatFrame1ButtonFrameDownButton:SetScript("OnUpdate", MessageFrameScrollButton_OnUpdate)
+		CUI_ChatFrame1ButtonFrameDownButton:SetScript("OnClick", function(self, button)
+			if ( self:GetButtonState() == "PUSHED" ) then
+				self.clickDelay = MESSAGE_SCROLLBUTTON_INITIAL_DELAY
+			else
+				self:GetParent():GetParent():ScrollDown()
+			end
+			PlaySound(SOUNDKIT.IG_CHAT_SCROLL_DOWN)
+		end)
+		CUI_ChatFrame1ButtonFrameDownButton:Hide()
+	end
+	CUI_ChatFrame1ButtonFrameDownButton.allowShow = true
+	local CUI_ChatFrame1ButtonFrameUpButton = _G["CUI_ChatFrame1ButtonFrameUpButton"]
+	if (CUI_ChatFrame1ButtonFrameUpButton == nil) then
+		CUI_ChatFrame1ButtonFrameUpButton = CreateFrame("Button", "CUI_ChatFrame1ButtonFrameUpButton", ChatFrame1ButtonFrame)
+		CUI_ChatFrame1ButtonFrameUpButton:SetFrameStrata(cFrameStrata)
+		CUI_ChatFrame1ButtonFrameUpButton:SetFrameLevel(cFrameLevel)
+		CUI_ChatFrame1ButtonFrameUpButton:SetSize(32, 32)
+		CUI_ChatFrame1ButtonFrameUpButton:SetPoint("BOTTOM", CUI_ChatFrame1ButtonFrameDownButton, "TOP", 0, 0)
+		CUI_ChatFrame1ButtonFrameUpButton:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollUp-Up")
+		CUI_ChatFrame1ButtonFrameUpButton:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollUp-Down")
+		CUI_ChatFrame1ButtonFrameUpButton:SetDisabledTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollUp-Disabled")
+		CUI_ChatFrame1ButtonFrameUpButton:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
+		MessageFrameScrollButton_OnLoad(CUI_ChatFrame1ButtonFrameUpButton)
+		CUI_ChatFrame1ButtonFrameUpButton:SetScript("OnUpdate", MessageFrameScrollButton_OnUpdate)
+		CUI_ChatFrame1ButtonFrameUpButton:SetScript("OnClick", function(self, button)
+			if ( self:GetButtonState() == "PUSHED" ) then
+				self.clickDelay = MESSAGE_SCROLLBUTTON_INITIAL_DELAY
+			else
+				self:GetParent():GetParent():ScrollUp()
+			end
+			PlaySound(SOUNDKIT.IG_CHAT_SCROLL_UP)
+		end)
+		CUI_ChatFrame1ButtonFrameUpButton:Hide()
+	end
+	CUI_ChatFrame1ButtonFrameUpButton.allowShow = true
+	ClassicUI:UpdateScrollButtonsVisibilityAndPosition()
+	if not(ClassicUI.hooked_ChatFrameToggleVoiceMuteButton) then
+		hooksecurefunc(ChatFrameToggleVoiceMuteButton, "CallVisibilityQuery", function(self)
+			ClassicUI:UpdateScrollButtonsVisibilityAndPosition(self)
+		end)
+		ClassicUI.hooked_ChatFrameToggleVoiceMuteButton = true
+	end
+end
+
 -- Function that executes functionalities of the 'ExtraFramesFunc' function that need to be executed after the first "PLAYER_ENTERING_WORLD" event
 function ClassicUI:EFF_PLAYER_ENTERING_WORLD()
 	-- [Minimap]
@@ -830,10 +1085,19 @@ function ClassicUI:EFF_PLAYER_ENTERING_WORLD()
 		MainMenuBarBackpackButton.Count:ClearAllPoints()
 		MainMenuBarBackpackButton.Count:SetPoint("CENTER", MainMenuBarBackpackButton, "CENTER", 0 + ClassicUI.db.profile.extraFrames.Bags.xOffsetFreeSlotsCounter, -10 + ClassicUI.db.profile.extraFrames.Bags.yOffsetFreeSlotsCounter)
 	end
+	if (mathabs(ClassicUI.db.profile.extraFrames.Bags.freeSlotsCounterFontSize-14) > STANDARD_EPSILON) then
+		local font, _, flags = MainMenuBarBackpackButton.Count:GetFont()
+		MainMenuBarBackpackButton.Count:SetFont(font, ClassicUI.db.profile.extraFrames.Bags.freeSlotsCounterFontSize, flags)
+	end
 	
 	-- [BuffAndDebuffFrames]
 	if (ClassicUI.db.profile.extraFrames.BuffAndDebuffFrames.hideCollapseAndExpandButton) then
 		ClassicUI:BuffFrameHideCollapseAndExpandButton()
+	end
+	
+	-- [Chat]
+	if (ClassicUI.db.profile.extraFrames.Chat.restoreScrollButtons) then
+		ClassicUI:RestoreChatScrollButtons()
 	end
 end
 
@@ -967,94 +1231,112 @@ function ClassicUI:GetNumberVisibleBars(statBar)
 	return mathmin(2, numVisBars)
 end
 
+-- Function to update the cached number of visible bars
+ClassicUI.UpdateCacheVisibleBars = function(self)
+	if (GetTime() > ClassicUI.cached_UpdateCacheVisibleBarsFunc_Timestamp) then
+		ClassicUI.cached_UpdateCacheVisibleBarsFunc_Timestamp = GetTime()
+		ClassicUI.cached_NumberVisibleBars = ClassicUI:GetNumberVisibleBars(self)
+		ClassicUI.cached_NumberRealVisibleBars = ClassicUI.cached_NumberVisibleBars
+		
+		if ( ClassicUI.cached_NumberVisibleBars == 2 ) then
+			-- Show/Hide the DoubleStatusBar
+			if (ClassicUI.cached_DoubleStatusBar_hide) then
+				local hideDoubleStatusBar = false
+				local barsShown = {}
+				for _, v in pairs(self.bars) do
+					if (v:ShouldBeVisible()) then
+						tblinsert(barsShown, v:GetPriority())
+					end
+				end
+				tblsort(barsShown)
+				if (#barsShown > 1) then
+					for _, v in pairs(ClassicUI.cached_DoubleStatusBar_hide) do
+						local barToHide1, barToHide2 = ClassicUI:GetDoubleBarsToHide(v)
+						if ((barToHide1 ~= nil) and (barToHide2 ~= nil) and (barToHide1 == barsShown[1]) and (barToHide2 == barsShown[2])) then
+							hideDoubleStatusBar = true
+							break
+						end
+					end
+				end
+				if ( hideDoubleStatusBar ) then
+					ClassicUI.cached_NumberRealVisibleBars = 0
+					if (self:IsShown()) then
+						self:Hide()
+					end
+				else
+					if (not self:IsShown()) then
+						self:Show()
+					end
+				end
+			else
+				if (not self:IsShown()) then
+					self:Show()
+				end
+			end
+		elseif ( ClassicUI.cached_NumberVisibleBars == 1 ) then
+			-- Show/Hide the SingleStatusBar
+			if (ClassicUI.cached_SingleStatusBar_hide) then
+				local hideSingleStatusBar = false
+				local barsShown = {}
+				for _, v in pairs(self.bars) do
+					if (v:ShouldBeVisible()) then
+						tblinsert(barsShown, v:GetPriority())
+					end
+				end
+				tblsort(barsShown)
+				if (#barsShown > 0) then
+					for _, v in pairs(ClassicUI.cached_SingleStatusBar_hide) do
+						local barToHide = ClassicUI:GetSingleBarToHide(v)
+						if ((barToHide ~= nil) and (barToHide == barsShown[1])) then
+							hideSingleStatusBar = true
+							break
+						end
+					end
+				end
+				if ( hideSingleStatusBar ) then
+					ClassicUI.cached_NumberRealVisibleBars = 0
+					if (self:IsShown()) then
+						self:Hide()
+					end
+				else
+					if (not self:IsShown()) then
+						self:Show()
+					end
+				end
+			else
+				if (not self:IsShown()) then
+					self:Show()
+				end
+			end
+		end
+		if (ClassicUI.cached_NumberRealVisibleBars <= 0) then
+			if not(CUI_MainMenuBarMaxLevelBar:IsShown()) then
+				CUI_MainMenuBarMaxLevelBar:Show()
+			end
+		elseif (ClassicUI.cached_NumberRealVisibleBars == 1) then
+			if (CUI_MainMenuBarMaxLevelBar:IsShown()) then
+				CUI_MainMenuBarMaxLevelBar:Hide()
+			end
+		else
+			if (CUI_MainMenuBarMaxLevelBar:IsShown()) then
+				CUI_MainMenuBarMaxLevelBar:Hide()
+			end
+		end
+	end
+end
+
 -- Function that keeps the old restored status bars
 ClassicUI.StatusTrackingBarManager_LayoutBar = function(self, bar, isTopBar)
 	-- Seems that this function does not need protection (InCombatLockdown)
 	
 	if ClassicUI.databaseCleaned then return end	-- [DB Integrity Check]
-	
+
 	-- Update the cached number of visible bars
-	ClassicUI.cached_NumberVisibleBars = ClassicUI:GetNumberVisibleBars(self)
-	ClassicUI.cached_NumberRealVisibleBars = ClassicUI.cached_NumberVisibleBars
-	
-	if ( ClassicUI.cached_NumberVisibleBars == 2 ) then
-		-- Show/Hide the DoubleStatusBar
-		if (ClassicUI.cached_DoubleStatusBar_hide) then
-			local hideDoubleStatusBar = false
-			local barsShown = {}
-			for _, v in pairs(self.bars) do
-				if (v:ShouldBeVisible()) then
-					tblinsert(barsShown, v:GetPriority())
-				end
-			end
-			tblsort(barsShown)
-			if (#barsShown > 1) then
-				for _, v in pairs(ClassicUI.cached_DoubleStatusBar_hide) do
-					local barToHide1, barToHide2 = ClassicUI:GetDoubleBarsToHide(v)
-					if ((barToHide1 ~= nil) and (barToHide2 ~= nil) and (barToHide1 == barsShown[1]) and (barToHide2 == barsShown[2])) then
-						hideDoubleStatusBar = true
-						break
-					end
-				end
-			end
-			if ( hideDoubleStatusBar ) then
-				ClassicUI.cached_NumberRealVisibleBars = 0
-				if (self:IsShown()) then
-					self:Hide()
-				end
-			else
-				if (not self:IsShown()) then
-					self:Show()
-				end
-			end
-		else
-			if (not self:IsShown()) then
-				self:Show()
-			end
-		end
-	elseif ( ClassicUI.cached_NumberVisibleBars == 1 ) then
-		-- Show/Hide the SingleStatusBar
-		if (ClassicUI.cached_SingleStatusBar_hide) then
-			local hideSingleStatusBar = false
-			local barsShown = {}
-			for _, v in pairs(self.bars) do
-				if (v:ShouldBeVisible()) then
-					tblinsert(barsShown, v:GetPriority())
-				end
-			end
-			tblsort(barsShown)
-			if (#barsShown > 0) then
-				for _, v in pairs(ClassicUI.cached_SingleStatusBar_hide) do
-					local barToHide = ClassicUI:GetSingleBarToHide(v)
-					if ((barToHide ~= nil) and (barToHide == barsShown[1])) then
-						hideSingleStatusBar = true
-						break
-					end
-				end
-			end
-			if ( hideSingleStatusBar ) then
-				ClassicUI.cached_NumberRealVisibleBars = 0
-				if (self:IsShown()) then
-					self:Hide()
-				end
-			else
-				if (not self:IsShown()) then
-					self:Show()
-				end
-			end
-		else
-			if (not self:IsShown()) then
-				self:Show()
-			end
-		end
-	end
+	ClassicUI.UpdateCacheVisibleBars(self)
 
 	bar.StatusBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar", "BORDER")
 	bar.StatusBar:GetStatusBarTexture():SetDrawLayer("BORDER", 0)
 	bar.StatusBar:GetStatusBarTexture():SetTexCoord(0, 0, 0, 1, 0.16666667, 0, 0.16666667, 1)
-	
-	self.TopBarFrameTexture:Hide()
-	self.BottomBarFrameTexture:Hide()
 	
 	bar:ClearAllPoints()
 	if (isTopBar) then
@@ -1157,21 +1439,8 @@ end
 
 -- Function that updates the position of the some ActionBars
 ClassicUI.UpdatedStatusBarsEvent = function()
-	-- No need to update cache here
-	
-	if (ClassicUI.cached_NumberRealVisibleBars <= 0) then
-		if not(CUI_MainMenuBarMaxLevelBar:IsShown()) then
-			CUI_MainMenuBarMaxLevelBar:Show()
-		end
-	elseif (ClassicUI.cached_NumberRealVisibleBars == 1) then
-		if (CUI_MainMenuBarMaxLevelBar:IsShown()) then
-			CUI_MainMenuBarMaxLevelBar:Hide()
-		end
-	else
-		if (CUI_MainMenuBarMaxLevelBar:IsShown()) then
-			CUI_MainMenuBarMaxLevelBar:Hide()
-		end
-	end
+	-- Update the cached number of visible bars
+	ClassicUI.UpdateCacheVisibleBars(StatusTrackingBarManager)
 	
 	if InCombatLockdown() then
 		delayFunc_UpdatedStatusBarsEvent = true
@@ -1201,7 +1470,8 @@ function ClassicUI:ReloadMainFramesSettings()
 			MinimapCluster:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", self.db.profile.extraFrames.Minimap.xOffset, self.db.profile.extraFrames.Minimap.yOffset)
 		end
 		if not(PetBattleFrame.BottomFrame.MicroButtonFrame:IsVisible()) and (ActionBarController_GetCurrentActionBarState() ~= LE_ACTIONBAR_STATE_OVERRIDE) then
-			MoveMicroButtons("BOTTOMLEFT", CUI_MainMenuBarArtFrame, "BOTTOMLEFT", 556 + self.db.profile.barsConfig.MicroButtons.xOffset, 2 + self.db.profile.barsConfig.MicroButtons.yOffset, false)
+			ClassicUI.UpdateMicroButtonsParent(CUI_MainMenuBarArtFrame)
+			ClassicUI.MoveMicroButtons("BOTTOMLEFT", CUI_MainMenuBarArtFrame, "BOTTOMLEFT", 556 + self.db.profile.barsConfig.MicroButtons.xOffset, 2 + self.db.profile.barsConfig.MicroButtons.yOffset, false)
 			LFDMicroButton:SetPoint("BOTTOMLEFT", GuildMicroButton, "BOTTOMRIGHT", -3, 0)
 		end
 		for k, _ in pairs(self.MicroButtonsGroup) do
@@ -1348,14 +1618,50 @@ function ClassicUI:EnableOldMinimap()
 		Minimap:SetZoom(0)
 		Minimap:SetZoom(iZoom)
 	end
+	hooksecurefunc(MinimapCluster, "ApplySystemAnchor", function(self)
+		MinimapCluster:ClearAllPoints()
+		MinimapCluster:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", ClassicUI.cached_db_profile.extraFrames_Minimap_xOffset, ClassicUI.cached_db_profile.extraFrames_Minimap_yOffset)	-- cached db value
+	end)
 	
-	hooksecurefunc(ExpansionLandingPageMinimapButton, "UpdateIconForGarrison", function()
-		ExpansionLandingPageMinimapButton:ClearAllPoints()
-		ExpansionLandingPageMinimapButton:SetPoint("TOPLEFT", MinimapBackdrop, "TOPLEFT", 32, -105)
+	hooksecurefunc(ExpansionLandingPageMinimapButton, "UpdateIconForGarrison", function(self)
+		self:ClearAllPoints()
+		if (self:GetNormalTexture():GetAtlas() == "dragonflight-landingbutton-up") then
+			self:SetPoint("CENTER", MinimapBackdrop, "TOPLEFT", 32 + 4 + 26.5 + ClassicUI.cached_db_profile.extraFrames_Minimap_xOffsetExpansionLandingPage, -105 - 6 - 26.5 + ClassicUI.cached_db_profile.extraFrames_Minimap_yOffsetExpansionLandingPage)	-- cached db value
+			if (ClassicUI.elpmbSizeW == 0 or ClassicUI.elpmbSizeH == 0) then
+				ClassicUI.elpmbSizeW = self:GetWidth()
+				ClassicUI.elpmbSizeH = self:GetHeight()
+			end
+			self:SetSize(mathfloor(ClassicUI.elpmbSizeW * ClassicUI.cached_db_profile.extraFrames_Minimap_scaleExpansionLandingPageDragonflight + 0.5), mathfloor(ClassicUI.elpmbSizeH * ClassicUI.cached_db_profile.extraFrames_Minimap_scaleExpansionLandingPageDragonflight + 0.5))	-- cached db value
+		else
+			self:SetPoint("CENTER", MinimapBackdrop, "TOPLEFT", 32 + 6 + 26.5 + ClassicUI.cached_db_profile.extraFrames_Minimap_xOffsetExpansionLandingPage, -105 - 7 - 26.5 + ClassicUI.cached_db_profile.extraFrames_Minimap_yOffsetExpansionLandingPage)	-- cached db value
+		end
+	end)
+	hooksecurefunc(ExpansionLandingPageMinimapButton, "UpdateIcon", function(self)
+		if not(self.garrisonMode) then
+			self:ClearAllPoints()
+			if (self:GetNormalTexture():GetAtlas() == "dragonflight-landingbutton-up") then
+				self:SetPoint("CENTER", MinimapBackdrop, "TOPLEFT", 32 + 4 + 26.5 + ClassicUI.cached_db_profile.extraFrames_Minimap_xOffsetExpansionLandingPage, -105 - 6 - 26.5 + ClassicUI.cached_db_profile.extraFrames_Minimap_yOffsetExpansionLandingPage)	-- cached db value
+				if (ClassicUI.elpmbSizeW == 0 or ClassicUI.elpmbSizeH == 0) then
+					ClassicUI.elpmbSizeW = self:GetWidth()
+					ClassicUI.elpmbSizeH = self:GetHeight()
+				end
+				self:SetSize(mathfloor(ClassicUI.elpmbSizeW * ClassicUI.cached_db_profile.extraFrames_Minimap_scaleExpansionLandingPageDragonflight + 0.5), mathfloor(ClassicUI.elpmbSizeH * ClassicUI.cached_db_profile.extraFrames_Minimap_scaleExpansionLandingPageDragonflight + 0.5))	-- cached db value
+			else
+				self:SetPoint("CENTER", MinimapBackdrop, "TOPLEFT", 32 + 6 + 26.5 + ClassicUI.cached_db_profile.extraFrames_Minimap_xOffsetExpansionLandingPage, -105 - 7 - 26.5 + ClassicUI.cached_db_profile.extraFrames_Minimap_yOffsetExpansionLandingPage)	-- cached db value
+			end
+		end
 	end)
 	ExpansionLandingPageMinimapButton:ClearAllPoints()
-	ExpansionLandingPageMinimapButton:SetPoint("TOPLEFT", MinimapBackdrop, "TOPLEFT", 32, -105)
-	local ldbi = LibStub ~= nil and LibStub:GetLibrary("LibDBIcon-1.0")
+	if (ExpansionLandingPageMinimapButton:GetNormalTexture():GetAtlas() == "dragonflight-landingbutton-up") then
+		ExpansionLandingPageMinimapButton:SetPoint("CENTER", MinimapBackdrop, "TOPLEFT", 32 + 4 + 26.5 + ClassicUI.cached_db_profile.extraFrames_Minimap_xOffsetExpansionLandingPage, -105 - 6 - 26.5 + ClassicUI.cached_db_profile.extraFrames_Minimap_yOffsetExpansionLandingPage)	-- cached db value
+		ClassicUI.elpmbSizeW = ExpansionLandingPageMinimapButton:GetWidth()
+		ClassicUI.elpmbSizeH = ExpansionLandingPageMinimapButton:GetHeight()
+		ExpansionLandingPageMinimapButton:SetSize(mathfloor(ClassicUI.elpmbSizeW * ClassicUI.cached_db_profile.extraFrames_Minimap_scaleExpansionLandingPageDragonflight + 0.5), mathfloor(ClassicUI.elpmbSizeH * ClassicUI.cached_db_profile.extraFrames_Minimap_scaleExpansionLandingPageDragonflight + 0.5))	-- cached db value
+	else
+		ExpansionLandingPageMinimapButton:SetPoint("CENTER", MinimapBackdrop, "TOPLEFT", 32 + 6 + 26.5 + ClassicUI.cached_db_profile.extraFrames_Minimap_xOffsetExpansionLandingPage, -105 - 7 - 26.5 + ClassicUI.cached_db_profile.extraFrames_Minimap_yOffsetExpansionLandingPage)	-- cached db value
+	end
+	
+	local ldbi = LibStub ~= nil and LibStub:GetLibrary("LibDBIcon-1.0", true)
 	if (ldbi ~= nil) then
 		for _, v in pairs(ldbi:GetButtonList()) do
 			ldbi:Refresh(v)
@@ -1462,7 +1768,6 @@ function ClassicUI:EnableOldMinimap()
 		MinimapCluster.Tracking.MiniMapTrackingIcon:SetPoint("TOPLEFT", MinimapCluster.Tracking, "TOPLEFT", 8, -8)
 		MinimapCluster.Tracking.MiniMapTrackingIconOverlay:Show()
 	end)
-	
 	MinimapCluster.Tracking.Button:HookScript("OnMouseUp", function()
 		MinimapCluster.Tracking.MiniMapTrackingIcon:SetPoint("TOPLEFT", MinimapCluster.Tracking, "TOPLEFT", 6, -6)
 		MinimapCluster.Tracking.MiniMapTrackingIconOverlay:Hide()
@@ -1497,25 +1802,67 @@ function ClassicUI:EnableOldMinimap()
 	Minimap.ZoomIn:Show()
 	Minimap.ZoomOut:Show()
 	
-	MinimapCluster.MailFrame:SetParent(MinimapCluster)
-	MinimapCluster.MailFrame:ClearAllPoints()
-	MinimapCluster.MailFrame:SetPoint("TOPRIGHT", Minimap, "TOPRIGHT", 24, -37)
-	MinimapCluster.MailFrame:SetSize(33, 33)
-	MinimapCluster.MailFrame:SetFrameStrata("LOW")
-	MinimapCluster.MailFrame:SetFrameLevel(4)
+	MinimapCluster.IndicatorFrame.MailFrame:ClearAllPoints()
+	MinimapCluster.IndicatorFrame.MailFrame:SetPoint("TOPLEFT", MinimapCluster.IndicatorFrame, "TOPLEFT", 0, 0)
+	MinimapCluster.IndicatorFrame.MailFrame:SetSize(33, 33)
+	MinimapCluster.IndicatorFrame.MailFrame:SetFrameStrata("LOW")
+	
+	MinimapCluster.IndicatorFrame.CraftingOrderFrame:ClearAllPoints()
+	MinimapCluster.IndicatorFrame.CraftingOrderFrame:SetPoint("TOPLEFT", MinimapCluster.IndicatorFrame, "TOPLEFT", 0, 0)
+	MinimapCluster.IndicatorFrame.CraftingOrderFrame:SetSize(33, 33)
+	MinimapCluster.IndicatorFrame.CraftingOrderFrame:SetFrameStrata("LOW")
+	
+	if (ClassicUI.db.profile.extraFrames.Minimap.mailIconPriority == 1) then
+		MinimapCluster.IndicatorFrame.MailFrame:SetFrameLevel(6)
+		MinimapCluster.IndicatorFrame.CraftingOrderFrame:SetFrameLevel(5)
+	else
+		MinimapCluster.IndicatorFrame.MailFrame:SetFrameLevel(5)
+		MinimapCluster.IndicatorFrame.CraftingOrderFrame:SetFrameLevel(6)
+	end
+	
+	MinimapCluster.IndicatorFrame:SetParent(MinimapCluster)
+	MinimapCluster.IndicatorFrame:ClearAllPoints()
+	MinimapCluster.IndicatorFrame:SetPoint("TOPRIGHT", MinimapCluster.Minimap, "TOPRIGHT", 24, -37)
+	MinimapCluster.IndicatorFrame:SetSize(33, 33)
+	MinimapCluster.IndicatorFrame:SetFrameStrata("LOW")
+	MinimapCluster.IndicatorFrame:SetFrameLevel(4)
+	hooksecurefunc(MinimapCluster.IndicatorFrame, "Layout", function(self)
+		MinimapCluster.IndicatorFrame:SetSize(33, 33)
+		MinimapCluster.IndicatorFrame.MailFrame:ClearAllPoints()
+		MinimapCluster.IndicatorFrame.MailFrame:SetPoint("TOPLEFT", MinimapCluster.IndicatorFrame, "TOPLEFT", 0, 0)
+		MinimapCluster.IndicatorFrame.CraftingOrderFrame:ClearAllPoints()
+		MinimapCluster.IndicatorFrame.CraftingOrderFrame:SetPoint("TOPLEFT", MinimapCluster.IndicatorFrame, "TOPLEFT", 0, 0)
+	end)
+	hooksecurefunc("MiniMapIndicatorFrame_UpdatePosition", function()
+		MinimapCluster.IndicatorFrame:ClearAllPoints()
+		MinimapCluster.IndicatorFrame:SetPoint("TOPRIGHT", MinimapCluster.Minimap, "TOPRIGHT", 24, -37)
+	end)
 	
 	MiniMapMailIcon:ClearAllPoints()
-	MiniMapMailIcon:SetPoint("TOPLEFT", MinimapCluster.MailFrame, "TOPLEFT", 7, -6)
+	MiniMapMailIcon:SetPoint("TOPLEFT", MinimapCluster.IndicatorFrame.MailFrame, "TOPLEFT", 7, -6)
 	MiniMapMailIcon:SetTexture("Interface\\Icons\\INV_Letter_15")
 	MiniMapMailIcon:SetSize(18, 18)
 	MiniMapMailIcon:SetDrawLayer("ARTWORK", 0)
 	
-	MinimapCluster.MailFrame:CreateTexture("MiniMapMailBorder", "OVERLAY")
+	MiniMapCraftingOrderIcon:ClearAllPoints()
+	MiniMapCraftingOrderIcon:SetPoint("TOPLEFT", MinimapCluster.IndicatorFrame.CraftingOrderFrame, "TOPLEFT", 7, -6)
+	MiniMapCraftingOrderIcon:SetTexture("Interface\\Icons\\INV_Hammer_12")
+	MiniMapCraftingOrderIcon:SetSize(18, 18)
+	MiniMapCraftingOrderIcon:SetDrawLayer("ARTWORK", 0)
+	
+	MinimapCluster.IndicatorFrame.MailFrame:CreateTexture("MiniMapMailBorder", "OVERLAY")
 	MiniMapMailBorder:ClearAllPoints()
-	MiniMapMailBorder:SetPoint("TOPLEFT", MinimapCluster.MailFrame, "TOPLEFT", 0, 0)
+	MiniMapMailBorder:SetPoint("TOPLEFT", MinimapCluster.IndicatorFrame.MailFrame, "TOPLEFT", 0, 0)
 	MiniMapMailBorder:SetTexture("Interface\\Addons\\ClassicUI\\Textures\\MiniMap-TrackingBorder")
 	MiniMapMailBorder:SetSize(52, 52)
 	MiniMapMailBorder:SetDrawLayer("OVERLAY", 0)
+	
+	MinimapCluster.IndicatorFrame.CraftingOrderFrame:CreateTexture("MiniMapMailBorder2", "OVERLAY")
+	MiniMapMailBorder2:ClearAllPoints()
+	MiniMapMailBorder2:SetPoint("TOPLEFT", MinimapCluster.IndicatorFrame.CraftingOrderFrame, "TOPLEFT", 0, 0)
+	MiniMapMailBorder2:SetTexture("Interface\\Addons\\ClassicUI\\Textures\\MiniMap-TrackingBorder")
+	MiniMapMailBorder2:SetSize(52, 52)
+	MiniMapMailBorder2:SetDrawLayer("OVERLAY", 0)
 	
 	MinimapCluster.InstanceDifficulty:Hide()
 	
@@ -1598,7 +1945,7 @@ function ClassicUI:EnableOldMinimap()
 	CUI_MiniMapChallengeMode:SetPoint("TOPLEFT", MinimapCluster, "TOPLEFT", 28, -23)
 	CUI_MiniMapChallengeMode:Hide()
 	local CUI_MiniMapChallengeModeTexture = CUI_MiniMapChallengeMode:CreateTexture("CUI_MiniMapChallengeModeTexture", "BACKGROUND")
-	CUI_MiniMapChallengeModeTexture:SetSize(64, 46)
+	CUI_MiniMapChallengeModeTexture:SetSize(64, 64)
 	CUI_MiniMapChallengeModeTexture:SetTexture("Interface\\Challenges\\challenges-minimap-banner")
 	CUI_MiniMapChallengeModeTexture:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
 	CUI_MiniMapChallengeModeTexture:SetPoint("CENTER", CUI_MiniMapChallengeMode, "CENTER", 0, 0)
@@ -1749,8 +2096,8 @@ function ClassicUI:EnableOldMinimap()
 		self.Minimap:SetPoint("CENTER", self, "TOP", 9, -92)
 		self.BorderTop:ClearAllPoints()
 		self.BorderTop:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", 0, 0)
-		self.MailFrame:ClearAllPoints()
-		self.MailFrame:SetPoint("TOPRIGHT", self.Minimap, "TOPRIGHT", 24, -37)
+		self.IndicatorFrame:ClearAllPoints()
+		self.IndicatorFrame:SetPoint("TOPRIGHT", self.Minimap, "TOPRIGHT", 24, -37)
 	end)
 	
 	CreateFrame("Button", "MinimapZoneTextButton", MinimapCluster)
@@ -1767,7 +2114,7 @@ function ClassicUI:EnableOldMinimap()
 	MinimapZoneText:SetJustifyH("CENTER")
 	MinimapBackdrop:CreateTexture("MinimapBorderTop", "ARTWORK")
 	MinimapBorderTop:ClearAllPoints()
-	MinimapBorderTop:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", ClassicUI.db.profile.extraFrames.Minimap.xOffset, ClassicUI.db.profile.extraFrames.Minimap.yOffset)
+	MinimapBorderTop:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", self.db.profile.extraFrames.Minimap.xOffset, self.db.profile.extraFrames.Minimap.yOffset)
 	MinimapBorderTop:SetTexture("Interface\\Minimap\\UI-Minimap-Border")
 	MinimapBorderTop:SetTexCoord(0.25, 0, 0.25, 0.125, 1, 0, 1, 0.125)
 	MinimapBorderTop:SetSize(192, 32)
@@ -1864,1406 +2211,6 @@ end
 
 -- Function that executes functionalities of the 'MainFunction' function that need to be executed after the first "PLAYER_ENTERING_WORLD" event
 function ClassicUI:MF_PLAYER_ENTERING_WORLD()
-	ClassicUI:SetStrataForMainFrames()
-	
-	-- [QueueStatusButton]
-	if (ClassicUI.db.profile.extraFrames.Minimap.anchorQueueButtonToMinimap) then
-		QueueStatusButton:SetParent(MinimapBackdrop)
-		QueueStatusButton:SetFrameStrata("LOW")
-		QueueStatusButton:SetFrameLevel(5)
-		if (ClassicUI.db.profile.extraFrames.Minimap.enabled) then
-			QueueStatusButton:SetPoint("TOPLEFT", MinimapBackdrop, "TOPLEFT", 22 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetQueueButton, -100 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetQueueButton)
-		else
-			QueueStatusButton:SetPoint("TOPLEFT", MinimapBackdrop, "TOPLEFT", -7 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetQueueButton, -135 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetQueueButton)
-		end
-	else
-		QueueStatusButton:SetParent(UIParent)
-		QueueStatusButton:SetFrameStrata("MEDIUM")
-		QueueStatusButton:SetFrameLevel(53)
-		QueueStatusButton:SetPoint("BOTTOMLEFT", MicroButtonAndBagsBar, "BOTTOMLEFT", -45 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetQueueButton, 4 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetQueueButton)
-	end
-	
-	--[StatusBars]
-	StatusTrackingBarManager:SetParent(CUI_MainMenuBar)
-	StatusTrackingBarManager:ClearAllPoints()
-	StatusTrackingBarManager:SetPoint("BOTTOM", CUI_MainMenuBar, "BOTTOM", 0, 0)
-	StatusTrackingBarManager:SetSize(804, 11)
-	StatusTrackingBarManager.TopBarFrameTexture:SetSize(1024, 7)
-	StatusTrackingBarManager.TopBarFrameTexture:ClearAllPoints()
-	StatusTrackingBarManager.TopBarFrameTexture:SetPoint("BOTTOM", CUI_MainMenuBar, "TOP", 0, -3)
-	StatusTrackingBarManager.BottomBarFrameTexture:SetSize(1024, 10)
-	StatusTrackingBarManager.BottomBarFrameTexture:ClearAllPoints()
-	StatusTrackingBarManager.BottomBarFrameTexture:SetPoint("TOP", CUI_MainMenuBar, "TOP", 0, 0)
-	StatusTrackingBarManager:CreateTexture("StatusTrackingBarManager_TopBarFrameTexture0", "ARTWORK")
-	StatusTrackingBarManager.TopBarFrameTexture0 = StatusTrackingBarManager_TopBarFrameTexture0
-	StatusTrackingBarManager.TopBarFrameTexture0:ClearAllPoints()
-	StatusTrackingBarManager.TopBarFrameTexture0:SetPoint("BOTTOMLEFT", CUI_MainMenuBar, "TOPLEFT", 0, -1)
-	StatusTrackingBarManager.TopBarFrameTexture0:SetTexture("Interface/PaperDollInfoFrame/UI-ReputationWatchBar")
-	StatusTrackingBarManager.TopBarFrameTexture0:SetTexCoord(0/256, 0/256, 0/256, 44/256, 256/256, 0/256, 256/256, 44/256)
-	StatusTrackingBarManager.TopBarFrameTexture0:SetSize(256, 11)
-	StatusTrackingBarManager.TopBarFrameTexture0:SetDrawLayer("ARTWORK", 0)
-	StatusTrackingBarManager.TopBarFrameTexture0:Hide()
-	StatusTrackingBarManager:CreateTexture("StatusTrackingBarManager_TopBarFrameTexture1", "ARTWORK")
-	StatusTrackingBarManager.TopBarFrameTexture1 = StatusTrackingBarManager_TopBarFrameTexture1
-	StatusTrackingBarManager.TopBarFrameTexture1:ClearAllPoints()
-	StatusTrackingBarManager.TopBarFrameTexture1:SetPoint("LEFT", StatusTrackingBarManager.TopBarFrameTexture0, "RIGHT", 0, 0)
-	StatusTrackingBarManager.TopBarFrameTexture1:SetTexture("Interface/PaperDollInfoFrame/UI-ReputationWatchBar")
-	StatusTrackingBarManager.TopBarFrameTexture1:SetTexCoord(0/256, 48/256, 0/256, 92/256, 256/256, 48/256, 256/256, 92/256)
-	StatusTrackingBarManager.TopBarFrameTexture1:SetSize(256, 11)
-	StatusTrackingBarManager.TopBarFrameTexture1:SetDrawLayer("ARTWORK", 0)
-	StatusTrackingBarManager.TopBarFrameTexture1:Hide()
-	StatusTrackingBarManager:CreateTexture("StatusTrackingBarManager_TopBarFrameTexture2", "ARTWORK")
-	StatusTrackingBarManager.TopBarFrameTexture2 = StatusTrackingBarManager_TopBarFrameTexture2
-	StatusTrackingBarManager.TopBarFrameTexture2:ClearAllPoints()
-	StatusTrackingBarManager.TopBarFrameTexture2:SetPoint("LEFT", StatusTrackingBarManager.TopBarFrameTexture1, "RIGHT", 0, 0)
-	StatusTrackingBarManager.TopBarFrameTexture2:SetTexture("Interface/PaperDollInfoFrame/UI-ReputationWatchBar")
-	StatusTrackingBarManager.TopBarFrameTexture2:SetTexCoord(0/256, 96/256, 0/256, 140/256, 256/256, 96/256, 256/256, 140/256)
-	StatusTrackingBarManager.TopBarFrameTexture2:SetSize(256, 11)
-	StatusTrackingBarManager.TopBarFrameTexture2:SetDrawLayer("ARTWORK", 0)
-	StatusTrackingBarManager.TopBarFrameTexture2:Hide()
-	StatusTrackingBarManager:CreateTexture("StatusTrackingBarManager_TopBarFrameTexture3", "ARTWORK")
-	StatusTrackingBarManager.TopBarFrameTexture3 = StatusTrackingBarManager_TopBarFrameTexture3
-	StatusTrackingBarManager.TopBarFrameTexture3:ClearAllPoints()
-	StatusTrackingBarManager.TopBarFrameTexture3:SetPoint("LEFT", StatusTrackingBarManager.TopBarFrameTexture2, "RIGHT", 0, 0)
-	StatusTrackingBarManager.TopBarFrameTexture3:SetTexture("Interface/PaperDollInfoFrame/UI-ReputationWatchBar")
-	StatusTrackingBarManager.TopBarFrameTexture3:SetTexCoord(0/256, 144/256, 0/256, 188/256, 256/256, 144/256, 256/256, 188/256)
-	StatusTrackingBarManager.TopBarFrameTexture3:SetSize(256, 11)
-	StatusTrackingBarManager.TopBarFrameTexture3:SetDrawLayer("ARTWORK", 0)
-	StatusTrackingBarManager.TopBarFrameTexture3:Hide()
-	StatusTrackingBarManager:CreateTexture("StatusTrackingBarManager_BottomBarFrameTexture0", "ARTWORK")
-	StatusTrackingBarManager.BottomBarFrameTexture0 = StatusTrackingBarManager_BottomBarFrameTexture0
-	StatusTrackingBarManager.BottomBarFrameTexture0:ClearAllPoints()
-	StatusTrackingBarManager.BottomBarFrameTexture0:SetPoint("TOPLEFT", CUI_MainMenuBar, "TOPLEFT", 0, 0)
-	StatusTrackingBarManager.BottomBarFrameTexture0:SetTexture("Interface\\MainMenuBar\\UI-MainMenuBar-Dwarf")
-	StatusTrackingBarManager.BottomBarFrameTexture0:SetTexCoord(0/256, 203/256, 0/256, 213/256, 256/256, 203/256, 256/256, 213/256)
-	StatusTrackingBarManager.BottomBarFrameTexture0:SetSize(256, 10)
-	StatusTrackingBarManager.BottomBarFrameTexture0:SetDrawLayer("ARTWORK", 0)
-	StatusTrackingBarManager.BottomBarFrameTexture0:Hide()
-	StatusTrackingBarManager:CreateTexture("StatusTrackingBarManager_BottomBarFrameTexture1", "ARTWORK")
-	StatusTrackingBarManager.BottomBarFrameTexture1 = StatusTrackingBarManager_BottomBarFrameTexture1
-	StatusTrackingBarManager.BottomBarFrameTexture1:ClearAllPoints()
-	StatusTrackingBarManager.BottomBarFrameTexture1:SetPoint("LEFT", StatusTrackingBarManager.BottomBarFrameTexture0, "RIGHT", 0, 0)
-	StatusTrackingBarManager.BottomBarFrameTexture1:SetTexture("Interface\\MainMenuBar\\UI-MainMenuBar-Dwarf")
-	StatusTrackingBarManager.BottomBarFrameTexture1:SetTexCoord(0/256, 139/256, 0/256, 149/256, 256/256, 139/256, 256/256, 149/256)
-	StatusTrackingBarManager.BottomBarFrameTexture1:SetSize(256, 10)
-	StatusTrackingBarManager.BottomBarFrameTexture1:SetDrawLayer("ARTWORK", 0)
-	StatusTrackingBarManager.BottomBarFrameTexture1:Hide()
-	StatusTrackingBarManager:CreateTexture("StatusTrackingBarManager_BottomBarFrameTexture2", "ARTWORK")
-	StatusTrackingBarManager.BottomBarFrameTexture2 = StatusTrackingBarManager_BottomBarFrameTexture2
-	StatusTrackingBarManager.BottomBarFrameTexture2:ClearAllPoints()
-	StatusTrackingBarManager.BottomBarFrameTexture2:SetPoint("LEFT", StatusTrackingBarManager.BottomBarFrameTexture1, "RIGHT", 0, 0)
-	StatusTrackingBarManager.BottomBarFrameTexture2:SetTexture("Interface\\MainMenuBar\\UI-MainMenuBar-Dwarf")
-	StatusTrackingBarManager.BottomBarFrameTexture2:SetTexCoord(0/256, 75/256, 0/256, 85/256, 256/256, 75/256, 256/256, 85/256)
-	StatusTrackingBarManager.BottomBarFrameTexture2:SetSize(256, 10)
-	StatusTrackingBarManager.BottomBarFrameTexture2:SetDrawLayer("ARTWORK", 0)
-	StatusTrackingBarManager.BottomBarFrameTexture2:Hide()
-	StatusTrackingBarManager:CreateTexture("StatusTrackingBarManager_BottomBarFrameTexture3", "ARTWORK")
-	StatusTrackingBarManager.BottomBarFrameTexture3 = StatusTrackingBarManager_BottomBarFrameTexture3
-	StatusTrackingBarManager.BottomBarFrameTexture3:ClearAllPoints()
-	StatusTrackingBarManager.BottomBarFrameTexture3:SetPoint("LEFT", StatusTrackingBarManager.BottomBarFrameTexture2, "RIGHT", 0, 0)
-	StatusTrackingBarManager.BottomBarFrameTexture3:SetTexture("Interface\\MainMenuBar\\UI-MainMenuBar-Dwarf")
-	StatusTrackingBarManager.BottomBarFrameTexture3:SetTexCoord(0/256, 11/256, 0/256, 21/256, 256/256, 11/256, 256/256, 21/256)
-	StatusTrackingBarManager.BottomBarFrameTexture3:SetSize(256, 10)
-	StatusTrackingBarManager.BottomBarFrameTexture3:SetDrawLayer("ARTWORK", 0)
-	StatusTrackingBarManager.BottomBarFrameTexture3:Hide()
-
-	StatusTrackingBarManager:SetFrameStrata("MEDIUM")
-	StatusTrackingBarManager:SetFrameLevel(2)
-	for _, bar in ipairs(StatusTrackingBarManager.bars) do
-		bar.StatusBar.Background:SetColorTexture(0, 0, 0, 1.0)
-		bar.StatusBar.Background:SetAlpha(0.5)
-		bar:SetFrameStrata("LOW")
-		bar:SetFrameLevel(2)
-		bar.StatusBar:SetFrameStrata("LOW")
-		bar.StatusBar:SetFrameLevel(1)
-		if (bar.priority == 0 or bar.priority == 4) then	-- AzeriteBar (priority = 0) or ArtifactBar (priority = 4)
-			bar:SetBarColor(ARTIFACT_BAR_COLOR:GetRGB())
-		elseif (bar.priority == 2) then						-- HonorBar (priority = 2)
-			if not ClassicUI.hooked_honorBar then
-				hooksecurefunc(bar, "Update", function(self)
-					self.StatusBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar", "BORDER")
-					self.StatusBar:GetStatusBarTexture():SetDrawLayer("BORDER", 0)
-					self.StatusBar:GetStatusBarTexture():SetTexCoord(0, 0, 0, 1, 0.16666667, 0, 0.16666667, 1)
-					self:SetBarColor(1.0, 0.24, 0)
-				end)
-				ClassicUI.hooked_honorBar = true
-			end
-			bar:SetBarColor(1.0, 0.24, 0)
-		elseif (bar.priority == 1) then						-- ReputationBar (priority = 1)
-			if not ClassicUI.hooked_repBar then
-				hooksecurefunc(bar, "Update", function(self)
-					local _, colorIndex, _, _, _, factionID = GetWatchedFactionInfo()
-					if not(C_Reputation_IsFactionParagon(factionID)) then
-						local friendshipID = C_GossipInfo_GetFriendshipReputation(factionID)
-						if (friendshipID) then
-							colorIndex = 5
-						end
-					end
-					local color = FACTION_BAR_COLORS[colorIndex]
-					self.StatusBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar", "BORDER")
-					self.StatusBar:GetStatusBarTexture():SetDrawLayer("BORDER", 0)
-					self.StatusBar:GetStatusBarTexture():SetTexCoord(0, 0, 0, 1, 0.16666667, 0, 0.16666667, 1)
-					self:SetBarColor(color.r, color.g, color.b, 1)
-				end)
-				ClassicUI.hooked_repBar = true
-			end
-			local _, colorIndex, _, _, _, factionID = GetWatchedFactionInfo()
-			if not(C_Reputation_IsFactionParagon(factionID)) then
-				local friendshipID = C_GossipInfo_GetFriendshipReputation(factionID)
-				if (friendshipID) then
-					colorIndex = 5
-				end
-			end
-			local color = FACTION_BAR_COLORS[colorIndex]
-			if (color ~= nil) then
-				bar:SetBarColor(color.r, color.g, color.b, 1)
-			end
-		elseif (bar.priority == 3) then						-- ExpBar (priority = 3)
-			if not ClassicUI.hooked_expBar then
-				hooksecurefunc(bar, "Update", function(self)
-					if (GameLimitedMode_IsActive()) then
-						local rLevel = GetRestrictedAccountData()
-						if UnitLevel("player") >= rLevel then
-							self.StatusBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar", "BORDER")
-							self.StatusBar:GetStatusBarTexture():SetDrawLayer("BORDER", 0)
-							self.StatusBar:GetStatusBarTexture():SetTexCoord(0, 0, 0, 1, 0.16666667, 0, 0.16666667, 1)
-							self:SetBarColor(0.58, 0.0, 0.55, 1.0)
-						end
-					end
-				end)
-				hooksecurefunc(bar.ExhaustionTick, "UpdateTickPosition", function(self)
-					local playerCurrXP = UnitXP("player")
-					local playerMaxXP = UnitXPMax("player")
-					local exhaustionThreshold = GetXPExhaustion()
-					local exhaustionStateID = GetRestState()
-					if (exhaustionStateID and exhaustionStateID >= 3) then
-						self:SetPoint("CENTER", self:GetParent() , "RIGHT", 0, 0)
-					end
-					if (not exhaustionThreshold) then
-						self:GetParent().ExhaustionLevelFillBar:Hide()
-					else
-						local exhaustionTickSet = mathmax(((playerCurrXP + exhaustionThreshold) / playerMaxXP) * (self:GetParent():GetWidth()), 0)
-						self:GetParent().ExhaustionLevelFillBar:Show()
-						if (exhaustionTickSet > bar:GetWidth()) then
-							self:Hide()
-							if ClassicUI.cached_db_profile.barsConfig_SingleStatusBar_expBarAlwaysShowRestedBar then	-- cached db value
-								self:GetParent().ExhaustionLevelFillBar:SetPoint("TOPRIGHT", bar, "TOPLEFT", bar:GetWidth(), 0)
-								self:GetParent().ExhaustionLevelFillBar:Show()
-							else
-								self:GetParent().ExhaustionLevelFillBar:Hide()
-							end
-						else
-							self:Show()
-							self:SetPoint("CENTER", self:GetParent(), "LEFT", exhaustionTickSet, -1)
-							self:GetParent().ExhaustionLevelFillBar:Show()
-							self:GetParent().ExhaustionLevelFillBar:SetPoint("TOPRIGHT", bar, "TOPLEFT", exhaustionTickSet, 0)
-							self:GetParent().ExhaustionLevelFillBar:SetWidth(0)
-						end
-					end
-					if (exhaustionStateID == 1) then
-						self:GetParent():SetBarColor(0.0, 0.39, 0.88, 1.0)
-						self:GetParent().ExhaustionLevelFillBar:SetVertexColor(0.0, 0.39, 0.88, 0.15)
-						self.Highlight:SetVertexColor(0.0, 0.39, 0.88)
-					else
-						self:GetParent():SetBarColor(0.58, 0.0, 0.55, 1.0)
-						self:GetParent().ExhaustionLevelFillBar:SetVertexColor(0.58, 0.0, 0.55, 0.15)
-						self.Highlight:SetVertexColor(0.58, 0.0, 0.55)
-					end
-				end)
-				hooksecurefunc(bar.ExhaustionTick, "UpdateExhaustionColor", function(self)
-					local exhaustionStateID = GetRestState()
-					self:GetParent().StatusBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar", "BORDER")
-					self:GetParent().StatusBar:GetStatusBarTexture():SetDrawLayer("BORDER", 0)
-					self:GetParent().StatusBar:GetStatusBarTexture():SetTexCoord(0, 0, 0, 1, 0.16666667, 0, 0.16666667, 1)
-					if (exhaustionStateID == 1) then
-						self:GetParent():SetBarColor(0.0, 0.39, 0.88, 1.0)
-						self:GetParent().ExhaustionLevelFillBar:SetVertexColor(0.0, 0.39, 0.88, 0.15)
-						self.Highlight:SetVertexColor(0.0, 0.39, 0.88)
-					else
-						self:GetParent():SetBarColor(0.58, 0.0, 0.55, 1.0)
-						self:GetParent().ExhaustionLevelFillBar:SetVertexColor(0.58, 0.0, 0.55, 0.15)
-						self.Highlight:SetVertexColor(0.58, 0.0, 0.55)
-					end
-				end)
-				bar.ExhaustionTick:HookScript("OnEvent", function(self)
-					if (IsRestrictedAccount()) then
-						local rlevel = GetRestrictedAccountData()
-						if (UnitLevel("player") >= rlevel) then
-							self:GetParent().StatusBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar", "BORDER")
-							self:GetParent().StatusBar:GetStatusBarTexture():SetDrawLayer("BORDER", 0)
-							self:GetParent().StatusBar:GetStatusBarTexture():SetTexCoord(0, 0, 0, 1, 0.16666667, 0, 0.16666667, 1)
-							self:GetParent():SetBarColor(0.0, 0.39, 0.88, 1.0)
-						end
-					end
-				end)
-				ClassicUI.hooked_expBar = true
-			end
-			
-			bar.ExhaustionTick:SetSize(32, 32)
-			bar.ExhaustionTick:GetNormalTexture():SetAtlas(nil)
-			bar.ExhaustionTick:SetNormalTexture("Interface\\MainMenuBar\\UI-ExhaustionTickNormal")
-			bar.ExhaustionTick:GetHighlightTexture():SetAtlas(nil)
-			bar.ExhaustionTick:SetHighlightTexture("Interface\\MainMenuBar\\UI-ExhaustionTickHighlight", "ADD")
-			
-			bar.ExhaustionLevelFillBar:SetAtlas(nil)
-			bar.ExhaustionLevelFillBar:SetColorTexture(1.0, 1.0, 1.0, 1.0)
-			bar.ExhaustionLevelFillBar:SetSize(0, 8)
-			bar.ExhaustionLevelFillBar:ClearAllPoints()
-			bar.ExhaustionLevelFillBar:SetPoint("TOPLEFT", bar, "TOPLEFT", 0, 0)
-			
-			local playerCurrXP = UnitXP("player")
-			local playerMaxXP = UnitXPMax("player")
-			local exhaustionThreshold = GetXPExhaustion()
-			local exhaustionStateID = GetRestState()
-			if (exhaustionStateID and exhaustionStateID >= 3) then
-				bar.ExhaustionTick:SetPoint("CENTER", bar.ExhaustionTick:GetParent() , "RIGHT", 0, 0)
-			end
-			if (not exhaustionThreshold) then
-				bar.ExhaustionLevelFillBar:Hide()
-			else
-				local exhaustionTickSet = mathmax(((playerCurrXP + exhaustionThreshold) / playerMaxXP) * (bar:GetWidth()), 0)
-				bar.ExhaustionLevelFillBar:Show()
-				if (exhaustionTickSet > bar:GetWidth()) then
-					bar.ExhaustionTick:Hide()
-					if ClassicUI.cached_db_profile.barsConfig_SingleStatusBar_expBarAlwaysShowRestedBar then	-- cached db value
-						bar.ExhaustionLevelFillBar:SetPoint("TOPRIGHT", bar, "TOPLEFT", bar:GetWidth(), 0)
-						bar.ExhaustionLevelFillBar:Show()
-					else
-						bar.ExhaustionLevelFillBar:Hide()
-					end
-				else
-					bar.ExhaustionTick:Show()
-					bar.ExhaustionTick:SetPoint("CENTER", bar.ExhaustionTick:GetParent(), "LEFT", exhaustionTickSet, -1)
-					bar.ExhaustionLevelFillBar:Show()
-					bar.ExhaustionLevelFillBar:SetPoint("TOPRIGHT", bar, "TOPLEFT", exhaustionTickSet, 0)
-					bar.ExhaustionLevelFillBar:SetWidth(0)
-				end
-			end
-			if (exhaustionStateID == 1) then
-				bar:SetBarColor(0.0, 0.39, 0.88, 1.0)
-				bar.ExhaustionLevelFillBar:SetVertexColor(0.0, 0.39, 0.88, 0.15)
-				bar.ExhaustionTick.Highlight:SetVertexColor(0.0, 0.39, 0.88)
-			else
-				bar:SetBarColor(0.58, 0.0, 0.55, 1.0)
-				bar.ExhaustionLevelFillBar:SetVertexColor(0.58, 0.0, 0.55, 0.15)
-				bar.ExhaustionTick.Highlight:SetVertexColor(0.58, 0.0, 0.55)
-			end
-		end
-	end
-	-- Hook this function to StatusTrackingBarManager:LayoutBar
-	hooksecurefunc(StatusTrackingBarManager, "LayoutBar", ClassicUI.StatusTrackingBarManager_LayoutBar)
-	hooksecurefunc(StatusTrackingBarManager, "HideStatusBars", function(self)
-		self.TopBarFrameTexture0:Hide()
-		self.TopBarFrameTexture1:Hide()
-		self.TopBarFrameTexture2:Hide()
-		self.TopBarFrameTexture3:Hide()
-		self.BottomBarFrameTexture0:Hide()
-		self.BottomBarFrameTexture1:Hide()
-		self.BottomBarFrameTexture2:Hide()
-		self.BottomBarFrameTexture3:Hide()
-	end)
-	
-	-- Hooks to keep action bars updated with changes
-	hooksecurefunc("MultiActionBar_Update", ClassicUI.UpdatedStatusBarsEvent)
-	hooksecurefunc(StatusTrackingBarManager, "UpdateBarsShown", ClassicUI.UpdatedStatusBarsEvent)
-	hooksecurefunc("ActionBarController_UpdateAll", ClassicUI.UpdatedStatusBarsEvent)
-	
-	-- Update frames after exit edit mode
-	ClassicUI.onExitEditMode = function(self)
-		ClassicUI:SetStrataForMainFrames()
-		ClassicUI:ReloadMainFramesSettings()
-		ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
-		ClassicUI.UpdatedStatusBarsEvent()
-	end
-	
-	if (EventRegistry and type(EventRegistry) == "table") then
-		EventRegistry:RegisterCallback("EditMode.Exit", ClassicUI.onExitEditMode, ClassicUI)
-	end
-	
-	ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
-	ClassicUI.UpdatedStatusBarsEvent()
-end
-
--- Function to manage the PLAYER_ENTERING_WORLD event. Here we do modifications to interface elements that may not have been fully loaded before this event.
-function ClassicUI:PLAYER_ENTERING_WORLD()
-	ClassicUI.frame:UnregisterEvent("PLAYER_ENTERING_WORLD")
-	if (ClassicUI.OnEvent_PEW_mf) then
-		ClassicUI.OnEvent_PEW_mf = false
-		ClassicUI:MF_PLAYER_ENTERING_WORLD()
-	end
-	if (ClassicUI.OnEvent_PEW_eff) then
-		ClassicUI.OnEvent_PEW_eff = false
-		ClassicUI:EFF_PLAYER_ENTERING_WORLD()
-	end
-end
-
--- Function that handles a queue of pending functions that set the scale of combat-protected frames
-function ClassicUI:BarHookProtectedApplySetScale()
-	if InCombatLockdown() then
-		delayFunc_BarHookProtectedApplySetScale = true
-		if (not fclFrame:IsEventRegistered("PLAYER_REGEN_ENABLED")) then
-			fclFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
-		end
-		return
-	end
-	for iCUIframe, iInfo in pairs(self.queuePending_HookSetScale) do
-		iCUIframe.hook_SetScale(iInfo[1], iInfo[2])
-		self.queuePending_HookSetScale[iCUIframe] = nil
-	end
-end
-
--- Function that restores the Dragonflight layout of a specific ActionButton
-ClassicUI.RestoreDragonflightLayoutActionButton = function(iActionButton, typeActionButton)
-	local name = iActionButton:GetName()
-	if (typeActionButton <= 2 or typeActionButton == 7) then
-		iActionButton:SetSize(45, 45)
-	else
-		iActionButton:SetSize(30, 30)
-	end
-	local iabnt = iActionButton:GetNormalTexture()
-	if (iabnt ~= nil) then
-		iabnt:SetAtlas("UI-HUD-ActionBar-IconFrame-AddRow")
-		iabnt:ClearAllPoints()
-		iabnt:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", 0, 0)
-		if (typeActionButton <= 2 or typeActionButton == 7) then
-			iabnt:SetSize(51, 51)
-		else
-			iabnt:SetSize(35, 35)
-		end
-	end
-	local iabpt = iActionButton:GetPushedTexture()
-	if (iabpt ~= nil) then
-		iabpt:SetAtlas("UI-HUD-ActionBar-IconFrame-AddRow-Down")
-		iabpt:ClearAllPoints()
-		iabpt:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", 0, 0)
-		if (typeActionButton <= 2 or typeActionButton == 7) then
-			iabpt:SetSize(51, 51)
-		else
-			iabpt:SetSize(35, 35)
-		end
-	end
-	local iabht = iActionButton:GetHighlightTexture()
-	if (iabht ~= nil) then
-		iabht:SetAtlas("UI-HUD-ActionBar-IconFrame-Mouseover")
-		iabht:SetBlendMode("BLEND")
-		iabht:ClearAllPoints()
-		iabht:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", 0, 0)
-		if (typeActionButton <= 2 or typeActionButton == 7) then
-			iabht:SetSize(46, 45)
-		else
-			iabht:SetSize(31.6, 30.9)
-		end
-	end
-	local iabchkt = iActionButton:GetCheckedTexture()
-	if (iabchkt ~= nil) then
-		iabchkt:SetAtlas("UI-HUD-ActionBar-IconFrame-Mouseover")
-		iabchkt:SetBlendMode("BLEND")
-		iabchkt:ClearAllPoints()
-		iabchkt:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", 0, 0)
-		if (typeActionButton <= 2 or typeActionButton == 7) then
-			iabchkt:SetSize(46, 45)
-		else
-			iabchkt:SetSize(31.6, 30.9)
-		end
-	end
-	local iabit = _G[name.."Icon"]
-	if (iabit ~= nil) then
-		if (typeActionButton == 6) then
-			iabit:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
-		end
-		if (typeActionButton <= 2 or typeActionButton == 7) then
-			iabit:SetSize(45, 45)
-		else
-			iabit:SetSize(30, 30)
-		end
-	end
-	local iabctt = _G[name.."Count"]
-	if (iabctt ~= nil) then
-		iabctt:ClearAllPoints()
-		if (typeActionButton <= 2 or typeActionButton == 7) then
-			iabctt:SetPoint("BOTTOMRIGHT", iActionButton, "BOTTOMRIGHT", -5, 5)
-		else
-			iabctt:SetPoint("BOTTOMRIGHT", iActionButton, "BOTTOMRIGHT", -3, 1)
-		end
-	end
-	local iabbt = _G[name.."Border"]
-	if (iabbt ~= nil) then
-		iabbt:SetAtlas("UI-HUD-ActionBar-IconFrame-Border")
-		iabbt:SetBlendMode("BLEND")
-		if ((iActionButton.action ~= nil) and (IsEquippedAction(iActionButton.action))) then
-			iabbt:SetAlpha(0.5)
-		else
-			iabbt:SetAlpha(1)
-		end
-		iabbt:ClearAllPoints()
-		iabbt:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", 0, 0)
-		if (typeActionButton <= 2 or typeActionButton == 7) then
-			iabbt:SetSize(46, 45)
-		else
-			iabbt:SetSize(31.6, 30.9)
-		end
-	end
-	local iabHt = _G[name.."HotKey"]
-	if (iabHt ~= nil) then
-		iabHt:ClearAllPoints()
-		if (typeActionButton <= 2 or typeActionButton == 7) then
-			iabHt:SetPoint("TOPRIGHT", iActionButton, "TOPRIGHT", -4, -5)
-			iabHt:SetSize(37, 10)
-		else
-			iabHt:SetPoint("TOPRIGHT", iActionButton, "TOPRIGHT", -3, -4)
-			iabHt:SetSize(32, 10)
-		end
-		local iabHt_f1, iabHt_f2, iabHt_f3 = iabHt:GetFont()
-		if (iabHt_f3 ~= "OUTLINE") then
-			iabHt:SetFont(iabHt_f1, iabHt_f2, "OUTLINE")
-		end
-	end
-	local iabcdt = _G[name.."Cooldown"]
-	if (iabcdt ~= nil) then
-		iabcdt:ClearAllPoints()
-		if (typeActionButton <= 2 or typeActionButton == 7) then
-			iabcdt:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", 3, -3)
-			iabcdt:SetPoint("BOTTOMRIGHT", iActionButton, "BOTTOMRIGHT", -3, 3)
-			iabcdt:SetSize(39, 39)
-		else
-			iabcdt:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", 1.7, -1.7)
-			iabcdt:SetPoint("BOTTOMRIGHT", iActionButton, "BOTTOMRIGHT", -1, 1)
-			iabcdt:SetSize(27.3, 27.3)
-		end
-	end
-	local iabft = _G[name.."Flash"]
-	if (iabft ~= nil) then
-		iabft:SetAtlas("UI-HUD-ActionBar-IconFrame-Flash")
-		iabft:ClearAllPoints()
-		iabft:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", 0, 0)
-		if (typeActionButton <= 2 or typeActionButton == 7) then
-			iabft:SetSize(46, 45)
-		else
-			iabft:SetSize(31.6, 30.9)
-		end
-	end
-	local iabfbst = _G[name.."FlyoutBorderShadow"]
-	if (iabfbst ~= nil) then
-		iabfbst:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
-		iabfbst:SetAtlas("UI-HUD-ActionBar-IconFrame-FlyoutBorderShadow")
-		iabfbst:ClearAllPoints()
-		iabfbst:SetPoint("CENTER", iActionButton, "CENTER", 0.2, 0.5)
-		iabfbst:SetSize(52, 52)
-	end
-	local iabnat = iActionButton.NewActionTexture
-	if (iabnat ~= nil) then
-		iabnat:SetAtlas("UI-HUD-ActionBar-IconFrame-Mouseover")
-		iabnat:SetBlendMode("BLEND")
-		iabnat:ClearAllPoints()
-		iabnat:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", 0, 0)
-		if (typeActionButton <= 2 or typeActionButton == 7) then
-			iabnat:SetSize(46, 45)
-		else
-			iabnat:SetSize(31.6, 30.9)
-		end
-	end
-	local iabsht = iActionButton.SpellHighlightTexture
-	if (iabsht ~= nil) then
-		iabsht:ClearAllPoints()
-		if (typeActionButton == 3) then
-			iabsht:SetAtlas("bags-newitem")
-			iabsht:SetPoint("CENTER", iActionButton, "CENTER", 0, 0)
-			iabsht:SetAlpha(1)
-		else
-			iabsht:SetAtlas("UI-HUD-ActionBar-IconFrame-Mouseover")
-			iabsht:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", 0, 0)
-			iabsht:SetAlpha(0.4)
-		end
-		iabsht:SetBlendMode("ADD")
-		if (typeActionButton <= 2 or typeActionButton == 7) then
-			iabsht:SetSize(46, 45)
-		else
-			iabsht:SetSize(31.6, 30.9)
-		end
-	end
-	local iabset = _G[name.."Shine"]
-	if (iabset ~= nil) then
-		if (typeActionButton <= 2 or typeActionButton == 7) then
-			iabset:SetSize(40, 40)
-		else
-			iabset:SetSize(27, 27)
-		end
-	end
-	local iabact = iActionButton.AutoCastable
-	if (iabact ~= nil) then
-		iabact:ClearAllPoints()
-		if (typeActionButton <= 2 or typeActionButton == 7) then
-			iabact:SetPoint("CENTER", iActionButton, "CENTER", 1, -1)
-		else
-			iabact:SetPoint("CENTER", iActionButton, "CENTER", 0.5, -0.5)
-		end
-	end
-	local iabfbgt = iActionButton.FloatingBG
-	if (iabfbgt ~= nil) then
-		iabfbgt:Hide()
-	end
-	local iabfbt = iActionButton.FlyoutBorder
-	if (iabfbt ~= nil) then
-		iabfbt:Hide()
-	end
-end
-
--- Function that sets the current layout for a selected ActionButton
--- 'typeActionButton' defines the type of the ActionButton.The possible values for this parameter are:
---     0 = MainMenuBarButton     | 1 = BottomMultiBarButton | 2 = RightMultiBarButton  | 3 = PetBarButton
---     4 = StanceBarButton       | 5 = PossessBarButton     | 6 = SpellFlyoutButton    | 7 = OverrideBarButton
-ClassicUI.LayoutActionButton = function(iActionButton, typeActionButton)
-	local typeABprofile
-	if (typeActionButton == 0) then
-		typeABprofile = ClassicUI.db.profile.barsConfig.MainMenuBar
-	elseif (typeActionButton == 1) then
-		typeABprofile = ClassicUI.db.profile.barsConfig.BottomMultiActionBars
-	elseif (typeActionButton == 2) then
-		typeABprofile = ClassicUI.db.profile.barsConfig.RightMultiActionBars
-	elseif (typeActionButton == 3) then
-		typeABprofile = ClassicUI.db.profile.barsConfig.PetActionBarFrame
-	elseif (typeActionButton == 4) then
-		typeABprofile = ClassicUI.db.profile.barsConfig.StanceBarFrame
-	elseif (typeActionButton == 5) then
-		typeABprofile = ClassicUI.db.profile.barsConfig.PossessBarFrame
-	elseif (typeActionButton == 6) then
-		typeABprofile = ClassicUI.db.profile.barsConfig.SpellFlyoutButtons
-	elseif (typeActionButton == 7) then
-		typeABprofile = ClassicUI.db.profile.barsConfig.OverrideActionBar
-	else
-		return
-	end
-	local newBLScale = typeABprofile.scale or 1
-	
-	local name = iActionButton:GetName()
-	iActionButton.RightDivider:SetAlpha(0)
-	iActionButton.BottomDivider:SetAlpha(0)
-	iActionButton.RightDivider:Hide()
-	iActionButton.BottomDivider:Hide()
-	if not(typeABprofile.BLStyle0AllowNewBackgroundArt) then
-		iActionButton.SlotArt:SetAlpha(0)
-		iActionButton.SlotBackground:SetAlpha(0)
-		iActionButton.SlotArt:Hide()
-		iActionButton.SlotBackground:Hide()
-	else
-		iActionButton.SlotArt:SetAlpha(1)
-		iActionButton.SlotBackground:SetAlpha(1)
-		if (iActionButton.showButtonArt) then
-			iActionButton.SlotArt:Show()
-			iActionButton.SlotBackground:Show()
-		end
-		if not(typeABprofile.BLStyle == 1) then
-			iActionButton.SlotArt:SetDrawLayer("BACKGROUND", -1)
-			iActionButton.SlotBackground:SetDrawLayer("BACKGROUND", -1)
-		end
-	end
-	local iabnt = iActionButton:GetNormalTexture()
-	local iabpt = iActionButton:GetPushedTexture()
-	if ((iActionButton.UpdateButtonArt ~= nil) and (iabnt ~= nil) and (iabpt ~= nil) and not(ClassicUI.cached_ActionButtonInfo.hooked_UpdateButtonArt[iActionButton])) then
-		hooksecurefunc(iActionButton, "UpdateButtonArt", function(self, hideDivider)
-			--if ClassicUI.databaseCleaned then return end	-- not needed because typeABprofile is an upvalue local table variable (the upvalue table can become empty but never nil, not an issue)
-			if (not self.SlotArt or not self.SlotBackground) then
-				return
-			end
-			if (self.RightDivider:IsShown()) then
-				self.RightDivider:Hide()
-			end
-			if (self.BottomDivider:IsShown()) then
-				self.BottomDivider:Hide()
-			end
-			if not(typeABprofile.BLStyle0AllowNewBackgroundArt) then
-				if (self.SlotArt:IsShown()) then
-					self.SlotArt:Hide()
-				end
-				if (self.SlotBackground:IsShown()) then
-					self.SlotBackground:Hide()
-				end
-			end
-			if (typeABprofile.BLStyle == 1) then
-				-- Dragonflight Layout
-				if (self.showButtonArt) then
-					if (self.NormalTexture:GetAtlas() ~= "UI-HUD-ActionBar-IconFrame-AddRow") then
-						self:SetNormalAtlas("UI-HUD-ActionBar-IconFrame-AddRow")
-						if (typeActionButton <= 2) then
-							self.NormalTexture:SetSize(51, 51)
-						end
-						self.NormalTexture:SetAlpha(typeABprofile.BLStyle1NormalTextureAlpha)
-					end
-					if (self.PushedTexture:GetAtlas() ~= "UI-HUD-ActionBar-IconFrame-AddRow-Down") then
-						self:SetPushedAtlas("UI-HUD-ActionBar-IconFrame-AddRow-Down")
-						if (typeActionButton <= 2) then
-							self.PushedTexture:SetSize(51, 51)
-						end
-					end
-				end
-			else
-				-- Classic Layout
-				if (self.NormalTexture:GetAtlas() ~= nil) then
-					self.NormalTexture:SetAtlas(nil)
-					if (typeActionButton == 3) then
-						self.NormalTexture:SetSize(54, 54)
-					elseif (typeActionButton == 4) then
-						if (MultiBarBottomLeft and MultiBarBottomLeft:IsShown()) then
-							self.NormalTexture:SetSize(52, 52)
-						else
-							self.NormalTexture:SetSize(64, 64)
-						end
-					elseif (typeActionButton == 5) then
-						self.NormalTexture:SetSize(60, 60)
-					elseif (typeActionButton == 6) then
-						self.NormalTexture:SetSize(28, 28)
-					elseif (typeActionButton == 7) then
-						self.NormalTexture:SetSize(82, 82)
-					else
-						self.NormalTexture:SetSize(66, 66)
-					end
-					if (typeActionButton == 3 or typeActionButton == 4) then
-						self.NormalTexture:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
-						self.NormalTexture:SetTexture("Interface\\Buttons\\UI-Quickslot2")
-						self.NormalTexture:SetAlpha(typeABprofile.BLStyle0NormalTextureAlpha)
-						self.NormalTexture:ClearAllPoints()
-						self.NormalTexture:SetPoint("CENTER", self, "CENTER", 0, -1)
-					elseif (typeActionButton == 6) then
-						self.NormalTexture:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
-						self.NormalTexture:SetTexture(nil)
-						self.NormalTexture:SetAlpha(typeABprofile.BLStyle0NormalTextureAlpha)
-						self.NormalTexture:ClearAllPoints()
-						self.NormalTexture:SetAllPoints(self)
-					else
-						self.NormalTexture:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
-						self.NormalTexture:SetTexture("Interface\\Buttons\\UI-Quickslot2")
-						self.NormalTexture:SetAlpha(typeABprofile.BLStyle0NormalTextureAlpha)
-						self.NormalTexture:ClearAllPoints()
-						self.NormalTexture:SetPoint("TOPLEFT", self, "TOPLEFT", -15, 15)
-						self.NormalTexture:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT", 15, -15)
-					end
-				end
-				if not(typeABprofile.BLStyle0UseNewPushedTexture) then
-					if (self.PushedTexture:GetAtlas() ~= nil) then
-						self.PushedTexture:SetAtlas(nil)
-						if (typeActionButton == 7) then
-							self.PushedTexture:SetSize(52, 52)
-						elseif (typeActionButton == 6) then
-							self.PushedTexture:SetSize(28, 28)
-						elseif (typeActionButton >= 3) then
-							self.PushedTexture:SetSize(30, 30)
-						else
-							self.PushedTexture:SetSize(36, 36)
-						end
-						self.PushedTexture:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
-						self.PushedTexture:SetTexture("Interface\\Buttons\\UI-Quickslot-Depress")
-						self.PushedTexture:SetAlpha(1)
-						self.PushedTexture:ClearAllPoints()
-						self.PushedTexture:SetAllPoints(self)
-					end
-				else
-					if (self.PushedTexture:GetAtlas() ~= "UI-HUD-ActionBar-IconFrame-AddRow-Down") then
-						self.PushedTexture:SetAtlas("UI-HUD-ActionBar-IconFrame-AddRow-Down")
-					end
-					if (typeActionButton == 7) then
-						self.PushedTexture:SetSize(61, 60)
-					elseif (typeActionButton == 6) then
-						self.PushedTexture:SetSize(32, 32)
-					elseif (typeActionButton <= 2) then
-						self.PushedTexture:SetSize(42, 41)
-					end
-				end
-			end
-		end)
-		ClassicUI.cached_ActionButtonInfo.hooked_UpdateButtonArt[iActionButton] = true
-	end
-	if (typeABprofile.BLStyle == 1) then
-		-- Dragonflight Layout
-		iActionButton.NormalTexture:SetAlpha(typeABprofile.BLStyle1NormalTextureAlpha)
-		if (typeActionButton <= 2) then
-			ClassicUI.cached_ActionButtonInfo.currentScale[iActionButton] = ClassicUI.ACTIONBUTTON_NEWLAYOUT_SCALE
-			iActionButton:SetScale((newBLScale / iActionButton:GetParent():GetScale()) * ClassicUI.cached_ActionButtonInfo.currentScale[iActionButton])
-			if (typeActionButton == 0) then
-				if ((iActionButton.UpdateButtonArt ~= nil) and iActionButton.SlotArt and iActionButton.SlotBackground and iActionButton.showButtonArt) then
-					if (iabnt ~= nil) and (iabnt:GetAtlas() ~= "UI-HUD-ActionBar-IconFrame-AddRow") then
-						iActionButton:SetNormalAtlas("UI-HUD-ActionBar-IconFrame-AddRow")
-						iabnt:SetSize(51, 51)
-					end
-					if (iabpt ~= nil) and (iabpt:GetAtlas() ~= "UI-HUD-ActionBar-IconFrame-AddRow-Down") then
-						iActionButton:SetPushedAtlas("UI-HUD-ActionBar-IconFrame-AddRow-Down")
-						iabpt:SetSize(51, 51)
-					end
-				end
-			end
-		end
-		if (ClassicUI.cached_ActionButtonInfo.currLayout[iActionButton] == 0) then
-			ClassicUI.RestoreDragonflightLayoutActionButton(iActionButton, typeActionButton)
-		end
-	else
-		-- Classic Layout
-		if (typeActionButton == 7) then
-			iActionButton:SetSize(52, 52)
-		elseif (typeActionButton == 6) then
-			iActionButton:SetSize(28, 28)
-		elseif (typeActionButton >= 3) then
-			iActionButton:SetSize(30, 30)
-		else
-			iActionButton:SetSize(36, 36)
-		end
-		ClassicUI.cached_ActionButtonInfo.currentScale[iActionButton] = 1
-		if (typeActionButton <= 2) then
-			iActionButton:SetScale(newBLScale / iActionButton:GetParent():GetScale())
-		end
-		if (iabnt ~= nil) then
-			iabnt:SetAtlas(nil)
-			if (typeActionButton == 3) then
-				iabnt:SetSize(54, 54)
-			elseif (typeActionButton == 4) then
-				if (MultiBarBottomLeft and MultiBarBottomLeft:IsShown()) then
-					iabnt:SetSize(52, 52)
-				else
-					iabnt:SetSize(64, 64)
-				end
-			elseif (typeActionButton == 5) then
-				iabnt:SetSize(60, 60)
-			elseif (typeActionButton == 6) then
-				iabnt:SetSize(28, 28)
-			elseif (typeActionButton == 7) then
-				iabnt:SetSize(82, 82)
-			else
-				iabnt:SetSize(66, 66)
-			end
-			if (typeActionButton == 3 or typeActionButton == 4) then
-				iabnt:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
-				iabnt:SetTexture("Interface\\Buttons\\UI-Quickslot2")
-				iabnt:SetAlpha(typeABprofile.BLStyle0NormalTextureAlpha)
-				iabnt:ClearAllPoints()
-				iabnt:SetPoint("CENTER", iActionButton, "CENTER", 0, -1)
-			elseif (typeActionButton == 6) then
-				iabnt:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
-				iabnt:SetTexture(nil)
-				iabnt:SetAlpha(typeABprofile.BLStyle0NormalTextureAlpha)
-				iabnt:ClearAllPoints()
-				iabnt:SetAllPoints(iActionButton)
-			else
-				iabnt:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
-				iabnt:SetTexture("Interface\\Buttons\\UI-Quickslot2")
-				iabnt:SetAlpha(typeABprofile.BLStyle0NormalTextureAlpha)
-				iabnt:ClearAllPoints()
-				iabnt:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", -15, 15)
-				iabnt:SetPoint("BOTTOMRIGHT", iActionButton, "BOTTOMRIGHT", 15, -15)
-			end
-		end
-		if (iabpt ~= nil) then
-			if not(typeABprofile.BLStyle0UseNewPushedTexture) then
-				iabpt:SetAtlas(nil)
-				if (typeActionButton == 7) then
-					iabpt:SetSize(52, 52)
-				elseif (typeActionButton == 6) then
-					iabpt:SetSize(28, 28)
-				elseif (typeActionButton >= 3) then
-					iabpt:SetSize(30, 30)
-				else
-					iabpt:SetSize(36, 36)
-				end
-				iabpt:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
-				iabpt:SetTexture("Interface\\Buttons\\UI-Quickslot-Depress")
-				iabpt:SetAlpha(1)
-				iabpt:ClearAllPoints()
-				iabpt:SetAllPoints(iActionButton)
-			else
-				if (iabpt:GetAtlas() ~= "UI-HUD-ActionBar-IconFrame-AddRow-Down") then
-					iabpt:SetAtlas("UI-HUD-ActionBar-IconFrame-AddRow-Down")
-					iabpt:ClearAllPoints()
-					iabpt:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", 0, 0)
-				end
-				if (typeActionButton == 7) then
-					iabpt:SetSize(61, 60)
-				elseif (typeActionButton == 6) then
-					iabpt:SetSize(32, 32)
-				elseif (typeActionButton <= 2) then
-					iabpt:SetSize(42, 41)
-				else
-					iabpt:SetSize(35, 35)
-				end
-			end
-		end
-		local iabht = iActionButton:GetHighlightTexture()
-		if (iabht ~= nil) then
-			if not(typeABprofile.BLStyle0UseNewHighlightTexture) then
-				iabht:SetAtlas(nil)
-				if (typeActionButton == 7) then
-					iabht:SetSize(52, 52)
-				elseif (typeActionButton == 6) then
-					iabht:SetSize(28, 28)
-				elseif (typeActionButton >= 3) then
-					iabht:SetSize(30, 30)
-				else
-					iabht:SetSize(36, 36)
-				end
-				iabht:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
-				iabht:SetBlendMode("ADD")
-				iabht:SetTexture("Interface\\Buttons\\ButtonHilight-Square")
-				iabht:SetAlpha(1)
-				iabht:ClearAllPoints()
-				iabht:SetAllPoints(iActionButton)
-			else
-				if (iabht:GetAtlas() == nil) then
-					iabht:SetAtlas("UI-HUD-ActionBar-IconFrame-Mouseover")
-					iabht:SetBlendMode("BLEND")
-					iabht:ClearAllPoints()
-					iabht:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", 0, 0)
-				end
-				if (typeActionButton == 7) then
-					iabht:SetSize(59, 58)
-					iabht:ClearAllPoints()
-					iabht:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", -2.5, 2.5)
-				elseif (typeActionButton == 6) then
-					iabht:SetSize(31, 30.31)
-					iabht:ClearAllPoints()
-					iabht:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", -1, 1)
-				elseif (typeActionButton >= 3) then
-					iabht:SetSize(34, 33.25)
-					iabht:ClearAllPoints()
-					iabht:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", -1.5, 1.5)
-				else
-					iabht:ClearAllPoints()
-					iabht:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", -2, 2)
-					iabht:SetSize(41, 40)
-				end
-			end
-		end
-		local iabchkt = iActionButton:GetCheckedTexture()
-		if (iabchkt ~= nil) then
-			if not(typeABprofile.BLStyle0UseNewCheckedTexture) then
-				iabchkt:SetAtlas(nil)
-				if (typeActionButton == 7) then
-					iabchkt:SetSize(52, 52)
-				elseif (typeActionButton == 6) then
-					iabchkt:SetSize(28, 28)
-				elseif (typeActionButton >= 3) then
-					iabchkt:SetSize(30, 30)
-				else
-					iabchkt:SetSize(36, 36)
-				end
-				iabchkt:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
-				iabchkt:SetBlendMode("ADD")
-				iabchkt:SetTexture("Interface\\Buttons\\CheckButtonHilight")
-				iabchkt:SetAlpha(1)
-				iabchkt:ClearAllPoints()
-				iabchkt:SetAllPoints(iActionButton)
-			else
-				if (iabchkt:GetAtlas() == nil) then
-					iabchkt:SetAtlas("UI-HUD-ActionBar-IconFrame-Mouseover")
-					iabchkt:SetBlendMode("BLEND")
-					iabchkt:ClearAllPoints()
-					iabchkt:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", 0, 0)
-				end
-				if (typeActionButton == 7) then
-					iabchkt:SetSize(59, 58)
-					iabchkt:ClearAllPoints()
-					iabchkt:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", -2.5, 2.5)
-				elseif (typeActionButton == 6) then
-					iabchkt:SetSize(31, 30.31)
-					iabchkt:ClearAllPoints()
-					iabchkt:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", -1, 1)
-				elseif (typeActionButton >= 3) then
-					iabchkt:SetSize(34, 33.25)
-					iabchkt:ClearAllPoints()
-					iabchkt:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", -1.5, 1.5)
-				else
-					iabchkt:SetSize(41, 40)
-					iabchkt:ClearAllPoints()
-					iabchkt:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", -2, 2)
-				end
-			end
-		end
-		local iabit = _G[name.."Icon"]
-		if (iabit ~= nil) then
-			if (typeActionButton == 7) then
-				iabit:SetSize(52, 52)
-			elseif (typeActionButton == 6) then
-				iabit:SetSize(28, 28)
-				iabit:SetTexCoord(4/64, 60/64, 4/64, 60/64)
-			elseif (typeActionButton >= 3) then
-				iabit:SetSize(30, 30)
-			else
-				iabit:SetSize(36, 36)
-			end
-		end
-		local iabctt = _G[name.."Count"]
-		if (iabctt ~= nil) then
-			iabctt:ClearAllPoints()
-			iabctt:SetPoint("BOTTOMRIGHT", iActionButton, "BOTTOMRIGHT", -2, 2)
-		end
-		local iabbt = _G[name.."Border"]
-		if (iabbt ~= nil) then
-			iabbt:SetSize(62, 62)
-			iabbt:SetAtlas(nil)
-			iabbt:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
-			iabbt:SetBlendMode("ADD")
-			if ((iActionButton.action ~= nil) and (IsEquippedAction(iActionButton.action))) then
-				iabbt:SetAlpha(0.5)
-			else
-				iabbt:SetAlpha(1)
-			end
-			iabbt:SetTexture("Interface\\Buttons\\UI-ActionButton-Border")
-			iabbt:ClearAllPoints()
-			iabbt:SetPoint("CENTER", iActionButton, "CENTER", 0, 0)
-		end
-		local iabHt = _G[name.."HotKey"]
-		if (iabHt ~= nil) then
-			if (typeABprofile.BLStyle0UseOldHotKeyTextStyle) then
-				iabHt:SetSize(36, 10)
-				iabHt:ClearAllPoints()
-				if (typeActionButton == 3) then
-					iabHt:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", -2, -3)
-				else
-					iabHt:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", 1, -3)
-				end
-				local iabHt_f1, iabHt_f2, iabHt_f3 = iabHt:GetFont()
-				if (iabHt_f3 ~= "OUTLINE, THICKOUTLINE, MONOCHROME") then
-					iabHt:SetFont(iabHt_f1, iabHt_f2, "OUTLINE, THICKOUTLINE, MONOCHROME")
-				end
-			else
-				iabHt:SetSize(32, 10)
-				iabHt:ClearAllPoints()
-				if (typeActionButton == 3) then
-					iabHt:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", -2, -3)
-				else
-					iabHt:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", 3, -3)
-				end
-				local iabHt_f1, iabHt_f2, iabHt_f3 = iabHt:GetFont()
-				if (iabHt_f3 ~= "OUTLINE") then
-					iabHt:SetFont(iabHt_f1, iabHt_f2, "OUTLINE")
-				end
-			end
-		end
-		local iabcdt = _G[name.."Cooldown"]
-		if (iabcdt ~= nil) then
-			if (typeActionButton == 3) then
-				iabcdt:SetSize(33, 33)
-			elseif (typeActionButton == 6) then
-				iabcdt:SetSize(28, 28)
-			elseif (typeActionButton >= 4) then
-				iabcdt:SetSize(30, 30)
-			else
-				iabcdt:SetSize(36, 36)
-			end
-			iabcdt:ClearAllPoints()
-			iabcdt:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", 0, 0)
-			iabcdt:SetPoint("CENTER", iActionButton, "CENTER", 0, -1)
-			iabcdt:SetPoint("BOTTOMRIGHT", iActionButton, "BOTTOMRIGHT", 0, 0)
-		end
-		local iabft = _G[name.."Flash"]
-		if (iabft ~= nil) then
-			if (typeActionButton == 7) then
-				iabft:SetSize(52, 52)
-			elseif (typeActionButton == 6) then
-				iabft:SetSize(28, 28)
-			elseif (typeActionButton >= 3) then
-				iabft:SetSize(30, 30)
-			else
-				iabft:SetSize(36, 36)
-			end
-			iabft:SetAtlas(nil)
-			iabft:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
-			iabft:SetAlpha(1)
-			iabft:SetTexture("Interface\\Buttons\\UI-QuickslotRed")
-			iabft:ClearAllPoints()
-			iabft:SetAllPoints(iActionButton)
-		end
-		local iabfbst = _G[name.."FlyoutBorderShadow"]
-		if (iabfbst ~= nil) then
-			iabfbst:SetSize(48, 48)
-			iabfbst:SetAtlas(nil)
-			iabfbst:SetTexCoord(0.015625, 0.0078125, 0.015625, 0.3828125, 0.765625, 0.0078125, 0.765625, 0.3828125)
-			iabfbst:SetAlpha(1)
-			iabfbst:SetTexture("Interface\\Buttons\\ActionBarFlyoutButton")
-			iabfbst:ClearAllPoints()
-			iabfbst:SetPoint("CENTER", iActionButton, "CENTER", 0, 0)
-		end
-		local iabnat = iActionButton.NewActionTexture
-		if (iabnat ~= nil) then
-			iabnat:SetSize(44, 44)
-			iabnat:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
-			iabnat:SetBlendMode("ADD")
-			iabnat:SetAlpha(1)
-			iabnat:SetTexture(969828)
-			iabnat:SetAtlas("bags-newitem")
-			iabnat:ClearAllPoints()
-			iabnat:SetPoint("CENTER", iActionButton, "CENTER", 0, 0)
-		end
-		local iabsht = iActionButton.SpellHighlightTexture
-		if (iabsht ~= nil) then
-			if not(typeABprofile.BLStyle0UseNewSpellHighlightTexture) then
-				if (typeActionButton == 3) then
-					iabsht:SetSize(34, 34)
-				else
-					iabsht:SetSize(44, 44)
-				end
-				iabsht:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
-				iabsht:SetBlendMode("ADD")
-				iabsht:SetAlpha(1)
-				iabsht:SetTexture(969828)
-				iabsht:SetAtlas("bags-newitem")
-				iabsht:ClearAllPoints()
-				iabsht:SetPoint("CENTER", iActionButton, "CENTER", 0, 0)
-			else
-				if (typeActionButton == 3) then
-					if (iabsht:GetAtlas() ~= "bags-newitem") then
-						iabsht:SetAtlas("bags-newitem")
-						iabsht:SetBlendMode("ADD")
-					end
-					iabsht:SetAlpha(1)
-				else
-					if (iabsht:GetAtlas() ~= "UI-HUD-ActionBar-IconFrame-Mouseover") then
-						iabsht:SetAtlas("UI-HUD-ActionBar-IconFrame-Mouseover")
-						iabsht:SetBlendMode("ADD")
-					end
-					iabsht:SetAlpha(0.4)
-				end
-				iabsht:ClearAllPoints()
-				if (typeActionButton == 7) then
-					iabsht:SetSize(59, 58)
-					iabsht:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", -2.5, 2.5)
-				elseif (typeActionButton == 6) then
-					iabsht:SetSize(31, 30.31)
-					iabsht:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", -1, 1)
-				elseif (typeActionButton >= 4) then
-					iabsht:SetSize(34, 33.25)
-					iabsht:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", -1.5, 1.5)
-				elseif (typeActionButton == 3) then
-					iabsht:SetSize(34, 34)
-					iabsht:SetPoint("CENTER", iActionButton, "CENTER", 0, 0)
-				elseif (typeActionButton <= 2) then
-					iabsht:SetSize(41, 40)
-					iabsht:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", -2, 2)
-				end
-			end
-		end
-		local iabset = _G[name.."Shine"]
-		if (iabset ~= nil) then
-			iabset:SetSize(28, 28)
-		end
-		local iabact = iActionButton.AutoCastable
-		if (iabact ~= nil) then
-			iabact:SetSize(58, 58)
-			iabact:ClearAllPoints()
-			iabact:SetPoint("CENTER", iActionButton, "CENTER", 0, 0)
-		end
-		if (typeActionButton == 1 or typeActionButton == 2) then
-			local iabfbgt = _G[name.."FloatingBG"]
-			if (not iabfbgt) then
-				iabfbgt = iActionButton:CreateTexture(name.."FloatingBG")
-				iActionButton.FloatingBG = iabfbgt
-			end
-			iabfbgt:SetSize(66, 66)
-			iabfbgt:SetAtlas(nil)
-			iabfbgt:SetDrawLayer("BACKGROUND", -1)
-			iabfbgt:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
-			iabfbgt:SetAlpha(0.4)
-			iabfbgt:SetTexture("Interface\\Buttons\\UI-Quickslot")
-			iabfbgt:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", -15, 15)
-			iabfbgt:SetPoint("BOTTOMRIGHT", iActionButton, "BOTTOMRIGHT", 15, -15)
-			iabfbgt:Show()
-		end
-		local iabfbt = _G[name.."FlyoutBorder"]
-		if (not iabfbt) then
-			iabfbt = iActionButton:CreateTexture(name.."FlyoutBorder")
-			iActionButton.FlyoutBorder = iabfbt
-		end
-		iabfbt:SetSize(42, 42)
-		iabfbt:SetAtlas(nil)
-		iabfbt:SetDrawLayer("ARTWORK", 1)
-		iabfbt:SetTexCoord(0.015625, 0.3984375, 0.015625, 0.7265625, 0.671875, 0.3984375, 0.671875, 0.726562)
-		iabfbt:SetAlpha(1)
-		iabfbt:SetTexture("Interface\\Buttons\\ActionBarFlyoutButton")
-		iabfbt:ClearAllPoints()
-		iabfbt:SetPoint("CENTER", iActionButton, "CENTER", 0, 0)
-		iabfbt:Hide()
-		-- TODO: We keep the new Dragonflight FlyoutArrow, maybe we recreate the old one in a future version
-		if (typeActionButton == 3) then
-			-- Hide IconMask for PetActionButtons but leave it for the others
-			iActionButton.IconMask:SetAlpha(0)
-			iActionButton.IconMask:Hide()
-		end
-		if ((iActionButton.UpdateHotkeys ~= nil) and (iabHt ~= nil) and not(ClassicUI.cached_ActionButtonInfo.hooked_UpdateHotkeys[iActionButton])) then
-			hooksecurefunc(iActionButton, "UpdateHotkeys", function(self, actionButtonType)
-				--if ClassicUI.databaseCleaned then return end	-- not needed because typeABprofile is an upvalue local table variable (the upvalue table can become empty but never nil, not an issue)
-				if not(typeABprofile.BLStyle == 1) then
-					local id
-					if (not actionButtonType) then
-						actionButtonType = "ACTIONBUTTON"
-						id = self:GetID()
-					else
-						if (actionButtonType == "MULTICASTACTIONBUTTON") then
-							id = self.buttonIndex
-						else
-							id = self:GetID()
-						end
-					end
-					local hotkey = self.HotKey
-					local key = GetBindingKey(actionButtonType..id) or GetBindingKey("CLICK "..self:GetName()..":LeftButton")
-					local text = GetBindingText(key, 1)
-					if (text ~= "") then
-						hotkey:ClearAllPoints()
-						if (typeABprofile.BLStyle0UseOldHotKeyTextStyle) then
-							hotkey:SetSize(36, 10)
-							if (typeActionButton == 3) then
-								hotkey:SetPoint("TOPLEFT", self, "TOPLEFT", -2, -3)
-							else
-								hotkey:SetPoint("TOPLEFT", self, "TOPLEFT", 1, -3)
-							end
-						else
-							hotkey:SetSize(32, 10)
-							if (typeActionButton == 3) then
-								hotkey:SetPoint("TOPLEFT", self, "TOPLEFT", -2, -3)
-							else
-								hotkey:SetPoint("TOPLEFT", self, "TOPLEFT", 3, -3)
-							end
-						end
-					end
-				end
-			end)
-			ClassicUI.cached_ActionButtonInfo.hooked_UpdateHotkeys[iActionButton] = true
-		end
-		if ((iActionButton.UpdateFlyout ~= nil) and (iabfbt ~= nil) and not(ClassicUI.cached_ActionButtonInfo.hooked_UpdateFlyout[iActionButton])) then
-			hooksecurefunc(iActionButton, "UpdateFlyout", function(self, isButtonDownOverride)
-				--if ClassicUI.databaseCleaned then return end	-- not needed because typeABprofile is an upvalue local table variable (the upvalue table can become empty but never nil, not an issue)
-				if not(typeABprofile.BLStyle == 1) and not(typeABprofile.BLStyle0UseNewFlyoutBorder) then
-					if (not self.FlyoutArrowContainer or not self.FlyoutBorderShadow) then
-						return
-					end
-					local actionType = GetActionInfo(self.action)
-					if (actionType ~= "flyout") then
-						if (not(self.FlyoutBorderShadow:IsShown()) and self.FlyoutBorder:IsShown()) then
-							self.FlyoutBorder:Hide()
-						end
-						return
-					end
-					local isMouseOverButton = GetMouseFocus() == self
-					local isFlyoutShown = SpellFlyout and SpellFlyout:IsShown() and SpellFlyout:GetParent() == self
-					if (isFlyoutShown or isMouseOverButton) then
-						if (self.FlyoutBorderShadow:IsShown() and not(self.FlyoutBorder:IsShown())) then
-							self.FlyoutBorder:Show()
-						end
-					else
-						if (not(self.FlyoutBorderShadow:IsShown()) and self.FlyoutBorder:IsShown()) then
-							self.FlyoutBorder:Hide()
-						end
-					end
-				end
-			end)
-			ClassicUI.cached_ActionButtonInfo.hooked_UpdateFlyout[iActionButton] = true
-		end
-	end
-	ClassicUI.cached_ActionButtonInfo.currLayout[iActionButton] = typeABprofile.BLStyle
-end
-
--- Function that sets the current layout for a desired groups of ActionButtons
-ClassicUI.LayoutGroupActionButtons = function(groups)
-	if ((groups == nil) or (type(groups) ~= "table")) then return end
-	if (groups[0]) then
-		for i = 1, 12 do
-			ClassicUI:ActionButtonProtectedApplyLayout(_G["ActionButton"..i], 0)
-		end
-	end
-	if (groups[1]) then
-		for i = 1, 12 do
-			ClassicUI:ActionButtonProtectedApplyLayout(_G["MultiBarBottomLeftButton"..i], 1)
-		end
-		for i = 1, 12 do
-			ClassicUI:ActionButtonProtectedApplyLayout(_G["MultiBarBottomRightButton"..i], 1)
-		end
-	end
-	if (groups[2]) then
-		for i = 1, 12 do
-			ClassicUI:ActionButtonProtectedApplyLayout(_G["MultiBarLeftButton"..i], 2)
-		end
-		for i = 1, 12 do
-			ClassicUI:ActionButtonProtectedApplyLayout(_G["MultiBarRightButton"..i], 2)
-		end
-	end
-	if (groups[3]) then
-		for i = 1, 10 do
-			ClassicUI:ActionButtonProtectedApplyLayout(_G["PetActionButton"..i], 3)
-		end
-	end
-	if (groups[4]) then
-		for i = 1, 10 do
-			ClassicUI:ActionButtonProtectedApplyLayout(_G["StanceButton"..i], 4)
-		end
-	end
-	if (groups[5]) then
-		for i = 1, 2 do
-			ClassicUI:ActionButtonProtectedApplyLayout(_G["PossessButton"..i], 5)
-		end
-	end
-	if (groups[6]) then
-		for i = 1, 40 do
-			local button = _G["SpellFlyoutButton"..i]
-			if (button ~= nil) then
-				ClassicUI:ActionButtonProtectedApplyLayout(button, 6)
-			else
-				break
-			end
-		end
-	end
-	if (groups[7]) then
-		for i = 1, 6 do
-			ClassicUI:ActionButtonProtectedApplyLayout(_G["OverrideActionBarButton"..i], 7)
-		end
-	end
-end
-
--- Function that sets the current layout for all ActionButtons
-ClassicUI.LayoutAllActionButtons = function()
-	ClassicUI.LayoutGroupActionButtons({[0]=true,[1]=true,[2]=true,[3]=true,[4]=true,[5]=true,[6]=true,[7]=true})
-end
-
--- Function to apply the current layout to an ActionButton, handling a queue of pending buttons if in combat lockdown
-function ClassicUI:ActionButtonProtectedApplyLayout(button, typeActionButton)
-	if InCombatLockdown() then
-		if ((button ~= nil) and (self.queuePending_ActionButtonsLayout[button] == nil)) then
-			self.queuePending_ActionButtonsLayout[button] = typeActionButton
-		end
-		delayFunc_ActionButtonProtectedApplyLayout = true
-		if (not fclFrame:IsEventRegistered("PLAYER_REGEN_ENABLED")) then
-			fclFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
-		end
-		return
-	end
-	if (button ~= nil) then
-		self.LayoutActionButton(button, typeActionButton)
-		self.queuePending_ActionButtonsLayout[button] = nil
-	end
-	for iButton, iTypeActionButton in pairs(self.queuePending_ActionButtonsLayout) do
-		self.LayoutActionButton(iButton, iTypeActionButton)
-		self.queuePending_ActionButtonsLayout[iButton] = nil
-	end
-end
-
--- Function that initializes the cache with the information of all the ActionButtons to the default values
-function ClassicUI:InitActionButtonInfoCache()
-	for i = 1, 12 do
-		self.cached_ActionButtonInfo.hooked_UpdateButtonArt = {
-			[_G["ActionButton"..i]] = false,
-			[_G["MultiBarBottomLeftButton"..i]] = false,
-			[_G["MultiBarBottomRightButton"..i]] = false,
-			[_G["MultiBarRightButton"..i]] = false,
-			[_G["MultiBarLeftButton"..i]] = false
-		}
-		self.cached_ActionButtonInfo.hooked_UpdateHotkeys = {
-			[_G["ActionButton"..i]] = false,
-			[_G["MultiBarBottomLeftButton"..i]] = false,
-			[_G["MultiBarBottomRightButton"..i]] = false,
-			[_G["MultiBarRightButton"..i]] = false,
-			[_G["MultiBarLeftButton"..i]] = false
-		}
-		self.cached_ActionButtonInfo.hooked_UpdateFlyout = {
-			[_G["ActionButton"..i]] = false,
-			[_G["MultiBarBottomLeftButton"..i]] = false,
-			[_G["MultiBarBottomRightButton"..i]] = false,
-			[_G["MultiBarRightButton"..i]] = false,
-			[_G["MultiBarLeftButton"..i]] = false
-		}
-		self.cached_ActionButtonInfo.currentScale = {
-			[_G["ActionButton"..i]] = 1,
-			[_G["MultiBarBottomLeftButton"..i]] = 1,
-			[_G["MultiBarBottomRightButton"..i]] = 1,
-			[_G["MultiBarRightButton"..i]] = 1,
-			[_G["MultiBarLeftButton"..i]] = 1
-		}
-		self.cached_ActionButtonInfo.currLayout = {
-			[_G["ActionButton"..i]] = 1,
-			[_G["MultiBarBottomLeftButton"..i]] = 1,
-			[_G["MultiBarBottomRightButton"..i]] = 1,
-			[_G["MultiBarRightButton"..i]] = 1,
-			[_G["MultiBarLeftButton"..i]] = 1
-		}
-	end
-	for i = 1, 10 do
-		self.cached_ActionButtonInfo.hooked_UpdateButtonArt = {
-			[_G["PetActionButton"..i]] = false,
-			[_G["StanceButton"..i]] = false
-		}
-		self.cached_ActionButtonInfo.hooked_UpdateHotkeys = {
-			[_G["PetActionButton"..i]] = false,
-			[_G["StanceButton"..i]] = false
-		}
-		self.cached_ActionButtonInfo.hooked_UpdateFlyout = {
-			[_G["PetActionButton"..i]] = false,
-			[_G["StanceButton"..i]] = false
-		}
-		self.cached_ActionButtonInfo.currentScale = {
-			[_G["PetActionButton"..i]] = 1,
-			[_G["StanceButton"..i]] = 1
-		}
-		self.cached_ActionButtonInfo.currLayout = {
-			[_G["PetActionButton"..i]] = 1,
-			[_G["StanceButton"..i]] = 1
-		}
-	end
-	for i = 1, 6 do
-		self.cached_ActionButtonInfo.hooked_UpdateButtonArt = {
-			[_G["OverrideActionBarButton"..i]] = false
-		}
-		self.cached_ActionButtonInfo.hooked_UpdateHotkeys = {
-			[_G["OverrideActionBarButton"..i]] = false
-		}
-		self.cached_ActionButtonInfo.hooked_UpdateFlyout = {
-			[_G["OverrideActionBarButton"..i]] = false
-		}
-		self.cached_ActionButtonInfo.currentScale = {
-			[_G["OverrideActionBarButton"..i]] = 1
-		}
-		self.cached_ActionButtonInfo.currLayout = {
-			[_G["OverrideActionBarButton"..i]] = 1
-		}
-	end
-	for i = 1, 40 do
-		local button = _G["SpellFlyoutButton"..i]
-		if (button ~= nil) then
-			self.cached_ActionButtonInfo.hooked_UpdateButtonArt = {
-				[button] = false
-			}
-			self.cached_ActionButtonInfo.hooked_UpdateHotkeys = {
-				[button] = false
-			}
-			self.cached_ActionButtonInfo.hooked_UpdateFlyout = {
-				[button] = false
-			}
-			self.cached_ActionButtonInfo.currentScale = {
-				[button] = 1
-			}
-			self.cached_ActionButtonInfo.currLayout = {
-				[button] = 1
-			}
-		else
-			break
-		end
-	end
-	self.cached_ActionButtonInfo.hooked_UpdateButtonArt[PossessButton1] = false
-	self.cached_ActionButtonInfo.hooked_UpdateButtonArt[PossessButton2] = false
-	self.cached_ActionButtonInfo.hooked_UpdateHotkeys[PossessButton1] = false
-	self.cached_ActionButtonInfo.hooked_UpdateHotkeys[PossessButton2] = false
-	self.cached_ActionButtonInfo.hooked_UpdateFlyout[PossessButton1] = false
-	self.cached_ActionButtonInfo.hooked_UpdateFlyout[PossessButton2] = false
-	self.cached_ActionButtonInfo.currentScale[PossessButton1] = 1
-	self.cached_ActionButtonInfo.currentScale[PossessButton2] = 1
-	self.cached_ActionButtonInfo.currLayout[PossessButton1] = 1
-	self.cached_ActionButtonInfo.currLayout[PossessButton2] = 1
-end
-
--- Main function that loads the core features of ClassicUI. This function at the end calls to 'ClassicUI:PLAYER_ENTERING_WORLD()'.
-function ClassicUI:MainFunction(isLogin)
-	
-	-- Update the cached value of the number of visible bars and the number of real visible bars
-	ClassicUI.cached_NumberVisibleBars = ClassicUI:GetNumberVisibleBars(StatusTrackingBarManager)
-	ClassicUI.cached_NumberRealVisibleBars = ClassicUI.cached_NumberVisibleBars
-	
-	-- Get and set the cached values for the status bar variables
-	ClassicUI:UpdateStatusBarOptionsCache()
-	
-	-- Create the basic default-value cache for ActionButtons
-	ClassicUI:InitActionButtonInfoCache()
-	
 	-- Wipe the .buttonsAndSpacers table from ActionBars to avoid Blizzard layout updates with the UpdateGridLayout() function. Wiping this table does not taint :)
 	if (MainMenuBar.buttonsAndSpacers ~= nil) then
 		tblwipe(MainMenuBar.buttonsAndSpacers)
@@ -3291,31 +2238,17 @@ function ClassicUI:MainFunction(isLogin)
 	end
 	
 	if InCombatLockdown() then
-		delayFunc_MainFunction = true
+		delayFunc_MF_PLAYER_ENTERING_WORLD = true
 		if (not fclFrame:IsEventRegistered("PLAYER_REGEN_ENABLED")) then
 			fclFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
 		end
 		return
 	end
 	
-	-- We reset certain attributes of the ActionBars to their old values and disable their interaction with the mouse
-	ClassicUI:ModifyOriginalFrames()
+	-- Update the cached number of visible bars (pre update)
+	ClassicUI.cached_NumberVisibleBars = ClassicUI:GetNumberVisibleBars(StatusTrackingBarManager)
+	ClassicUI.cached_NumberRealVisibleBars = ClassicUI.cached_NumberVisibleBars
 	
-	hooksecurefunc(MainMenuBar, "UpdateEndCaps", function(self, overrideHideEndCaps)
-		self.EndCaps.LeftEndCap:Hide()
-		self.EndCaps.RightEndCap:Hide()
-		self.EndCaps:Hide()
-	end)
-	MainMenuBar.EndCaps.LeftEndCap:Hide()
-	MainMenuBar.EndCaps.RightEndCap:Hide()
-	MainMenuBar.EndCaps:Hide()
-	hooksecurefunc(MainMenuBar, "UpdateSystemSettingHideBarArt", function(self)
-		self.BorderArt:SetShown(false)
-		self.Background:SetShown(false)
-	end)
-	MainMenuBar.BorderArt:SetShown(false)
-	MainMenuBar.Background:SetShown(false)
-
 	-- Create wrapper frames for the [ActionBars], setting their attributes to their originals, and using the original frame as parent
 	-- These frames will be the ones used by the ActionButton to anchor, since they will have fewer restrictions than the original ones and will cause fewer taints errors
 	-- These frames will always be visible, so their actual visibility depends on that of their parent frame (the original ActionBar)
@@ -4524,10 +3457,25 @@ function ClassicUI:MainFunction(isLogin)
 		[StoreMicroButton] = 10,
 		[MainMenuMicroButton] = 11
 	}
+	ClassicUI.UpdateMicroButtonsParent = function(parent)
+		for k, _ in pairs(ClassicUI.MicroButtonsGroup) do
+			k:SetParent(parent);
+		end
+	end
+	ClassicUI.MoveMicroButtons = function(anchor, anchorTo, relAnchor, x, y, isStacked)
+		CharacterMicroButton:ClearAllPoints()
+		CharacterMicroButton:SetPoint(anchor, anchorTo, relAnchor, x, y)
+		LFDMicroButton:ClearAllPoints()
+		if ( isStacked ) then
+			LFDMicroButton:SetPoint("TOPLEFT", CharacterMicroButton, "BOTTOMLEFT", 0, -1)
+		else
+			LFDMicroButton:SetPoint("BOTTOMLEFT", GuildMicroButton, "BOTTOMRIGHT", 1, 0)
+		end
+	end
 	
 	MainMenuBar:HookScript("OnShow", function(self)
-		UpdateMicroButtonsParent(CUI_MainMenuBarArtFrame)
-		MoveMicroButtons("BOTTOMLEFT", CUI_MainMenuBarArtFrame, "BOTTOMLEFT", 556 + ClassicUI.db.profile.barsConfig.MicroButtons.xOffset, 2 + ClassicUI.db.profile.barsConfig.MicroButtons.yOffset, false)
+		ClassicUI.UpdateMicroButtonsParent(CUI_MainMenuBarArtFrame)
+		ClassicUI.MoveMicroButtons("BOTTOMLEFT", CUI_MainMenuBarArtFrame, "BOTTOMLEFT", 556 + ClassicUI.db.profile.barsConfig.MicroButtons.xOffset, 2 + ClassicUI.db.profile.barsConfig.MicroButtons.yOffset, false)
 		LFDMicroButton:SetPoint("BOTTOMLEFT", GuildMicroButton, "BOTTOMRIGHT", -3, 0)
 	end)
 	
@@ -4541,20 +3489,22 @@ function ClassicUI:MainFunction(isLogin)
 			elseif self.HasExit then
 				anchorX = 537
 			end
-			UpdateMicroButtonsParent(self)
-			MoveMicroButtons("BOTTOMLEFT", self, "BOTTOMLEFT", anchorX, anchorY, true)
+			ClassicUI.UpdateMicroButtonsParent(self)
+			ClassicUI.MoveMicroButtons("BOTTOMLEFT", self, "BOTTOMLEFT", anchorX, anchorY, true)
 			LFDMicroButton:SetPoint("TOPLEFT", CharacterMicroButton, "BOTTOMLEFT", 0, 4)
 		end
 	end)
 	
 	PetBattleFrame.BottomFrame.MicroButtonFrame:HookScript("OnShow", function(self)
-		MoveMicroButtons("TOPLEFT", self, "TOPLEFT", -11.5, 7.5, true)
+		ClassicUI.UpdateMicroButtonsParent(self)
+		ClassicUI.MoveMicroButtons("TOPLEFT", self, "TOPLEFT", -11.5, 7.5, true)
 		LFDMicroButton:SetPoint("TOPLEFT", CharacterMicroButton, "BOTTOMLEFT", 0, 4)
 	end)
 	
 	-- [MicroButtons] CharacterMicroButton
 	CharacterMicroButton:SetParent(CUI_MainMenuBarArtFrame)
 	CharacterMicroButton:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
+	CharacterMicroButton:ClearAllPoints()
 	CharacterMicroButton:SetPoint("BOTTOMLEFT", CUI_MainMenuBarArtFrame, "BOTTOMLEFT", 556 + ClassicUI.db.profile.barsConfig.MicroButtons.xOffset, 2 + ClassicUI.db.profile.barsConfig.MicroButtons.yOffset)
 	CharacterMicroButton:SetFrameStrata("MEDIUM")
 	CharacterMicroButton:SetFrameLevel(3)
@@ -4609,6 +3559,7 @@ function ClassicUI:MainFunction(isLogin)
 	-- [MicroButtons] SpellbookMicroButton
 	SpellbookMicroButton:SetParent(CUI_MainMenuBarArtFrame)
 	SpellbookMicroButton:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
+	SpellbookMicroButton:ClearAllPoints()
 	SpellbookMicroButton:SetPoint("BOTTOMLEFT", CharacterMicroButton, "BOTTOMRIGHT", -2, 0)
 	SpellbookMicroButton:SetFrameStrata("MEDIUM")
 	SpellbookMicroButton:SetFrameLevel(3)
@@ -4625,11 +3576,12 @@ function ClassicUI:MainFunction(isLogin)
 	SpellbookMicroButton:GetHighlightTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 	SpellbookMicroButton:GetDisabledTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 	SpellbookMicroButton.FlashBorder:SetSize(34, 44)
-	SpellbookMicroButton.FlashBorder:SetPoint("TOPLEFT", TalentMicroButton, "TOPLEFT", -2, 3)
+	SpellbookMicroButton.FlashBorder:SetPoint("TOPLEFT", SpellbookMicroButton, "TOPLEFT", -2, 3)
 	
 	-- [MicroButtons] TalentMicroButton
 	TalentMicroButton:SetParent(CUI_MainMenuBarArtFrame)
 	TalentMicroButton:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
+	TalentMicroButton:ClearAllPoints()
 	TalentMicroButton:SetPoint("BOTTOMLEFT", SpellbookMicroButton, "BOTTOMRIGHT", -2, 0)
 	TalentMicroButton:SetFrameStrata("MEDIUM")
 	TalentMicroButton:SetFrameLevel(3)
@@ -4651,6 +3603,7 @@ function ClassicUI:MainFunction(isLogin)
 	-- [MicroButtons] AchievementMicroButton
 	AchievementMicroButton:SetParent(CUI_MainMenuBarArtFrame)
 	AchievementMicroButton:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
+	AchievementMicroButton:ClearAllPoints()
 	AchievementMicroButton:SetPoint("BOTTOMLEFT", TalentMicroButton, "BOTTOMRIGHT", -2, 0)
 	AchievementMicroButton:SetFrameStrata("MEDIUM")
 	AchievementMicroButton:SetFrameLevel(3)
@@ -4667,11 +3620,12 @@ function ClassicUI:MainFunction(isLogin)
 	AchievementMicroButton:GetHighlightTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 	AchievementMicroButton:GetDisabledTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 	AchievementMicroButton.FlashBorder:SetSize(34, 44)
-	AchievementMicroButton.FlashBorder:SetPoint("TOPLEFT", TalentMicroButton, "TOPLEFT", -2, 3)
+	AchievementMicroButton.FlashBorder:SetPoint("TOPLEFT", AchievementMicroButton, "TOPLEFT", -2, 3)
 	
 	-- [MicroButtons] QuestLogMicroButton
 	QuestLogMicroButton:SetParent(CUI_MainMenuBarArtFrame)
 	QuestLogMicroButton:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
+	QuestLogMicroButton:ClearAllPoints()
 	QuestLogMicroButton:SetPoint("BOTTOMLEFT", AchievementMicroButton, "BOTTOMRIGHT", -2, 0)
 	QuestLogMicroButton:SetFrameStrata("MEDIUM")
 	QuestLogMicroButton:SetFrameLevel(3)
@@ -4694,11 +3648,12 @@ function ClassicUI:MainFunction(isLogin)
 	QuestLogMicroButton:GetHighlightTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 	QuestLogMicroButton:GetDisabledTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 	QuestLogMicroButton.FlashBorder:SetSize(34, 44)
-	QuestLogMicroButton.FlashBorder:SetPoint("TOPLEFT", TalentMicroButton, "TOPLEFT", -2, 3)
+	QuestLogMicroButton.FlashBorder:SetPoint("TOPLEFT", QuestLogMicroButton, "TOPLEFT", -2, 3)
 	
 	-- [MicroButtons] GuildMicroButton
 	GuildMicroButton:SetParent(CUI_MainMenuBarArtFrame)
 	GuildMicroButton:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
+	GuildMicroButton:ClearAllPoints()
 	GuildMicroButton:SetPoint("BOTTOMLEFT", QuestLogMicroButton, "BOTTOMRIGHT", -2, 0)
 	GuildMicroButton:SetFrameStrata("MEDIUM")
 	GuildMicroButton:SetFrameLevel(3)
@@ -4721,7 +3676,7 @@ function ClassicUI:MainFunction(isLogin)
 	GuildMicroButton:GetHighlightTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 	GuildMicroButton:GetDisabledTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 	GuildMicroButton.FlashBorder:SetSize(34, 44)
-	GuildMicroButton.FlashBorder:SetPoint("TOPLEFT", TalentMicroButton, "TOPLEFT", -2, 3)
+	GuildMicroButton.FlashBorder:SetPoint("TOPLEFT", GuildMicroButton, "TOPLEFT", -2, 3)
 	GuildMicroButton.NotificationOverlay:SetFrameStrata("MEDIUM")
 	GuildMicroButton.NotificationOverlay:SetFrameLevel(500)
 	GuildMicroButton.NotificationOverlay.UnreadNotificationIcon:SetAtlas("hud-microbutton-communities-icon-notification")
@@ -4819,6 +3774,7 @@ function ClassicUI:MainFunction(isLogin)
 	-- [MicroButtons] LFDMicroButton
 	LFDMicroButton:SetParent(CUI_MainMenuBarArtFrame)
 	LFDMicroButton:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
+	LFDMicroButton:ClearAllPoints()
 	LFDMicroButton:SetPoint("BOTTOMLEFT", GuildMicroButton, "BOTTOMRIGHT", -3, 0)
 	LFDMicroButton:SetFrameStrata("MEDIUM")
 	LFDMicroButton:SetFrameLevel(3)
@@ -4835,11 +3791,12 @@ function ClassicUI:MainFunction(isLogin)
 	LFDMicroButton:GetHighlightTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 	LFDMicroButton:GetDisabledTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 	LFDMicroButton.FlashBorder:SetSize(34, 44)
-	LFDMicroButton.FlashBorder:SetPoint("TOPLEFT", TalentMicroButton, "TOPLEFT", -2, 3)
+	LFDMicroButton.FlashBorder:SetPoint("TOPLEFT", LFDMicroButton, "TOPLEFT", -2, 3)
 	
 	-- [MicroButtons] CollectionsMicroButton
 	CollectionsMicroButton:SetParent(CUI_MainMenuBarArtFrame)
 	CollectionsMicroButton:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
+	CollectionsMicroButton:ClearAllPoints()
 	CollectionsMicroButton:SetPoint("BOTTOMLEFT", LFDMicroButton, "BOTTOMRIGHT", -2, 0)
 	CollectionsMicroButton:SetFrameStrata("MEDIUM")
 	CollectionsMicroButton:SetFrameLevel(3)
@@ -4856,11 +3813,12 @@ function ClassicUI:MainFunction(isLogin)
 	CollectionsMicroButton:GetHighlightTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 	CollectionsMicroButton:GetDisabledTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 	CollectionsMicroButton.FlashBorder:SetSize(34, 44)
-	CollectionsMicroButton.FlashBorder:SetPoint("TOPLEFT", TalentMicroButton, "TOPLEFT", -2, 3)
+	CollectionsMicroButton.FlashBorder:SetPoint("TOPLEFT", CollectionsMicroButton, "TOPLEFT", -2, 3)
 	
 	-- [MicroButtons] EJMicroButton
 	EJMicroButton:SetParent(CUI_MainMenuBarArtFrame)
 	EJMicroButton:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
+	EJMicroButton:ClearAllPoints()
 	EJMicroButton:SetPoint("BOTTOMLEFT", CollectionsMicroButton, "BOTTOMRIGHT", -2, 0)
 	EJMicroButton:SetFrameStrata("MEDIUM")
 	EJMicroButton:SetFrameLevel(3)
@@ -4877,11 +3835,12 @@ function ClassicUI:MainFunction(isLogin)
 	EJMicroButton:GetHighlightTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 	EJMicroButton:GetDisabledTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 	EJMicroButton.FlashBorder:SetSize(34, 44)
-	EJMicroButton.FlashBorder:SetPoint("TOPLEFT", TalentMicroButton, "TOPLEFT", -2, 3)
+	EJMicroButton.FlashBorder:SetPoint("TOPLEFT", EJMicroButton, "TOPLEFT", -2, 3)
 	
 	-- [MicroButtons] StoreMicroButton
 	StoreMicroButton:SetParent(CUI_MainMenuBarArtFrame)
 	StoreMicroButton:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
+	StoreMicroButton:ClearAllPoints()
 	StoreMicroButton:SetPoint("BOTTOMLEFT", EJMicroButton, "BOTTOMRIGHT", -2, 0)
 	StoreMicroButton:SetFrameStrata("MEDIUM")
 	StoreMicroButton:SetFrameLevel(3)
@@ -4898,11 +3857,12 @@ function ClassicUI:MainFunction(isLogin)
 	StoreMicroButton:GetHighlightTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 	StoreMicroButton:GetDisabledTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 	StoreMicroButton.FlashBorder:SetSize(34, 44)
-	StoreMicroButton.FlashBorder:SetPoint("TOPLEFT", TalentMicroButton, "TOPLEFT", -2, 3)
+	StoreMicroButton.FlashBorder:SetPoint("TOPLEFT", StoreMicroButton, "TOPLEFT", -2, 3)
 	
 	-- [MicroButtons] MainMenuMicroButton
 	MainMenuMicroButton:SetParent(CUI_MainMenuBarArtFrame)
 	MainMenuMicroButton:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
+	MainMenuMicroButton:ClearAllPoints()
 	MainMenuMicroButton:SetPoint("BOTTOMLEFT", StoreMicroButton, "BOTTOMRIGHT", -3, 0)
 	MainMenuMicroButton:SetFrameStrata("MEDIUM")
 	MainMenuMicroButton:SetFrameLevel(3)
@@ -4925,7 +3885,7 @@ function ClassicUI:MainFunction(isLogin)
 	MainMenuMicroButton:GetHighlightTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 	MainMenuMicroButton:GetDisabledTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 	MainMenuMicroButton.FlashBorder:SetSize(34, 44)
-	MainMenuMicroButton.FlashBorder:SetPoint("TOPLEFT", TalentMicroButton, "TOPLEFT", -2, 3)
+	MainMenuMicroButton.FlashBorder:SetPoint("TOPLEFT", MainMenuMicroButton, "TOPLEFT", -2, 3)
 	
 	if (MainMenuMicroButton.MainMenuBarPerformanceBar ~= nil) then
 		MainMenuMicroButton.MainMenuBarPerformanceBar:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
@@ -4937,11 +3897,19 @@ function ClassicUI:MainFunction(isLogin)
 		end
 	end
 	
-	hooksecurefunc("MicroButtonPulse", function(self, duration)
-		if (ClassicUI.MicroButtonsGroup[self] ~= nil and self.FlashContent ~= nil) then
-			UIFrameFlashStop(self.FlashContent)
-		end
-	end)
+	local CUI_MicroButtonPulseHiddenFrame = CreateFrame("Frame", "CUI_MicroButtonPulseHiddenFrame", UIParent)
+	CUI_MicroButtonPulseHiddenFrame:Hide()
+	CharacterMicroButton.FlashContent:SetParent(CUI_MicroButtonPulseHiddenFrame)
+	SpellbookMicroButton.FlashContent:SetParent(CUI_MicroButtonPulseHiddenFrame)
+	TalentMicroButton.FlashContent:SetParent(CUI_MicroButtonPulseHiddenFrame)
+	AchievementMicroButton.FlashContent:SetParent(CUI_MicroButtonPulseHiddenFrame)
+	QuestLogMicroButton.FlashContent:SetParent(CUI_MicroButtonPulseHiddenFrame)
+	GuildMicroButton.FlashContent:SetParent(CUI_MicroButtonPulseHiddenFrame)
+	LFDMicroButton.FlashContent:SetParent(CUI_MicroButtonPulseHiddenFrame)
+	CollectionsMicroButton.FlashContent:SetParent(CUI_MicroButtonPulseHiddenFrame)
+	EJMicroButton.FlashContent:SetParent(CUI_MicroButtonPulseHiddenFrame)
+	StoreMicroButton.FlashContent:SetParent(CUI_MicroButtonPulseHiddenFrame)
+	MainMenuMicroButton.FlashContent:SetParent(CUI_MicroButtonPulseHiddenFrame)
 	
 	-- [MicroButtons] MainMenuMicroButton -> HelpOpenWebTicketButton
 	if (HelpOpenWebTicketButton ~= nil) then
@@ -5016,16 +3984,17 @@ function ClassicUI:MainFunction(isLogin)
 			elseif OverrideActionBar.HasExit then
 				anchorX = 537
 			end
-			UpdateMicroButtonsParent(OverrideActionBar)
-			MoveMicroButtons("BOTTOMLEFT", OverrideActionBar, "BOTTOMLEFT", anchorX, anchorY, true)
+			ClassicUI.UpdateMicroButtonsParent(OverrideActionBar)
+			ClassicUI.MoveMicroButtons("BOTTOMLEFT", OverrideActionBar, "BOTTOMLEFT", anchorX, anchorY, true)
 			LFDMicroButton:SetPoint("TOPLEFT", CharacterMicroButton, "BOTTOMLEFT", 0, 4)
 		else
-			UpdateMicroButtonsParent(CUI_MainMenuBarArtFrame)
-			MoveMicroButtons("BOTTOMLEFT", CUI_MainMenuBarArtFrame, "BOTTOMLEFT", 556 + ClassicUI.db.profile.barsConfig.MicroButtons.xOffset, 2 + ClassicUI.db.profile.barsConfig.MicroButtons.yOffset, false)
+			ClassicUI.UpdateMicroButtonsParent(CUI_MainMenuBarArtFrame)
+			ClassicUI.MoveMicroButtons("BOTTOMLEFT", CUI_MainMenuBarArtFrame, "BOTTOMLEFT", 556 + ClassicUI.db.profile.barsConfig.MicroButtons.xOffset, 2 + ClassicUI.db.profile.barsConfig.MicroButtons.yOffset, false)
 			LFDMicroButton:SetPoint("BOTTOMLEFT", GuildMicroButton, "BOTTOMRIGHT", -3, 0)
 		end
 	else
-		MoveMicroButtons("TOPLEFT", PetBattleFrame.BottomFrame.MicroButtonFrame, "TOPLEFT", -11.5, 7.5, true)
+		ClassicUI.UpdateMicroButtonsParent(PetBattleFrame.BottomFrame.MicroButtonFrame)
+		ClassicUI.MoveMicroButtons("TOPLEFT", PetBattleFrame.BottomFrame.MicroButtonFrame, "TOPLEFT", -11.5, 7.5, true)
 		LFDMicroButton:SetPoint("TOPLEFT", CharacterMicroButton, "BOTTOMLEFT", 0, 4)
 	end
 	for k, _ in pairs(ClassicUI.MicroButtonsGroup) do
@@ -5056,8 +4025,8 @@ function ClassicUI:MainFunction(isLogin)
 		self.SlotHighlightTexture:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
 		self.SlotHighlightTexture:SetSize(30, 30)
 		self.SlotHighlightTexture:SetAlpha(1)
---		--self.SlotHighlightTexture:ClearAllPoints()	-- not needed
---		--self.SlotHighlightTexture:SetAllPoints(self)	-- not needed
+		--self.SlotHighlightTexture:ClearAllPoints()	-- not needed
+		--self.SlotHighlightTexture:SetAllPoints(self)	-- not needed
 		
 		self:GetNormalTexture():SetAtlas(nil)
 		self:GetNormalTexture():SetTexture("Interface\\Buttons\\UI-Quickslot2")
@@ -5080,6 +4049,24 @@ function ClassicUI:MainFunction(isLogin)
 		hooksecurefunc(bagSlot, "UpdateTextures", ClassicUI.BaseBagSlotButton_UpdateTextures)
 	end
 	hooksecurefunc(MainMenuBarBackpackButton, "UpdateTextures", ClassicUI.BaseBagSlotButton_UpdateTextures)
+	ClassicUI.onExpandChangedMainMenuBarManager = function(self)
+		MainMenuBarBackpackButton:ClearAllPoints()
+		MainMenuBarBackpackButton:SetPoint("BOTTOMRIGHT", CUI_MainMenuBarArtFrame, "BOTTOMRIGHT", -4, 6)
+		CharacterBag0Slot:ClearAllPoints()
+		CharacterBag0Slot:SetPoint("RIGHT", MainMenuBarBackpackButton, "LEFT", -2, 0)
+		CharacterBag1Slot:ClearAllPoints()
+		CharacterBag1Slot:SetPoint("RIGHT", CharacterBag0Slot, "LEFT", -2, 0)
+		CharacterBag2Slot:ClearAllPoints()
+		CharacterBag2Slot:SetPoint("RIGHT", CharacterBag1Slot, "LEFT", -2, 0)
+		CharacterBag3Slot:ClearAllPoints()
+		CharacterBag3Slot:SetPoint("RIGHT", CharacterBag2Slot, "LEFT", -2, 0)
+		CharacterReagentBag0Slot:ClearAllPoints()
+		CharacterReagentBag0Slot:SetPoint("CENTER", CharacterBag3Slot, "LEFT", -5 + ClassicUI.db.profile.barsConfig.BagsIcons.xOffsetReagentBag, -2 + ClassicUI.db.profile.barsConfig.BagsIcons.yOffsetReagentBag)
+	end
+	hooksecurefunc(BagsBar, "Layout", ClassicUI.onExpandChangedMainMenuBarManager)
+	if (EventRegistry and type(EventRegistry) == "table") then
+		EventRegistry:RegisterCallback("MainMenuBarManager.OnExpandChanged", ClassicUI.onExpandChangedMainMenuBarManager, BagsBar)
+	end
 	
 	ItemButtonMixin.SetItemButtonQuality(CharacterBag0Slot, GetInventoryItemQuality("player", CharacterBag0Slot:GetID()), GetInventoryItemID("player", CharacterBag0Slot:GetID()), CharacterBag0Slot.HasPaperDollAzeriteItemOverlay)
 	ItemButtonMixin.SetItemButtonQuality(CharacterBag1Slot, GetInventoryItemQuality("player", CharacterBag1Slot:GetID()), GetInventoryItemID("player", CharacterBag1Slot:GetID()), CharacterBag1Slot.HasPaperDollAzeriteItemOverlay)
@@ -5130,8 +4117,6 @@ function ClassicUI:MainFunction(isLogin)
 	CharacterBag3Slot:SetFrameStrata("MEDIUM")
 	CharacterBag3Slot:SetFrameLevel(3)
 	CharacterReagentBag0Slot:SetParent(CUI_MainMenuBarArtFrame)
-	CharacterReagentBag0Slot:ClearAllPoints()
-	CharacterReagentBag0Slot:SetPoint("CENTER", CharacterBag3Slot, "LEFT", -5 + ClassicUI.db.profile.barsConfig.BagsIcons.xOffsetReagentBag, -2 + ClassicUI.db.profile.barsConfig.BagsIcons.yOffsetReagentBag)
 	CharacterReagentBag0Slot:SetFrameStrata("MEDIUM")
 	CharacterReagentBag0Slot:SetFrameLevel(4)
 	MainMenuBarBackpackButton.CircleMask:Hide()
@@ -5144,16 +4129,1455 @@ function ClassicUI:MainFunction(isLogin)
 	MainMenuBarBackpackButton:SetPoint("BOTTOMRIGHT", CUI_MainMenuBarArtFrame, "BOTTOMRIGHT", -4, 6)
 	MainMenuBarBackpackButton:SetFrameStrata("MEDIUM")
 	MainMenuBarBackpackButton:SetFrameLevel(3)
-	if not(MainMenuBarBagManager:IsBarUserExpanded()) then
-		MainMenuBarBagManager:ToggleExpandBar()
-	end
-	BagBarExpandToggle:Hide()
-	MicroButtonAndBagsBar:Hide()
-	
+	hooksecurefunc(CharacterBag0Slot, "SetBarExpanded", function(self, isExpanded) if not(self:IsShown()) then self:Show() end end)
+	hooksecurefunc(CharacterBag1Slot, "SetBarExpanded", function(self, isExpanded) if not(self:IsShown()) then self:Show() end end)
+	hooksecurefunc(CharacterBag2Slot, "SetBarExpanded", function(self, isExpanded) if not(self:IsShown()) then self:Show() end end)
+	hooksecurefunc(CharacterBag3Slot, "SetBarExpanded", function(self, isExpanded) if not(self:IsShown()) then self:Show() end end)
 	hooksecurefunc(CharacterReagentBag0Slot, "SetBarExpanded", function(self, isExpanded)
 		CharacterReagentBag0Slot:ClearAllPoints()
 		CharacterReagentBag0Slot:SetPoint("CENTER", CharacterBag3Slot, "LEFT", -5 + ClassicUI.cached_db_profile.barsConfig_BagsIcons_xOffsetReagentBag, -2 + ClassicUI.cached_db_profile.barsConfig_BagsIcons_yOffsetReagentBag)	-- cached db value
 	end)
+	if not(CharacterBag0Slot:IsShown()) then CharacterBag0Slot:Show() end
+	if not(CharacterBag1Slot:IsShown()) then CharacterBag1Slot:Show() end
+	if not(CharacterBag2Slot:IsShown()) then CharacterBag2Slot:Show() end
+	if not(CharacterBag3Slot:IsShown()) then CharacterBag3Slot:Show() end
+	CharacterReagentBag0Slot:ClearAllPoints()
+	CharacterReagentBag0Slot:SetPoint("CENTER", CharacterBag3Slot, "LEFT", -5 + ClassicUI.db.profile.barsConfig.BagsIcons.xOffsetReagentBag, -2 + ClassicUI.db.profile.barsConfig.BagsIcons.yOffsetReagentBag)
+	BagBarExpandToggle:Hide()
+	MicroButtonAndBagsBar:Hide()
+	
+	ClassicUI:SetStrataForMainFrames()
+	
+	-- [QueueStatusButton]
+	if (ClassicUI.db.profile.extraFrames.Minimap.anchorQueueButtonToMinimap) then
+		QueueStatusButton:SetParent(MinimapBackdrop)
+		QueueStatusButton:SetFrameStrata("LOW")
+		QueueStatusButton:SetFrameLevel(5)
+		if (ClassicUI.db.profile.extraFrames.Minimap.enabled) then
+			QueueStatusButton:SetPoint("TOPLEFT", MinimapBackdrop, "TOPLEFT", 22 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetQueueButton, -100 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetQueueButton)
+		else
+			QueueStatusButton:SetPoint("TOPLEFT", MinimapBackdrop, "TOPLEFT", -7 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetQueueButton, -135 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetQueueButton)
+		end
+	else
+		QueueStatusButton:SetParent(UIParent)
+		QueueStatusButton:SetFrameStrata("MEDIUM")
+		QueueStatusButton:SetFrameLevel(53)
+		QueueStatusButton:SetPoint("BOTTOMLEFT", MicroButtonAndBagsBar, "BOTTOMLEFT", -45 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetQueueButton, 4 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetQueueButton)
+	end
+	
+	--[StatusBars]
+	StatusTrackingBarManager:SetParent(CUI_MainMenuBar)
+	StatusTrackingBarManager:ClearAllPoints()
+	StatusTrackingBarManager:SetPoint("BOTTOM", CUI_MainMenuBar, "BOTTOM", 0, 0)
+	StatusTrackingBarManager:SetSize(804, 11)
+	StatusTrackingBarManager.MainStatusTrackingBarContainer.BarFrameTexture:SetSize(1024, 7)
+	StatusTrackingBarManager.MainStatusTrackingBarContainer:ClearAllPoints()
+	StatusTrackingBarManager.MainStatusTrackingBarContainer:SetPoint("BOTTOM", CUI_MainMenuBar, "TOP", 0, -3)
+	StatusTrackingBarManager.MainStatusTrackingBarContainer:Hide()
+	StatusTrackingBarManager.MainStatusTrackingBarContainer.BarFrameTexture:Hide()
+	StatusTrackingBarManager.SecondaryStatusTrackingBarContainer.BarFrameTexture:SetSize(1024, 10)
+	StatusTrackingBarManager.SecondaryStatusTrackingBarContainer:ClearAllPoints()
+	StatusTrackingBarManager.SecondaryStatusTrackingBarContainer:SetPoint("TOP", CUI_MainMenuBar, "TOP", 0, 0)
+	StatusTrackingBarManager.SecondaryStatusTrackingBarContainer:Hide()
+	StatusTrackingBarManager.SecondaryStatusTrackingBarContainer.BarFrameTexture:Hide()
+	StatusTrackingBarManager:CreateTexture("StatusTrackingBarManager_TopBarFrameTexture0", "ARTWORK")
+	StatusTrackingBarManager.TopBarFrameTexture0 = StatusTrackingBarManager_TopBarFrameTexture0
+	StatusTrackingBarManager.TopBarFrameTexture0:ClearAllPoints()
+	StatusTrackingBarManager.TopBarFrameTexture0:SetPoint("BOTTOMLEFT", CUI_MainMenuBar, "TOPLEFT", 0, -1)
+	StatusTrackingBarManager.TopBarFrameTexture0:SetTexture("Interface/PaperDollInfoFrame/UI-ReputationWatchBar")
+	StatusTrackingBarManager.TopBarFrameTexture0:SetTexCoord(0/256, 0/256, 0/256, 44/256, 256/256, 0/256, 256/256, 44/256)
+	StatusTrackingBarManager.TopBarFrameTexture0:SetSize(256, 11)
+	StatusTrackingBarManager.TopBarFrameTexture0:SetDrawLayer("ARTWORK", 0)
+	StatusTrackingBarManager.TopBarFrameTexture0:Hide()
+	StatusTrackingBarManager:CreateTexture("StatusTrackingBarManager_TopBarFrameTexture1", "ARTWORK")
+	StatusTrackingBarManager.TopBarFrameTexture1 = StatusTrackingBarManager_TopBarFrameTexture1
+	StatusTrackingBarManager.TopBarFrameTexture1:ClearAllPoints()
+	StatusTrackingBarManager.TopBarFrameTexture1:SetPoint("LEFT", StatusTrackingBarManager.TopBarFrameTexture0, "RIGHT", 0, 0)
+	StatusTrackingBarManager.TopBarFrameTexture1:SetTexture("Interface/PaperDollInfoFrame/UI-ReputationWatchBar")
+	StatusTrackingBarManager.TopBarFrameTexture1:SetTexCoord(0/256, 48/256, 0/256, 92/256, 256/256, 48/256, 256/256, 92/256)
+	StatusTrackingBarManager.TopBarFrameTexture1:SetSize(256, 11)
+	StatusTrackingBarManager.TopBarFrameTexture1:SetDrawLayer("ARTWORK", 0)
+	StatusTrackingBarManager.TopBarFrameTexture1:Hide()
+	StatusTrackingBarManager:CreateTexture("StatusTrackingBarManager_TopBarFrameTexture2", "ARTWORK")
+	StatusTrackingBarManager.TopBarFrameTexture2 = StatusTrackingBarManager_TopBarFrameTexture2
+	StatusTrackingBarManager.TopBarFrameTexture2:ClearAllPoints()
+	StatusTrackingBarManager.TopBarFrameTexture2:SetPoint("LEFT", StatusTrackingBarManager.TopBarFrameTexture1, "RIGHT", 0, 0)
+	StatusTrackingBarManager.TopBarFrameTexture2:SetTexture("Interface/PaperDollInfoFrame/UI-ReputationWatchBar")
+	StatusTrackingBarManager.TopBarFrameTexture2:SetTexCoord(0/256, 96/256, 0/256, 140/256, 256/256, 96/256, 256/256, 140/256)
+	StatusTrackingBarManager.TopBarFrameTexture2:SetSize(256, 11)
+	StatusTrackingBarManager.TopBarFrameTexture2:SetDrawLayer("ARTWORK", 0)
+	StatusTrackingBarManager.TopBarFrameTexture2:Hide()
+	StatusTrackingBarManager:CreateTexture("StatusTrackingBarManager_TopBarFrameTexture3", "ARTWORK")
+	StatusTrackingBarManager.TopBarFrameTexture3 = StatusTrackingBarManager_TopBarFrameTexture3
+	StatusTrackingBarManager.TopBarFrameTexture3:ClearAllPoints()
+	StatusTrackingBarManager.TopBarFrameTexture3:SetPoint("LEFT", StatusTrackingBarManager.TopBarFrameTexture2, "RIGHT", 0, 0)
+	StatusTrackingBarManager.TopBarFrameTexture3:SetTexture("Interface/PaperDollInfoFrame/UI-ReputationWatchBar")
+	StatusTrackingBarManager.TopBarFrameTexture3:SetTexCoord(0/256, 144/256, 0/256, 188/256, 256/256, 144/256, 256/256, 188/256)
+	StatusTrackingBarManager.TopBarFrameTexture3:SetSize(256, 11)
+	StatusTrackingBarManager.TopBarFrameTexture3:SetDrawLayer("ARTWORK", 0)
+	StatusTrackingBarManager.TopBarFrameTexture3:Hide()
+	StatusTrackingBarManager:CreateTexture("StatusTrackingBarManager_BottomBarFrameTexture0", "ARTWORK")
+	StatusTrackingBarManager.BottomBarFrameTexture0 = StatusTrackingBarManager_BottomBarFrameTexture0
+	StatusTrackingBarManager.BottomBarFrameTexture0:ClearAllPoints()
+	StatusTrackingBarManager.BottomBarFrameTexture0:SetPoint("TOPLEFT", CUI_MainMenuBar, "TOPLEFT", 0, 0)
+	StatusTrackingBarManager.BottomBarFrameTexture0:SetTexture("Interface\\MainMenuBar\\UI-MainMenuBar-Dwarf")
+	StatusTrackingBarManager.BottomBarFrameTexture0:SetTexCoord(0/256, 203/256, 0/256, 213/256, 256/256, 203/256, 256/256, 213/256)
+	StatusTrackingBarManager.BottomBarFrameTexture0:SetSize(256, 10)
+	StatusTrackingBarManager.BottomBarFrameTexture0:SetDrawLayer("ARTWORK", 0)
+	StatusTrackingBarManager.BottomBarFrameTexture0:Hide()
+	StatusTrackingBarManager:CreateTexture("StatusTrackingBarManager_BottomBarFrameTexture1", "ARTWORK")
+	StatusTrackingBarManager.BottomBarFrameTexture1 = StatusTrackingBarManager_BottomBarFrameTexture1
+	StatusTrackingBarManager.BottomBarFrameTexture1:ClearAllPoints()
+	StatusTrackingBarManager.BottomBarFrameTexture1:SetPoint("LEFT", StatusTrackingBarManager.BottomBarFrameTexture0, "RIGHT", 0, 0)
+	StatusTrackingBarManager.BottomBarFrameTexture1:SetTexture("Interface\\MainMenuBar\\UI-MainMenuBar-Dwarf")
+	StatusTrackingBarManager.BottomBarFrameTexture1:SetTexCoord(0/256, 139/256, 0/256, 149/256, 256/256, 139/256, 256/256, 149/256)
+	StatusTrackingBarManager.BottomBarFrameTexture1:SetSize(256, 10)
+	StatusTrackingBarManager.BottomBarFrameTexture1:SetDrawLayer("ARTWORK", 0)
+	StatusTrackingBarManager.BottomBarFrameTexture1:Hide()
+	StatusTrackingBarManager:CreateTexture("StatusTrackingBarManager_BottomBarFrameTexture2", "ARTWORK")
+	StatusTrackingBarManager.BottomBarFrameTexture2 = StatusTrackingBarManager_BottomBarFrameTexture2
+	StatusTrackingBarManager.BottomBarFrameTexture2:ClearAllPoints()
+	StatusTrackingBarManager.BottomBarFrameTexture2:SetPoint("LEFT", StatusTrackingBarManager.BottomBarFrameTexture1, "RIGHT", 0, 0)
+	StatusTrackingBarManager.BottomBarFrameTexture2:SetTexture("Interface\\MainMenuBar\\UI-MainMenuBar-Dwarf")
+	StatusTrackingBarManager.BottomBarFrameTexture2:SetTexCoord(0/256, 75/256, 0/256, 85/256, 256/256, 75/256, 256/256, 85/256)
+	StatusTrackingBarManager.BottomBarFrameTexture2:SetSize(256, 10)
+	StatusTrackingBarManager.BottomBarFrameTexture2:SetDrawLayer("ARTWORK", 0)
+	StatusTrackingBarManager.BottomBarFrameTexture2:Hide()
+	StatusTrackingBarManager:CreateTexture("StatusTrackingBarManager_BottomBarFrameTexture3", "ARTWORK")
+	StatusTrackingBarManager.BottomBarFrameTexture3 = StatusTrackingBarManager_BottomBarFrameTexture3
+	StatusTrackingBarManager.BottomBarFrameTexture3:ClearAllPoints()
+	StatusTrackingBarManager.BottomBarFrameTexture3:SetPoint("LEFT", StatusTrackingBarManager.BottomBarFrameTexture2, "RIGHT", 0, 0)
+	StatusTrackingBarManager.BottomBarFrameTexture3:SetTexture("Interface\\MainMenuBar\\UI-MainMenuBar-Dwarf")
+	StatusTrackingBarManager.BottomBarFrameTexture3:SetTexCoord(0/256, 11/256, 0/256, 21/256, 256/256, 11/256, 256/256, 21/256)
+	StatusTrackingBarManager.BottomBarFrameTexture3:SetSize(256, 10)
+	StatusTrackingBarManager.BottomBarFrameTexture3:SetDrawLayer("ARTWORK", 0)
+	StatusTrackingBarManager.BottomBarFrameTexture3:Hide()
+
+	StatusTrackingBarManager:SetFrameStrata("MEDIUM")
+	StatusTrackingBarManager:SetFrameLevel(2)
+	for _, bar in ipairs(StatusTrackingBarManager.bars) do
+		bar.StatusBar.Background:SetColorTexture(0, 0, 0, 1.0)
+		bar.StatusBar.Background:SetAlpha(0.5)
+		bar:SetFrameStrata("LOW")
+		bar:SetFrameLevel(2)
+		bar.StatusBar:SetFrameStrata("LOW")
+		bar.StatusBar:SetFrameLevel(1)
+		if (bar.priority == 0 or bar.priority == 4) then	-- AzeriteBar (priority = 0) or ArtifactBar (priority = 4)
+			bar:SetBarColor(ARTIFACT_BAR_COLOR:GetRGB())
+		elseif (bar.priority == 2) then						-- HonorBar (priority = 2)
+			if not ClassicUI.hooked_honorBar then
+				hooksecurefunc(bar, "Update", function(self)
+					self.StatusBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar", "BORDER")
+					self.StatusBar:GetStatusBarTexture():SetDrawLayer("BORDER", 0)
+					self.StatusBar:GetStatusBarTexture():SetTexCoord(0, 0, 0, 1, 0.16666667, 0, 0.16666667, 1)
+					self:SetBarColor(1.0, 0.24, 0)
+				end)
+				ClassicUI.hooked_honorBar = true
+			end
+			bar:SetBarColor(1.0, 0.24, 0)
+		elseif (bar.priority == 1) then						-- ReputationBar (priority = 1)
+			if not ClassicUI.hooked_repBar then
+				hooksecurefunc(bar, "Update", function(self)
+					local _, colorIndex, _, _, _, factionID = GetWatchedFactionInfo()
+					if not(C_Reputation_IsFactionParagon(factionID)) then
+						local friendshipID = C_GossipInfo_GetFriendshipReputation(factionID)
+						if (friendshipID) then
+							colorIndex = 5
+						end
+					end
+					local color = FACTION_BAR_COLORS[colorIndex]
+					self.StatusBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar", "BORDER")
+					self.StatusBar:GetStatusBarTexture():SetDrawLayer("BORDER", 0)
+					self.StatusBar:GetStatusBarTexture():SetTexCoord(0, 0, 0, 1, 0.16666667, 0, 0.16666667, 1)
+					self:SetBarColor(color.r, color.g, color.b, 1)
+				end)
+				ClassicUI.hooked_repBar = true
+			end
+			local _, colorIndex, _, _, _, factionID = GetWatchedFactionInfo()
+			if not(C_Reputation_IsFactionParagon(factionID)) then
+				local friendshipID = C_GossipInfo_GetFriendshipReputation(factionID)
+				if (friendshipID) then
+					colorIndex = 5
+				end
+			end
+			local color = FACTION_BAR_COLORS[colorIndex]
+			if (color ~= nil) then
+				bar:SetBarColor(color.r, color.g, color.b, 1)
+			end
+		elseif (bar.priority == 3) then						-- ExpBar (priority = 3)
+			if not ClassicUI.hooked_expBar then
+				hooksecurefunc(bar, "Update", function(self)
+					if (GameLimitedMode_IsActive()) then
+						local rLevel = GetRestrictedAccountData()
+						if UnitLevel("player") >= rLevel then
+							self.StatusBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar", "BORDER")
+							self.StatusBar:GetStatusBarTexture():SetDrawLayer("BORDER", 0)
+							self.StatusBar:GetStatusBarTexture():SetTexCoord(0, 0, 0, 1, 0.16666667, 0, 0.16666667, 1)
+							self:SetBarColor(0.58, 0.0, 0.55, 1.0)
+						end
+					end
+				end)
+				hooksecurefunc(bar.ExhaustionTick, "UpdateTickPosition", function(self)
+					local playerCurrXP = UnitXP("player")
+					local playerMaxXP = UnitXPMax("player")
+					local exhaustionThreshold = GetXPExhaustion()
+					local exhaustionStateID = GetRestState()
+					if (exhaustionStateID and exhaustionStateID >= 3) then
+						self:SetPoint("CENTER", self:GetParent() , "RIGHT", 0, 0)
+					end
+					if (not exhaustionThreshold) then
+						self:GetParent().ExhaustionLevelFillBar:Hide()
+					else
+						local exhaustionTickSet = mathmax(((playerCurrXP + exhaustionThreshold) / playerMaxXP) * (self:GetParent():GetWidth()), 0)
+						self:GetParent().ExhaustionLevelFillBar:Show()
+						if (exhaustionTickSet > bar:GetWidth()) then
+							self:Hide()
+							if ClassicUI.cached_db_profile.barsConfig_SingleStatusBar_expBarAlwaysShowRestedBar then	-- cached db value
+								self:GetParent().ExhaustionLevelFillBar:SetPoint("TOPRIGHT", bar, "TOPLEFT", bar:GetWidth(), 0)
+								self:GetParent().ExhaustionLevelFillBar:Show()
+							else
+								self:GetParent().ExhaustionLevelFillBar:Hide()
+							end
+						else
+							self:Show()
+							self:SetPoint("CENTER", self:GetParent(), "LEFT", exhaustionTickSet, -1)
+							self:GetParent().ExhaustionLevelFillBar:Show()
+							self:GetParent().ExhaustionLevelFillBar:SetPoint("TOPRIGHT", bar, "TOPLEFT", exhaustionTickSet, 0)
+							self:GetParent().ExhaustionLevelFillBar:SetWidth(0)
+						end
+					end
+					if (exhaustionStateID == 1) then
+						self:GetParent():SetBarColor(0.0, 0.39, 0.88, 1.0)
+						self:GetParent().ExhaustionLevelFillBar:SetVertexColor(0.0, 0.39, 0.88, 0.15)
+						self.Highlight:SetVertexColor(0.0, 0.39, 0.88)
+					else
+						self:GetParent():SetBarColor(0.58, 0.0, 0.55, 1.0)
+						self:GetParent().ExhaustionLevelFillBar:SetVertexColor(0.58, 0.0, 0.55, 0.15)
+						self.Highlight:SetVertexColor(0.58, 0.0, 0.55)
+					end
+				end)
+				hooksecurefunc(bar.ExhaustionTick, "UpdateExhaustionColor", function(self)
+					local exhaustionStateID = GetRestState()
+					self:GetParent().StatusBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar", "BORDER")
+					self:GetParent().StatusBar:GetStatusBarTexture():SetDrawLayer("BORDER", 0)
+					self:GetParent().StatusBar:GetStatusBarTexture():SetTexCoord(0, 0, 0, 1, 0.16666667, 0, 0.16666667, 1)
+					if (exhaustionStateID == 1) then
+						self:GetParent():SetBarColor(0.0, 0.39, 0.88, 1.0)
+						self:GetParent().ExhaustionLevelFillBar:SetVertexColor(0.0, 0.39, 0.88, 0.15)
+						self.Highlight:SetVertexColor(0.0, 0.39, 0.88)
+					else
+						self:GetParent():SetBarColor(0.58, 0.0, 0.55, 1.0)
+						self:GetParent().ExhaustionLevelFillBar:SetVertexColor(0.58, 0.0, 0.55, 0.15)
+						self.Highlight:SetVertexColor(0.58, 0.0, 0.55)
+					end
+				end)
+				bar.ExhaustionTick:HookScript("OnEvent", function(self)
+					if (IsRestrictedAccount()) then
+						local rlevel = GetRestrictedAccountData()
+						if (UnitLevel("player") >= rlevel) then
+							self:GetParent().StatusBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar", "BORDER")
+							self:GetParent().StatusBar:GetStatusBarTexture():SetDrawLayer("BORDER", 0)
+							self:GetParent().StatusBar:GetStatusBarTexture():SetTexCoord(0, 0, 0, 1, 0.16666667, 0, 0.16666667, 1)
+							self:GetParent():SetBarColor(0.0, 0.39, 0.88, 1.0)
+						end
+					end
+				end)
+				ClassicUI.hooked_expBar = true
+			end
+			
+			bar.ExhaustionTick:SetSize(32, 32)
+			bar.ExhaustionTick:GetNormalTexture():SetAtlas(nil)
+			bar.ExhaustionTick:SetNormalTexture("Interface\\MainMenuBar\\UI-ExhaustionTickNormal")
+			bar.ExhaustionTick:GetHighlightTexture():SetAtlas(nil)
+			bar.ExhaustionTick:SetHighlightTexture("Interface\\MainMenuBar\\UI-ExhaustionTickHighlight", "ADD")
+			
+			bar.ExhaustionLevelFillBar:SetAtlas(nil)
+			bar.ExhaustionLevelFillBar:SetColorTexture(1.0, 1.0, 1.0, 1.0)
+			bar.ExhaustionLevelFillBar:SetSize(0, 8)
+			bar.ExhaustionLevelFillBar:ClearAllPoints()
+			bar.ExhaustionLevelFillBar:SetPoint("TOPLEFT", bar, "TOPLEFT", 0, 0)
+			
+			local playerCurrXP = UnitXP("player")
+			local playerMaxXP = UnitXPMax("player")
+			local exhaustionThreshold = GetXPExhaustion()
+			local exhaustionStateID = GetRestState()
+			if (exhaustionStateID and exhaustionStateID >= 3) then
+				bar.ExhaustionTick:SetPoint("CENTER", bar.ExhaustionTick:GetParent() , "RIGHT", 0, 0)
+			end
+			if (not exhaustionThreshold) then
+				bar.ExhaustionLevelFillBar:Hide()
+			else
+				local exhaustionTickSet = mathmax(((playerCurrXP + exhaustionThreshold) / playerMaxXP) * (bar:GetWidth()), 0)
+				bar.ExhaustionLevelFillBar:Show()
+				if (exhaustionTickSet > bar:GetWidth()) then
+					bar.ExhaustionTick:Hide()
+					if ClassicUI.cached_db_profile.barsConfig_SingleStatusBar_expBarAlwaysShowRestedBar then	-- cached db value
+						bar.ExhaustionLevelFillBar:SetPoint("TOPRIGHT", bar, "TOPLEFT", bar:GetWidth(), 0)
+						bar.ExhaustionLevelFillBar:Show()
+					else
+						bar.ExhaustionLevelFillBar:Hide()
+					end
+				else
+					bar.ExhaustionTick:Show()
+					bar.ExhaustionTick:SetPoint("CENTER", bar.ExhaustionTick:GetParent(), "LEFT", exhaustionTickSet, -1)
+					bar.ExhaustionLevelFillBar:Show()
+					bar.ExhaustionLevelFillBar:SetPoint("TOPRIGHT", bar, "TOPLEFT", exhaustionTickSet, 0)
+					bar.ExhaustionLevelFillBar:SetWidth(0)
+				end
+			end
+			if (exhaustionStateID == 1) then
+				bar:SetBarColor(0.0, 0.39, 0.88, 1.0)
+				bar.ExhaustionLevelFillBar:SetVertexColor(0.0, 0.39, 0.88, 0.15)
+				bar.ExhaustionTick.Highlight:SetVertexColor(0.0, 0.39, 0.88)
+			else
+				bar:SetBarColor(0.58, 0.0, 0.55, 1.0)
+				bar.ExhaustionLevelFillBar:SetVertexColor(0.58, 0.0, 0.55, 0.15)
+				bar.ExhaustionTick.Highlight:SetVertexColor(0.58, 0.0, 0.55)
+			end
+		end
+	end
+	-- Hook this function to StatusTrackingBarManager:LayoutBar
+	hooksecurefunc(StatusTrackingBarManager, "LayoutBar", ClassicUI.StatusTrackingBarManager_LayoutBar)
+	hooksecurefunc(StatusTrackingBarManager, "HideStatusBars", function(self)
+		self.TopBarFrameTexture0:Hide()
+		self.TopBarFrameTexture1:Hide()
+		self.TopBarFrameTexture2:Hide()
+		self.TopBarFrameTexture3:Hide()
+		self.BottomBarFrameTexture0:Hide()
+		self.BottomBarFrameTexture1:Hide()
+		self.BottomBarFrameTexture2:Hide()
+		self.BottomBarFrameTexture3:Hide()
+	end)
+	hooksecurefunc(StatusTrackingBarManager.MainStatusTrackingBarContainer, "UpdateShownState", function(self)
+		self:Hide()
+	end)
+	hooksecurefunc(StatusTrackingBarManager.SecondaryStatusTrackingBarContainer, "UpdateShownState", function(self)
+		self:Hide()
+	end)
+	
+	-- Hooks to keep action bars updated with changes
+	hooksecurefunc("MultiActionBar_Update", ClassicUI.UpdatedStatusBarsEvent)
+	hooksecurefunc(StatusTrackingBarManager, "UpdateBarsShown", ClassicUI.UpdatedStatusBarsEvent)
+	hooksecurefunc("ActionBarController_UpdateAll", ClassicUI.UpdatedStatusBarsEvent)
+	
+	-- Update frames after exit edit mode
+	ClassicUI.onExitEditMode = function(self)
+		ClassicUI:SetStrataForMainFrames()
+		ClassicUI:ReloadMainFramesSettings()
+		ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+		ClassicUI.UpdatedStatusBarsEvent()
+		ClassicUI:UpdateScrollButtonsVisibilityAndPosition()
+	end
+	
+	if (EventRegistry and type(EventRegistry) == "table") then
+		EventRegistry:RegisterCallback("EditMode.Exit", ClassicUI.onExitEditMode, ClassicUI)
+	end
+	
+	ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+	ClassicUI.UpdatedStatusBarsEvent()
+end
+
+-- Function to manage the PLAYER_ENTERING_WORLD event. Here we do modifications to interface elements that may not have been fully loaded before this event.
+function ClassicUI:PLAYER_ENTERING_WORLD()
+	ClassicUI.frame:UnregisterEvent("PLAYER_ENTERING_WORLD")
+	if (ClassicUI.OnEvent_PEW_mf) then
+		ClassicUI.OnEvent_PEW_mf = false
+		ClassicUI:MF_PLAYER_ENTERING_WORLD()
+	end
+	if (ClassicUI.OnEvent_PEW_eff) then
+		ClassicUI.OnEvent_PEW_eff = false
+		ClassicUI:EFF_PLAYER_ENTERING_WORLD()
+	end
+end
+
+-- Function that handles a queue of pending functions that set the scale of combat-protected frames
+function ClassicUI:BarHookProtectedApplySetScale()
+	if InCombatLockdown() then
+		delayFunc_BarHookProtectedApplySetScale = true
+		if (not fclFrame:IsEventRegistered("PLAYER_REGEN_ENABLED")) then
+			fclFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+		end
+		return
+	end
+	for iCUIframe, iInfo in pairs(self.queuePending_HookSetScale) do
+		iCUIframe.hook_SetScale(iInfo[1], iInfo[2])
+		self.queuePending_HookSetScale[iCUIframe] = nil
+	end
+end
+
+-- Function that restores the Dragonflight layout of a specific ActionButton
+ClassicUI.RestoreDragonflightLayoutActionButton = function(iActionButton, typeActionButton)
+	local name = iActionButton:GetName()
+	if (typeActionButton <= 2 or typeActionButton == 7) then
+		iActionButton:SetSize(45, 45)
+	else
+		iActionButton:SetSize(30, 30)
+	end
+	local iabnt = iActionButton:GetNormalTexture()
+	if (iabnt ~= nil) then
+		iabnt:SetAtlas("UI-HUD-ActionBar-IconFrame-AddRow")
+		iabnt:ClearAllPoints()
+		iabnt:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", 0, 0)
+		if (typeActionButton <= 2 or typeActionButton == 7) then
+			iabnt:SetSize(51, 51)
+		else
+			iabnt:SetSize(35, 35)
+		end
+	end
+	local iabpt = iActionButton:GetPushedTexture()
+	if (iabpt ~= nil) then
+		iabpt:SetAtlas("UI-HUD-ActionBar-IconFrame-AddRow-Down")
+		iabpt:ClearAllPoints()
+		iabpt:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", 0, 0)
+		if (typeActionButton <= 2 or typeActionButton == 7) then
+			iabpt:SetSize(51, 51)
+		else
+			iabpt:SetSize(35, 35)
+		end
+	end
+	local iabht = iActionButton:GetHighlightTexture()
+	if (iabht ~= nil) then
+		iabht:SetAtlas("UI-HUD-ActionBar-IconFrame-Mouseover")
+		iabht:SetBlendMode("BLEND")
+		iabht:ClearAllPoints()
+		iabht:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", 0, 0)
+		if (typeActionButton <= 2 or typeActionButton == 7) then
+			iabht:SetSize(46, 45)
+		else
+			iabht:SetSize(31.6, 30.9)
+		end
+	end
+	local iabchkt = iActionButton:GetCheckedTexture()
+	if (iabchkt ~= nil) then
+		iabchkt:SetAtlas("UI-HUD-ActionBar-IconFrame-Mouseover")
+		iabchkt:SetBlendMode("BLEND")
+		iabchkt:ClearAllPoints()
+		iabchkt:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", 0, 0)
+		if (typeActionButton <= 2 or typeActionButton == 7) then
+			iabchkt:SetSize(46, 45)
+		else
+			iabchkt:SetSize(31.6, 30.9)
+		end
+	end
+	local iabit = _G[name.."Icon"]
+	if (iabit ~= nil) then
+		if (typeActionButton == 6) then
+			iabit:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
+		end
+		if (typeActionButton <= 2 or typeActionButton == 7) then
+			iabit:SetSize(45, 45)
+		else
+			iabit:SetSize(30, 30)
+		end
+	end
+	local iabctt = _G[name.."Count"]
+	if (iabctt ~= nil) then
+		iabctt:ClearAllPoints()
+		if (typeActionButton <= 2 or typeActionButton == 7) then
+			iabctt:SetPoint("BOTTOMRIGHT", iActionButton, "BOTTOMRIGHT", -5, 5)
+		else
+			iabctt:SetPoint("BOTTOMRIGHT", iActionButton, "BOTTOMRIGHT", -3, 1)
+		end
+	end
+	local iabbt = _G[name.."Border"]
+	if (iabbt ~= nil) then
+		iabbt:SetAtlas("UI-HUD-ActionBar-IconFrame-Border")
+		iabbt:SetBlendMode("BLEND")
+		if ((iActionButton.action ~= nil) and (IsEquippedAction(iActionButton.action))) then
+			iabbt:SetAlpha(0.5)
+		else
+			iabbt:SetAlpha(1)
+		end
+		iabbt:ClearAllPoints()
+		iabbt:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", 0, 0)
+		if (typeActionButton <= 2 or typeActionButton == 7) then
+			iabbt:SetSize(46, 45)
+		else
+			iabbt:SetSize(31.6, 30.9)
+		end
+	end
+	local iabHt = _G[name.."HotKey"]
+	if (iabHt ~= nil) then
+		iabHt:ClearAllPoints()
+		if (typeActionButton <= 2 or typeActionButton == 7) then
+			iabHt:SetPoint("TOPRIGHT", iActionButton, "TOPRIGHT", -4, -5)
+			iabHt:SetSize(37, 10)
+		else
+			iabHt:SetPoint("TOPRIGHT", iActionButton, "TOPRIGHT", -3, -4)
+			iabHt:SetSize(32, 10)
+		end
+		local iabHt_f1, iabHt_f2, iabHt_f3 = iabHt:GetFont()
+		if (iabHt_f3 ~= "OUTLINE") then
+			iabHt:SetFont(iabHt_f1, iabHt_f2, "OUTLINE")
+		end
+	end
+	local iabcdt = _G[name.."Cooldown"]
+	if (iabcdt ~= nil) then
+		iabcdt:ClearAllPoints()
+		if (typeActionButton <= 2 or typeActionButton == 7) then
+			iabcdt:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", 3, -3)
+			iabcdt:SetPoint("BOTTOMRIGHT", iActionButton, "BOTTOMRIGHT", -3, 3)
+			iabcdt:SetSize(39, 39)
+		else
+			iabcdt:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", 1.7, -1.7)
+			iabcdt:SetPoint("BOTTOMRIGHT", iActionButton, "BOTTOMRIGHT", -1, 1)
+			iabcdt:SetSize(27.3, 27.3)
+		end
+	end
+	local iabft = _G[name.."Flash"]
+	if (iabft ~= nil) then
+		iabft:SetAtlas("UI-HUD-ActionBar-IconFrame-Flash")
+		iabft:ClearAllPoints()
+		iabft:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", 0, 0)
+		if (typeActionButton <= 2 or typeActionButton == 7) then
+			iabft:SetSize(46, 45)
+		else
+			iabft:SetSize(31.6, 30.9)
+		end
+	end
+	local iabfbst = _G[name.."FlyoutBorderShadow"]
+	if (iabfbst ~= nil) then
+		iabfbst:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
+		iabfbst:SetAtlas("UI-HUD-ActionBar-IconFrame-FlyoutBorderShadow")
+		iabfbst:ClearAllPoints()
+		iabfbst:SetPoint("CENTER", iActionButton, "CENTER", 0.2, 0.5)
+		iabfbst:SetSize(52, 52)
+	end
+	local iabnat = iActionButton.NewActionTexture
+	if (iabnat ~= nil) then
+		iabnat:SetAtlas("UI-HUD-ActionBar-IconFrame-Mouseover")
+		iabnat:SetBlendMode("BLEND")
+		iabnat:ClearAllPoints()
+		iabnat:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", 0, 0)
+		if (typeActionButton <= 2 or typeActionButton == 7) then
+			iabnat:SetSize(46, 45)
+		else
+			iabnat:SetSize(31.6, 30.9)
+		end
+	end
+	local iabsht = iActionButton.SpellHighlightTexture
+	if (iabsht ~= nil) then
+		iabsht:ClearAllPoints()
+		if (typeActionButton == 3) then
+			iabsht:SetAtlas("bags-newitem")
+			iabsht:SetPoint("CENTER", iActionButton, "CENTER", 0, 0)
+			iabsht:SetAlpha(1)
+		else
+			iabsht:SetAtlas("UI-HUD-ActionBar-IconFrame-Mouseover")
+			iabsht:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", 0, 0)
+			iabsht:SetAlpha(0.4)
+		end
+		iabsht:SetBlendMode("ADD")
+		if (typeActionButton <= 2 or typeActionButton == 7) then
+			iabsht:SetSize(46, 45)
+		else
+			iabsht:SetSize(31.6, 30.9)
+		end
+	end
+	local iabset = _G[name.."Shine"]
+	if (iabset ~= nil) then
+		if (typeActionButton <= 2 or typeActionButton == 7) then
+			iabset:SetSize(40, 40)
+		else
+			iabset:SetSize(27, 27)
+		end
+	end
+	local iabact = iActionButton.AutoCastable
+	if (iabact ~= nil) then
+		iabact:ClearAllPoints()
+		if (typeActionButton <= 2 or typeActionButton == 7) then
+			iabact:SetPoint("CENTER", iActionButton, "CENTER", 1, -1)
+		else
+			iabact:SetPoint("CENTER", iActionButton, "CENTER", 0.5, -0.5)
+		end
+	end
+	local iabfbgt = iActionButton.FloatingBG
+	if (iabfbgt ~= nil) then
+		iabfbgt:Hide()
+	end
+	local iabfbt = iActionButton.FlyoutBorder
+	if (iabfbt ~= nil) then
+		iabfbt:Hide()
+	end
+end
+
+-- Function that sets the current layout for a selected ActionButton
+-- 'typeActionButton' defines the type of the ActionButton.The possible values for this parameter are:
+--     0 = MainMenuBarButton     | 1 = BottomMultiBarButton | 2 = RightMultiBarButton  | 3 = PetBarButton
+--     4 = StanceBarButton       | 5 = PossessBarButton     | 6 = SpellFlyoutButton    | 7 = OverrideBarButton
+ClassicUI.LayoutActionButton = function(iActionButton, typeActionButton)
+	local typeABprofile
+	if (typeActionButton == 0) then
+		typeABprofile = ClassicUI.db.profile.barsConfig.MainMenuBar
+	elseif (typeActionButton == 1) then
+		typeABprofile = ClassicUI.db.profile.barsConfig.BottomMultiActionBars
+	elseif (typeActionButton == 2) then
+		typeABprofile = ClassicUI.db.profile.barsConfig.RightMultiActionBars
+	elseif (typeActionButton == 3) then
+		typeABprofile = ClassicUI.db.profile.barsConfig.PetActionBarFrame
+	elseif (typeActionButton == 4) then
+		typeABprofile = ClassicUI.db.profile.barsConfig.StanceBarFrame
+	elseif (typeActionButton == 5) then
+		typeABprofile = ClassicUI.db.profile.barsConfig.PossessBarFrame
+	elseif (typeActionButton == 6) then
+		typeABprofile = ClassicUI.db.profile.barsConfig.SpellFlyoutButtons
+	elseif (typeActionButton == 7) then
+		typeABprofile = ClassicUI.db.profile.barsConfig.OverrideActionBar
+	else
+		return
+	end
+	local newBLScale = typeABprofile.scale or 1
+	
+	local name = iActionButton:GetName()
+	iActionButton.RightDivider:SetAlpha(0)
+	iActionButton.BottomDivider:SetAlpha(0)
+	iActionButton.RightDivider:Hide()
+	iActionButton.BottomDivider:Hide()
+	if not(typeABprofile.BLStyle0AllowNewBackgroundArt) then
+		iActionButton.SlotArt:SetAlpha(0)
+		iActionButton.SlotBackground:SetAlpha(0)
+		iActionButton.SlotArt:Hide()
+		iActionButton.SlotBackground:Hide()
+	else
+		iActionButton.SlotArt:SetAlpha(1)
+		iActionButton.SlotBackground:SetAlpha(1)
+		if (iActionButton.showButtonArt) then
+			iActionButton.SlotArt:Show()
+			iActionButton.SlotBackground:Show()
+		end
+		if not(typeABprofile.BLStyle == 1) then
+			iActionButton.SlotArt:SetDrawLayer("BACKGROUND", -1)
+			iActionButton.SlotBackground:SetDrawLayer("BACKGROUND", -1)
+		end
+	end
+	local iabnt = iActionButton:GetNormalTexture()
+	local iabpt = iActionButton:GetPushedTexture()
+	if ((iActionButton.UpdateButtonArt ~= nil) and (iabnt ~= nil) and (iabpt ~= nil) and not(ClassicUI.cached_ActionButtonInfo.hooked_UpdateButtonArt[iActionButton])) then
+		hooksecurefunc(iActionButton, "UpdateButtonArt", function(self, hideDivider)
+			--if ClassicUI.databaseCleaned then return end	-- not needed because typeABprofile is an upvalue local table variable (the upvalue table can become empty but never nil, not an issue)
+			if (not self.SlotArt or not self.SlotBackground) then
+				return
+			end
+			if (self.RightDivider:IsShown()) then
+				self.RightDivider:Hide()
+			end
+			if (self.BottomDivider:IsShown()) then
+				self.BottomDivider:Hide()
+			end
+			if not(typeABprofile.BLStyle0AllowNewBackgroundArt) then
+				if (self.SlotArt:IsShown()) then
+					self.SlotArt:Hide()
+				end
+				if (self.SlotBackground:IsShown()) then
+					self.SlotBackground:Hide()
+				end
+			end
+			if (typeABprofile.BLStyle == 1) then
+				-- Dragonflight Layout
+				if (self.showButtonArt) then
+					if (self.NormalTexture:GetAtlas() ~= "UI-HUD-ActionBar-IconFrame-AddRow") then
+						self:SetNormalAtlas("UI-HUD-ActionBar-IconFrame-AddRow")
+						if (typeActionButton <= 2) then
+							self.NormalTexture:SetSize(51, 51)
+						end
+						self.NormalTexture:SetAlpha(typeABprofile.BLStyle1NormalTextureAlpha)
+					end
+					if (self.PushedTexture:GetAtlas() ~= "UI-HUD-ActionBar-IconFrame-AddRow-Down") then
+						self:SetPushedAtlas("UI-HUD-ActionBar-IconFrame-AddRow-Down")
+						if (typeActionButton <= 2) then
+							self.PushedTexture:SetSize(51, 51)
+						end
+					end
+				end
+			else
+				-- Classic Layout
+				if (self.NormalTexture:GetAtlas() ~= nil) then
+					self.NormalTexture:SetAtlas(nil)
+					if (typeActionButton == 3) then
+						self.NormalTexture:SetSize(54, 54)
+					elseif (typeActionButton == 4) then
+						if (MultiBarBottomLeft and MultiBarBottomLeft:IsShown()) then
+							self.NormalTexture:SetSize(52, 52)
+						else
+							self.NormalTexture:SetSize(64, 64)
+						end
+					elseif (typeActionButton == 5) then
+						self.NormalTexture:SetSize(60, 60)
+					elseif (typeActionButton == 6) then
+						self.NormalTexture:SetSize(28, 28)
+					elseif (typeActionButton == 7) then
+						self.NormalTexture:SetSize(82, 82)
+					else
+						self.NormalTexture:SetSize(66, 66)
+					end
+					if (typeActionButton == 3 or typeActionButton == 4) then
+						self.NormalTexture:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
+						self.NormalTexture:SetTexture("Interface\\Buttons\\UI-Quickslot2")
+						self.NormalTexture:SetAlpha(typeABprofile.BLStyle0NormalTextureAlpha)
+						self.NormalTexture:ClearAllPoints()
+						self.NormalTexture:SetPoint("CENTER", self, "CENTER", 0, -1)
+					elseif (typeActionButton == 6) then
+						self.NormalTexture:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
+						self.NormalTexture:SetTexture(nil)
+						self.NormalTexture:SetAlpha(typeABprofile.BLStyle0NormalTextureAlpha)
+						self.NormalTexture:ClearAllPoints()
+						self.NormalTexture:SetAllPoints(self)
+					else
+						self.NormalTexture:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
+						self.NormalTexture:SetTexture("Interface\\Buttons\\UI-Quickslot2")
+						self.NormalTexture:SetAlpha(typeABprofile.BLStyle0NormalTextureAlpha)
+						self.NormalTexture:ClearAllPoints()
+						self.NormalTexture:SetPoint("TOPLEFT", self, "TOPLEFT", -15, 15)
+						self.NormalTexture:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT", 15, -15)
+					end
+				end
+				if not(typeABprofile.BLStyle0UseNewPushedTexture) then
+					if (self.PushedTexture:GetAtlas() ~= nil) then
+						self.PushedTexture:SetAtlas(nil)
+						if (typeActionButton == 7) then
+							self.PushedTexture:SetSize(52, 52)
+						elseif (typeActionButton == 6) then
+							self.PushedTexture:SetSize(28, 28)
+						elseif (typeActionButton >= 3) then
+							self.PushedTexture:SetSize(30, 30)
+						else
+							self.PushedTexture:SetSize(36, 36)
+						end
+						self.PushedTexture:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
+						self.PushedTexture:SetTexture("Interface\\Buttons\\UI-Quickslot-Depress")
+						self.PushedTexture:SetAlpha(1)
+						self.PushedTexture:ClearAllPoints()
+						self.PushedTexture:SetAllPoints(self)
+					end
+				else
+					if (self.PushedTexture:GetAtlas() ~= "UI-HUD-ActionBar-IconFrame-AddRow-Down") then
+						self.PushedTexture:SetAtlas("UI-HUD-ActionBar-IconFrame-AddRow-Down")
+					end
+					if (typeActionButton == 7) then
+						self.PushedTexture:SetSize(61, 60)
+					elseif (typeActionButton == 6) then
+						self.PushedTexture:SetSize(32, 32)
+					elseif (typeActionButton <= 2) then
+						self.PushedTexture:SetSize(42, 41)
+					end
+				end
+			end
+		end)
+		ClassicUI.cached_ActionButtonInfo.hooked_UpdateButtonArt[iActionButton] = true
+	end
+	if (typeABprofile.BLStyle == 1) then
+		-- Dragonflight Layout
+		iActionButton.NormalTexture:SetAlpha(typeABprofile.BLStyle1NormalTextureAlpha)
+		if (typeActionButton <= 2) then
+			ClassicUI.cached_ActionButtonInfo.currentScale[iActionButton] = ClassicUI.ACTIONBUTTON_NEWLAYOUT_SCALE
+			iActionButton:SetScale((newBLScale / iActionButton:GetParent():GetScale()) * ClassicUI.cached_ActionButtonInfo.currentScale[iActionButton])
+			if (typeActionButton == 0) then
+				if ((iActionButton.UpdateButtonArt ~= nil) and iActionButton.SlotArt and iActionButton.SlotBackground and iActionButton.showButtonArt) then
+					if (iabnt ~= nil) and (iabnt:GetAtlas() ~= "UI-HUD-ActionBar-IconFrame-AddRow") then
+						iActionButton:SetNormalAtlas("UI-HUD-ActionBar-IconFrame-AddRow")
+						iabnt:SetSize(51, 51)
+					end
+					if (iabpt ~= nil) and (iabpt:GetAtlas() ~= "UI-HUD-ActionBar-IconFrame-AddRow-Down") then
+						iActionButton:SetPushedAtlas("UI-HUD-ActionBar-IconFrame-AddRow-Down")
+						iabpt:SetSize(51, 51)
+					end
+				end
+			end
+		end
+		if (ClassicUI.cached_ActionButtonInfo.currLayout[iActionButton] == 0) then
+			ClassicUI.RestoreDragonflightLayoutActionButton(iActionButton, typeActionButton)
+		end
+	else
+		-- Classic Layout
+		if (typeActionButton == 7) then
+			iActionButton:SetSize(52, 52)
+		elseif (typeActionButton == 6) then
+			iActionButton:SetSize(28, 28)
+		elseif (typeActionButton >= 3) then
+			iActionButton:SetSize(30, 30)
+		else
+			iActionButton:SetSize(36, 36)
+		end
+		ClassicUI.cached_ActionButtonInfo.currentScale[iActionButton] = 1
+		if (typeActionButton <= 2) then
+			iActionButton:SetScale(newBLScale / iActionButton:GetParent():GetScale())
+		end
+		if (iabnt ~= nil) then
+			iabnt:SetAtlas(nil)
+			if (typeActionButton == 3) then
+				iabnt:SetSize(54, 54)
+			elseif (typeActionButton == 4) then
+				if (MultiBarBottomLeft and MultiBarBottomLeft:IsShown()) then
+					iabnt:SetSize(52, 52)
+				else
+					iabnt:SetSize(64, 64)
+				end
+			elseif (typeActionButton == 5) then
+				iabnt:SetSize(60, 60)
+			elseif (typeActionButton == 6) then
+				iabnt:SetSize(28, 28)
+			elseif (typeActionButton == 7) then
+				iabnt:SetSize(82, 82)
+			else
+				iabnt:SetSize(66, 66)
+			end
+			if (typeActionButton == 3 or typeActionButton == 4) then
+				iabnt:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
+				iabnt:SetTexture("Interface\\Buttons\\UI-Quickslot2")
+				iabnt:SetAlpha(typeABprofile.BLStyle0NormalTextureAlpha)
+				iabnt:ClearAllPoints()
+				iabnt:SetPoint("CENTER", iActionButton, "CENTER", 0, -1)
+			elseif (typeActionButton == 6) then
+				iabnt:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
+				iabnt:SetTexture(nil)
+				iabnt:SetAlpha(typeABprofile.BLStyle0NormalTextureAlpha)
+				iabnt:ClearAllPoints()
+				iabnt:SetAllPoints(iActionButton)
+			else
+				iabnt:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
+				iabnt:SetTexture("Interface\\Buttons\\UI-Quickslot2")
+				iabnt:SetAlpha(typeABprofile.BLStyle0NormalTextureAlpha)
+				iabnt:ClearAllPoints()
+				iabnt:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", -15, 15)
+				iabnt:SetPoint("BOTTOMRIGHT", iActionButton, "BOTTOMRIGHT", 15, -15)
+			end
+		end
+		if (iabpt ~= nil) then
+			if not(typeABprofile.BLStyle0UseNewPushedTexture) then
+				iabpt:SetAtlas(nil)
+				if (typeActionButton == 7) then
+					iabpt:SetSize(52, 52)
+				elseif (typeActionButton == 6) then
+					iabpt:SetSize(28, 28)
+				elseif (typeActionButton >= 3) then
+					iabpt:SetSize(30, 30)
+				else
+					iabpt:SetSize(36, 36)
+				end
+				iabpt:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
+				iabpt:SetTexture("Interface\\Buttons\\UI-Quickslot-Depress")
+				iabpt:SetAlpha(1)
+				iabpt:ClearAllPoints()
+				iabpt:SetAllPoints(iActionButton)
+			else
+				if (iabpt:GetAtlas() ~= "UI-HUD-ActionBar-IconFrame-AddRow-Down") then
+					iabpt:SetAtlas("UI-HUD-ActionBar-IconFrame-AddRow-Down")
+					iabpt:ClearAllPoints()
+					iabpt:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", 0, 0)
+				end
+				if (typeActionButton == 7) then
+					iabpt:SetSize(61, 60)
+				elseif (typeActionButton == 6) then
+					iabpt:SetSize(32, 32)
+				elseif (typeActionButton <= 2) then
+					iabpt:SetSize(42, 41)
+				else
+					iabpt:SetSize(35, 35)
+				end
+			end
+		end
+		local iabht = iActionButton:GetHighlightTexture()
+		if (iabht ~= nil) then
+			if not(typeABprofile.BLStyle0UseNewHighlightTexture) then
+				iabht:SetAtlas(nil)
+				if (typeActionButton == 7) then
+					iabht:SetSize(52, 52)
+				elseif (typeActionButton == 6) then
+					iabht:SetSize(28, 28)
+				elseif (typeActionButton >= 3) then
+					iabht:SetSize(30, 30)
+				else
+					iabht:SetSize(36, 36)
+				end
+				iabht:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
+				iabht:SetBlendMode("ADD")
+				iabht:SetTexture("Interface\\Buttons\\ButtonHilight-Square")
+				iabht:SetAlpha(1)
+				iabht:ClearAllPoints()
+				iabht:SetAllPoints(iActionButton)
+			else
+				if (iabht:GetAtlas() == nil) then
+					iabht:SetAtlas("UI-HUD-ActionBar-IconFrame-Mouseover")
+					iabht:SetBlendMode("BLEND")
+					iabht:ClearAllPoints()
+					iabht:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", 0, 0)
+				end
+				if (typeActionButton == 7) then
+					iabht:SetSize(59, 58)
+					iabht:ClearAllPoints()
+					iabht:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", -2.5, 2.5)
+				elseif (typeActionButton == 6) then
+					iabht:SetSize(31, 30.31)
+					iabht:ClearAllPoints()
+					iabht:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", -1, 1)
+				elseif (typeActionButton >= 3) then
+					iabht:SetSize(34, 33.25)
+					iabht:ClearAllPoints()
+					iabht:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", -1.5, 1.5)
+				else
+					iabht:ClearAllPoints()
+					iabht:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", -2, 2)
+					iabht:SetSize(41, 40)
+				end
+			end
+		end
+		local iabchkt = iActionButton:GetCheckedTexture()
+		if (iabchkt ~= nil) then
+			if not(typeABprofile.BLStyle0UseNewCheckedTexture) then
+				iabchkt:SetAtlas(nil)
+				if (typeActionButton == 7) then
+					iabchkt:SetSize(52, 52)
+				elseif (typeActionButton == 6) then
+					iabchkt:SetSize(28, 28)
+				elseif (typeActionButton >= 3) then
+					iabchkt:SetSize(30, 30)
+				else
+					iabchkt:SetSize(36, 36)
+				end
+				iabchkt:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
+				iabchkt:SetBlendMode("ADD")
+				iabchkt:SetTexture("Interface\\Buttons\\CheckButtonHilight")
+				iabchkt:SetAlpha(1)
+				iabchkt:ClearAllPoints()
+				iabchkt:SetAllPoints(iActionButton)
+			else
+				if (iabchkt:GetAtlas() == nil) then
+					iabchkt:SetAtlas("UI-HUD-ActionBar-IconFrame-Mouseover")
+					iabchkt:SetBlendMode("BLEND")
+					iabchkt:ClearAllPoints()
+					iabchkt:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", 0, 0)
+				end
+				if (typeActionButton == 7) then
+					iabchkt:SetSize(59, 58)
+					iabchkt:ClearAllPoints()
+					iabchkt:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", -2.5, 2.5)
+				elseif (typeActionButton == 6) then
+					iabchkt:SetSize(31, 30.31)
+					iabchkt:ClearAllPoints()
+					iabchkt:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", -1, 1)
+				elseif (typeActionButton >= 3) then
+					iabchkt:SetSize(34, 33.25)
+					iabchkt:ClearAllPoints()
+					iabchkt:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", -1.5, 1.5)
+				else
+					iabchkt:SetSize(41, 40)
+					iabchkt:ClearAllPoints()
+					iabchkt:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", -2, 2)
+				end
+			end
+		end
+		local iabit = _G[name.."Icon"]
+		if (iabit ~= nil) then
+			if (typeActionButton == 7) then
+				iabit:SetSize(52, 52)
+			elseif (typeActionButton == 6) then
+				iabit:SetSize(28, 28)
+				iabit:SetTexCoord(4/64, 60/64, 4/64, 60/64)
+			elseif (typeActionButton >= 3) then
+				iabit:SetSize(30, 30)
+			else
+				iabit:SetSize(36, 36)
+			end
+		end
+		local iabctt = _G[name.."Count"]
+		if (iabctt ~= nil) then
+			iabctt:ClearAllPoints()
+			iabctt:SetPoint("BOTTOMRIGHT", iActionButton, "BOTTOMRIGHT", -2, 2)
+		end
+		local iabbt = _G[name.."Border"]
+		if (iabbt ~= nil) then
+			iabbt:SetSize(62, 62)
+			iabbt:SetAtlas(nil)
+			iabbt:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
+			iabbt:SetBlendMode("ADD")
+			if ((iActionButton.action ~= nil) and (IsEquippedAction(iActionButton.action))) then
+				iabbt:SetAlpha(0.5)
+			else
+				iabbt:SetAlpha(1)
+			end
+			iabbt:SetTexture("Interface\\Buttons\\UI-ActionButton-Border")
+			iabbt:ClearAllPoints()
+			iabbt:SetPoint("CENTER", iActionButton, "CENTER", 0, 0)
+		end
+		local iabHt = _G[name.."HotKey"]
+		if (iabHt ~= nil) then
+			if (typeABprofile.BLStyle0UseOldHotKeyTextStyle) then
+				iabHt:SetSize(36, 10)
+				iabHt:ClearAllPoints()
+				if (typeActionButton == 3) then
+					iabHt:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", -2, -3)
+				else
+					iabHt:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", 1, -3)
+				end
+				local iabHt_f1, iabHt_f2, iabHt_f3 = iabHt:GetFont()
+				if (iabHt_f3 ~= "OUTLINE, THICKOUTLINE, MONOCHROME") then
+					iabHt:SetFont(iabHt_f1, iabHt_f2, "OUTLINE, THICKOUTLINE, MONOCHROME")
+				end
+			else
+				iabHt:SetSize(32, 10)
+				iabHt:ClearAllPoints()
+				if (typeActionButton == 3) then
+					iabHt:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", -2, -3)
+				else
+					iabHt:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", 3, -3)
+				end
+				local iabHt_f1, iabHt_f2, iabHt_f3 = iabHt:GetFont()
+				if (iabHt_f3 ~= "OUTLINE") then
+					iabHt:SetFont(iabHt_f1, iabHt_f2, "OUTLINE")
+				end
+			end
+		end
+		local iabcdt = _G[name.."Cooldown"]
+		if (iabcdt ~= nil) then
+			if (typeActionButton == 3) then
+				iabcdt:SetSize(33, 33)
+			elseif (typeActionButton == 6) then
+				iabcdt:SetSize(28, 28)
+			elseif (typeActionButton >= 4) then
+				iabcdt:SetSize(30, 30)
+			else
+				iabcdt:SetSize(36, 36)
+			end
+			iabcdt:ClearAllPoints()
+			iabcdt:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", 0, 0)
+			iabcdt:SetPoint("CENTER", iActionButton, "CENTER", 0, -1)
+			iabcdt:SetPoint("BOTTOMRIGHT", iActionButton, "BOTTOMRIGHT", 0, 0)
+		end
+		local iabft = _G[name.."Flash"]
+		if (iabft ~= nil) then
+			if (typeActionButton == 7) then
+				iabft:SetSize(52, 52)
+			elseif (typeActionButton == 6) then
+				iabft:SetSize(28, 28)
+			elseif (typeActionButton >= 3) then
+				iabft:SetSize(30, 30)
+			else
+				iabft:SetSize(36, 36)
+			end
+			iabft:SetAtlas(nil)
+			iabft:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
+			iabft:SetAlpha(1)
+			iabft:SetTexture("Interface\\Buttons\\UI-QuickslotRed")
+			iabft:ClearAllPoints()
+			iabft:SetAllPoints(iActionButton)
+		end
+		local iabfbst = _G[name.."FlyoutBorderShadow"]
+		if (iabfbst ~= nil) then
+			iabfbst:SetSize(48, 48)
+			iabfbst:SetAtlas(nil)
+			iabfbst:SetTexCoord(0.015625, 0.0078125, 0.015625, 0.3828125, 0.765625, 0.0078125, 0.765625, 0.3828125)
+			iabfbst:SetAlpha(1)
+			iabfbst:SetTexture("Interface\\Buttons\\ActionBarFlyoutButton")
+			iabfbst:ClearAllPoints()
+			iabfbst:SetPoint("CENTER", iActionButton, "CENTER", 0, 0)
+		end
+		local iabnat = iActionButton.NewActionTexture
+		if (iabnat ~= nil) then
+			iabnat:SetSize(44, 44)
+			iabnat:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
+			iabnat:SetBlendMode("ADD")
+			iabnat:SetAlpha(1)
+			iabnat:SetTexture(969828)
+			iabnat:SetAtlas("bags-newitem")
+			iabnat:ClearAllPoints()
+			iabnat:SetPoint("CENTER", iActionButton, "CENTER", 0, 0)
+		end
+		local iabsht = iActionButton.SpellHighlightTexture
+		if (iabsht ~= nil) then
+			if not(typeABprofile.BLStyle0UseNewSpellHighlightTexture) then
+				if (typeActionButton == 3) then
+					iabsht:SetSize(34, 34)
+				else
+					iabsht:SetSize(44, 44)
+				end
+				iabsht:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
+				iabsht:SetBlendMode("ADD")
+				iabsht:SetAlpha(1)
+				iabsht:SetTexture(969828)
+				iabsht:SetAtlas("bags-newitem")
+				iabsht:ClearAllPoints()
+				iabsht:SetPoint("CENTER", iActionButton, "CENTER", 0, 0)
+			else
+				if (typeActionButton == 3) then
+					if (iabsht:GetAtlas() ~= "bags-newitem") then
+						iabsht:SetAtlas("bags-newitem")
+						iabsht:SetBlendMode("ADD")
+					end
+					iabsht:SetAlpha(1)
+				else
+					if (iabsht:GetAtlas() ~= "UI-HUD-ActionBar-IconFrame-Mouseover") then
+						iabsht:SetAtlas("UI-HUD-ActionBar-IconFrame-Mouseover")
+						iabsht:SetBlendMode("ADD")
+					end
+					iabsht:SetAlpha(0.4)
+				end
+				iabsht:ClearAllPoints()
+				if (typeActionButton == 7) then
+					iabsht:SetSize(59, 58)
+					iabsht:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", -2.5, 2.5)
+				elseif (typeActionButton == 6) then
+					iabsht:SetSize(31, 30.31)
+					iabsht:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", -1, 1)
+				elseif (typeActionButton >= 4) then
+					iabsht:SetSize(34, 33.25)
+					iabsht:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", -1.5, 1.5)
+				elseif (typeActionButton == 3) then
+					iabsht:SetSize(34, 34)
+					iabsht:SetPoint("CENTER", iActionButton, "CENTER", 0, 0)
+				elseif (typeActionButton <= 2) then
+					iabsht:SetSize(41, 40)
+					iabsht:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", -2, 2)
+				end
+			end
+		end
+		local iabset = _G[name.."Shine"]
+		if (iabset ~= nil) then
+			iabset:SetSize(28, 28)
+		end
+		local iabact = iActionButton.AutoCastable
+		if (iabact ~= nil) then
+			iabact:SetSize(58, 58)
+			iabact:ClearAllPoints()
+			iabact:SetPoint("CENTER", iActionButton, "CENTER", 0, 0)
+		end
+		if (typeActionButton == 1 or typeActionButton == 2) then
+			local iabfbgt = _G[name.."FloatingBG"]
+			if (not iabfbgt) then
+				iabfbgt = iActionButton:CreateTexture(name.."FloatingBG")
+				iActionButton.FloatingBG = iabfbgt
+			end
+			iabfbgt:SetSize(66, 66)
+			iabfbgt:SetAtlas(nil)
+			iabfbgt:SetDrawLayer("BACKGROUND", -1)
+			iabfbgt:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
+			iabfbgt:SetAlpha(0.4)
+			iabfbgt:SetTexture("Interface\\Buttons\\UI-Quickslot")
+			iabfbgt:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", -15, 15)
+			iabfbgt:SetPoint("BOTTOMRIGHT", iActionButton, "BOTTOMRIGHT", 15, -15)
+			iabfbgt:Show()
+		end
+		local iabfbt = _G[name.."FlyoutBorder"]
+		if (not iabfbt) then
+			iabfbt = iActionButton:CreateTexture(name.."FlyoutBorder")
+			iActionButton.FlyoutBorder = iabfbt
+		end
+		iabfbt:SetSize(42, 42)
+		iabfbt:SetAtlas(nil)
+		iabfbt:SetDrawLayer("ARTWORK", 1)
+		iabfbt:SetTexCoord(0.015625, 0.3984375, 0.015625, 0.7265625, 0.671875, 0.3984375, 0.671875, 0.726562)
+		iabfbt:SetAlpha(1)
+		iabfbt:SetTexture("Interface\\Buttons\\ActionBarFlyoutButton")
+		iabfbt:ClearAllPoints()
+		iabfbt:SetPoint("CENTER", iActionButton, "CENTER", 0, 0)
+		iabfbt:Hide()
+		-- TODO: We keep the new Dragonflight FlyoutArrow, maybe we recreate the old one in a future version
+		if (typeActionButton == 3) then
+			-- Hide IconMask for PetActionButtons but leave it for the others
+			iActionButton.IconMask:SetAlpha(0)
+			iActionButton.IconMask:Hide()
+		end
+		if ((iActionButton.UpdateHotkeys ~= nil) and (iabHt ~= nil) and not(ClassicUI.cached_ActionButtonInfo.hooked_UpdateHotkeys[iActionButton])) then
+			hooksecurefunc(iActionButton, "UpdateHotkeys", function(self, actionButtonType)
+				--if ClassicUI.databaseCleaned then return end	-- not needed because typeABprofile is an upvalue local table variable (the upvalue table can become empty but never nil, not an issue)
+				if not(typeABprofile.BLStyle == 1) then
+					local id
+					if (not actionButtonType) then
+						actionButtonType = "ACTIONBUTTON"
+						id = self:GetID()
+					else
+						if (actionButtonType == "MULTICASTACTIONBUTTON") then
+							id = self.buttonIndex
+						else
+							id = self:GetID()
+						end
+					end
+					local hotkey = self.HotKey
+					local key = GetBindingKey(actionButtonType..id) or GetBindingKey("CLICK "..self:GetName()..":LeftButton")
+					local text = GetBindingText(key, 1)
+					if (text ~= "") then
+						hotkey:ClearAllPoints()
+						if (typeABprofile.BLStyle0UseOldHotKeyTextStyle) then
+							hotkey:SetSize(36, 10)
+							if (typeActionButton == 3) then
+								hotkey:SetPoint("TOPLEFT", self, "TOPLEFT", -2, -3)
+							else
+								hotkey:SetPoint("TOPLEFT", self, "TOPLEFT", 1, -3)
+							end
+						else
+							hotkey:SetSize(32, 10)
+							if (typeActionButton == 3) then
+								hotkey:SetPoint("TOPLEFT", self, "TOPLEFT", -2, -3)
+							else
+								hotkey:SetPoint("TOPLEFT", self, "TOPLEFT", 3, -3)
+							end
+						end
+					end
+				end
+			end)
+			ClassicUI.cached_ActionButtonInfo.hooked_UpdateHotkeys[iActionButton] = true
+		end
+		if ((iActionButton.UpdateFlyout ~= nil) and (iabfbt ~= nil) and not(ClassicUI.cached_ActionButtonInfo.hooked_UpdateFlyout[iActionButton])) then
+			hooksecurefunc(iActionButton, "UpdateFlyout", function(self, isButtonDownOverride)
+				--if ClassicUI.databaseCleaned then return end	-- not needed because typeABprofile is an upvalue local table variable (the upvalue table can become empty but never nil, not an issue)
+				if not(typeABprofile.BLStyle == 1) and not(typeABprofile.BLStyle0UseNewFlyoutBorder) then
+					if (not self.FlyoutArrowContainer or not self.FlyoutBorderShadow) then
+						return
+					end
+					local actionType = GetActionInfo(self.action)
+					if (actionType ~= "flyout") then
+						if (not(self.FlyoutBorderShadow:IsShown()) and self.FlyoutBorder:IsShown()) then
+							self.FlyoutBorder:Hide()
+						end
+						return
+					end
+					local isMouseOverButton = GetMouseFocus() == self
+					local isFlyoutShown = SpellFlyout and SpellFlyout:IsShown() and SpellFlyout:GetParent() == self
+					if (isFlyoutShown or isMouseOverButton) then
+						if (self.FlyoutBorderShadow:IsShown() and not(self.FlyoutBorder:IsShown())) then
+							self.FlyoutBorder:Show()
+						end
+					else
+						if (not(self.FlyoutBorderShadow:IsShown()) and self.FlyoutBorder:IsShown()) then
+							self.FlyoutBorder:Hide()
+						end
+					end
+				end
+			end)
+			ClassicUI.cached_ActionButtonInfo.hooked_UpdateFlyout[iActionButton] = true
+		end
+	end
+	ClassicUI.cached_ActionButtonInfo.currLayout[iActionButton] = typeABprofile.BLStyle
+end
+
+-- Function that sets the current layout for a desired groups of ActionButtons
+ClassicUI.LayoutGroupActionButtons = function(groups)
+	if ((groups == nil) or (type(groups) ~= "table")) then return end
+	if (groups[0]) then
+		for i = 1, 12 do
+			ClassicUI:ActionButtonProtectedApplyLayout(_G["ActionButton"..i], 0)
+		end
+	end
+	if (groups[1]) then
+		for i = 1, 12 do
+			ClassicUI:ActionButtonProtectedApplyLayout(_G["MultiBarBottomLeftButton"..i], 1)
+		end
+		for i = 1, 12 do
+			ClassicUI:ActionButtonProtectedApplyLayout(_G["MultiBarBottomRightButton"..i], 1)
+		end
+	end
+	if (groups[2]) then
+		for i = 1, 12 do
+			ClassicUI:ActionButtonProtectedApplyLayout(_G["MultiBarLeftButton"..i], 2)
+		end
+		for i = 1, 12 do
+			ClassicUI:ActionButtonProtectedApplyLayout(_G["MultiBarRightButton"..i], 2)
+		end
+	end
+	if (groups[3]) then
+		for i = 1, 10 do
+			ClassicUI:ActionButtonProtectedApplyLayout(_G["PetActionButton"..i], 3)
+		end
+	end
+	if (groups[4]) then
+		for i = 1, 10 do
+			ClassicUI:ActionButtonProtectedApplyLayout(_G["StanceButton"..i], 4)
+		end
+	end
+	if (groups[5]) then
+		for i = 1, 2 do
+			ClassicUI:ActionButtonProtectedApplyLayout(_G["PossessButton"..i], 5)
+		end
+	end
+	if (groups[6]) then
+		for i = 1, 40 do
+			local button = _G["SpellFlyoutButton"..i]
+			if (button ~= nil) then
+				ClassicUI:ActionButtonProtectedApplyLayout(button, 6)
+			else
+				break
+			end
+		end
+	end
+	if (groups[7]) then
+		for i = 1, 6 do
+			ClassicUI:ActionButtonProtectedApplyLayout(_G["OverrideActionBarButton"..i], 7)
+		end
+	end
+end
+
+-- Function that sets the current layout for all ActionButtons
+ClassicUI.LayoutAllActionButtons = function()
+	ClassicUI.LayoutGroupActionButtons({[0]=true,[1]=true,[2]=true,[3]=true,[4]=true,[5]=true,[6]=true,[7]=true})
+end
+
+-- Function to apply the current layout to an ActionButton, handling a queue of pending buttons if in combat lockdown
+function ClassicUI:ActionButtonProtectedApplyLayout(button, typeActionButton)
+	if InCombatLockdown() then
+		if ((button ~= nil) and (self.queuePending_ActionButtonsLayout[button] == nil)) then
+			self.queuePending_ActionButtonsLayout[button] = typeActionButton
+		end
+		delayFunc_ActionButtonProtectedApplyLayout = true
+		if (not fclFrame:IsEventRegistered("PLAYER_REGEN_ENABLED")) then
+			fclFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+		end
+		return
+	end
+	if (button ~= nil) then
+		self.LayoutActionButton(button, typeActionButton)
+		self.queuePending_ActionButtonsLayout[button] = nil
+	end
+	for iButton, iTypeActionButton in pairs(self.queuePending_ActionButtonsLayout) do
+		self.LayoutActionButton(iButton, iTypeActionButton)
+		self.queuePending_ActionButtonsLayout[iButton] = nil
+	end
+end
+
+-- Function that initializes the cache with the information of all the ActionButtons to the default values
+function ClassicUI:InitActionButtonInfoCache()
+	for i = 1, 12 do
+		self.cached_ActionButtonInfo.hooked_UpdateButtonArt = {
+			[_G["ActionButton"..i]] = false,
+			[_G["MultiBarBottomLeftButton"..i]] = false,
+			[_G["MultiBarBottomRightButton"..i]] = false,
+			[_G["MultiBarRightButton"..i]] = false,
+			[_G["MultiBarLeftButton"..i]] = false
+		}
+		self.cached_ActionButtonInfo.hooked_UpdateHotkeys = {
+			[_G["ActionButton"..i]] = false,
+			[_G["MultiBarBottomLeftButton"..i]] = false,
+			[_G["MultiBarBottomRightButton"..i]] = false,
+			[_G["MultiBarRightButton"..i]] = false,
+			[_G["MultiBarLeftButton"..i]] = false
+		}
+		self.cached_ActionButtonInfo.hooked_UpdateFlyout = {
+			[_G["ActionButton"..i]] = false,
+			[_G["MultiBarBottomLeftButton"..i]] = false,
+			[_G["MultiBarBottomRightButton"..i]] = false,
+			[_G["MultiBarRightButton"..i]] = false,
+			[_G["MultiBarLeftButton"..i]] = false
+		}
+		self.cached_ActionButtonInfo.currentScale = {
+			[_G["ActionButton"..i]] = 1,
+			[_G["MultiBarBottomLeftButton"..i]] = 1,
+			[_G["MultiBarBottomRightButton"..i]] = 1,
+			[_G["MultiBarRightButton"..i]] = 1,
+			[_G["MultiBarLeftButton"..i]] = 1
+		}
+		self.cached_ActionButtonInfo.currLayout = {
+			[_G["ActionButton"..i]] = 1,
+			[_G["MultiBarBottomLeftButton"..i]] = 1,
+			[_G["MultiBarBottomRightButton"..i]] = 1,
+			[_G["MultiBarRightButton"..i]] = 1,
+			[_G["MultiBarLeftButton"..i]] = 1
+		}
+	end
+	for i = 1, 10 do
+		self.cached_ActionButtonInfo.hooked_UpdateButtonArt = {
+			[_G["PetActionButton"..i]] = false,
+			[_G["StanceButton"..i]] = false
+		}
+		self.cached_ActionButtonInfo.hooked_UpdateHotkeys = {
+			[_G["PetActionButton"..i]] = false,
+			[_G["StanceButton"..i]] = false
+		}
+		self.cached_ActionButtonInfo.hooked_UpdateFlyout = {
+			[_G["PetActionButton"..i]] = false,
+			[_G["StanceButton"..i]] = false
+		}
+		self.cached_ActionButtonInfo.currentScale = {
+			[_G["PetActionButton"..i]] = 1,
+			[_G["StanceButton"..i]] = 1
+		}
+		self.cached_ActionButtonInfo.currLayout = {
+			[_G["PetActionButton"..i]] = 1,
+			[_G["StanceButton"..i]] = 1
+		}
+	end
+	for i = 1, 6 do
+		self.cached_ActionButtonInfo.hooked_UpdateButtonArt = {
+			[_G["OverrideActionBarButton"..i]] = false
+		}
+		self.cached_ActionButtonInfo.hooked_UpdateHotkeys = {
+			[_G["OverrideActionBarButton"..i]] = false
+		}
+		self.cached_ActionButtonInfo.hooked_UpdateFlyout = {
+			[_G["OverrideActionBarButton"..i]] = false
+		}
+		self.cached_ActionButtonInfo.currentScale = {
+			[_G["OverrideActionBarButton"..i]] = 1
+		}
+		self.cached_ActionButtonInfo.currLayout = {
+			[_G["OverrideActionBarButton"..i]] = 1
+		}
+	end
+	for i = 1, 40 do
+		local button = _G["SpellFlyoutButton"..i]
+		if (button ~= nil) then
+			self.cached_ActionButtonInfo.hooked_UpdateButtonArt = {
+				[button] = false
+			}
+			self.cached_ActionButtonInfo.hooked_UpdateHotkeys = {
+				[button] = false
+			}
+			self.cached_ActionButtonInfo.hooked_UpdateFlyout = {
+				[button] = false
+			}
+			self.cached_ActionButtonInfo.currentScale = {
+				[button] = 1
+			}
+			self.cached_ActionButtonInfo.currLayout = {
+				[button] = 1
+			}
+		else
+			break
+		end
+	end
+	self.cached_ActionButtonInfo.hooked_UpdateButtonArt[PossessButton1] = false
+	self.cached_ActionButtonInfo.hooked_UpdateButtonArt[PossessButton2] = false
+	self.cached_ActionButtonInfo.hooked_UpdateHotkeys[PossessButton1] = false
+	self.cached_ActionButtonInfo.hooked_UpdateHotkeys[PossessButton2] = false
+	self.cached_ActionButtonInfo.hooked_UpdateFlyout[PossessButton1] = false
+	self.cached_ActionButtonInfo.hooked_UpdateFlyout[PossessButton2] = false
+	self.cached_ActionButtonInfo.currentScale[PossessButton1] = 1
+	self.cached_ActionButtonInfo.currentScale[PossessButton2] = 1
+	self.cached_ActionButtonInfo.currLayout[PossessButton1] = 1
+	self.cached_ActionButtonInfo.currLayout[PossessButton2] = 1
+end
+
+-- Main function that loads the core features of ClassicUI. This function at the end calls to 'ClassicUI:PLAYER_ENTERING_WORLD()'.
+function ClassicUI:MainFunction(isLogin)
+	
+	-- Get and set the cached values for the status bar variables
+	ClassicUI:UpdateStatusBarOptionsCache()
+	
+	-- Create the basic default-value cache for ActionButtons
+	ClassicUI:InitActionButtonInfoCache()
+	
+	if InCombatLockdown() then
+		delayFunc_MainFunction = true
+		if (not fclFrame:IsEventRegistered("PLAYER_REGEN_ENABLED")) then
+			fclFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+		end
+		return
+	end
+	
+	-- We reset certain attributes of the ActionBars to their old values and disable their interaction with the mouse
+	ClassicUI:ModifyOriginalFrames()
+	
+	hooksecurefunc(MainMenuBar, "UpdateEndCaps", function(self, overrideHideEndCaps)
+		self.EndCaps.LeftEndCap:Hide()
+		self.EndCaps.RightEndCap:Hide()
+		self.EndCaps:Hide()
+	end)
+	MainMenuBar.EndCaps.LeftEndCap:Hide()
+	MainMenuBar.EndCaps.RightEndCap:Hide()
+	MainMenuBar.EndCaps:Hide()
+	hooksecurefunc(MainMenuBar, "UpdateSystemSettingHideBarArt", function(self)
+		self.BorderArt:SetShown(false)
+		self.Background:SetShown(false)
+	end)
+	MainMenuBar.BorderArt:SetShown(false)
+	MainMenuBar.Background:SetShown(false)
 
 	if (isLogin) then
 		ClassicUI.OnEvent_PEW_mf = true
@@ -5569,39 +5993,42 @@ function ClassicUI:HookRedRangeIcons()
 				hooksecurefunc(actionBarButton, "UpdateUsable", function(self)
 					local action = self.action
 					local icon = self.icon
-					local isUsable, notEnoughMana = IsUsableAction(action)
 					local normalTexture = self.NormalTexture
-					if ( not normalTexture ) then
-						return
-					end
 					if (ActionHasRange(action) and IsActionInRange(action) == false) then
 						icon:SetVertexColor(0.8, 0.1, 0.1)
-						normalTexture:SetVertexColor(0.8, 0.1, 0.1)
+						if (normalTexture ~= nil) then
+							normalTexture:SetVertexColor(0.8, 0.1, 0.1)
+						end
 						self.redRangeRed = true
-					elseif (self.redRangeRed) then
+					else
+						local isUsable, notEnoughMana = IsUsableAction(action)
 						if (isUsable) then
 							icon:SetVertexColor(1.0, 1.0, 1.0)
-							normalTexture:SetVertexColor(1.0, 1.0, 1.0)
-							self.redRangeRed = false
+							if (normalTexture ~= nil) then
+								normalTexture:SetVertexColor(1.0, 1.0, 1.0)
+							end
 						elseif (notEnoughMana) then
 							icon:SetVertexColor(0.1, 0.3, 1.0)
-							normalTexture:SetVertexColor(0.1, 0.3, 1.0)
-							self.redRangeRed = false
+							if (normalTexture ~= nil) then
+								normalTexture:SetVertexColor(0.1, 0.3, 1.0)
+							end
 						else
 							icon:SetVertexColor(0.4, 0.4, 0.4)
-							normalTexture:SetVertexColor(1.0, 1.0, 1.0)
-							self.redRangeRed = false
+							if (normalTexture ~= nil) then
+								normalTexture:SetVertexColor(1.0, 1.0, 1.0)
+							end
 						end
+						self.redRangeRed = false
 					end
 				end)
 			end
 		end
 		hooksecurefunc("ActionButton_UpdateRangeIndicator", function(self, checksRange, inRange)
-			if ( checksRange and not inRange ) then
+			if (checksRange and not inRange) then
 				local icon = self.icon
 				local normalTexture = self.NormalTexture
 				icon:SetVertexColor(0.8, 0.1, 0.1)
-				if (normalTexture ~= nil) and (next(normalTexture) ~= nil) then
+				if (normalTexture ~= nil) then
 					normalTexture:SetVertexColor(0.8, 0.1, 0.1)
 				end
 				self.redRangeRed = true
@@ -5613,23 +6040,23 @@ function ClassicUI:HookRedRangeIcons()
 					local isUsable, notEnoughMana = IsUsableAction(action)
 					if (isUsable) then
 						icon:SetVertexColor(1.0, 1.0, 1.0)
-						if (normalTexture ~= nil) and (next(normalTexture) ~= nil) then
+						if (normalTexture ~= nil) then
 							normalTexture:SetVertexColor(1.0, 1.0, 1.0)
 						end
 					elseif (notEnoughMana) then
 						icon:SetVertexColor(0.1, 0.3, 1.0)
-						if (normalTexture ~= nil) and (next(normalTexture) ~= nil) then
+						if (normalTexture ~= nil) then
 							normalTexture:SetVertexColor(0.1, 0.3, 1.0)
 						end
 					else
 						icon:SetVertexColor(0.4, 0.4, 0.4)
-						if (normalTexture ~= nil) and (next(normalTexture) ~= nil) then
+						if (normalTexture ~= nil) then
 							normalTexture:SetVertexColor(1.0, 1.0, 1.0)
 						end
 					end
 				else
 					icon:SetVertexColor(1.0, 1.0, 1.0)
-					if (normalTexture ~= nil) and (next(normalTexture) ~= nil) then
+					if (normalTexture ~= nil) then
 						normalTexture:SetVertexColor(1.0, 1.0, 1.0)
 					end
 				end
