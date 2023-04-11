@@ -1,7 +1,7 @@
 -- ------------------------------------------------------------ --
 -- Addon: ClassicUI                                             --
 --                                                              --
--- Version: 2.0.1                                               --
+-- Version: 2.0.2                                               --
 -- Author: Millán - Sanguino                                    --
 --                                                              --
 -- License: GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007 --
@@ -62,6 +62,8 @@ local UIFrameFlashStop = UIFrameFlashStop
 local UnitXP = UnitXP
 local UnitXPMax = UnitXPMax
 local UnitFactionGroup = UnitFactionGroup
+local Clamp = Clamp
+local GetUnscaledFrameRect = GetUnscaledFrameRect
 local GetXPExhaustion = GetXPExhaustion
 local GetRestState = GetRestState
 local GetFlyoutInfo = GetFlyoutInfo
@@ -78,7 +80,7 @@ local GetGuildInfo = GetGuildInfo
 local InGuildParty = InGuildParty
 
 -- Global constants
-ClassicUI.VERSION = "2.0.1"
+ClassicUI.VERSION = "2.0.2"
 ClassicUI.ACTIONBUTTON_NEWLAYOUT_SCALE = 0.826
 ClassicUI.ACTION_BAR_OFFSET = 45
 ClassicUI.SPELLFLYOUT_DEFAULT_SPACING = 4
@@ -397,6 +399,7 @@ local fclFrame = CreateFrame("Frame")
 local delayFunc_MainFunction = false
 local delayFunc_MF_PLAYER_ENTERING_WORLD = false
 local delayFunc_SetStrataForMainFrames = false
+local delayFunc_ReLayoutMainFrames = false
 local delayFunc_ReloadMainFramesSettings = false
 local delayFunc_UpdatedStatusBarsEvent = false
 local delayFunc_CUI_PetActionBarFrame_RelocateBar_Update = false
@@ -416,6 +419,10 @@ fclFrame:SetScript("OnEvent",function(self,event)
 		if (delayFunc_SetStrataForMainFrames) then
 			delayFunc_SetStrataForMainFrames = false
 			ClassicUI:SetStrataForMainFrames()
+		end
+		if (delayFunc_ReLayoutMainFrames) then
+			delayFunc_ReLayoutMainFrames = false
+			ClassicUI:ReLayoutMainFrames()
 		end
 		if (delayFunc_ReloadMainFramesSettings) then
 			delayFunc_ReloadMainFramesSettings = false
@@ -707,17 +714,17 @@ function ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
 	if (self:IsEnabled()) then
 		local visBars = {}
 		for _, bar in ipairs(StatusTrackingBarManager.bars) do
-			if ( bar:ShouldBeVisible() ) then
+			if (bar:ShouldBeVisible()) then
 				tblinsert(visBars, bar)
 			end
 		end
 		tblsort(visBars, function(left, right) return left:GetPriority() < right:GetPriority() end)
 		local width = StatusTrackingBarManager:GetParent():GetSize()
 		local TOP_BAR = true
-		if ( #visBars > 1 ) then
+		if (#visBars > 1) then
 			self.StatusTrackingBarManager_LayoutBar(StatusTrackingBarManager, visBars[2], not TOP_BAR)
 			self.StatusTrackingBarManager_LayoutBar(StatusTrackingBarManager, visBars[1], TOP_BAR)
-		elseif( #visBars == 1 ) then
+		elseif (#visBars == 1) then
 			self.StatusTrackingBarManager_LayoutBar(StatusTrackingBarManager, visBars[1], not TOP_BAR)
 		end
 	end
@@ -1007,7 +1014,7 @@ function ClassicUI:RestoreChatScrollButtons()
 		MessageFrameScrollButton_OnLoad(CUI_ChatFrame1ButtonFrameDownButton)
 		CUI_ChatFrame1ButtonFrameDownButton:SetScript("OnUpdate", MessageFrameScrollButton_OnUpdate)
 		CUI_ChatFrame1ButtonFrameDownButton:SetScript("OnClick", function(self, button)
-			if ( self:GetButtonState() == "PUSHED" ) then
+			if (self:GetButtonState() == "PUSHED") then
 				self.clickDelay = MESSAGE_SCROLLBUTTON_INITIAL_DELAY
 			else
 				self:GetParent():GetParent():ScrollDown()
@@ -1031,7 +1038,7 @@ function ClassicUI:RestoreChatScrollButtons()
 		MessageFrameScrollButton_OnLoad(CUI_ChatFrame1ButtonFrameUpButton)
 		CUI_ChatFrame1ButtonFrameUpButton:SetScript("OnUpdate", MessageFrameScrollButton_OnUpdate)
 		CUI_ChatFrame1ButtonFrameUpButton:SetScript("OnClick", function(self, button)
-			if ( self:GetButtonState() == "PUSHED" ) then
+			if (self:GetButtonState() == "PUSHED") then
 				self.clickDelay = MESSAGE_SCROLLBUTTON_INITIAL_DELAY
 			else
 				self:GetParent():GetParent():ScrollUp()
@@ -1146,7 +1153,7 @@ function ClassicUI:ModifyOriginalFrames()
 	MainMenuBar:SetFrameStrata("MEDIUM")
 	MainMenuBar:SetFrameLevel(1)
 	MainMenuBar:EnableMouse(false)
-	--it is preferable not to modify the size and position of the original frames
+	-- It is preferable not to modify the size and position of the original frames
 	--MainMenuBar:SetSize(1024, 53)
 	--MainMenuBar:ClearAllPoints()
 	--MainMenuBar:SetPoint("BOTTOM", UIParent, "BOTTOM", 0 + ClassicUI.db.profile.barsConfig.MainMenuBar.xOffset, 0 + ClassicUI.db.profile.barsConfig.MainMenuBar.yOffset)
@@ -1220,6 +1227,71 @@ function ClassicUI:SetStrataForMainFrames()
 	CUI_PetActionBarFrame:SetFrameLevel(2)
 end
 
+-- Helper function for 'ResizeLayoutCUIFunc'. Is a copy from 'GetExtents' local function of 'LayoutFrame.lua'
+ClassicUI.ResizeLayoutCUIGetExtents = function(childFrame, left, right, top, bottom, layoutFrameScale)
+	local frameLeft, frameBottom, frameWidth, frameHeight, defaulted = GetUnscaledFrameRect(childFrame, layoutFrameScale)
+	local frameRight = frameLeft + frameWidth
+	local frameTop = frameBottom + frameHeight
+	left = left and mathmin(frameLeft, left) or frameLeft
+	right = right and mathmax(frameRight, right) or frameRight
+	top = top and mathmax(frameTop, top) or frameTop
+	bottom = bottom and mathmin(frameBottom, bottom) or frameBottom
+	return left, right, top, bottom, defaulted
+end
+
+-- Helper function for 'ResizeLayoutCUIFunc'. Is a copy from 'GetSize' local function of 'LayoutFrame.lua'
+ClassicUI.ResizeLayoutCUIGetSize = function(desired, fixed, minimum, maximum)
+	return fixed or Clamp(desired, minimum or desired, maximum or desired)
+end
+
+-- Function that allows to readjust the size of an ActionBar. We cannot execute the function 'ResizeLayoutMixin:Layout()' on demand because it will cause taints. This function does the same but avoiding the taints.
+ClassicUI.ResizeLayoutCUIFunc = function(bar)
+	-- GetExtents will fail if the LayoutFrame has 0 width or height, so set them to 1 to start, and it is also necessary to set it like this initially for correct function operation
+	bar:SetSize(1, 1)
+	-- GetExtents will also fail if the LayoutFrame has no anchors set
+	local hadNoAnchors = (bar:GetNumPoints() == 0)
+	if hadNoAnchors then
+		-- Normally we would set the anchor here, but in order not to cause taints we prefer to exit the function and not perform the layout
+		return
+	end
+	local left, right, top, bottom, defaulted
+	local layoutFrameScale = bar:GetEffectiveScale()
+	for childIndex, child in ipairs(bar:GetLayoutChildren()) do
+		-- We avoid making the Layout of the child frames, it does not seem necessary
+		local l, r, t, b, d = ClassicUI.ResizeLayoutCUIGetExtents(child, left, right, top, bottom, layoutFrameScale)
+		left, right, top, bottom = l, r, t, b
+		defaulted = defaulted or d
+	end
+	if left and right and top and bottom then
+		local width = ClassicUI.ResizeLayoutCUIGetSize((right - left) + (bar.widthPadding or 0), bar.fixedWidth, bar.minimumWidth, bar.maximumWidth)
+		local height = ClassicUI.ResizeLayoutCUIGetSize((top - bottom) + (bar.heightPadding or 0), bar.fixedHeight, bar.minimumHeight, bar.maximumHeight)
+		bar:SetSize(width, height)
+	end
+	-- It is not necessary to perform the ClearAllPoints here if the bar does not have anchors, and we avoid the MarkClean function that would cause a taint
+end
+
+-- Function to ReLayout all main frames to adjust its size, avoiding the issue that sometimes happens that causes them to fill the entire screen
+function ClassicUI:ReLayoutMainFrames()
+	if InCombatLockdown() then
+		delayFunc_ReLayoutMainFrames = true
+		if (not fclFrame:IsEventRegistered("PLAYER_REGEN_ENABLED")) then
+			fclFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+		end
+		return
+	end
+	-- ReLayout the main frames (MainMenuBar, MultiBarBottomLeft, MultiBarBottomRight, MultiBarRight, MultiBarLeft)
+	ClassicUI.ResizeLayoutCUIFunc(MainMenuBar)
+	ClassicUI.ResizeLayoutCUIFunc(MultiBarBottomLeft)
+	ClassicUI.ResizeLayoutCUIFunc(MultiBarBottomRight)
+	ClassicUI.ResizeLayoutCUIFunc(MultiBarRight)
+	ClassicUI.ResizeLayoutCUIFunc(MultiBarLeft)
+	-- Some additional adjustments from the 'FramePositionDelegate:UIParentManageFramePositions()' function
+	local rightAnchor = (EditModeUtil ~= nil) and EditModeUtil:GetRightContainerAnchor() or nil
+	if (rightAnchor and UIParentRightManagedFrameContainer) then
+		rightAnchor:SetPoint(UIParentRightManagedFrameContainer, true)
+	end
+end
+
 -- Function that retrieves the number of visible bars. It can negatively affect performance, so it is advisable to use a cached value when possible and avoid multiple unnecessary calls to this function
 function ClassicUI:GetNumberVisibleBars(statBar)
 	local numVisBars = 0
@@ -1237,8 +1309,7 @@ ClassicUI.UpdateCacheVisibleBars = function(self)
 		ClassicUI.cached_UpdateCacheVisibleBarsFunc_Timestamp = GetTime()
 		ClassicUI.cached_NumberVisibleBars = ClassicUI:GetNumberVisibleBars(self)
 		ClassicUI.cached_NumberRealVisibleBars = ClassicUI.cached_NumberVisibleBars
-		
-		if ( ClassicUI.cached_NumberVisibleBars == 2 ) then
+		if (ClassicUI.cached_NumberVisibleBars == 2) then
 			-- Show/Hide the DoubleStatusBar
 			if (ClassicUI.cached_DoubleStatusBar_hide) then
 				local hideDoubleStatusBar = false
@@ -1258,7 +1329,7 @@ ClassicUI.UpdateCacheVisibleBars = function(self)
 						end
 					end
 				end
-				if ( hideDoubleStatusBar ) then
+				if (hideDoubleStatusBar) then
 					ClassicUI.cached_NumberRealVisibleBars = 0
 					if (self:IsShown()) then
 						self:Hide()
@@ -1273,7 +1344,7 @@ ClassicUI.UpdateCacheVisibleBars = function(self)
 					self:Show()
 				end
 			end
-		elseif ( ClassicUI.cached_NumberVisibleBars == 1 ) then
+		elseif (ClassicUI.cached_NumberVisibleBars == 1) then
 			-- Show/Hide the SingleStatusBar
 			if (ClassicUI.cached_SingleStatusBar_hide) then
 				local hideSingleStatusBar = false
@@ -1293,7 +1364,7 @@ ClassicUI.UpdateCacheVisibleBars = function(self)
 						end
 					end
 				end
-				if ( hideSingleStatusBar ) then
+				if (hideSingleStatusBar) then
 					ClassicUI.cached_NumberRealVisibleBars = 0
 					if (self:IsShown()) then
 						self:Hide()
@@ -1959,8 +2030,8 @@ function ClassicUI:EnableOldMinimap()
 	function CUI_MiniMapInstanceDifficulty:MiniMapInstanceDifficulty_Update()
 		local _, instanceType, difficulty, _, maxPlayers, playerDifficulty, isDynamicInstance, _, instanceGroupSize = GetInstanceInfo()
 		local _, _, isHeroic, isChallengeMode, displayHeroic, displayMythic = GetDifficultyInfo(difficulty)
-		if ( self.isGuildGroup ) then
-			if ( instanceGroupSize == 0 ) then
+		if (self.isGuildGroup) then
+			if (instanceGroupSize == 0) then
 				CUI_GuildInstanceDifficultyText:SetText("")
 				CUI_GuildInstanceDifficultyDarkBackground:SetAlpha(0)
 				CUI_GuildInstanceDifficulty.emblem:SetPoint("TOPLEFT", 12, -16)
@@ -1970,13 +2041,13 @@ function ClassicUI:EnableOldMinimap()
 				CUI_GuildInstanceDifficulty.emblem:SetPoint("TOPLEFT", 12, -10)
 			end
 			CUI_GuildInstanceDifficultyText:ClearAllPoints()
-			if ( isHeroic or isChallengeMode or displayMythic or displayHeroic ) then
+			if (isHeroic or isChallengeMode or displayMythic or displayHeroic) then
 				local symbolTexture
-				if ( isChallengeMode ) then
+				if (isChallengeMode) then
 					symbolTexture = CUI_GuildInstanceDifficultyChallengeModeTexture
 					CUI_GuildInstanceDifficultyHeroicTexture:Hide()
 					CUI_GuildInstanceDifficultyMythicTexture:Hide()
-				elseif ( displayMythic ) then
+				elseif (displayMythic) then
 					symbolTexture = CUI_GuildInstanceDifficultyMythicTexture
 					CUI_GuildInstanceDifficultyHeroicTexture:Hide()
 					CUI_GuildInstanceDifficultyChallengeModeTexture:Hide()
@@ -1985,10 +2056,10 @@ function ClassicUI:EnableOldMinimap()
 					CUI_GuildInstanceDifficultyChallengeModeTexture:Hide()
 					CUI_GuildInstanceDifficultyMythicTexture:Hide()
 				end
-				if ( instanceGroupSize < 10 ) then
+				if (instanceGroupSize < 10) then
 					symbolTexture:SetPoint("BOTTOMLEFT", 11, 7)
 					CUI_GuildInstanceDifficultyText:SetPoint("BOTTOMLEFT", 23, 8)
-				elseif ( instanceGroupSize > 19 ) then
+				elseif (instanceGroupSize > 19) then
 					symbolTexture:SetPoint("BOTTOMLEFT", 8, 7)
 					CUI_GuildInstanceDifficultyText:SetPoint("BOTTOMLEFT", 20, 8)
 				else
@@ -2006,20 +2077,20 @@ function ClassicUI:EnableOldMinimap()
 			SetSmallGuildTabardTextures("player", CUI_GuildInstanceDifficulty.emblem, CUI_GuildInstanceDifficulty.background, CUI_GuildInstanceDifficulty.border)
 			CUI_GuildInstanceDifficulty:Show()
 			CUI_MiniMapChallengeMode:Hide()
-		elseif ( isChallengeMode ) then
+		elseif (isChallengeMode) then
 			CUI_MiniMapChallengeMode:Show()
 			self:Hide()
 			CUI_GuildInstanceDifficulty:Hide()
-		elseif ( instanceType == "raid" or isHeroic or displayMythic or displayHeroic ) then
+		elseif (instanceType == "raid" or isHeroic or displayMythic or displayHeroic) then
 			CUI_MiniMapInstanceDifficultyText:SetText(instanceGroupSize)
 			local xOffset = 0
-			if ( instanceGroupSize >= 10 and instanceGroupSize <= 19 ) then
+			if (instanceGroupSize >= 10 and instanceGroupSize <= 19) then
 				xOffset = -1
 			end
-			if ( displayMythic ) then
+			if (displayMythic) then
 				CUI_MiniMapInstanceDifficultyTexture:SetTexCoord(0.25, 0.5, 0.0703125, 0.4296875)
 				CUI_MiniMapInstanceDifficultyText:SetPoint("CENTER", xOffset, -9)
-			elseif ( isHeroic or displayHeroic ) then
+			elseif (isHeroic or displayHeroic) then
 				CUI_MiniMapInstanceDifficultyTexture:SetTexCoord(0, 0.25, 0.0703125, 0.4296875)
 				CUI_MiniMapInstanceDifficultyText:SetPoint("CENTER", xOffset, -9)
 			else
@@ -2036,20 +2107,20 @@ function ClassicUI:EnableOldMinimap()
 		end
 	end
 	CUI_MiniMapInstanceDifficulty:SetScript("OnEvent", function(self, event, ...)
-		if ( event == "GUILD_PARTY_STATE_UPDATED" ) then
+		if (event == "GUILD_PARTY_STATE_UPDATED") then
 			local isGuildGroup = ...
-			if ( isGuildGroup ~= self.isGuildGroup ) then
+			if (isGuildGroup ~= self.isGuildGroup) then
 				self.isGuildGroup = isGuildGroup
 				self:MiniMapInstanceDifficulty_Update()
 			end
-		elseif ( event == "PLAYER_DIFFICULTY_CHANGED") then
+		elseif (event == "PLAYER_DIFFICULTY_CHANGED") then
 			self:MiniMapInstanceDifficulty_Update()
-		elseif ( event == "UPDATE_INSTANCE_INFO" or event == "INSTANCE_GROUP_SIZE_CHANGED" ) then
+		elseif (event == "UPDATE_INSTANCE_INFO" or event == "INSTANCE_GROUP_SIZE_CHANGED") then
 			self:MiniMapInstanceDifficulty_Update()
-		elseif ( event == "PLAYER_GUILD_UPDATE" ) then
+		elseif (event == "PLAYER_GUILD_UPDATE") then
 			local tabard = CUI_GuildInstanceDifficulty
 			SetSmallGuildTabardTextures("player", tabard.emblem, tabard.background, tabard.border)
-			if not( IsInGuild() ) then
+			if not(IsInGuild()) then
 				self.isGuildGroup = nil
 				self:MiniMapInstanceDifficulty_Update()
 			end
@@ -2072,17 +2143,17 @@ function ClassicUI:EnableOldMinimap()
 		local guildName = GetGuildInfo("player")
 		local _, instanceType, _, _, maxPlayers = GetInstanceInfo()
 		local _, numGuildPresent, numGuildRequired, xpMultiplier = InGuildParty()
-		if ( instanceType == "arena" ) then
+		if (instanceType == "arena") then
 			maxPlayers = numGuildRequired
 		end
 		GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT", 8, 8)
 		GameTooltip:SetText(GUILD_GROUP, 1, 1, 1)
-		if ( xpMultiplier < 1 ) then
+		if (xpMultiplier < 1) then
 			GameTooltip:AddLine(strformat(GUILD_ACHIEVEMENTS_ELIGIBLE_MINXP, numGuildRequired, maxPlayers, guildName, xpMultiplier * 100), nil, nil, nil, true)
-		elseif ( xpMultiplier > 1 ) then
+		elseif (xpMultiplier > 1) then
 			GameTooltip:AddLine(strformat(GUILD_ACHIEVEMENTS_ELIGIBLE_MAXXP, guildName, xpMultiplier * 100), nil, nil, nil, true)
 		else
-			if ( instanceType == "party" and maxPlayers == 5 ) then
+			if (instanceType == "party" and maxPlayers == 5) then
 				numGuildRequired = 4
 			end
 			GameTooltip:AddLine(strformat(GUILD_ACHIEVEMENTS_ELIGIBLE, numGuildRequired, maxPlayers, guildName), nil, nil, nil, true)
@@ -2175,7 +2246,7 @@ function ClassicUI:EnableOldMinimap()
 				GameTooltip:AddLine(subzoneName, 1.0, 0.7, 0.0)
 				GameTooltip:AddLine(CONTESTED_TERRITORY, 1.0, 0.7, 0.0)
 			elseif (pvpType == "combat") then
-				GameTooltip:AddLine(subzoneName, 1.0, 0.1, 0.1 )
+				GameTooltip:AddLine(subzoneName, 1.0, 0.1, 0.1)
 				GameTooltip:AddLine(COMBAT_ZONE, 1.0, 0.1, 0.1)
 			else
 				GameTooltip:AddLine(subzoneName, NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b)
@@ -2211,32 +2282,6 @@ end
 
 -- Function that executes functionalities of the 'MainFunction' function that need to be executed after the first "PLAYER_ENTERING_WORLD" event
 function ClassicUI:MF_PLAYER_ENTERING_WORLD()
-	-- Wipe the .buttonsAndSpacers table from ActionBars to avoid Blizzard layout updates with the UpdateGridLayout() function. Wiping this table does not taint :)
-	if (MainMenuBar.buttonsAndSpacers ~= nil) then
-		tblwipe(MainMenuBar.buttonsAndSpacers)
-	end
-	if (MultiBarBottomLeft.buttonsAndSpacers ~= nil) then
-		tblwipe(MultiBarBottomLeft.buttonsAndSpacers)
-	end
-	if (MultiBarBottomRight.buttonsAndSpacers ~= nil) then
-		tblwipe(MultiBarBottomRight.buttonsAndSpacers)
-	end
-	if (StanceBar.buttonsAndSpacers ~= nil) then
-		tblwipe(StanceBar.buttonsAndSpacers)
-	end
-	if (PetActionBar.buttonsAndSpacers ~= nil) then
-		tblwipe(PetActionBar.buttonsAndSpacers)
-	end
-	if (PossessActionBar.buttonsAndSpacers ~= nil) then
-		tblwipe(PossessActionBar.buttonsAndSpacers)
-	end
-	if (MultiBarRight.buttonsAndSpacers ~= nil) then
-		tblwipe(MultiBarRight.buttonsAndSpacers)
-	end
-	if (MultiBarLeft.buttonsAndSpacers ~= nil) then
-		tblwipe(MultiBarLeft.buttonsAndSpacers)
-	end
-	
 	if InCombatLockdown() then
 		delayFunc_MF_PLAYER_ENTERING_WORLD = true
 		if (not fclFrame:IsEventRegistered("PLAYER_REGEN_ENABLED")) then
@@ -2295,6 +2340,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	CUI_MainMenuBar:EnableMouse(true)
 	CUI_MainMenuBar:SetAlpha(1)
 	CUI_MainMenuBar:Show()
+	CUI_MainMenuBar.actionButtons = { }
 	CUI_MainMenuBar.hook_SetScale = function(self, scale)
 		if (CUI_MainMenuBar.oldOrigScale ~= scale) then
 			local newMainScale = ClassicUI.cached_db_profile.barsConfig_MainMenuBar_scale / scale	-- cached db value
@@ -2302,6 +2348,8 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 				if InCombatLockdown() then
 					if (ClassicUI.queuePending_HookSetScale[CUI_MainMenuBar] == nil) then
 						ClassicUI.queuePending_HookSetScale[CUI_MainMenuBar] = { self, scale }
+					else
+						ClassicUI.queuePending_HookSetScale[CUI_MainMenuBar][2] = scale
 					end
 					delayFunc_BarHookProtectedApplySetScale = true
 					if (not fclFrame:IsEventRegistered("PLAYER_REGEN_ENABLED")) then
@@ -2314,13 +2362,38 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 				for i = 1, 12 do
 					local iActionButton = _G["ActionButton"..i]
 					if (iActionButton ~= nil) then
-						iActionButton:SetScale(newMainScale * ClassicUI.cached_ActionButtonInfo.currentScale[iActionButton])
+						iActionButton:SetScale(ClassicUI.cached_db_profile.barsConfig_MainMenuBar_scale / (iActionButton:GetParent():GetScale() * scale) * ClassicUI.cached_ActionButtonInfo.currentScale[iActionButton])	-- cached db value
 					end
 				end
 			end
 		end
 	end
 	hooksecurefunc(MainMenuBar, "SetScale", CUI_MainMenuBar.hook_SetScale)
+	for i = 1, 12 do
+		local iActionButton = _G["ActionButton"..i]
+		if (iActionButton ~= nil) then
+			CUI_MainMenuBar.actionButtons[iActionButton] = { }
+			CUI_MainMenuBar.actionButtons[iActionButton].hook_SetScale = function(self, scale)
+				local newMainScale = ClassicUI.cached_db_profile.barsConfig_MainMenuBar_scale / (scale * iActionButton.bar:GetScale()) * ClassicUI.cached_ActionButtonInfo.currentScale[iActionButton]	-- cached db value
+				if (mathabs(iActionButton:GetScale()-newMainScale) > SCALE_EPSILON) then
+					if InCombatLockdown() then
+						if (ClassicUI.queuePending_HookSetScale[CUI_MainMenuBar.actionButtons[iActionButton]] == nil) then
+							ClassicUI.queuePending_HookSetScale[CUI_MainMenuBar.actionButtons[iActionButton]] = { self, scale }
+						else
+							ClassicUI.queuePending_HookSetScale[CUI_MainMenuBar.actionButtons[iActionButton]][2] = scale
+						end
+						delayFunc_BarHookProtectedApplySetScale = true
+						if (not fclFrame:IsEventRegistered("PLAYER_REGEN_ENABLED")) then
+							fclFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+						end
+						return
+					end
+					iActionButton:SetScale(newMainScale)
+				end
+			end
+			hooksecurefunc(iActionButton:GetParent(), "SetScale", CUI_MainMenuBar.actionButtons[iActionButton].hook_SetScale)
+		end
+	end
 	
 	-- [ActionBars] MainMenuBar -> MainMenuBarArtFrame
 	local CUI_MainMenuBarArtFrame = CreateFrame("Frame", "CUI_MainMenuBarArtFrame", CUI_MainMenuBar)
@@ -2571,8 +2644,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 			direction = "UP"
 		end
 		if (isActionBar) then
-			local actionBar = parent:GetParent()
-			direction = actionBar:GetSpellFlyoutDirection()
+			direction = parent.bar:GetSpellFlyoutDirection()
 		end
 		local prevButton = nil
 		local numButtons = 0
@@ -2686,6 +2758,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	CUI_MultiBarBottomLeft:EnableMouse(false)
 	CUI_MultiBarBottomLeft:SetAlpha(1)
 	CUI_MultiBarBottomLeft:Show()
+	CUI_MultiBarBottomLeft.actionButtons = { }
 	CUI_MultiBarBottomLeft.hook_SetScale = function(self, scale)
 		if (CUI_MultiBarBottomLeft.oldOrigScale ~= scale) then
 			local newMainScale = ClassicUI.cached_db_profile.barsConfig_BottomMultiActionBars_scale / scale	-- cached db value
@@ -2693,6 +2766,8 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 				if InCombatLockdown() then
 					if (ClassicUI.queuePending_HookSetScale[CUI_MultiBarBottomLeft] == nil) then
 						ClassicUI.queuePending_HookSetScale[CUI_MultiBarBottomLeft] = { self, scale }
+					else
+						ClassicUI.queuePending_HookSetScale[CUI_MultiBarBottomLeft][2] = scale
 					end
 					delayFunc_BarHookProtectedApplySetScale = true
 					if (not fclFrame:IsEventRegistered("PLAYER_REGEN_ENABLED")) then
@@ -2705,13 +2780,38 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 				for i = 1, 12 do
 					local iMultiBarBottomLeftButton = _G["MultiBarBottomLeftButton"..i]
 					if (iMultiBarBottomLeftButton ~= nil) then
-						iMultiBarBottomLeftButton:SetScale(newMainScale * ClassicUI.cached_ActionButtonInfo.currentScale[iMultiBarBottomLeftButton])
+						iMultiBarBottomLeftButton:SetScale(ClassicUI.cached_db_profile.barsConfig_BottomMultiActionBars_scale / (iMultiBarBottomLeftButton:GetParent():GetScale() * scale) * ClassicUI.cached_ActionButtonInfo.currentScale[iMultiBarBottomLeftButton])	-- cached db value
 					end
 				end
 			end
 		end
 	end
 	hooksecurefunc(MultiBarBottomLeft, "SetScale", CUI_MultiBarBottomLeft.hook_SetScale)
+	for i = 1, 12 do
+		local iMultiBarBottomLeftButton = _G["MultiBarBottomLeftButton"..i]
+		if (iMultiBarBottomLeftButton ~= nil) then
+			CUI_MultiBarBottomLeft.actionButtons[iMultiBarBottomLeftButton] = { }
+			CUI_MultiBarBottomLeft.actionButtons[iMultiBarBottomLeftButton].hook_SetScale = function(self, scale)
+				local newMainScale = ClassicUI.cached_db_profile.barsConfig_BottomMultiActionBars_scale / (scale * iMultiBarBottomLeftButton.bar:GetScale()) * ClassicUI.cached_ActionButtonInfo.currentScale[iMultiBarBottomLeftButton]	-- cached db value
+				if (mathabs(iMultiBarBottomLeftButton:GetScale()-newMainScale) > SCALE_EPSILON) then
+					if InCombatLockdown() then
+						if (ClassicUI.queuePending_HookSetScale[CUI_MultiBarBottomLeft.actionButtons[iMultiBarBottomLeftButton]] == nil) then
+							ClassicUI.queuePending_HookSetScale[CUI_MultiBarBottomLeft.actionButtons[iMultiBarBottomLeftButton]] = { self, scale }
+						else
+							ClassicUI.queuePending_HookSetScale[CUI_MultiBarBottomLeft.actionButtons[iMultiBarBottomLeftButton]][2] = scale
+						end
+						delayFunc_BarHookProtectedApplySetScale = true
+						if (not fclFrame:IsEventRegistered("PLAYER_REGEN_ENABLED")) then
+							fclFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+						end
+						return
+					end
+					iMultiBarBottomLeftButton:SetScale(newMainScale)
+				end
+			end
+			hooksecurefunc(iMultiBarBottomLeftButton:GetParent(), "SetScale", CUI_MultiBarBottomLeft.actionButtons[iMultiBarBottomLeftButton].hook_SetScale)
+		end
+	end
 	
 	-- [ActionBars] MultiBarBottomRight
 	local CUI_MultiBarBottomRight = CreateFrame("Frame", "CUI_MultiBarBottomRight", MultiBarBottomRight)
@@ -2747,6 +2847,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	CUI_MultiBarBottomRight:EnableMouse(false)
 	CUI_MultiBarBottomRight:SetAlpha(1)
 	CUI_MultiBarBottomRight:Show()
+	CUI_MultiBarBottomRight.actionButtons = { }
 	CUI_MultiBarBottomRight.hook_SetScale = function(self, scale)
 		if (CUI_MultiBarBottomRight.oldOrigScale ~= scale) then
 			local newMainScale = ClassicUI.cached_db_profile.barsConfig_BottomMultiActionBars_scale / scale	-- cached db value
@@ -2754,6 +2855,8 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 				if InCombatLockdown() then
 					if (ClassicUI.queuePending_HookSetScale[CUI_MultiBarBottomRight] == nil) then
 						ClassicUI.queuePending_HookSetScale[CUI_MultiBarBottomRight] = { self, scale }
+					else
+						ClassicUI.queuePending_HookSetScale[CUI_MultiBarBottomRight][2] = scale
 					end
 					delayFunc_BarHookProtectedApplySetScale = true
 					if (not fclFrame:IsEventRegistered("PLAYER_REGEN_ENABLED")) then
@@ -2766,13 +2869,38 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 				for i = 1, 12 do
 					local iMultiBarBottomRightButton = _G["MultiBarBottomRightButton"..i]
 					if (iMultiBarBottomRightButton ~= nil) then
-						iMultiBarBottomRightButton:SetScale(newMainScale * ClassicUI.cached_ActionButtonInfo.currentScale[iMultiBarBottomRightButton])
+						iMultiBarBottomRightButton:SetScale(ClassicUI.cached_db_profile.barsConfig_BottomMultiActionBars_scale / (iMultiBarBottomRightButton:GetParent():GetScale() * scale) * ClassicUI.cached_ActionButtonInfo.currentScale[iMultiBarBottomRightButton])	-- cached db value
 					end
 				end
 			end
 		end
 	end
 	hooksecurefunc(MultiBarBottomRight, "SetScale", CUI_MultiBarBottomRight.hook_SetScale)
+	for i = 1, 12 do
+		local iMultiBarBottomRightButton = _G["MultiBarBottomRightButton"..i]
+		if (iMultiBarBottomRightButton ~= nil) then
+			CUI_MultiBarBottomRight.actionButtons[iMultiBarBottomRightButton] = { }
+			CUI_MultiBarBottomRight.actionButtons[iMultiBarBottomRightButton].hook_SetScale = function(self, scale)
+				local newMainScale = ClassicUI.cached_db_profile.barsConfig_BottomMultiActionBars_scale / (scale * iMultiBarBottomRightButton.bar:GetScale()) * ClassicUI.cached_ActionButtonInfo.currentScale[iMultiBarBottomRightButton]	-- cached db value
+				if (mathabs(iMultiBarBottomRightButton:GetScale()-newMainScale) > SCALE_EPSILON) then
+					if InCombatLockdown() then
+						if (ClassicUI.queuePending_HookSetScale[CUI_MultiBarBottomRight.actionButtons[iMultiBarBottomRightButton]] == nil) then
+							ClassicUI.queuePending_HookSetScale[CUI_MultiBarBottomRight.actionButtons[iMultiBarBottomRightButton]] = { self, scale }
+						else
+							ClassicUI.queuePending_HookSetScale[CUI_MultiBarBottomRight.actionButtons[iMultiBarBottomRightButton]][2] = scale
+						end
+						delayFunc_BarHookProtectedApplySetScale = true
+						if (not fclFrame:IsEventRegistered("PLAYER_REGEN_ENABLED")) then
+							fclFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+						end
+						return
+					end
+					iMultiBarBottomRightButton:SetScale(newMainScale)
+				end
+			end
+			hooksecurefunc(iMultiBarBottomRightButton:GetParent(), "SetScale", CUI_MultiBarBottomRight.actionButtons[iMultiBarBottomRightButton].hook_SetScale)
+		end
+	end
 	
 	-- [ActionBars] MultiBarRight
 	local CUI_MultiBarRight = CreateFrame("Frame", "CUI_MultiBarRight", MultiBarRight)
@@ -2824,6 +2952,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	CUI_MultiBarRight:EnableMouse(false)
 	CUI_MultiBarRight:SetAlpha(1)
 	CUI_MultiBarRight:Show()
+	CUI_MultiBarRight.actionButtons = { }
 	CUI_MultiBarRight.hook_SetScale = function(self, scale)
 		if (CUI_MultiBarRight.oldOrigScale ~= scale) then
 			local newMainScale = ClassicUI.cached_db_profile.barsConfig_RightMultiActionBars_scale / scale	-- cached db value
@@ -2831,6 +2960,8 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 				if InCombatLockdown() then
 					if (ClassicUI.queuePending_HookSetScale[CUI_MultiBarRight] == nil) then
 						ClassicUI.queuePending_HookSetScale[CUI_MultiBarRight] = { self, scale }
+					else
+						ClassicUI.queuePending_HookSetScale[CUI_MultiBarRight][2] = scale
 					end
 					delayFunc_BarHookProtectedApplySetScale = true
 					if (not fclFrame:IsEventRegistered("PLAYER_REGEN_ENABLED")) then
@@ -2843,13 +2974,38 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 				for i = 1, 12 do
 					local iMultiBarRightButton = _G["MultiBarRightButton"..i]
 					if (iMultiBarRightButton ~= nil) then
-						iMultiBarRightButton:SetScale(newMainScale * ClassicUI.cached_ActionButtonInfo.currentScale[iMultiBarRightButton])
+						iMultiBarRightButton:SetScale(ClassicUI.cached_db_profile.barsConfig_RightMultiActionBars_scale / (iMultiBarRightButton:GetParent():GetScale() * scale) * ClassicUI.cached_ActionButtonInfo.currentScale[iMultiBarRightButton])	-- cached db value
 					end
 				end
 			end
 		end
 	end
 	hooksecurefunc(MultiBarRight, "SetScale", CUI_MultiBarRight.hook_SetScale)
+	for i = 1, 12 do
+		local iMultiBarRightButton = _G["MultiBarRightButton"..i]
+		if (iMultiBarRightButton ~= nil) then
+			CUI_MultiBarRight.actionButtons[iMultiBarRightButton] = { }
+			CUI_MultiBarRight.actionButtons[iMultiBarRightButton].hook_SetScale = function(self, scale)
+				local newMainScale = ClassicUI.cached_db_profile.barsConfig_RightMultiActionBars_scale / (scale * iMultiBarRightButton.bar:GetScale()) * ClassicUI.cached_ActionButtonInfo.currentScale[iMultiBarRightButton]	-- cached db value
+				if (mathabs(iMultiBarRightButton:GetScale()-newMainScale) > SCALE_EPSILON) then
+					if InCombatLockdown() then
+						if (ClassicUI.queuePending_HookSetScale[CUI_MultiBarRight.actionButtons[iMultiBarRightButton]] == nil) then
+							ClassicUI.queuePending_HookSetScale[CUI_MultiBarRight.actionButtons[iMultiBarRightButton]] = { self, scale }
+						else
+							ClassicUI.queuePending_HookSetScale[CUI_MultiBarRight.actionButtons[iMultiBarRightButton]][2] = scale
+						end
+						delayFunc_BarHookProtectedApplySetScale = true
+						if (not fclFrame:IsEventRegistered("PLAYER_REGEN_ENABLED")) then
+							fclFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+						end
+						return
+					end
+					iMultiBarRightButton:SetScale(newMainScale)
+				end
+			end
+			hooksecurefunc(iMultiBarRightButton:GetParent(), "SetScale", CUI_MultiBarRight.actionButtons[iMultiBarRightButton].hook_SetScale)
+		end
+	end
 	
 	-- [ActionBars] MultiBarLeft
 	local CUI_MultiBarLeft = CreateFrame("Frame", "CUI_MultiBarLeft", MultiBarLeft)
@@ -2885,6 +3041,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	CUI_MultiBarLeft:EnableMouse(false)
 	CUI_MultiBarLeft:SetAlpha(1)
 	CUI_MultiBarLeft:Show()
+	CUI_MultiBarLeft.actionButtons = { }
 	CUI_MultiBarLeft.hook_SetScale = function(self, scale)
 		if (CUI_MultiBarLeft.oldOrigScale ~= scale) then
 			local newMainScale = ClassicUI.cached_db_profile.barsConfig_RightMultiActionBars_scale / scale	-- cached db value
@@ -2892,6 +3049,8 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 				if InCombatLockdown() then
 					if (ClassicUI.queuePending_HookSetScale[CUI_MultiBarLeft] == nil) then
 						ClassicUI.queuePending_HookSetScale[CUI_MultiBarLeft] = { self, scale }
+					else
+						ClassicUI.queuePending_HookSetScale[CUI_MultiBarLeft][2] = scale
 					end
 					delayFunc_BarHookProtectedApplySetScale = true
 					if (not fclFrame:IsEventRegistered("PLAYER_REGEN_ENABLED")) then
@@ -2904,13 +3063,38 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 				for i = 1, 12 do
 					local iMultiBarLeftButton = _G["MultiBarLeftButton"..i]
 					if (iMultiBarLeftButton ~= nil) then
-						iMultiBarLeftButton:SetScale(newMainScale * ClassicUI.cached_ActionButtonInfo.currentScale[iMultiBarLeftButton])
+						iMultiBarLeftButton:SetScale(ClassicUI.cached_db_profile.barsConfig_RightMultiActionBars_scale / (iMultiBarLeftButton:GetParent():GetScale() * scale) * ClassicUI.cached_ActionButtonInfo.currentScale[iMultiBarLeftButton])	-- cached db value
 					end
 				end
 			end
 		end
 	end
 	hooksecurefunc(MultiBarLeft, "SetScale", CUI_MultiBarLeft.hook_SetScale)
+	for i = 1, 12 do
+		local iMultiBarLeftButton = _G["MultiBarLeftButton"..i]
+		if (iMultiBarLeftButton ~= nil) then
+			CUI_MultiBarLeft.actionButtons[iMultiBarLeftButton] = { }
+			CUI_MultiBarLeft.actionButtons[iMultiBarLeftButton].hook_SetScale = function(self, scale)
+				local newMainScale = ClassicUI.cached_db_profile.barsConfig_RightMultiActionBars_scale / (scale * iMultiBarLeftButton.bar:GetScale()) * ClassicUI.cached_ActionButtonInfo.currentScale[iMultiBarLeftButton]	-- cached db value
+				if (mathabs(iMultiBarLeftButton:GetScale()-newMainScale) > SCALE_EPSILON) then
+					if InCombatLockdown() then
+						if (ClassicUI.queuePending_HookSetScale[CUI_MultiBarLeft.actionButtons[iMultiBarLeftButton]] == nil) then
+							ClassicUI.queuePending_HookSetScale[CUI_MultiBarLeft.actionButtons[iMultiBarLeftButton]] = { self, scale }
+						else
+							ClassicUI.queuePending_HookSetScale[CUI_MultiBarLeft.actionButtons[iMultiBarLeftButton]][2] = scale
+						end
+						delayFunc_BarHookProtectedApplySetScale = true
+						if (not fclFrame:IsEventRegistered("PLAYER_REGEN_ENABLED")) then
+							fclFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+						end
+						return
+					end
+					iMultiBarLeftButton:SetScale(newMainScale)
+				end
+			end
+			hooksecurefunc(iMultiBarLeftButton:GetParent(), "SetScale", CUI_MultiBarLeft.actionButtons[iMultiBarLeftButton].hook_SetScale)
+		end
+	end
 	
 	-- [ActionBars] PetActionBarFrame (a.k.a. PetActionBar)
 	local CUI_PetActionBarFrame = CreateFrame("Frame", "CUI_PetActionBarFrame", PetActionBar)
@@ -3073,6 +3257,8 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 				if InCombatLockdown() then
 					if (ClassicUI.queuePending_HookSetScale[CUI_PetActionBarFrame] == nil) then
 						ClassicUI.queuePending_HookSetScale[CUI_PetActionBarFrame] = { self, scale }
+					else
+						ClassicUI.queuePending_HookSetScale[CUI_PetActionBarFrame][2] = scale
 					end
 					delayFunc_BarHookProtectedApplySetScale = true
 					if (not fclFrame:IsEventRegistered("PLAYER_REGEN_ENABLED")) then
@@ -3229,6 +3415,8 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 				if InCombatLockdown() then
 					if (ClassicUI.queuePending_HookSetScale[CUI_PossessBarFrame] == nil) then
 						ClassicUI.queuePending_HookSetScale[CUI_PossessBarFrame] = { self, scale }
+					else
+						ClassicUI.queuePending_HookSetScale[CUI_PossessBarFrame][2] = scale
 					end
 					delayFunc_BarHookProtectedApplySetScale = true
 					if (not fclFrame:IsEventRegistered("PLAYER_REGEN_ENABLED")) then
@@ -3368,6 +3556,8 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 				if InCombatLockdown() then
 					if (ClassicUI.queuePending_HookSetScale[CUI_StanceBarFrame] == nil) then
 						ClassicUI.queuePending_HookSetScale[CUI_StanceBarFrame] = { self, scale }
+					else
+						ClassicUI.queuePending_HookSetScale[CUI_StanceBarFrame][2] = scale
 					end
 					delayFunc_BarHookProtectedApplySetScale = true
 					if (not fclFrame:IsEventRegistered("PLAYER_REGEN_ENABLED")) then
@@ -3459,14 +3649,14 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	}
 	ClassicUI.UpdateMicroButtonsParent = function(parent)
 		for k, _ in pairs(ClassicUI.MicroButtonsGroup) do
-			k:SetParent(parent);
+			k:SetParent(parent)
 		end
 	end
 	ClassicUI.MoveMicroButtons = function(anchor, anchorTo, relAnchor, x, y, isStacked)
 		CharacterMicroButton:ClearAllPoints()
 		CharacterMicroButton:SetPoint(anchor, anchorTo, relAnchor, x, y)
 		LFDMicroButton:ClearAllPoints()
-		if ( isStacked ) then
+		if (isStacked) then
 			LFDMicroButton:SetPoint("TOPLEFT", CharacterMicroButton, "BOTTOMLEFT", 0, -1)
 		else
 			LFDMicroButton:SetPoint("BOTTOMLEFT", GuildMicroButton, "BOTTOMRIGHT", 1, 0)
@@ -3715,13 +3905,13 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	
 	ClassicUI.GuildMicroButton_UpdateTabard = function(forceUpdate)
 		local tabard = GuildMicroButtonTabard
-		if ( not tabard.needsUpdate and not forceUpdate ) then
+		if (not tabard.needsUpdate and not forceUpdate) then
 			return
 		end
 		if not(ClassicUI.db.profile.barsConfig.MicroButtons.useClassicGuildIcon) then
 			local emblemFilename = select(10, GetGuildLogoInfo())
-			if ( emblemFilename ) then
-				if ( not tabard:IsShown() ) then
+			if (emblemFilename) then
+				if (not tabard:IsShown()) then
 					local button = GuildMicroButton
 					button:SetNormalTexture("Interface\\Buttons\\UI-MicroButtonCharacter-Up")
 					button:SetPushedTexture("Interface\\Buttons\\UI-MicroButtonCharacter-Down")
@@ -3729,7 +3919,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 				end
 				SetSmallGuildTabardTextures("player", tabard.emblem, tabard.background)
 			else
-				if ( tabard:IsShown() ) then
+				if (tabard:IsShown()) then
 					local button = GuildMicroButton
 					button:SetDisabledAtlas("hud-microbutton-Socials-Disabled", true)
 					button:SetNormalTexture("Interface\\Buttons\\UI-MicroButton-Socials-Up")
@@ -3746,7 +3936,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		if (Kiosk_IsEnabled()) then
 			return
 		end
-		if (event == "PLAYER_GUILD_UPDATE" or event == "NEUTRAL_FACTION_SELECT_RESULT" ) then
+		if (event == "PLAYER_GUILD_UPDATE" or event == "NEUTRAL_FACTION_SELECT_RESULT") then
 			self.needsUpdate = true
 			ClassicUI.GuildMicroButton_UpdateTabard()
 		end
@@ -3755,10 +3945,10 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	hooksecurefunc("UpdateMicroButtons", function(self)
 		ClassicUI.GuildMicroButton_UpdateTabard()
 		local factionGroup = UnitFactionGroup("player")
-		if not( IsCommunitiesUIDisabledByTrialAccount() or factionGroup == "Neutral" or Kiosk_IsEnabled() ) and
-		   not( C_Club_IsEnabled() and not BNConnected() ) and
-		   not( C_Club_IsEnabled() and C_Club_IsRestricted() ~= Enum.ClubRestrictionReason.None ) and
-		      ( CommunitiesFrame and CommunitiesFrame:IsShown() ) or ( GuildFrame and GuildFrame:IsShown() ) then
+		if not(IsCommunitiesUIDisabledByTrialAccount() or factionGroup == "Neutral" or Kiosk_IsEnabled()) and
+		   not(C_Club_IsEnabled() and not BNConnected()) and
+		   not(C_Club_IsEnabled() and C_Club_IsRestricted() ~= Enum.ClubRestrictionReason.None) and
+		      (CommunitiesFrame and CommunitiesFrame:IsShown()) or (GuildFrame and GuildFrame:IsShown()) then
 			GuildMicroButtonTabard:SetPoint("TOPLEFT", -1, -2)
 			GuildMicroButtonTabard:SetAlpha(0.70)
 		else
@@ -3914,7 +4104,14 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	-- [MicroButtons] MainMenuMicroButton -> HelpOpenWebTicketButton
 	if (HelpOpenWebTicketButton ~= nil) then
 		HelpOpenWebTicketButton:SetParent(MainMenuMicroButton)
+		HelpOpenWebTicketButton:ClearAllPoints()
 		HelpOpenWebTicketButton:SetPoint("CENTER", HelpOpenWebTicketButton:GetParent(), "TOPRIGHT", -3, -4)
+		if (MicroMenu ~= nil and MicroMenu.UpdateHelpTicketButtonAnchor ~= nil) then
+			hooksecurefunc(MicroMenu, "UpdateHelpTicketButtonAnchor", function(self, position)
+				HelpOpenWebTicketButton:ClearAllPoints()
+				HelpOpenWebTicketButton:SetPoint("CENTER", HelpOpenWebTicketButton:GetParent(), "TOPRIGHT", -3, -4)
+			end)
+		end
 	end
 	
 	-- [MicroButtons] MainMenuMicroButton -> MainMenuBarDownload texture
@@ -3930,7 +4127,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	MainMenuMicroButton:HookScript("OnUpdate", function(self, elapsed)
 		if (self.updateInterval >= 1) then	-- PERFORMANCE_BAR_UPDATE_INTERVAL = 1
 			local status = GetFileStreamingStatus()
-			if ( status == 0 ) then
+			if (status == 0) then
 				status = (GetBackgroundLoadingStatus()~=0) and 1 or 0
 			end
 			self:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
@@ -3940,7 +4137,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 			self:SetHighlightAtlas("hud-microbutton-highlight")
 			self:SetHighlightTexture("Interface\\Buttons\\UI-MicroButton-Hilight", "ADD")
 			self:GetNormalTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
-			if ( status == 0 ) then
+			if (status == 0) then
 				if not(ClassicUI.cached_db_profile.barsConfig_MicroButtons_useClassicMainMenuIcon) then	-- cached db value
 					self:SetNormalTexture("Interface\\Buttons\\UI-MicroButton-MainMenu-Up")
 					self:SetPushedTexture("Interface\\Buttons\\UI-MicroButton-MainMenu-Down")
@@ -3961,11 +4158,11 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 				self:GetPushedTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 				self:GetHighlightTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 				self:GetDisabledTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
-				if ( status == 1 ) then
+				if (status == 1) then
 					CUI_MainMenuBarDownload:SetTexture("Interface\\Buttons\\UI-MicroStream-Green")
-				elseif ( status == 2 ) then
+				elseif (status == 2) then
 					CUI_MainMenuBarDownload:SetTexture("Interface\\Buttons\\UI-MicroStream-Yellow")
-				elseif ( status == 3 ) then
+				elseif (status == 3) then
 					CUI_MainMenuBarDownload:SetTexture("Interface\\Buttons\\UI-MicroStream-Red")
 				end
 				CUI_MainMenuBarDownload:Show()
@@ -4147,6 +4344,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	MicroButtonAndBagsBar:Hide()
 	
 	ClassicUI:SetStrataForMainFrames()
+	ClassicUI:ReLayoutMainFrames()
 	
 	-- [QueueStatusButton]
 	if (ClassicUI.db.profile.extraFrames.Minimap.anchorQueueButtonToMinimap) then
@@ -4279,10 +4477,13 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 			if not ClassicUI.hooked_repBar then
 				hooksecurefunc(bar, "Update", function(self)
 					local _, colorIndex, _, _, _, factionID = GetWatchedFactionInfo()
-					if not(C_Reputation_IsFactionParagon(factionID)) then
-						local friendshipID = C_GossipInfo_GetFriendshipReputation(factionID)
-						if (friendshipID) then
-							colorIndex = 5
+					if (factionID ~= nil) and (factionID ~= 0) and not(C_Reputation_IsFactionParagon(factionID)) then
+						local reputationInfo = C_GossipInfo_GetFriendshipReputation(factionID)
+						if (reputationInfo ~= nil) then
+							local friendshipID = reputationInfo.friendshipFactionID
+							if (friendshipID > 0) then
+								colorIndex = 5
+							end
 						end
 					end
 					local color = FACTION_BAR_COLORS[colorIndex]
@@ -4294,10 +4495,13 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 				ClassicUI.hooked_repBar = true
 			end
 			local _, colorIndex, _, _, _, factionID = GetWatchedFactionInfo()
-			if not(C_Reputation_IsFactionParagon(factionID)) then
-				local friendshipID = C_GossipInfo_GetFriendshipReputation(factionID)
-				if (friendshipID) then
-					colorIndex = 5
+			if (factionID ~= nil) and (factionID ~= 0) and not(C_Reputation_IsFactionParagon(factionID)) then
+				local reputationInfo = C_GossipInfo_GetFriendshipReputation(factionID)
+				if (reputationInfo ~= nil) then
+					local friendshipID = reputationInfo.friendshipFactionID
+					if (friendshipID > 0) then
+						colorIndex = 5
+					end
 				end
 			end
 			local color = FACTION_BAR_COLORS[colorIndex]
@@ -4463,6 +4667,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	-- Update frames after exit edit mode
 	ClassicUI.onExitEditMode = function(self)
 		ClassicUI:SetStrataForMainFrames()
+		ClassicUI:ReLayoutMainFrames()
 		ClassicUI:ReloadMainFramesSettings()
 		ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
 		ClassicUI.UpdatedStatusBarsEvent()
@@ -4870,7 +5075,7 @@ ClassicUI.LayoutActionButton = function(iActionButton, typeActionButton)
 		iActionButton.NormalTexture:SetAlpha(typeABprofile.BLStyle1NormalTextureAlpha)
 		if (typeActionButton <= 2) then
 			ClassicUI.cached_ActionButtonInfo.currentScale[iActionButton] = ClassicUI.ACTIONBUTTON_NEWLAYOUT_SCALE
-			iActionButton:SetScale((newBLScale / iActionButton:GetParent():GetScale()) * ClassicUI.cached_ActionButtonInfo.currentScale[iActionButton])
+			iActionButton:SetScale((newBLScale / (iActionButton:GetParent():GetScale() * iActionButton.bar:GetScale())) * ClassicUI.cached_ActionButtonInfo.currentScale[iActionButton])
 			if (typeActionButton == 0) then
 				if ((iActionButton.UpdateButtonArt ~= nil) and iActionButton.SlotArt and iActionButton.SlotBackground and iActionButton.showButtonArt) then
 					if (iabnt ~= nil) and (iabnt:GetAtlas() ~= "UI-HUD-ActionBar-IconFrame-AddRow") then
@@ -4900,7 +5105,7 @@ ClassicUI.LayoutActionButton = function(iActionButton, typeActionButton)
 		end
 		ClassicUI.cached_ActionButtonInfo.currentScale[iActionButton] = 1
 		if (typeActionButton <= 2) then
-			iActionButton:SetScale(newBLScale / iActionButton:GetParent():GetScale())
+			iActionButton:SetScale(newBLScale / (iActionButton:GetParent():GetScale() * iActionButton.bar:GetScale()))
 		end
 		if (iabnt ~= nil) then
 			iabnt:SetAtlas(nil)
@@ -5544,6 +5749,11 @@ function ClassicUI:InitActionButtonInfoCache()
 	self.cached_ActionButtonInfo.currLayout[PossessButton2] = 1
 end
 
+-- Function handler for event fired when player changes specialization. This can change the layout, so we need to relayout the main frames here.
+function ClassicUI:PLAYER_SPECIALIZATION_CHANGED()
+	ClassicUI:ReLayoutMainFrames()
+end
+
 -- Main function that loads the core features of ClassicUI. This function at the end calls to 'ClassicUI:PLAYER_ENTERING_WORLD()'.
 function ClassicUI:MainFunction(isLogin)
 	
@@ -5578,6 +5788,10 @@ function ClassicUI:MainFunction(isLogin)
 	end)
 	MainMenuBar.BorderArt:SetShown(false)
 	MainMenuBar.Background:SetShown(false)
+
+	if (not ClassicUI.frame:IsEventRegistered("PLAYER_SPECIALIZATION_CHANGED")) then
+		ClassicUI.frame:RegisterUnitEvent("PLAYER_SPECIALIZATION_CHANGED", "player")
+	end
 
 	if (isLogin) then
 		ClassicUI.OnEvent_PEW_mf = true
@@ -5953,11 +6167,11 @@ end
 function ClassicUI:HookLossOfControlUICCRemover()
 	if (not DISABLELOSSOFCONTROLUI_HOOKED) then
 		hooksecurefunc('ActionButton_UpdateCooldown', function(self)
-			if ( self.cooldown.currentCooldownType == COOLDOWN_TYPE_LOSS_OF_CONTROL ) then
+			if (self.cooldown.currentCooldownType == COOLDOWN_TYPE_LOSS_OF_CONTROL) then
 				local start, duration, enable, charges, maxCharges, chargeStart, chargeDuration
 				local modRate = 1.0
 				local chargeModRate = 1.0
-				if ( self.spellID ) then
+				if (self.spellID) then
 					start, duration, enable, modRate = GetSpellCooldown(self.spellID)
 					charges, maxCharges, chargeStart, chargeDuration, chargeModRate = GetSpellCharges(self.spellID)
 				else
@@ -5967,7 +6181,7 @@ function ClassicUI:HookLossOfControlUICCRemover()
 				self.cooldown:SetEdgeTexture("Interface\\Cooldown\\edge")
 				self.cooldown:SetSwipeColor(0, 0, 0)
 				self.cooldown:SetHideCountdownNumbers(false)
-				if ( charges and maxCharges and maxCharges > 1 and charges < maxCharges ) then
+				if (charges and maxCharges and maxCharges > 1 and charges < maxCharges) then
 					if chargeStart == 0 then
 						ClearChargeCooldown(self)
 					else
@@ -6195,13 +6409,13 @@ function ClassicUI:HookOpenGuildPanelMode()
 			if (factionGroup == "Neutral") then
 				return
 			end
-			if ( IsTrialAccount() or (IsVeteranTrialAccount() and not IsInGuild()) ) then
+			if (IsTrialAccount() or (IsVeteranTrialAccount() and not IsInGuild())) then
 				UIErrorsFrame:AddMessage(ERR_RESTRICTED_ACCOUNT_TRIAL, 1.0, 0.1, 0.1, 1.0)
 				return
 			end
-			if ( IsInGuild() ) then
+			if (IsInGuild()) then
 				GuildFrame_LoadUI()
-				if ( GuildFrame_Toggle ) then
+				if (GuildFrame_Toggle) then
 					GuildFrame_Toggle()
 				end
 			else

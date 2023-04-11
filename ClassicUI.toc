@@ -1,7 +1,7 @@
-## Interface: 100005
+## Interface: 100007
 ## Title: ClassicUI
 ## Author: millanzarreta
-## Version: 2.0.1
+## Version: 2.0.2
 ## Notes: Restores the classic interface pre-Dragonflight
 ## Notes-esES: Restaura la interfaz clasica pre-Dragonflight
 ## X-Category: Action Bars
@@ -11,7 +11,7 @@
 ## LoadOnDemand: 0
 ## SavedVariables: ClassicUI_DB
 ## OptionalDeps: Ace3, LibStub, CallbackHandler-1.0
-## X-Curse-Packaged-Version: 2.0.1
+## X-Curse-Packaged-Version: 2.0.2
 ## X-Curse-Project-Name: ClassicUI
 ## X-Curse-Project-ID: ClassicUI
 ## X-Curse-Repository-ID: ClassicUI-mainline
