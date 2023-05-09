@@ -1,0 +1,16 @@
+## Interface: 100100
+## Title: ClassicUI [|cffeda55fClassicBlizzGuildUI|r]
+## Author: millanzarreta
+## Version: 2.0.3
+## IconTexture: Interface\Addons\ClassicUI_ClassicBlizzGuildUI\micon
+## Notes: ClassicUI: [|cffeda55fClassicBlizzGuildUI|r] Module
+## Notes-esES: ClassicUI: Modulo [|cffeda55fClassicBlizzGuildUI|r]
+## Dependencies: ClassicUI
+## DefaultState: Enabled
+## LoadOnDemand: 1
+
+CUI_Blizzard_GuildUI.xml
+CUI_Blizzard_GuildRoster.xml
+CUI_Blizzard_GuildNews.xml
+CUI_Blizzard_GuildRewards.xml
+CUI_Blizzard_GuildInfo.xml

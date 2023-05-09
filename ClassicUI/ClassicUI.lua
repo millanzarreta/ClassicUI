@@ -1,7 +1,7 @@
 -- ------------------------------------------------------------ --
 -- Addon: ClassicUI                                             --
 --                                                              --
--- Version: 2.0.2                                               --
+-- Version: 2.0.3                                               --
 -- Author: Millán - Sanguino                                    --
 --                                                              --
 -- License: GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007 --
@@ -71,6 +71,7 @@ local GetFlyoutSlotInfo = GetFlyoutSlotInfo
 local GetCallPetSpellInfo = GetCallPetSpellInfo
 local GetFileStreamingStatus = GetFileStreamingStatus
 local GetBackgroundLoadingStatus = GetBackgroundLoadingStatus
+local GetPossessInfo = GetPossessInfo
 local IsEquippedAction = IsEquippedAction
 local IsCommunitiesUIDisabledByTrialAccount = IsCommunitiesUIDisabledByTrialAccount
 local GetDifficultyInfo = GetDifficultyInfo
@@ -80,7 +81,7 @@ local GetGuildInfo = GetGuildInfo
 local InGuildParty = InGuildParty
 
 -- Global constants
-ClassicUI.VERSION = "2.0.2"
+ClassicUI.VERSION = "2.0.3"
 ClassicUI.ACTIONBUTTON_NEWLAYOUT_SCALE = 0.826
 ClassicUI.ACTION_BAR_OFFSET = 45
 ClassicUI.SPELLFLYOUT_DEFAULT_SPACING = 4
@@ -108,6 +109,9 @@ ClassicUI.cached_ActionButtonInfo = {
 ClassicUI.cached_db_profile = { }
 ClassicUI.queuePending_ActionButtonsLayout = { }
 ClassicUI.queuePending_HookSetScale = { }
+ClassicUI.STBMbars = { }
+ClassicUI.STBMMainBars = { }
+ClassicUI.STBMSecBars = { }
 
 -- Default settings
 ClassicUI.defaults = {
@@ -346,6 +350,10 @@ ClassicUI.defaults = {
 				xOffsetExpansionLandingPage = 0,
 				yOffsetExpansionLandingPage = 0,
 				scaleExpansionLandingPageDragonflight = 0.82,
+				hideAddonCompartment = true,
+				xOffsetAddonCompartment = 0,
+				yOffsetAddonCompartment = 0,
+				scaleAddonCompartment = 1,
 				anchorQueueButtonToMinimap = true,
 				xOffsetQueueButton = 0,
 				yOffsetQueueButton = 0,
@@ -699,6 +707,9 @@ function ClassicUI:UpdateDBValuesCache()
 	self.cached_db_profile.extraFrames_Minimap_xOffsetExpansionLandingPage = self.db.profile.extraFrames.Minimap.xOffsetExpansionLandingPage
 	self.cached_db_profile.extraFrames_Minimap_yOffsetExpansionLandingPage = self.db.profile.extraFrames.Minimap.yOffsetExpansionLandingPage
 	self.cached_db_profile.extraFrames_Minimap_scaleExpansionLandingPageDragonflight = self.db.profile.extraFrames.Minimap.scaleExpansionLandingPageDragonflight
+	self.cached_db_profile.extraFrames_Minimap_hideAddonCompartment = self.db.profile.extraFrames.Minimap.hideAddonCompartment
+	self.cached_db_profile.extraFrames_Minimap_xOffsetQueueButton = self.db.profile.extraFrames.Minimap.xOffsetQueueButton
+	self.cached_db_profile.extraFrames_Minimap_yOffsetQueueButton = self.db.profile.extraFrames.Minimap.yOffsetQueueButton
 	self.cached_db_profile.extraFrames_Chat_restoreBottomScrollButton = self.db.profile.extraFrames.Chat.restoreBottomScrollButton
 	self.cached_db_profile.extraFrames_Chat_socialButtonToBottom = self.db.profile.extraFrames.Chat.socialButtonToBottom
 	self.cached_db_profile.extraConfigs_KeybindsConfig_hideKeybindsMode = self.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode
@@ -712,19 +723,28 @@ end
 -- Function to update the status bars when requested
 function ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
 	if (self:IsEnabled()) then
+		StatusTrackingBarManager.TopBarFrameTexture0:Hide()
+		StatusTrackingBarManager.TopBarFrameTexture1:Hide()
+		StatusTrackingBarManager.TopBarFrameTexture2:Hide()
+		StatusTrackingBarManager.TopBarFrameTexture3:Hide()
+		StatusTrackingBarManager.BottomBarFrameTexture0:Hide()
+		StatusTrackingBarManager.BottomBarFrameTexture1:Hide()
+		StatusTrackingBarManager.BottomBarFrameTexture2:Hide()
+		StatusTrackingBarManager.BottomBarFrameTexture3:Hide()
 		local visBars = {}
-		for _, bar in ipairs(StatusTrackingBarManager.bars) do
-			if (bar:ShouldBeVisible()) then
+		for _, bar in ipairs(ClassicUI.STBMbars) do
+			if (bar:IsShown() and bar:ShouldBeVisible()) then
 				tblinsert(visBars, bar)
 			end
 		end
 		tblsort(visBars, function(left, right) return left:GetPriority() < right:GetPriority() end)
 		local width = StatusTrackingBarManager:GetParent():GetSize()
+		local visBarsSize = #visBars
 		local TOP_BAR = true
-		if (#visBars > 1) then
+		if (visBarsSize > 1) then
 			self.StatusTrackingBarManager_LayoutBar(StatusTrackingBarManager, visBars[2], not TOP_BAR)
 			self.StatusTrackingBarManager_LayoutBar(StatusTrackingBarManager, visBars[1], TOP_BAR)
-		elseif (#visBars == 1) then
+		elseif (visBarsSize == 1) then
 			self.StatusTrackingBarManager_LayoutBar(StatusTrackingBarManager, visBars[1], not TOP_BAR)
 		end
 	end
@@ -1075,14 +1095,41 @@ function ClassicUI:EFF_PLAYER_ENTERING_WORLD()
 		end
 		QueueStatusButton:SetFrameStrata("LOW")
 		QueueStatusButton:SetFrameLevel(5)
-		if not(ClassicUI.db.profile.extraFrames.Minimap.bigQueueButton) then
-			ClassicUI:QueueButtonSetSmallSize()
-		end
 	else
 		if (ClassicUI:IsEnabled()) then
 			QueueStatusButton:SetParent(UIParent)
+			QueueStatusButton:ClearAllPoints()
+			QueueStatusButton:SetPoint("BOTTOMLEFT", MicroButtonAndBagsBar, "BOTTOMLEFT", -45 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetQueueButton, 4 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetQueueButton)
+			QueueStatusButton:SetFrameStrata("MEDIUM")
+			QueueStatusButton:SetFrameLevel(53)
+		else
+			local point, relativeTo, relativePoint, xOfs, yOfs = QueueStatusButton:GetPoint()
+			QueueStatusButton:ClearAllPoints()
+			QueueStatusButton:SetPoint(point, relativeTo, relativePoint, xOfs + ClassicUI.db.profile.extraFrames.Minimap.xOffsetQueueButton, yOfs + ClassicUI.db.profile.extraFrames.Minimap.yOffsetQueueButton)
 		end
 	end
+	if not(ClassicUI.db.profile.extraFrames.Minimap.bigQueueButton) then
+		ClassicUI:QueueButtonSetSmallSize()
+	end
+	hooksecurefunc(QueueStatusButton, "UpdatePosition", function(self, microMenuPosition, isMenuHorizontal)
+		if (ClassicUI.db.profile.extraFrames.Minimap.anchorQueueButtonToMinimap) then
+			self:ClearAllPoints()
+			if (ClassicUI.db.profile.extraFrames.Minimap.enabled) then
+				self:SetPoint("TOPLEFT", MinimapBackdrop, "TOPLEFT", 22 + ClassicUI.cached_db_profile.extraFrames_Minimap_xOffsetQueueButton, -100 + ClassicUI.cached_db_profile.extraFrames_Minimap_yOffsetQueueButton)	-- cached db value
+			else
+				self:SetPoint("TOPLEFT", MinimapBackdrop, "TOPLEFT", -7 + ClassicUI.cached_db_profile.extraFrames_Minimap_xOffsetQueueButton, -135 + ClassicUI.cached_db_profile.extraFrames_Minimap_yOffsetQueueButton)	-- cached db value
+			end
+		else
+			if (ClassicUI:IsEnabled()) then
+				self:ClearAllPoints()
+				self:SetPoint("BOTTOMLEFT", MicroButtonAndBagsBar, "BOTTOMLEFT", -45 + ClassicUI.cached_db_profile.extraFrames_Minimap_xOffsetQueueButton, 4 + ClassicUI.cached_db_profile.extraFrames_Minimap_yOffsetQueueButton)	-- cached db value
+			else
+				local point, relativeTo, relativePoint, xOfs, yOfs = self:GetPoint()
+				self:ClearAllPoints()
+				self:SetPoint(point, relativeTo, relativePoint, xOfs + ClassicUI.cached_db_profile.extraFrames_Minimap_xOffsetQueueButton, yOfs + ClassicUI.cached_db_profile.extraFrames_Minimap_yOffsetQueueButton)	-- cached db value
+			end
+		end
+	end)
 	
 	-- [Bags]
 	if (ClassicUI.db.profile.extraFrames.Bags.freeSlotCounterMod ~= 0) then
@@ -1293,9 +1340,9 @@ function ClassicUI:ReLayoutMainFrames()
 end
 
 -- Function that retrieves the number of visible bars. It can negatively affect performance, so it is advisable to use a cached value when possible and avoid multiple unnecessary calls to this function
-function ClassicUI:GetNumberVisibleBars(statBar)
+function ClassicUI:GetNumberVisibleBars()
 	local numVisBars = 0
-	for _, bar in ipairs(statBar.bars) do
+	for _, bar in ipairs(ClassicUI.STBMMainBars) do
 		if (bar:ShouldBeVisible()) then
 			numVisBars = numVisBars + 1
 		end
@@ -1307,14 +1354,14 @@ end
 ClassicUI.UpdateCacheVisibleBars = function(self)
 	if (GetTime() > ClassicUI.cached_UpdateCacheVisibleBarsFunc_Timestamp) then
 		ClassicUI.cached_UpdateCacheVisibleBarsFunc_Timestamp = GetTime()
-		ClassicUI.cached_NumberVisibleBars = ClassicUI:GetNumberVisibleBars(self)
+		ClassicUI.cached_NumberVisibleBars = ClassicUI:GetNumberVisibleBars()
 		ClassicUI.cached_NumberRealVisibleBars = ClassicUI.cached_NumberVisibleBars
 		if (ClassicUI.cached_NumberVisibleBars == 2) then
 			-- Show/Hide the DoubleStatusBar
 			if (ClassicUI.cached_DoubleStatusBar_hide) then
 				local hideDoubleStatusBar = false
 				local barsShown = {}
-				for _, v in pairs(self.bars) do
+				for _, v in pairs(ClassicUI.STBMMainBars) do
 					if (v:ShouldBeVisible()) then
 						tblinsert(barsShown, v:GetPriority())
 					end
@@ -1349,7 +1396,7 @@ ClassicUI.UpdateCacheVisibleBars = function(self)
 			if (ClassicUI.cached_SingleStatusBar_hide) then
 				local hideSingleStatusBar = false
 				local barsShown = {}
-				for _, v in pairs(self.bars) do
+				for _, v in pairs(ClassicUI.STBMMainBars) do
 					if (v:ShouldBeVisible()) then
 						tblinsert(barsShown, v:GetPriority())
 					end
@@ -1383,10 +1430,6 @@ ClassicUI.UpdateCacheVisibleBars = function(self)
 		if (ClassicUI.cached_NumberRealVisibleBars <= 0) then
 			if not(CUI_MainMenuBarMaxLevelBar:IsShown()) then
 				CUI_MainMenuBarMaxLevelBar:Show()
-			end
-		elseif (ClassicUI.cached_NumberRealVisibleBars == 1) then
-			if (CUI_MainMenuBarMaxLevelBar:IsShown()) then
-				CUI_MainMenuBarMaxLevelBar:Hide()
 			end
 		else
 			if (CUI_MainMenuBarMaxLevelBar:IsShown()) then
@@ -1641,6 +1684,7 @@ function ClassicUI:EnableOldMinimap()
 	MinimapCluster:SetScale(self.db.profile.extraFrames.Minimap.scale)
 	MinimapCluster:ClearAllPoints()
 	MinimapCluster:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", self.db.profile.extraFrames.Minimap.xOffset, self.db.profile.extraFrames.Minimap.yOffset)
+	Minimap:SetParent(MinimapCluster)
 	Minimap:SetSize(140, 140)
 	Minimap:ClearAllPoints()
 	Minimap:SetPoint("CENTER", MinimapCluster, "TOP", 9, -92)
@@ -1690,8 +1734,13 @@ function ClassicUI:EnableOldMinimap()
 		Minimap:SetZoom(iZoom)
 	end
 	hooksecurefunc(MinimapCluster, "ApplySystemAnchor", function(self)
-		MinimapCluster:ClearAllPoints()
-		MinimapCluster:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", ClassicUI.cached_db_profile.extraFrames_Minimap_xOffset, ClassicUI.cached_db_profile.extraFrames_Minimap_yOffset)	-- cached db value
+		self:ClearAllPoints()
+		self:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", ClassicUI.cached_db_profile.extraFrames_Minimap_xOffset, ClassicUI.cached_db_profile.extraFrames_Minimap_yOffset)	-- cached db value
+	end)
+	hooksecurefunc(MinimapCluster, "Layout", function(self, headerUnderneath)
+		self:SetSize(192, 192)
+		self:ClearAllPoints()
+		self:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", ClassicUI.cached_db_profile.extraFrames_Minimap_xOffset, ClassicUI.cached_db_profile.extraFrames_Minimap_yOffset)	-- cached db value
 	end)
 	
 	hooksecurefunc(ExpansionLandingPageMinimapButton, "UpdateIconForGarrison", function(self)
@@ -1893,7 +1942,7 @@ function ClassicUI:EnableOldMinimap()
 	
 	MinimapCluster.IndicatorFrame:SetParent(MinimapCluster)
 	MinimapCluster.IndicatorFrame:ClearAllPoints()
-	MinimapCluster.IndicatorFrame:SetPoint("TOPRIGHT", MinimapCluster.Minimap, "TOPRIGHT", 24, -37)
+	MinimapCluster.IndicatorFrame:SetPoint("TOPRIGHT", MinimapCluster.MinimapContainer.Minimap, "TOPRIGHT", 24, -37)
 	MinimapCluster.IndicatorFrame:SetSize(33, 33)
 	MinimapCluster.IndicatorFrame:SetFrameStrata("LOW")
 	MinimapCluster.IndicatorFrame:SetFrameLevel(4)
@@ -1906,7 +1955,7 @@ function ClassicUI:EnableOldMinimap()
 	end)
 	hooksecurefunc("MiniMapIndicatorFrame_UpdatePosition", function()
 		MinimapCluster.IndicatorFrame:ClearAllPoints()
-		MinimapCluster.IndicatorFrame:SetPoint("TOPRIGHT", MinimapCluster.Minimap, "TOPRIGHT", 24, -37)
+		MinimapCluster.IndicatorFrame:SetPoint("TOPRIGHT", MinimapCluster.MinimapContainer.Minimap, "TOPRIGHT", 24, -37)
 	end)
 	
 	MiniMapMailIcon:ClearAllPoints()
@@ -1934,6 +1983,21 @@ function ClassicUI:EnableOldMinimap()
 	MiniMapMailBorder2:SetTexture("Interface\\Addons\\ClassicUI\\Textures\\MiniMap-TrackingBorder")
 	MiniMapMailBorder2:SetSize(52, 52)
 	MiniMapMailBorder2:SetDrawLayer("OVERLAY", 0)
+	
+	hooksecurefunc(AddonCompartmentFrame, "UpdateDisplay", function(self)
+		if (ClassicUI.cached_db_profile.extraFrames_Minimap_hideAddonCompartment) then	-- cached db value
+			if (self:IsShown()) then
+				self:Hide()
+			end
+		end
+	end)
+	if (self.db.profile.extraFrames.Minimap.hideAddonCompartment) then
+		AddonCompartmentFrame:Hide()
+	end
+	AddonCompartmentFrame:ClearAllPoints()
+	AddonCompartmentFrame:SetPoint("TOPRIGHT", GameTimeFrame, "TOPLEFT", 5, 0)
+	AddonCompartmentFrame:SetFrameStrata("LOW")
+	AddonCompartmentFrame:SetFrameLevel(4)
 	
 	MinimapCluster.InstanceDifficulty:Hide()
 	
@@ -2163,12 +2227,12 @@ function ClassicUI:EnableOldMinimap()
 	CUI_GuildInstanceDifficulty:SetScript("OnLeave", GameTooltip_Hide)
 	
 	hooksecurefunc(MinimapCluster, "SetHeaderUnderneath", function(self, headerUnderneath)
-		self.Minimap:ClearAllPoints()
-		self.Minimap:SetPoint("CENTER", self, "TOP", 9, -92)
+		self.MinimapContainer.Minimap:ClearAllPoints()
+		self.MinimapContainer.Minimap:SetPoint("CENTER", self, "TOP", 9, -92)
 		self.BorderTop:ClearAllPoints()
 		self.BorderTop:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", 0, 0)
 		self.IndicatorFrame:ClearAllPoints()
-		self.IndicatorFrame:SetPoint("TOPRIGHT", self.Minimap, "TOPRIGHT", 24, -37)
+		self.IndicatorFrame:SetPoint("TOPRIGHT", self.MinimapContainer.Minimap, "TOPRIGHT", 24, -37)
 	end)
 	
 	CreateFrame("Button", "MinimapZoneTextButton", MinimapCluster)
@@ -2291,7 +2355,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	end
 	
 	-- Update the cached number of visible bars (pre update)
-	ClassicUI.cached_NumberVisibleBars = ClassicUI:GetNumberVisibleBars(StatusTrackingBarManager)
+	ClassicUI.cached_NumberVisibleBars = ClassicUI:GetNumberVisibleBars()
 	ClassicUI.cached_NumberRealVisibleBars = ClassicUI.cached_NumberVisibleBars
 	
 	-- Create wrapper frames for the [ActionBars], setting their attributes to their originals, and using the original frame as parent
@@ -3430,6 +3494,20 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		end
 	end
 	hooksecurefunc(PossessActionBar, "SetScale", CUI_PossessBarFrame.hook_SetScale)
+	hooksecurefunc(PossessActionBar, "UpdateState", function(self)
+		local _, _, enabled = GetPossessInfo(1)
+		if (enabled) then
+			CUI_PossessBackground1:Show()
+		else
+			CUI_PossessBackground1:Hide()
+		end
+		_, _, enabled = GetPossessInfo(2)
+		if (enabled) then
+			CUI_PossessBackground2:Show()
+		else
+			CUI_PossessBackground2:Hide()
+		end
+	end)
 	
 	-- [ActionBars] StanceBarFrame (a.k.a. StanceBar)
 	local CUI_StanceBarFrame = CreateFrame("Frame", "CUI_StanceBarFrame", StanceBar)
@@ -4346,23 +4424,6 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	ClassicUI:SetStrataForMainFrames()
 	ClassicUI:ReLayoutMainFrames()
 	
-	-- [QueueStatusButton]
-	if (ClassicUI.db.profile.extraFrames.Minimap.anchorQueueButtonToMinimap) then
-		QueueStatusButton:SetParent(MinimapBackdrop)
-		QueueStatusButton:SetFrameStrata("LOW")
-		QueueStatusButton:SetFrameLevel(5)
-		if (ClassicUI.db.profile.extraFrames.Minimap.enabled) then
-			QueueStatusButton:SetPoint("TOPLEFT", MinimapBackdrop, "TOPLEFT", 22 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetQueueButton, -100 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetQueueButton)
-		else
-			QueueStatusButton:SetPoint("TOPLEFT", MinimapBackdrop, "TOPLEFT", -7 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetQueueButton, -135 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetQueueButton)
-		end
-	else
-		QueueStatusButton:SetParent(UIParent)
-		QueueStatusButton:SetFrameStrata("MEDIUM")
-		QueueStatusButton:SetFrameLevel(53)
-		QueueStatusButton:SetPoint("BOTTOMLEFT", MicroButtonAndBagsBar, "BOTTOMLEFT", -45 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetQueueButton, 4 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetQueueButton)
-	end
-	
 	--[StatusBars]
 	StatusTrackingBarManager:SetParent(CUI_MainMenuBar)
 	StatusTrackingBarManager:ClearAllPoints()
@@ -4373,11 +4434,23 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	StatusTrackingBarManager.MainStatusTrackingBarContainer:SetPoint("BOTTOM", CUI_MainMenuBar, "TOP", 0, -3)
 	StatusTrackingBarManager.MainStatusTrackingBarContainer:Hide()
 	StatusTrackingBarManager.MainStatusTrackingBarContainer.BarFrameTexture:Hide()
+	for _, bar in ipairs(StatusTrackingBarManager.MainStatusTrackingBarContainer.bars) do
+		bar.oriparent = bar:GetParent()
+		bar:SetParent(StatusTrackingBarManager)
+		tblinsert(ClassicUI.STBMbars, bar)
+		tblinsert(ClassicUI.STBMMainBars, bar)
+	end
 	StatusTrackingBarManager.SecondaryStatusTrackingBarContainer.BarFrameTexture:SetSize(1024, 10)
 	StatusTrackingBarManager.SecondaryStatusTrackingBarContainer:ClearAllPoints()
 	StatusTrackingBarManager.SecondaryStatusTrackingBarContainer:SetPoint("TOP", CUI_MainMenuBar, "TOP", 0, 0)
 	StatusTrackingBarManager.SecondaryStatusTrackingBarContainer:Hide()
 	StatusTrackingBarManager.SecondaryStatusTrackingBarContainer.BarFrameTexture:Hide()
+	for _, bar in ipairs(StatusTrackingBarManager.SecondaryStatusTrackingBarContainer.bars) do
+		bar.oriparent = bar:GetParent()
+		bar:SetParent(StatusTrackingBarManager)
+		tblinsert(ClassicUI.STBMbars, bar)
+		tblinsert(ClassicUI.STBMSecBars, bar)
+	end
 	StatusTrackingBarManager:CreateTexture("StatusTrackingBarManager_TopBarFrameTexture0", "ARTWORK")
 	StatusTrackingBarManager.TopBarFrameTexture0 = StatusTrackingBarManager_TopBarFrameTexture0
 	StatusTrackingBarManager.TopBarFrameTexture0:ClearAllPoints()
@@ -4453,47 +4526,108 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 
 	StatusTrackingBarManager:SetFrameStrata("MEDIUM")
 	StatusTrackingBarManager:SetFrameLevel(2)
-	for _, bar in ipairs(StatusTrackingBarManager.bars) do
+	for _, bar in ipairs(ClassicUI.STBMbars) do
+		bar.StatusBar.GainFlareAnimationTexture:Hide()
+		bar.StatusBar.LevelUpTexture:Hide()
+		bar.StatusBar.AnimationMask:Hide()
+		hooksecurefunc(bar.StatusBar.GainFlareAnimation, "Play", function(self)
+			self:Stop()
+			self:GetParent().GainFlareAnimationTexture:Hide()
+		end)
+		hooksecurefunc(bar.StatusBar.LevelUpRolloverAnimation, "Play", function(self)
+			self:Stop()
+			self:GetParent().LevelUpTexture:Hide()
+		end)
+		hooksecurefunc(bar.StatusBar.LevelUpMaxAnimation, "Play", function(self)
+			self:Stop()
+			self:GetParent().LevelUpTexture:Hide()
+		end)
+		hooksecurefunc(bar.StatusBar.GainFlareAnimation, "Restart", function(self)
+			self:Stop()
+			self:GetParent().GainFlareAnimationTexture:Hide()
+		end)
+		hooksecurefunc(bar.StatusBar.LevelUpRolloverAnimation, "Restart", function(self)
+			self:Stop()
+			self:GetParent().LevelUpTexture:Hide()
+		end)
+		hooksecurefunc(bar.StatusBar.LevelUpMaxAnimation, "Restart", function(self)
+			self:Stop()
+			self:GetParent().LevelUpTexture:Hide()
+		end)
 		bar.StatusBar.Background:SetColorTexture(0, 0, 0, 1.0)
 		bar.StatusBar.Background:SetAlpha(0.5)
 		bar:SetFrameStrata("LOW")
 		bar:SetFrameLevel(2)
 		bar.StatusBar:SetFrameStrata("LOW")
 		bar.StatusBar:SetFrameLevel(1)
-		if (bar.priority == 0 or bar.priority == 4) then	-- AzeriteBar (priority = 0) or ArtifactBar (priority = 4)
-			bar:SetBarColor(ARTIFACT_BAR_COLOR:GetRGB())
-		elseif (bar.priority == 2) then						-- HonorBar (priority = 2)
-			if not ClassicUI.hooked_honorBar then
-				hooksecurefunc(bar, "Update", function(self)
-					self.StatusBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar", "BORDER")
-					self.StatusBar:GetStatusBarTexture():SetDrawLayer("BORDER", 0)
-					self.StatusBar:GetStatusBarTexture():SetTexCoord(0, 0, 0, 1, 0.16666667, 0, 0.16666667, 1)
-					self:SetBarColor(1.0, 0.24, 0)
-				end)
-				ClassicUI.hooked_honorBar = true
+		if (bar.GetPriority == nil) then
+			bar.GetPriority = function(self)
+				return self.priority
 			end
+		end
+		if (bar.SetBarColor == nil) then
+			bar.SetBarColor = function(self, r, g, b)
+				self.StatusBar:SetStatusBarColor(r, g, b)
+				--self.StatusBar:SetAnimatedTextureColors(r, g, b)	-- not available, 'StatusBar' no longer inherits from 'AnimatedStatusBarTemplate'
+			end
+		end
+		if ((bar.priority == 0) or (bar.barIndex == 5)) then		-- AzeriteBar (priority = 0) (barIndex = 5)
+			bar.priority = 0
+			if (bar.ShouldBeVisible == nil) then
+				bar.ShouldBeVisible = function(self)
+					local azeriteItem = C_AzeriteItem.FindActiveAzeriteItem()
+					return not C_AzeriteItem.IsAzeriteItemAtMaxLevel() and azeriteItem and azeriteItem:IsEquipmentSlot() and C_AzeriteItem.IsAzeriteItemEnabled(azeriteItem)
+				end
+			end
+			bar:SetBarColor(ARTIFACT_BAR_COLOR:GetRGB())
+		elseif ((bar.priority == 4) or (bar.barIndex == 3)) then	-- ArtifactBar (priority = 4) (barIndex = 3)
+			bar.priority = 4
+			if (bar.ShouldBeVisible == nil) then
+				bar.ShouldBeVisible = function(self)
+					return HasArtifactEquipped() and not C_ArtifactUI.IsEquippedArtifactMaxed() and not C_ArtifactUI.IsEquippedArtifactDisabled()
+				end
+			end
+			bar:SetBarColor(ARTIFACT_BAR_COLOR:GetRGB())
+		elseif ((bar.priority == 2) or (bar.barIndex == 2)) then	-- HonorBar (priority = 2) (barIndex = 2)
+			bar.priority = 2
+			if (bar.ShouldBeVisible == nil) then
+				bar.ShouldBeVisible = function(self)
+					return IsWatchingHonorAsXP() or C_PvP.IsActiveBattlefield() or IsInActiveWorldPVP()
+				end
+			end
+			bar.StatusBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar", "BORDER")
+			bar.StatusBar:GetStatusBarTexture():SetDrawLayer("BORDER", 0)
+			bar.StatusBar:GetStatusBarTexture():SetTexCoord(0, 0, 0, 1, 0.16666667, 0, 0.16666667, 1)
 			bar:SetBarColor(1.0, 0.24, 0)
-		elseif (bar.priority == 1) then						-- ReputationBar (priority = 1)
-			if not ClassicUI.hooked_repBar then
-				hooksecurefunc(bar, "Update", function(self)
-					local _, colorIndex, _, _, _, factionID = GetWatchedFactionInfo()
-					if (factionID ~= nil) and (factionID ~= 0) and not(C_Reputation_IsFactionParagon(factionID)) then
-						local reputationInfo = C_GossipInfo_GetFriendshipReputation(factionID)
-						if (reputationInfo ~= nil) then
-							local friendshipID = reputationInfo.friendshipFactionID
-							if (friendshipID > 0) then
-								colorIndex = 5
-							end
+		elseif ((bar.priority == 1) or (bar.barIndex == 1)) then	-- ReputationBar (priority = 1) (barIndex = 1)
+			bar.priority = 1
+			if (bar.ShouldBeVisible == nil) then
+				bar.ShouldBeVisible = function(self)
+					local name, reaction, minFaction, maxFaction, value, factionID = GetWatchedFactionInfo()
+					return name ~= nil
+				end
+			end
+			hooksecurefunc(bar, "Update", function(self)
+				local _, colorIndex, _, _, _, factionID = GetWatchedFactionInfo()
+				if (factionID ~= nil) and (factionID ~= 0) and not(C_Reputation_IsFactionParagon(factionID)) then
+					local reputationInfo = C_GossipInfo_GetFriendshipReputation(factionID)
+					if (reputationInfo ~= nil) then
+						local friendshipID = reputationInfo.friendshipFactionID
+						if (friendshipID > 0) then
+							colorIndex = 5
 						end
 					end
+				end
+				self.StatusBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar", "BORDER")
+				self.StatusBar:GetStatusBarTexture():SetDrawLayer("BORDER", 0)
+				self.StatusBar:GetStatusBarTexture():SetTexCoord(0, 0, 0, 1, 0.16666667, 0, 0.16666667, 1)
+				if (colorIndex ~= nil and colorIndex > 0) then
 					local color = FACTION_BAR_COLORS[colorIndex]
-					self.StatusBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar", "BORDER")
-					self.StatusBar:GetStatusBarTexture():SetDrawLayer("BORDER", 0)
-					self.StatusBar:GetStatusBarTexture():SetTexCoord(0, 0, 0, 1, 0.16666667, 0, 0.16666667, 1)
-					self:SetBarColor(color.r, color.g, color.b, 1)
-				end)
-				ClassicUI.hooked_repBar = true
-			end
+					if (color ~= nil) then
+						self:SetBarColor(color.r, color.g, color.b, 1)
+					end
+				end
+			end)
 			local _, colorIndex, _, _, _, factionID = GetWatchedFactionInfo()
 			if (factionID ~= nil) and (factionID ~= 0) and not(C_Reputation_IsFactionParagon(factionID)) then
 				local reputationInfo = C_GossipInfo_GetFriendshipReputation(factionID)
@@ -4504,90 +4638,95 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 					end
 				end
 			end
-			local color = FACTION_BAR_COLORS[colorIndex]
-			if (color ~= nil) then
-				bar:SetBarColor(color.r, color.g, color.b, 1)
+			if (colorIndex ~= nil and colorIndex > 0) then
+				local color = FACTION_BAR_COLORS[colorIndex]
+				if (color ~= nil) then
+					bar:SetBarColor(color.r, color.g, color.b, 1)
+				end
 			end
-		elseif (bar.priority == 3) then						-- ExpBar (priority = 3)
-			if not ClassicUI.hooked_expBar then
-				hooksecurefunc(bar, "Update", function(self)
-					if (GameLimitedMode_IsActive()) then
-						local rLevel = GetRestrictedAccountData()
-						if UnitLevel("player") >= rLevel then
-							self.StatusBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar", "BORDER")
-							self.StatusBar:GetStatusBarTexture():SetDrawLayer("BORDER", 0)
-							self.StatusBar:GetStatusBarTexture():SetTexCoord(0, 0, 0, 1, 0.16666667, 0, 0.16666667, 1)
-							self:SetBarColor(0.58, 0.0, 0.55, 1.0)
-						end
+		elseif ((bar.priority == 3) or (bar.barIndex == 4)) then	-- ExpBar (priority = 3) (barIndex = 4)
+			bar.priority = 3
+			if (bar.ShouldBeVisible == nil) then
+				bar.ShouldBeVisible = function(self)
+					return not IsPlayerAtEffectiveMaxLevel() and not IsXPUserDisabled()
+				end
+			end
+			hooksecurefunc(bar, "Update", function(self)
+				if (GameLimitedMode_IsActive()) then
+					local rLevel = GetRestrictedAccountData()
+					if UnitLevel("player") >= rLevel then
+						self.StatusBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar", "BORDER")
+						self.StatusBar:GetStatusBarTexture():SetDrawLayer("BORDER", 0)
+						self.StatusBar:GetStatusBarTexture():SetTexCoord(0, 0, 0, 1, 0.16666667, 0, 0.16666667, 1)
+						self:SetBarColor(0.58, 0.0, 0.55, 1.0)
 					end
-				end)
-				hooksecurefunc(bar.ExhaustionTick, "UpdateTickPosition", function(self)
-					local playerCurrXP = UnitXP("player")
-					local playerMaxXP = UnitXPMax("player")
-					local exhaustionThreshold = GetXPExhaustion()
-					local exhaustionStateID = GetRestState()
-					if (exhaustionStateID and exhaustionStateID >= 3) then
-						self:SetPoint("CENTER", self:GetParent() , "RIGHT", 0, 0)
-					end
-					if (not exhaustionThreshold) then
-						self:GetParent().ExhaustionLevelFillBar:Hide()
-					else
-						local exhaustionTickSet = mathmax(((playerCurrXP + exhaustionThreshold) / playerMaxXP) * (self:GetParent():GetWidth()), 0)
-						self:GetParent().ExhaustionLevelFillBar:Show()
-						if (exhaustionTickSet > bar:GetWidth()) then
-							self:Hide()
-							if ClassicUI.cached_db_profile.barsConfig_SingleStatusBar_expBarAlwaysShowRestedBar then	-- cached db value
-								self:GetParent().ExhaustionLevelFillBar:SetPoint("TOPRIGHT", bar, "TOPLEFT", bar:GetWidth(), 0)
-								self:GetParent().ExhaustionLevelFillBar:Show()
-							else
-								self:GetParent().ExhaustionLevelFillBar:Hide()
-							end
-						else
-							self:Show()
-							self:SetPoint("CENTER", self:GetParent(), "LEFT", exhaustionTickSet, -1)
+				end
+			end)
+			hooksecurefunc(bar.ExhaustionTick, "UpdateTickPosition", function(self)
+				local playerCurrXP = UnitXP("player")
+				local playerMaxXP = UnitXPMax("player")
+				local exhaustionThreshold = GetXPExhaustion()
+				local exhaustionStateID = GetRestState()
+				if (exhaustionStateID and exhaustionStateID >= 3) then
+					self:SetPoint("CENTER", self:GetParent() , "RIGHT", 0, 0)
+				end
+				if (not exhaustionThreshold) then
+					self:GetParent().ExhaustionLevelFillBar:Hide()
+				else
+					local exhaustionTickSet = mathmax(((playerCurrXP + exhaustionThreshold) / playerMaxXP) * (self:GetParent():GetWidth()), 0)
+					self:GetParent().ExhaustionLevelFillBar:Show()
+					if (exhaustionTickSet > bar:GetWidth()) then
+						self:Hide()
+						if ClassicUI.cached_db_profile.barsConfig_SingleStatusBar_expBarAlwaysShowRestedBar then	-- cached db value
+							self:GetParent().ExhaustionLevelFillBar:SetPoint("TOPRIGHT", bar, "TOPLEFT", bar:GetWidth(), 0)
 							self:GetParent().ExhaustionLevelFillBar:Show()
-							self:GetParent().ExhaustionLevelFillBar:SetPoint("TOPRIGHT", bar, "TOPLEFT", exhaustionTickSet, 0)
-							self:GetParent().ExhaustionLevelFillBar:SetWidth(0)
+						else
+							self:GetParent().ExhaustionLevelFillBar:Hide()
 						end
-					end
-					if (exhaustionStateID == 1) then
-						self:GetParent():SetBarColor(0.0, 0.39, 0.88, 1.0)
-						self:GetParent().ExhaustionLevelFillBar:SetVertexColor(0.0, 0.39, 0.88, 0.15)
-						self.Highlight:SetVertexColor(0.0, 0.39, 0.88)
 					else
-						self:GetParent():SetBarColor(0.58, 0.0, 0.55, 1.0)
-						self:GetParent().ExhaustionLevelFillBar:SetVertexColor(0.58, 0.0, 0.55, 0.15)
-						self.Highlight:SetVertexColor(0.58, 0.0, 0.55)
+						self:Show()
+						self:SetPoint("CENTER", self:GetParent(), "LEFT", exhaustionTickSet, -1)
+						self:GetParent().ExhaustionLevelFillBar:Show()
+						self:GetParent().ExhaustionLevelFillBar:SetPoint("TOPRIGHT", bar, "TOPLEFT", exhaustionTickSet, 0)
+						self:GetParent().ExhaustionLevelFillBar:SetWidth(0)
 					end
-				end)
-				hooksecurefunc(bar.ExhaustionTick, "UpdateExhaustionColor", function(self)
-					local exhaustionStateID = GetRestState()
-					self:GetParent().StatusBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar", "BORDER")
-					self:GetParent().StatusBar:GetStatusBarTexture():SetDrawLayer("BORDER", 0)
-					self:GetParent().StatusBar:GetStatusBarTexture():SetTexCoord(0, 0, 0, 1, 0.16666667, 0, 0.16666667, 1)
-					if (exhaustionStateID == 1) then
+				end
+				if (exhaustionStateID == 1) then
+					self:GetParent():SetBarColor(0.0, 0.39, 0.88, 1.0)
+					self:GetParent().ExhaustionLevelFillBar:SetVertexColor(0.0, 0.39, 0.88, 0.15)
+					self.Highlight:SetVertexColor(0.0, 0.39, 0.88)
+				else
+					self:GetParent():SetBarColor(0.58, 0.0, 0.55, 1.0)
+					self:GetParent().ExhaustionLevelFillBar:SetVertexColor(0.58, 0.0, 0.55, 0.15)
+					self.Highlight:SetVertexColor(0.58, 0.0, 0.55)
+				end
+			end)
+			hooksecurefunc(bar.ExhaustionTick, "UpdateExhaustionColor", function(self)
+				local exhaustionStateID = GetRestState()
+				self:GetParent().StatusBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar", "BORDER")
+				self:GetParent().StatusBar:GetStatusBarTexture():SetDrawLayer("BORDER", 0)
+				self:GetParent().StatusBar:GetStatusBarTexture():SetTexCoord(0, 0, 0, 1, 0.16666667, 0, 0.16666667, 1)
+				if (exhaustionStateID == 1) then
+					self:GetParent():SetBarColor(0.0, 0.39, 0.88, 1.0)
+					self:GetParent().ExhaustionLevelFillBar:SetVertexColor(0.0, 0.39, 0.88, 0.15)
+					self.Highlight:SetVertexColor(0.0, 0.39, 0.88)
+				else
+					self:GetParent():SetBarColor(0.58, 0.0, 0.55, 1.0)
+					self:GetParent().ExhaustionLevelFillBar:SetVertexColor(0.58, 0.0, 0.55, 0.15)
+					self.Highlight:SetVertexColor(0.58, 0.0, 0.55)
+				end
+			end)
+			bar.ExhaustionTick:HookScript("OnEvent", function(self)
+				if (IsRestrictedAccount()) then
+					local rlevel = GetRestrictedAccountData()
+					if (UnitLevel("player") >= rlevel) then
+						self:GetParent().StatusBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar", "BORDER")
+						self:GetParent().StatusBar:GetStatusBarTexture():SetDrawLayer("BORDER", 0)
+						self:GetParent().StatusBar:GetStatusBarTexture():SetTexCoord(0, 0, 0, 1, 0.16666667, 0, 0.16666667, 1)
 						self:GetParent():SetBarColor(0.0, 0.39, 0.88, 1.0)
-						self:GetParent().ExhaustionLevelFillBar:SetVertexColor(0.0, 0.39, 0.88, 0.15)
-						self.Highlight:SetVertexColor(0.0, 0.39, 0.88)
-					else
-						self:GetParent():SetBarColor(0.58, 0.0, 0.55, 1.0)
-						self:GetParent().ExhaustionLevelFillBar:SetVertexColor(0.58, 0.0, 0.55, 0.15)
-						self.Highlight:SetVertexColor(0.58, 0.0, 0.55)
 					end
-				end)
-				bar.ExhaustionTick:HookScript("OnEvent", function(self)
-					if (IsRestrictedAccount()) then
-						local rlevel = GetRestrictedAccountData()
-						if (UnitLevel("player") >= rlevel) then
-							self:GetParent().StatusBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar", "BORDER")
-							self:GetParent().StatusBar:GetStatusBarTexture():SetDrawLayer("BORDER", 0)
-							self:GetParent().StatusBar:GetStatusBarTexture():SetTexCoord(0, 0, 0, 1, 0.16666667, 0, 0.16666667, 1)
-							self:GetParent():SetBarColor(0.0, 0.39, 0.88, 1.0)
-						end
-					end
-				end)
-				ClassicUI.hooked_expBar = true
-			end
+				end
+			end)
 			
 			bar.ExhaustionTick:SetSize(32, 32)
 			bar.ExhaustionTick:GetNormalTexture():SetAtlas(nil)
@@ -4640,29 +4779,47 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 			end
 		end
 	end
-	-- Hook this function to StatusTrackingBarManager:LayoutBar
-	hooksecurefunc(StatusTrackingBarManager, "LayoutBar", ClassicUI.StatusTrackingBarManager_LayoutBar)
-	hooksecurefunc(StatusTrackingBarManager, "HideStatusBars", function(self)
-		self.TopBarFrameTexture0:Hide()
-		self.TopBarFrameTexture1:Hide()
-		self.TopBarFrameTexture2:Hide()
-		self.TopBarFrameTexture3:Hide()
-		self.BottomBarFrameTexture0:Hide()
-		self.BottomBarFrameTexture1:Hide()
-		self.BottomBarFrameTexture2:Hide()
-		self.BottomBarFrameTexture3:Hide()
-	end)
 	hooksecurefunc(StatusTrackingBarManager.MainStatusTrackingBarContainer, "UpdateShownState", function(self)
-		self:Hide()
+		if self:IsShown() then
+			self:Hide()
+		end
 	end)
 	hooksecurefunc(StatusTrackingBarManager.SecondaryStatusTrackingBarContainer, "UpdateShownState", function(self)
-		self:Hide()
+		if self:IsShown() then
+			self:Hide()
+		end
 	end)
 	
 	-- Hooks to keep action bars updated with changes
 	hooksecurefunc("MultiActionBar_Update", ClassicUI.UpdatedStatusBarsEvent)
 	hooksecurefunc(StatusTrackingBarManager, "UpdateBarsShown", ClassicUI.UpdatedStatusBarsEvent)
 	hooksecurefunc("ActionBarController_UpdateAll", ClassicUI.UpdatedStatusBarsEvent)
+	hooksecurefunc(StatusTrackingBarManager.MainStatusTrackingBarContainer, "SetShownBar", function(self, barIndex)
+		local stbm = self:GetParent()
+		if (barIndex > 0) then
+			ClassicUI.StatusTrackingBarManager_LayoutBar(stbm, self.bars[barIndex], false)
+		else
+			if (stbm.BottomBarFrameTexture0:IsShown()) then
+				stbm.BottomBarFrameTexture0:Hide()
+				stbm.BottomBarFrameTexture1:Hide()
+				stbm.BottomBarFrameTexture2:Hide()
+				stbm.BottomBarFrameTexture3:Hide()
+			end
+		end
+	end)
+	hooksecurefunc(StatusTrackingBarManager.SecondaryStatusTrackingBarContainer, "SetShownBar", function(self, barIndex)
+		local stbm = self:GetParent()
+		if (barIndex > 0) then
+			ClassicUI.StatusTrackingBarManager_LayoutBar(stbm, self.bars[barIndex], true)
+		else
+			if (stbm.TopBarFrameTexture0:IsShown()) then
+				stbm.TopBarFrameTexture0:Hide()
+				stbm.TopBarFrameTexture1:Hide()
+				stbm.TopBarFrameTexture2:Hide()
+				stbm.TopBarFrameTexture3:Hide()
+			end
+		end
+	end)
 	
 	-- Update frames after exit edit mode
 	ClassicUI.onExitEditMode = function(self)
@@ -6414,9 +6571,17 @@ function ClassicUI:HookOpenGuildPanelMode()
 				return
 			end
 			if (IsInGuild()) then
-				GuildFrame_LoadUI()
-				if (GuildFrame_Toggle) then
-					GuildFrame_Toggle()
+				local loaded, reason = LoadAddOn("ClassicUI_ClassicBlizzGuildUI");
+				if (not loaded) then
+					if (not ClassicUI.addonloadfailed_ClassicBlizzGuildUI) then
+						ClassicUI.addonloadfailed_ClassicBlizzGuildUI = true
+						message(format(ADDON_LOAD_FAILED, "ClassicUI_ClassicBlizzGuildUI", _G["ADDON_"..reason]));
+					end
+					ToggleNewGuildFrame()
+				else
+					if (CUI_GuildFrame_Toggle) then
+						CUI_GuildFrame_Toggle()
+					end
 				end
 			else
 				ToggleGuildFinder()

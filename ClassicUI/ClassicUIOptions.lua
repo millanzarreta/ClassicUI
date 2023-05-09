@@ -2847,7 +2847,7 @@ ClassicUI.optionsTable = {
 								ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.expBarAlwaysShowRestedBar = value
 								ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.expBarAlwaysShowRestedBar = value
 								if (ClassicUI:IsEnabled()) then
-									for _, bar in pairs(StatusTrackingBarManager.bars) do
+									for _, bar in pairs(ClassicUI.STBMbars) do
 										if (bar.priority == 3 and bar.ExhaustionTick and bar.ExhaustionTick.UpdateTickPosition) then
 											bar.ExhaustionTick:UpdateTickPosition()
 										end
@@ -3965,9 +3965,13 @@ ClassicUI.optionsTable = {
 								ClassicUI.db.profile.extraFrames.Minimap.enabled = value
 								if (value) then
 									ClassicUI:EnableOldMinimap()
-									QueueStatusButton:SetPoint("TOPLEFT", MinimapBackdrop, "TOPLEFT", 22 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetQueueButton, -100 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetQueueButton)
+									if (ClassicUI.db.profile.extraFrames.Minimap.anchorQueueButtonToMinimap) then
+										QueueStatusButton:SetPoint("TOPLEFT", MinimapBackdrop, "TOPLEFT", 22 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetQueueButton, -100 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetQueueButton)
+									end
 								else
-									QueueStatusButton:SetPoint("TOPLEFT", MinimapBackdrop, "TOPLEFT", -7 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetQueueButton, -135 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetQueueButton)
+									if not(ClassicUI.db.profile.extraFrames.Minimap.anchorQueueButtonToMinimap) then
+										QueueStatusButton:SetPoint("TOPLEFT", MinimapBackdrop, "TOPLEFT", -7 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetQueueButton, -135 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetQueueButton)
+									end
 									ReloadUI()
 								end
 							end
@@ -4163,13 +4167,109 @@ ClassicUI.optionsTable = {
 							order = 13,
 							name = ""
 						},
+						AddonCompartmentFrameGroup = {
+							order = 14,
+							disabled = function() return not(ClassicUI.db.profile.extraFrames.Minimap.enabled) end,
+							inline = true,
+							type = "group",
+							name = L["AddonCompartment Frame Button"],
+							desc = "",
+							args = {
+								hideAddonCompartment = {
+									order = 1,
+									type = "toggle",
+									name = L['Hide'],
+									desc = L['HideAddonCompartmentDesc'],
+									get = function() return ClassicUI.db.profile.extraFrames.Minimap.hideAddonCompartment end,
+									set = function(_,value)
+										ClassicUI.db.profile.extraFrames.Minimap.hideAddonCompartment = value
+										ClassicUI.cached_db_profile.extraFrames_Minimap_hideAddonCompartment = value
+										if (ClassicUI.db.profile.extraFrames.Minimap.enabled) then
+											if (value) then
+												AddonCompartmentFrame:Hide()
+											else
+												local addonCount = (type(AddonCompartmentFrame.registeredAddons)=="table") and #AddonCompartmentFrame.registeredAddons or 0
+												AddonCompartmentFrame:SetShown(addonCount > 0)
+											end
+										end
+									end,
+								},
+								Spacer1 = {
+									type = "description",
+									order = 2,
+									name = ""
+								},
+								xOffsetAddonCompartment = {
+									order = 3,
+									disabled = function() return (not(ClassicUI.db.profile.extraFrames.Minimap.enabled) or ClassicUI.db.profile.extraFrames.Minimap.hideAddonCompartment) end,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['xOffsetACFrame'],
+									desc = L['xOffsetACFrame'],
+									get = function() return ClassicUI.db.profile.extraFrames.Minimap.xOffsetAddonCompartment end,
+									set = function(_,value)
+										ClassicUI.db.profile.extraFrames.Minimap.xOffsetAddonCompartment = value
+										if (ClassicUI.db.profile.extraFrames.Minimap.enabled) then
+											AddonCompartmentFrame:ClearAllPoints()
+											AddonCompartmentFrame:SetPoint("TOPRIGHT", GameTimeFrame, "TOPLEFT", 5 + value, 0 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetAddonCompartment)
+										end
+									end
+								},
+								yOffsetAddonCompartment = {
+									order = 4,
+									disabled = function() return (not(ClassicUI.db.profile.extraFrames.Minimap.enabled) or ClassicUI.db.profile.extraFrames.Minimap.hideAddonCompartment) end,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['yOffsetACFrame'],
+									desc = L['yOffsetACFrame'],
+									get = function() return ClassicUI.db.profile.extraFrames.Minimap.yOffsetAddonCompartment end,
+									set = function(_,value)
+										ClassicUI.db.profile.extraFrames.Minimap.yOffsetAddonCompartment = value
+										if (ClassicUI.db.profile.extraFrames.Minimap.enabled) then
+											AddonCompartmentFrame:ClearAllPoints()
+											AddonCompartmentFrame:SetPoint("TOPRIGHT", GameTimeFrame, "TOPLEFT", 5 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetAddonCompartment, 0 + value)
+										end
+									end
+								},
+								scaleAddonCompartmentDragonflight = {
+									order = 5,
+									disabled = function() return (not(ClassicUI.db.profile.extraFrames.Minimap.enabled) or ClassicUI.db.profile.extraFrames.Minimap.hideAddonCompartment) end,
+									type = "range",
+									min = 0.01,
+									softMin = 0.01,
+									softMax = 4,
+									step = 0.01,
+									bigStep = 0.03,
+									name = L['ScaleACFrame'],
+									desc = L['ScaleACFrameDesc'],
+									get = function() return ClassicUI.db.profile.extraFrames.Minimap.scaleAddonCompartmentDragonflight end,
+									set = function(_,value)
+										ClassicUI.db.profile.extraFrames.Minimap.scaleAddonCompartmentDragonflight = value
+										if (ClassicUI.db.profile.extraFrames.Minimap.enabled) then
+											AddonCompartmentFrame:SetScale(value)
+										end
+									end
+								}
+							}
+						},
+						Spacer6 = {
+							type = "description",
+							order = 15,
+							name = ""
+						},
 						Header2 = {
 							type = 'header',
-							order = 14,
+							order = 16,
 							name = L['QueueButton (LFG)']
 						},
 						enabled2 = {
-							order = 15,
+							order = 17,
 							type = "toggle",
 							name = L['Anchor QueueButton (LFG) to Minimap'],
 							desc = L['Anchor QueueButton (LFG) to Minimap'],
@@ -4179,35 +4279,41 @@ ClassicUI.optionsTable = {
 							end,
 							set = function(_,value)
 								ClassicUI.db.profile.extraFrames.Minimap.anchorQueueButtonToMinimap = value
-								QueueStatusButton:ClearAllPoints()
 								if (value) then
 									QueueStatusButton:SetParent(MinimapBackdrop)
-									QueueStatusButton:SetFrameStrata("LOW")
-									QueueStatusButton:SetFrameLevel(5)
+									QueueStatusButton:ClearAllPoints()
 									if (ClassicUI.db.profile.extraFrames.Minimap.enabled) then
 										QueueStatusButton:SetPoint("TOPLEFT", MinimapBackdrop, "TOPLEFT", 22 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetQueueButton, -100 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetQueueButton)
 									else
 										QueueStatusButton:SetPoint("TOPLEFT", MinimapBackdrop, "TOPLEFT", -7 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetQueueButton, -135 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetQueueButton)
 									end
+									QueueStatusButton:SetFrameStrata("LOW")
+									QueueStatusButton:SetFrameLevel(5)
 								else
 									if (ClassicUI:IsEnabled()) then
 										QueueStatusButton:SetParent(UIParent)
+										QueueStatusButton:ClearAllPoints()
+										QueueStatusButton:SetPoint("BOTTOMLEFT", MicroButtonAndBagsBar, "BOTTOMLEFT", -45 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetQueueButton, 4 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetQueueButton)
+										QueueStatusButton:SetFrameStrata("MEDIUM")
+										QueueStatusButton:SetFrameLevel(53)
 									else
-										QueueStatusButton:SetParent(MicroButtonAndBagsBar)
+										QueueStatusButton:SetParent(MicroMenuContainer)
+										if MicroMenu ~= nil and MicroMenuContainer~= nil then
+											QueueStatusButton:UpdatePosition(MicroMenuContainer:GetPosition(), MicroMenu.isHorizontal)
+										end
+										QueueStatusButton:SetFrameStrata("MEDIUM")
+										QueueStatusButton:SetFrameLevel(2)
 									end
-									QueueStatusButton:SetFrameStrata("MEDIUM")
-									QueueStatusButton:SetFrameLevel(53)
-									QueueStatusButton:SetPoint("BOTTOMLEFT", MicroButtonAndBagsBar, "BOTTOMLEFT", -45 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetQueueButton, 4 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetQueueButton)
 								end
 							end
 						},
-						Spacer6 = {
+						Spacer7 = {
 							type = "description",
-							order = 16,
+							order = 18,
 							name = ""
 						},
 						xOffsetQueueButton = {
-							order = 17,
+							order = 19,
 							type = "range",
 							softMin = -500,
 							softMax = 500,
@@ -4218,20 +4324,28 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.extraFrames.Minimap.xOffsetQueueButton end,
 							set = function(_,value)
 								ClassicUI.db.profile.extraFrames.Minimap.xOffsetQueueButton = value
-								QueueStatusButton:ClearAllPoints()
+								ClassicUI.cached_db_profile.extraFrames_Minimap_xOffsetQueueButton = value
 								if (ClassicUI.db.profile.extraFrames.Minimap.anchorQueueButtonToMinimap) then
+									QueueStatusButton:ClearAllPoints()
 									if (ClassicUI.db.profile.extraFrames.Minimap.enabled) then
 										QueueStatusButton:SetPoint("TOPLEFT", MinimapBackdrop, "TOPLEFT", 22 + value, -100 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetQueueButton)
 									else
 										QueueStatusButton:SetPoint("TOPLEFT", MinimapBackdrop, "TOPLEFT", -7 + value, -135 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetQueueButton)
 									end
 								else
-									QueueStatusButton:SetPoint("BOTTOMLEFT", MicroButtonAndBagsBar, "BOTTOMLEFT", -45 + value, 4 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetQueueButton)
+									if (ClassicUI:IsEnabled()) then
+										QueueStatusButton:ClearAllPoints()
+										QueueStatusButton:SetPoint("BOTTOMLEFT", MicroButtonAndBagsBar, "BOTTOMLEFT", -45 + value, 4 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetQueueButton)
+									else
+										if MicroMenu ~= nil and MicroMenuContainer~= nil then
+											QueueStatusButton:UpdatePosition(MicroMenuContainer:GetPosition(), MicroMenu.isHorizontal)
+										end
+									end
 								end
 							end
 						},
 						yOffsetQueueButton = {
-							order = 18,
+							order = 20,
 							type = "range",
 							softMin = -500,
 							softMax = 500,
@@ -4242,25 +4356,33 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.extraFrames.Minimap.yOffsetQueueButton end,
 							set = function(_,value)
 								ClassicUI.db.profile.extraFrames.Minimap.yOffsetQueueButton = value
-								QueueStatusButton:ClearAllPoints()
+								ClassicUI.cached_db_profile.extraFrames_Minimap_yOffsetQueueButton = value
 								if (ClassicUI.db.profile.extraFrames.Minimap.anchorQueueButtonToMinimap) then
+									QueueStatusButton:ClearAllPoints()
 									if (ClassicUI.db.profile.extraFrames.Minimap.enabled) then
 										QueueStatusButton:SetPoint("TOPLEFT", MinimapBackdrop, "TOPLEFT", 22 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetQueueButton, -100 + value)
 									else
 										QueueStatusButton:SetPoint("TOPLEFT", MinimapBackdrop, "TOPLEFT", -7 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetQueueButton, -135 + value)
 									end
 								else
-									QueueStatusButton:SetPoint("BOTTOMLEFT", MicroButtonAndBagsBar, "BOTTOMLEFT", -45 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetQueueButton, 4 + value)
+									if (ClassicUI:IsEnabled()) then
+										QueueStatusButton:ClearAllPoints()
+										QueueStatusButton:SetPoint("BOTTOMLEFT", MicroButtonAndBagsBar, "BOTTOMLEFT", -45 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetQueueButton, 4 + value)
+									else
+										if MicroMenu ~= nil and MicroMenuContainer~= nil then
+											QueueStatusButton:UpdatePosition(MicroMenuContainer:GetPosition(), MicroMenu.isHorizontal)
+										end
+									end
 								end
 							end
 						},
-						Spacer7 = {
+						Spacer8 = {
 							type = "description",
-							order = 19,
+							order = 21,
 							name = ""
 						},
 						bigQueueButton = {
-							order = 20,
+							order = 22,
 							type = "toggle",
 							name = L['Use a big QueueButton (LFG)'],
 							desc = L['Use the default Big QueueButton (LFG) introduced in Dragonflight'],
