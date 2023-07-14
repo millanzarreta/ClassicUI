@@ -68,10 +68,12 @@ function CUI_GuildFrame_OnHide(self)
 end
 
 function CUI_GuildFrame_Toggle()
-	if ( CUI_GuildFrame:IsShown() ) then
-		HideUIPanel(CUI_GuildFrame);
-	else
-		ShowUIPanel(CUI_GuildFrame);
+	if not(InCombatLockdown()) then	-- show/hide UI panels in combat is forbidden for insecure code
+		if ( CUI_GuildFrame:IsShown() ) then
+			HideUIPanel(CUI_GuildFrame);
+		else
+			ShowUIPanel(CUI_GuildFrame);
+		end
 	end
 end
 
@@ -87,8 +89,10 @@ function CUI_GuildFrame_OnEvent(self, event, ...)
 			self:SetTitle(guildName);
 			CUI_GuildFrame_UpdateTabard();
 		else
-			if ( self:IsShown() ) then
-				HideUIPanel(self);
+			if not(InCombatLockdown()) then	-- show/hide UI panels in combat is forbidden for insecure code
+				if ( self:IsShown() ) then
+					HideUIPanel(self);
+				end
 			end
 		end
 	elseif ( event == "PLAYER_ENTERING_WORLD" ) then
@@ -511,3 +515,27 @@ function CUI_GuildPerks_Update()
 		CUI_GuildPerksButton_OnEnter(scrollFrame.activeButton);
 	end
 end
+
+--****** Aux ********************************************************************
+
+local AL = LibStub and LibStub("AceLocale-3.0")
+local L = AL and AL:GetLocale("ClassicUI") or (ClassicUI and ClassicUI.L)
+local textCGPF = L and L['CUI_GUILD_PROTECTEDFUNC'] or 'Functionality not available from ClassicUI Guild Panel, please use Blizzard\'s default Guild UI for this action'
+StaticPopupDialogs["CUI_GUILD_PROTECTEDFUNC_W"] = {
+	text = textCGPF,
+	button1 = OKAY,
+	timeout = 0,
+	whileDead = true,
+	hideOnEscape = true,
+	preferredIndex = STATICPOPUP_NUMDIALOGS or 3,	-- avoid some UI taint
+}
+
+local textCGPFGI = GUILD_IMPEACH_POPUP_TEXT .. "\n\n" .. textCGPF
+StaticPopupDialogs["CUI_GUILD_PROTECTEDFUNC_IMPEACH_W"] = {
+	text = textCGPFGI,
+	button1 = OKAY,
+	timeout = 0,
+	whileDead = true,
+	hideOnEscape = true,
+	preferredIndex = STATICPOPUP_NUMDIALOGS or 3,	-- avoid some UI taint
+}

@@ -192,7 +192,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0AllowNewBackgroundArt'],
 									desc = L['BLStyle0AllowNewBackgroundArtDesc'],
-									width = 2.40,
+									width = 2.95,
 									disabled = function() return (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle ~= 0) end,
 									hidden = function() return (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle ~= 0) end,
 									get = function() return ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0AllowNewBackgroundArt end,
@@ -210,7 +210,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseOldHotKeyTextStyle'],
 									desc = L['BLStyle0UseOldHotKeyTextStyleDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0UseOldHotKeyTextStyle end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0UseOldHotKeyTextStyle = value
@@ -226,7 +226,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseNewPushedTexture'],
 									desc = L['BLStyle0UseNewPushedTextureDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0UseNewPushedTexture end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0UseNewPushedTexture = value
@@ -242,7 +242,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseNewCheckedTexture'],
 									desc = L['BLStyle0UseNewCheckedTextureDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0UseNewCheckedTexture end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0UseNewCheckedTexture = value
@@ -258,7 +258,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseNewHighlightTexture'],
 									desc = L['BLStyle0UseNewHighlightTextureDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0UseNewHighlightTexture end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0UseNewHighlightTexture = value
@@ -274,7 +274,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseNewSpellHighlightTexture'],
 									desc = L['BLStyle0UseNewSpellHighlightTextureDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0UseNewSpellHighlightTexture end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0UseNewSpellHighlightTexture = value
@@ -290,10 +290,122 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseNewFlyoutBorder'],
 									desc = L['BLStyle0UseNewFlyoutBorderDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0UseNewFlyoutBorder end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0UseNewFlyoutBorder = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[0]=true})
+										end
+									end
+								},
+								BLStyle0UseNewSpellActivationAlert = {
+									order = 11,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewSpellActivationAlert'],
+									desc = L['BLStyle0UseNewSpellActivationAlertDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0UseNewSpellActivationAlert end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0UseNewSpellActivationAlert = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[0]=true})
+										end
+									end
+								},
+								BLStyle0UseNewTargetReticleAnimFrame = {
+									order = 12,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewTargetReticleAnimFrame'],
+									desc = L['BLStyle0UseNewTargetReticleAnimFrameDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0UseNewTargetReticleAnimFrame end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0UseNewTargetReticleAnimFrame = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[0]=true})
+										end
+									end
+								},
+								BLStyle0UseNewInterruptDisplay = {
+									order = 13,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewInterruptDisplay'],
+									desc = L['BLStyle0UseNewInterruptDisplayDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0UseNewInterruptDisplay end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0UseNewInterruptDisplay = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[0]=true})
+										end
+									end
+								},
+								BLStyle0UseNewSpellCastAnimFrame = {
+									order = 14,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewSpellCastAnimFrame'],
+									desc = L['BLStyle0UseNewSpellCastAnimFrameDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0UseNewSpellCastAnimFrame end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0UseNewSpellCastAnimFrame = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[0]=true})
+										end
+									end
+								},
+								BLStyle0UseNewCooldownFlash = {
+									order = 15,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewCooldownFlash'],
+									desc = L['BLStyle0UseNewCooldownFlashDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0UseNewCooldownFlash end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0UseNewCooldownFlash = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[0]=true})
+										end
+									end
+								},
+								BLStyle0HideCooldownBlingAnim = {
+									order = 16,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0HideCooldownBlingAnim'],
+									desc = L['BLStyle0HideCooldownBlingAnimDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0HideCooldownBlingAnim end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0HideCooldownBlingAnim = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[0]=true})
+										end
+									end
+								},
+								BLStyle0UseNewChargeCooldownEdgeTexture = {
+									order = 17,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewChargeCooldownEdgeTexture'],
+									desc = L['BLStyle0UseNewChargeCooldownEdgeTextureDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0UseNewChargeCooldownEdgeTexture end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0UseNewChargeCooldownEdgeTexture = value
 										if (ClassicUI:IsEnabled()) then
 											ClassicUI.LayoutGroupActionButtons({[0]=true})
 										end
@@ -584,7 +696,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0AllowNewBackgroundArt'],
 									desc = L['BLStyle0AllowNewBackgroundArtDesc'],
-									width = 2.40,
+									width = 2.95,
 									disabled = function() return (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle ~= 0) end,
 									hidden = function() return (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle ~= 0) end,
 									get = function() return ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0AllowNewBackgroundArt end,
@@ -602,7 +714,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseOldHotKeyTextStyle'],
 									desc = L['BLStyle0UseOldHotKeyTextStyleDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0UseOldHotKeyTextStyle end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0UseOldHotKeyTextStyle = value
@@ -618,7 +730,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseNewPushedTexture'],
 									desc = L['BLStyle0UseNewPushedTextureDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0UseNewPushedTexture end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0UseNewPushedTexture = value
@@ -634,7 +746,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseNewCheckedTexture'],
 									desc = L['BLStyle0UseNewCheckedTextureDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0UseNewCheckedTexture end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0UseNewCheckedTexture = value
@@ -650,7 +762,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseNewHighlightTexture'],
 									desc = L['BLStyle0UseNewHighlightTextureDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0UseNewHighlightTexture end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0UseNewHighlightTexture = value
@@ -666,7 +778,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseNewSpellHighlightTexture'],
 									desc = L['BLStyle0UseNewSpellHighlightTextureDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0UseNewSpellHighlightTexture end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0UseNewSpellHighlightTexture = value
@@ -682,10 +794,122 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseNewFlyoutBorder'],
 									desc = L['BLStyle0UseNewFlyoutBorderDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0UseNewFlyoutBorder end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0UseNewFlyoutBorder = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[6]=true})
+										end
+									end
+								},
+								BLStyle0UseNewSpellActivationAlert = {
+									order = 11,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewSpellActivationAlert'],
+									desc = L['BLStyle0UseNewSpellActivationAlertDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0UseNewSpellActivationAlert end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0UseNewSpellActivationAlert = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[6]=true})
+										end
+									end
+								},
+								BLStyle0UseNewTargetReticleAnimFrame = {
+									order = 12,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewTargetReticleAnimFrame'],
+									desc = L['BLStyle0UseNewTargetReticleAnimFrameDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0UseNewTargetReticleAnimFrame end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0UseNewTargetReticleAnimFrame = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[6]=true})
+										end
+									end
+								},
+								BLStyle0UseNewInterruptDisplay = {
+									order = 13,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewInterruptDisplay'],
+									desc = L['BLStyle0UseNewInterruptDisplayDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0UseNewInterruptDisplay end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0UseNewInterruptDisplay = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[6]=true})
+										end
+									end
+								},
+								BLStyle0UseNewSpellCastAnimFrame = {
+									order = 14,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewSpellCastAnimFrame'],
+									desc = L['BLStyle0UseNewSpellCastAnimFrameDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0UseNewSpellCastAnimFrame end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0UseNewSpellCastAnimFrame = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[6]=true})
+										end
+									end
+								},
+								BLStyle0UseNewCooldownFlash = {
+									order = 15,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewCooldownFlash'],
+									desc = L['BLStyle0UseNewCooldownFlashDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0UseNewCooldownFlash end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0UseNewCooldownFlash = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[6]=true})
+										end
+									end
+								},
+								BLStyle0HideCooldownBlingAnim = {
+									order = 16,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0HideCooldownBlingAnim'],
+									desc = L['BLStyle0HideCooldownBlingAnimDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0HideCooldownBlingAnim end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0HideCooldownBlingAnim = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[6]=true})
+										end
+									end
+								},
+								BLStyle0UseNewChargeCooldownEdgeTexture = {
+									order = 17,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewChargeCooldownEdgeTexture'],
+									desc = L['BLStyle0UseNewChargeCooldownEdgeTextureDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0UseNewChargeCooldownEdgeTexture end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0UseNewChargeCooldownEdgeTexture = value
 										if (ClassicUI:IsEnabled()) then
 											ClassicUI.LayoutGroupActionButtons({[6]=true})
 										end
@@ -824,7 +1048,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0AllowNewBackgroundArt'],
 									desc = L['BLStyle0AllowNewBackgroundArtDesc'],
-									width = 2.40,
+									width = 2.95,
 									disabled = function() return (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle ~= 0) end,
 									hidden = function() return (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle ~= 0) end,
 									get = function() return ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0AllowNewBackgroundArt end,
@@ -842,7 +1066,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseOldHotKeyTextStyle'],
 									desc = L['BLStyle0UseOldHotKeyTextStyleDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0UseOldHotKeyTextStyle end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0UseOldHotKeyTextStyle = value
@@ -858,7 +1082,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseNewPushedTexture'],
 									desc = L['BLStyle0UseNewPushedTextureDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0UseNewPushedTexture end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0UseNewPushedTexture = value
@@ -874,7 +1098,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseNewCheckedTexture'],
 									desc = L['BLStyle0UseNewCheckedTextureDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0UseNewCheckedTexture end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0UseNewCheckedTexture = value
@@ -890,7 +1114,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseNewHighlightTexture'],
 									desc = L['BLStyle0UseNewHighlightTextureDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0UseNewHighlightTexture end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0UseNewHighlightTexture = value
@@ -906,7 +1130,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseNewSpellHighlightTexture'],
 									desc = L['BLStyle0UseNewSpellHighlightTextureDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0UseNewSpellHighlightTexture end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0UseNewSpellHighlightTexture = value
@@ -922,10 +1146,122 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseNewFlyoutBorder'],
 									desc = L['BLStyle0UseNewFlyoutBorderDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0UseNewFlyoutBorder end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0UseNewFlyoutBorder = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[7]=true})
+										end
+									end
+								},
+								BLStyle0UseNewSpellActivationAlert = {
+									order = 11,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewSpellActivationAlert'],
+									desc = L['BLStyle0UseNewSpellActivationAlertDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0UseNewSpellActivationAlert end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0UseNewSpellActivationAlert = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[7]=true})
+										end
+									end
+								},
+								BLStyle0UseNewTargetReticleAnimFrame = {
+									order = 12,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewTargetReticleAnimFrame'],
+									desc = L['BLStyle0UseNewTargetReticleAnimFrameDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0UseNewTargetReticleAnimFrame end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0UseNewTargetReticleAnimFrame = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[7]=true})
+										end
+									end
+								},
+								BLStyle0UseNewInterruptDisplay = {
+									order = 13,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewInterruptDisplay'],
+									desc = L['BLStyle0UseNewInterruptDisplayDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0UseNewInterruptDisplay end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0UseNewInterruptDisplay = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[7]=true})
+										end
+									end
+								},
+								BLStyle0UseNewSpellCastAnimFrame = {
+									order = 14,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewSpellCastAnimFrame'],
+									desc = L['BLStyle0UseNewSpellCastAnimFrameDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0UseNewSpellCastAnimFrame end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0UseNewSpellCastAnimFrame = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[7]=true})
+										end
+									end
+								},
+								BLStyle0UseNewCooldownFlash = {
+									order = 15,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewCooldownFlash'],
+									desc = L['BLStyle0UseNewCooldownFlashDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0UseNewCooldownFlash end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0UseNewCooldownFlash = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[7]=true})
+										end
+									end
+								},
+								BLStyle0HideCooldownBlingAnim = {
+									order = 16,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0HideCooldownBlingAnim'],
+									desc = L['BLStyle0HideCooldownBlingAnimDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0HideCooldownBlingAnim end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0HideCooldownBlingAnim = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[7]=true})
+										end
+									end
+								},
+								BLStyle0UseNewChargeCooldownEdgeTexture = {
+									order = 17,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewChargeCooldownEdgeTexture'],
+									desc = L['BLStyle0UseNewChargeCooldownEdgeTextureDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0UseNewChargeCooldownEdgeTexture end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0UseNewChargeCooldownEdgeTexture = value
 										if (ClassicUI:IsEnabled()) then
 											ClassicUI.LayoutGroupActionButtons({[7]=true})
 										end
@@ -1428,7 +1764,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0AllowNewBackgroundArt'],
 									desc = L['BLStyle0AllowNewBackgroundArtDesc'],
-									width = 2.40,
+									width = 2.95,
 									disabled = function() return (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle ~= 0) end,
 									hidden = function() return (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle ~= 0) end,
 									get = function() return ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0AllowNewBackgroundArt end,
@@ -1446,7 +1782,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseOldHotKeyTextStyle'],
 									desc = L['BLStyle0UseOldHotKeyTextStyleDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0UseOldHotKeyTextStyle end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0UseOldHotKeyTextStyle = value
@@ -1462,7 +1798,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseNewPushedTexture'],
 									desc = L['BLStyle0UseNewPushedTextureDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0UseNewPushedTexture end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0UseNewPushedTexture = value
@@ -1478,7 +1814,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseNewCheckedTexture'],
 									desc = L['BLStyle0UseNewCheckedTextureDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0UseNewCheckedTexture end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0UseNewCheckedTexture = value
@@ -1494,7 +1830,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseNewHighlightTexture'],
 									desc = L['BLStyle0UseNewHighlightTextureDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0UseNewHighlightTexture end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0UseNewHighlightTexture = value
@@ -1510,7 +1846,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseNewSpellHighlightTexture'],
 									desc = L['BLStyle0UseNewSpellHighlightTextureDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0UseNewSpellHighlightTexture end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0UseNewSpellHighlightTexture = value
@@ -1526,10 +1862,122 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseNewFlyoutBorder'],
 									desc = L['BLStyle0UseNewFlyoutBorderDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0UseNewFlyoutBorder end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0UseNewFlyoutBorder = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[1]=true})
+										end
+									end
+								},
+								BLStyle0UseNewSpellActivationAlert = {
+									order = 11,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewSpellActivationAlert'],
+									desc = L['BLStyle0UseNewSpellActivationAlertDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0UseNewSpellActivationAlert end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0UseNewSpellActivationAlert = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[1]=true})
+										end
+									end
+								},
+								BLStyle0UseNewTargetReticleAnimFrame = {
+									order = 12,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewTargetReticleAnimFrame'],
+									desc = L['BLStyle0UseNewTargetReticleAnimFrameDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0UseNewTargetReticleAnimFrame end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0UseNewTargetReticleAnimFrame = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[1]=true})
+										end
+									end
+								},
+								BLStyle0UseNewInterruptDisplay = {
+									order = 13,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewInterruptDisplay'],
+									desc = L['BLStyle0UseNewInterruptDisplayDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0UseNewInterruptDisplay end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0UseNewInterruptDisplay = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[1]=true})
+										end
+									end
+								},
+								BLStyle0UseNewSpellCastAnimFrame = {
+									order = 14,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewSpellCastAnimFrame'],
+									desc = L['BLStyle0UseNewSpellCastAnimFrameDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0UseNewSpellCastAnimFrame end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0UseNewSpellCastAnimFrame = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[1]=true})
+										end
+									end
+								},
+								BLStyle0UseNewCooldownFlash = {
+									order = 15,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewCooldownFlash'],
+									desc = L['BLStyle0UseNewCooldownFlashDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0UseNewCooldownFlash end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0UseNewCooldownFlash = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[1]=true})
+										end
+									end
+								},
+								BLStyle0HideCooldownBlingAnim = {
+									order = 16,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0HideCooldownBlingAnim'],
+									desc = L['BLStyle0HideCooldownBlingAnimDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0HideCooldownBlingAnim end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0HideCooldownBlingAnim = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[1]=true})
+										end
+									end
+								},
+								BLStyle0UseNewChargeCooldownEdgeTexture = {
+									order = 17,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewChargeCooldownEdgeTexture'],
+									desc = L['BLStyle0UseNewChargeCooldownEdgeTextureDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0UseNewChargeCooldownEdgeTexture end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0UseNewChargeCooldownEdgeTexture = value
 										if (ClassicUI:IsEnabled()) then
 											ClassicUI.LayoutGroupActionButtons({[1]=true})
 										end
@@ -1721,7 +2169,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0AllowNewBackgroundArt'],
 									desc = L['BLStyle0AllowNewBackgroundArtDesc'],
-									width = 2.40,
+									width = 2.95,
 									disabled = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle ~= 0) end,
 									hidden = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle ~= 0) end,
 									get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0AllowNewBackgroundArt end,
@@ -1739,7 +2187,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseOldHotKeyTextStyle'],
 									desc = L['BLStyle0UseOldHotKeyTextStyleDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0UseOldHotKeyTextStyle end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0UseOldHotKeyTextStyle = value
@@ -1755,7 +2203,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseNewPushedTexture'],
 									desc = L['BLStyle0UseNewPushedTextureDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0UseNewPushedTexture end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0UseNewPushedTexture = value
@@ -1771,7 +2219,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseNewCheckedTexture'],
 									desc = L['BLStyle0UseNewCheckedTextureDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0UseNewCheckedTexture end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0UseNewCheckedTexture = value
@@ -1787,7 +2235,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseNewHighlightTexture'],
 									desc = L['BLStyle0UseNewHighlightTextureDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0UseNewHighlightTexture end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0UseNewHighlightTexture = value
@@ -1803,7 +2251,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseNewSpellHighlightTexture'],
 									desc = L['BLStyle0UseNewSpellHighlightTextureDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0UseNewSpellHighlightTexture end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0UseNewSpellHighlightTexture = value
@@ -1819,10 +2267,122 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseNewFlyoutBorder'],
 									desc = L['BLStyle0UseNewFlyoutBorderDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0UseNewFlyoutBorder end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0UseNewFlyoutBorder = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[2]=true})
+										end
+									end
+								},
+								BLStyle0UseNewSpellActivationAlert = {
+									order = 11,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewSpellActivationAlert'],
+									desc = L['BLStyle0UseNewSpellActivationAlertDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0UseNewSpellActivationAlert end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0UseNewSpellActivationAlert = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[2]=true})
+										end
+									end
+								},
+								BLStyle0UseNewTargetReticleAnimFrame = {
+									order = 12,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewTargetReticleAnimFrame'],
+									desc = L['BLStyle0UseNewTargetReticleAnimFrameDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0UseNewTargetReticleAnimFrame end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0UseNewTargetReticleAnimFrame = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[2]=true})
+										end
+									end
+								},
+								BLStyle0UseNewInterruptDisplay = {
+									order = 13,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewInterruptDisplay'],
+									desc = L['BLStyle0UseNewInterruptDisplayDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0UseNewInterruptDisplay end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0UseNewInterruptDisplay = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[2]=true})
+										end
+									end
+								},
+								BLStyle0UseNewSpellCastAnimFrame = {
+									order = 14,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewSpellCastAnimFrame'],
+									desc = L['BLStyle0UseNewSpellCastAnimFrameDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0UseNewSpellCastAnimFrame end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0UseNewSpellCastAnimFrame = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[2]=true})
+										end
+									end
+								},
+								BLStyle0UseNewCooldownFlash = {
+									order = 15,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewCooldownFlash'],
+									desc = L['BLStyle0UseNewCooldownFlashDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0UseNewCooldownFlash end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0UseNewCooldownFlash = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[2]=true})
+										end
+									end
+								},
+								BLStyle0HideCooldownBlingAnim = {
+									order = 16,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0HideCooldownBlingAnim'],
+									desc = L['BLStyle0HideCooldownBlingAnimDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0HideCooldownBlingAnim end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0HideCooldownBlingAnim = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[2]=true})
+										end
+									end
+								},
+								BLStyle0UseNewChargeCooldownEdgeTexture = {
+									order = 17,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewChargeCooldownEdgeTexture'],
+									desc = L['BLStyle0UseNewChargeCooldownEdgeTextureDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0UseNewChargeCooldownEdgeTexture end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0UseNewChargeCooldownEdgeTexture = value
 										if (ClassicUI:IsEnabled()) then
 											ClassicUI.LayoutGroupActionButtons({[2]=true})
 										end
@@ -2043,7 +2603,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0AllowNewBackgroundArt'],
 									desc = L['BLStyle0AllowNewBackgroundArtDesc'],
-									width = 2.40,
+									width = 2.95,
 									disabled = function() return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle ~= 0) end,
 									hidden = function() return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle ~= 0) end,
 									get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0AllowNewBackgroundArt end,
@@ -2061,7 +2621,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseOldHotKeyTextStyle'],
 									desc = L['BLStyle0UseOldHotKeyTextStyleDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0UseOldHotKeyTextStyle end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0UseOldHotKeyTextStyle = value
@@ -2077,7 +2637,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseNewPushedTexture'],
 									desc = L['BLStyle0UseNewPushedTextureDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0UseNewPushedTexture end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0UseNewPushedTexture = value
@@ -2093,7 +2653,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseNewCheckedTexture'],
 									desc = L['BLStyle0UseNewCheckedTextureDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0UseNewCheckedTexture end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0UseNewCheckedTexture = value
@@ -2109,7 +2669,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseNewHighlightTexture'],
 									desc = L['BLStyle0UseNewHighlightTextureDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0UseNewHighlightTexture end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0UseNewHighlightTexture = value
@@ -2125,7 +2685,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseNewSpellHighlightTexture'],
 									desc = L['BLStyle0UseNewSpellHighlightTextureDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0UseNewSpellHighlightTexture end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0UseNewSpellHighlightTexture = value
@@ -2141,10 +2701,122 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseNewFlyoutBorder'],
 									desc = L['BLStyle0UseNewFlyoutBorderDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0UseNewFlyoutBorder end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0UseNewFlyoutBorder = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[3]=true})
+										end
+									end
+								},
+								BLStyle0UseNewSpellActivationAlert = {
+									order = 11,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewSpellActivationAlert'],
+									desc = L['BLStyle0UseNewSpellActivationAlertDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0UseNewSpellActivationAlert end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0UseNewSpellActivationAlert = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[3]=true})
+										end
+									end
+								},
+								BLStyle0UseNewTargetReticleAnimFrame = {
+									order = 12,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewTargetReticleAnimFrame'],
+									desc = L['BLStyle0UseNewTargetReticleAnimFrameDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0UseNewTargetReticleAnimFrame end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0UseNewTargetReticleAnimFrame = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[3]=true})
+										end
+									end
+								},
+								BLStyle0UseNewInterruptDisplay = {
+									order = 13,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewInterruptDisplay'],
+									desc = L['BLStyle0UseNewInterruptDisplayDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0UseNewInterruptDisplay end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0UseNewInterruptDisplay = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[3]=true})
+										end
+									end
+								},
+								BLStyle0UseNewSpellCastAnimFrame = {
+									order = 14,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewSpellCastAnimFrame'],
+									desc = L['BLStyle0UseNewSpellCastAnimFrameDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0UseNewSpellCastAnimFrame end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0UseNewSpellCastAnimFrame = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[3]=true})
+										end
+									end
+								},
+								BLStyle0UseNewCooldownFlash = {
+									order = 15,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewCooldownFlash'],
+									desc = L['BLStyle0UseNewCooldownFlashDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0UseNewCooldownFlash end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0UseNewCooldownFlash = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[3]=true})
+										end
+									end
+								},
+								BLStyle0HideCooldownBlingAnim = {
+									order = 16,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0HideCooldownBlingAnim'],
+									desc = L['BLStyle0HideCooldownBlingAnimDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0HideCooldownBlingAnim end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0HideCooldownBlingAnim = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[3]=true})
+										end
+									end
+								},
+								BLStyle0UseNewChargeCooldownEdgeTexture = {
+									order = 17,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewChargeCooldownEdgeTexture'],
+									desc = L['BLStyle0UseNewChargeCooldownEdgeTextureDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0UseNewChargeCooldownEdgeTexture end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0UseNewChargeCooldownEdgeTexture = value
 										if (ClassicUI:IsEnabled()) then
 											ClassicUI.LayoutGroupActionButtons({[3]=true})
 										end
@@ -2397,7 +3069,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0AllowNewBackgroundArt'],
 									desc = L['BLStyle0AllowNewBackgroundArtDesc'],
-									width = 2.40,
+									width = 2.95,
 									disabled = function() return (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle ~= 0) end,
 									hidden = function() return (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle ~= 0) end,
 									get = function() return ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0AllowNewBackgroundArt end,
@@ -2415,7 +3087,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseOldHotKeyTextStyle'],
 									desc = L['BLStyle0UseOldHotKeyTextStyleDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0UseOldHotKeyTextStyle end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0UseOldHotKeyTextStyle = value
@@ -2431,7 +3103,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseNewPushedTexture'],
 									desc = L['BLStyle0UseNewPushedTextureDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0UseNewPushedTexture end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0UseNewPushedTexture = value
@@ -2447,7 +3119,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseNewCheckedTexture'],
 									desc = L['BLStyle0UseNewCheckedTextureDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0UseNewCheckedTexture end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0UseNewCheckedTexture = value
@@ -2463,7 +3135,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseNewHighlightTexture'],
 									desc = L['BLStyle0UseNewHighlightTextureDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0UseNewHighlightTexture end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0UseNewHighlightTexture = value
@@ -2479,7 +3151,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseNewSpellHighlightTexture'],
 									desc = L['BLStyle0UseNewSpellHighlightTextureDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0UseNewSpellHighlightTexture end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0UseNewSpellHighlightTexture = value
@@ -2495,10 +3167,122 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseNewFlyoutBorder'],
 									desc = L['BLStyle0UseNewFlyoutBorderDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0UseNewFlyoutBorder end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0UseNewFlyoutBorder = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[4]=true})
+										end
+									end
+								},
+								BLStyle0UseNewSpellActivationAlert = {
+									order = 11,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewSpellActivationAlert'],
+									desc = L['BLStyle0UseNewSpellActivationAlertDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0UseNewSpellActivationAlert end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0UseNewSpellActivationAlert = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[4]=true})
+										end
+									end
+								},
+								BLStyle0UseNewTargetReticleAnimFrame = {
+									order = 12,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewTargetReticleAnimFrame'],
+									desc = L['BLStyle0UseNewTargetReticleAnimFrameDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0UseNewTargetReticleAnimFrame end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0UseNewTargetReticleAnimFrame = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[4]=true})
+										end
+									end
+								},
+								BLStyle0UseNewInterruptDisplay = {
+									order = 13,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewInterruptDisplay'],
+									desc = L['BLStyle0UseNewInterruptDisplayDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0UseNewInterruptDisplay end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0UseNewInterruptDisplay = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[4]=true})
+										end
+									end
+								},
+								BLStyle0UseNewSpellCastAnimFrame = {
+									order = 14,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewSpellCastAnimFrame'],
+									desc = L['BLStyle0UseNewSpellCastAnimFrameDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0UseNewSpellCastAnimFrame end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0UseNewSpellCastAnimFrame = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[4]=true})
+										end
+									end
+								},
+								BLStyle0UseNewCooldownFlash = {
+									order = 15,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewCooldownFlash'],
+									desc = L['BLStyle0UseNewCooldownFlashDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0UseNewCooldownFlash end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0UseNewCooldownFlash = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[4]=true})
+										end
+									end
+								},
+								BLStyle0HideCooldownBlingAnim = {
+									order = 16,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0HideCooldownBlingAnim'],
+									desc = L['BLStyle0HideCooldownBlingAnimDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0HideCooldownBlingAnim end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0HideCooldownBlingAnim = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[4]=true})
+										end
+									end
+								},
+								BLStyle0UseNewChargeCooldownEdgeTexture = {
+									order = 17,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewChargeCooldownEdgeTexture'],
+									desc = L['BLStyle0UseNewChargeCooldownEdgeTextureDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0UseNewChargeCooldownEdgeTexture end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0UseNewChargeCooldownEdgeTexture = value
 										if (ClassicUI:IsEnabled()) then
 											ClassicUI.LayoutGroupActionButtons({[4]=true})
 										end
@@ -2702,7 +3486,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0AllowNewBackgroundArt'],
 									desc = L['BLStyle0AllowNewBackgroundArtDesc'],
-									width = 2.40,
+									width = 2.95,
 									disabled = function() return (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle ~= 0) end,
 									hidden = function() return (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle ~= 0) end,
 									get = function() return ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0AllowNewBackgroundArt end,
@@ -2720,7 +3504,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseOldHotKeyTextStyle'],
 									desc = L['BLStyle0UseOldHotKeyTextStyleDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0UseOldHotKeyTextStyle end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0UseOldHotKeyTextStyle = value
@@ -2736,7 +3520,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseNewPushedTexture'],
 									desc = L['BLStyle0UseNewPushedTextureDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0UseNewPushedTexture end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0UseNewPushedTexture = value
@@ -2752,7 +3536,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseNewCheckedTexture'],
 									desc = L['BLStyle0UseNewCheckedTextureDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0UseNewCheckedTexture end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0UseNewCheckedTexture = value
@@ -2768,7 +3552,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseNewHighlightTexture'],
 									desc = L['BLStyle0UseNewHighlightTextureDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0UseNewHighlightTexture end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0UseNewHighlightTexture = value
@@ -2784,7 +3568,7 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseNewSpellHighlightTexture'],
 									desc = L['BLStyle0UseNewSpellHighlightTextureDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0UseNewSpellHighlightTexture end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0UseNewSpellHighlightTexture = value
@@ -2800,10 +3584,122 @@ ClassicUI.optionsTable = {
 									type = "toggle",
 									name = L['BLStyle0UseNewFlyoutBorder'],
 									desc = L['BLStyle0UseNewFlyoutBorderDesc'],
-									width = 2.40,
+									width = 2.95,
 									get = function() return ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0UseNewFlyoutBorder end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0UseNewFlyoutBorder = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[5]=true})
+										end
+									end
+								},
+								BLStyle0UseNewSpellActivationAlert = {
+									order = 11,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewSpellActivationAlert'],
+									desc = L['BLStyle0UseNewSpellActivationAlertDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0UseNewSpellActivationAlert end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0UseNewSpellActivationAlert = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[5]=true})
+										end
+									end
+								},
+								BLStyle0UseNewTargetReticleAnimFrame = {
+									order = 12,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewTargetReticleAnimFrame'],
+									desc = L['BLStyle0UseNewTargetReticleAnimFrameDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0UseNewTargetReticleAnimFrame end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0UseNewTargetReticleAnimFrame = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[5]=true})
+										end
+									end
+								},
+								BLStyle0UseNewInterruptDisplay = {
+									order = 13,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewInterruptDisplay'],
+									desc = L['BLStyle0UseNewInterruptDisplayDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0UseNewInterruptDisplay end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0UseNewInterruptDisplay = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[5]=true})
+										end
+									end
+								},
+								BLStyle0UseNewSpellCastAnimFrame = {
+									order = 14,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewSpellCastAnimFrame'],
+									desc = L['BLStyle0UseNewSpellCastAnimFrameDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0UseNewSpellCastAnimFrame end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0UseNewSpellCastAnimFrame = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[5]=true})
+										end
+									end
+								},
+								BLStyle0UseNewCooldownFlash = {
+									order = 15,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewCooldownFlash'],
+									desc = L['BLStyle0UseNewCooldownFlashDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0UseNewCooldownFlash end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0UseNewCooldownFlash = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[5]=true})
+										end
+									end
+								},
+								BLStyle0HideCooldownBlingAnim = {
+									order = 16,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0HideCooldownBlingAnim'],
+									desc = L['BLStyle0HideCooldownBlingAnimDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0HideCooldownBlingAnim end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0HideCooldownBlingAnim = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[5]=true})
+										end
+									end
+								},
+								BLStyle0UseNewChargeCooldownEdgeTexture = {
+									order = 17,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewChargeCooldownEdgeTexture'],
+									desc = L['BLStyle0UseNewChargeCooldownEdgeTextureDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0UseNewChargeCooldownEdgeTexture end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0UseNewChargeCooldownEdgeTexture = value
 										if (ClassicUI:IsEnabled()) then
 											ClassicUI.LayoutGroupActionButtons({[5]=true})
 										end

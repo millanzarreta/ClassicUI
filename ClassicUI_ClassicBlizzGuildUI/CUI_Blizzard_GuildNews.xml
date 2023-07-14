@@ -122,7 +122,8 @@
 				</Layers>
 				<Scripts>
 					<OnClick>
-						StaticPopup_Show("GUILD_IMPEACH");
+						--StaticPopup_Show("GUILD_IMPEACH");	-- removed because is restricted-protected
+						StaticPopup_Show("CUI_GUILD_PROTECTEDFUNC_IMPEACH_W");
 					</OnClick>
 				</Scripts>
 				<HighlightTexture file="Interface\FriendsFrame\UI-FriendsFrame-HighlightBar-Blue" setAllPoints="true" alphaMode="ADD"/>

@@ -356,9 +356,11 @@
 						end
 						
 						local wasShown = GuildControlUI:IsShown();
-						CloseWindows(nil, CUI_GuildFrame);
-						if not wasShown then
-							ShowUIPanel(GuildControlUI);
+						if not(InCombatLockdown()) then	-- show/hide UI panels in combat is forbidden for insecure code
+							CloseWindows(nil, CUI_GuildFrame);
+							if not wasShown then
+								ShowUIPanel(GuildControlUI);
+							end
 						end
 					</OnClick>
 				</Scripts>

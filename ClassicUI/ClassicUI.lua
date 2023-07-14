@@ -1,7 +1,7 @@
 -- ------------------------------------------------------------ --
 -- Addon: ClassicUI                                             --
 --                                                              --
--- Version: 2.0.3                                               --
+-- Version: 2.0.4                                               --
 -- Author: Millán - Sanguino                                    --
 --                                                              --
 -- License: GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007 --
@@ -22,6 +22,7 @@ end
 ClassicUI.frame:SetScript("OnEvent", ClassicUI.OnEvent)
 
 local L = LibStub("AceLocale-3.0"):GetLocale("ClassicUI")
+ClassicUI.L = L
 
 local _G = _G
 local _
@@ -39,10 +40,10 @@ local type = type
 local pairs = pairs
 local ipairs = ipairs
 local next = next
-local SetPortraitTexture = SetPortraitTexture
 local SetClampedTextureRotation = SetClampedTextureRotation
 local InCombatLockdown = InCombatLockdown
 local ActionHasRange = ActionHasRange
+local AnimateTexCoords = AnimateTexCoords
 local IsActionInRange = IsActionInRange
 local IsUsableAction = IsUsableAction
 local ActionBarController_GetCurrentActionBarState = ActionBarController_GetCurrentActionBarState
@@ -58,7 +59,6 @@ local GetRestrictedAccountData = GetRestrictedAccountData
 local GetWatchedFactionInfo = GetWatchedFactionInfo
 local GameLimitedMode_IsActive = GameLimitedMode_IsActive
 local Kiosk_IsEnabled = Kiosk.IsEnabled
-local UIFrameFlashStop = UIFrameFlashStop
 local UnitXP = UnitXP
 local UnitXPMax = UnitXPMax
 local UnitFactionGroup = UnitFactionGroup
@@ -81,7 +81,7 @@ local GetGuildInfo = GetGuildInfo
 local InGuildParty = InGuildParty
 
 -- Global constants
-ClassicUI.VERSION = "2.0.3"
+ClassicUI.VERSION = "2.0.4"
 ClassicUI.ACTIONBUTTON_NEWLAYOUT_SCALE = 0.826
 ClassicUI.ACTION_BAR_OFFSET = 45
 ClassicUI.SPELLFLYOUT_DEFAULT_SPACING = 4
@@ -103,6 +103,9 @@ ClassicUI.cached_ActionButtonInfo = {
 	hooked_UpdateButtonArt = { },
 	hooked_UpdateHotkeys = { },
 	hooked_UpdateFlyout = { },
+	hooked_PlaySpellCastAnim = { },
+	spellActivationAlertAdjusted = { },
+	typeActionButton = { },
 	currentScale = { },
 	currLayout = { }
 }
@@ -147,6 +150,13 @@ ClassicUI.defaults = {
 				BLStyle0UseNewHighlightTexture = false,
 				BLStyle0UseNewSpellHighlightTexture = false,
 				BLStyle0UseNewFlyoutBorder = false,
+				BLStyle0UseNewSpellActivationAlert = false,
+				BLStyle0UseNewTargetReticleAnimFrame = false,
+				BLStyle0UseNewInterruptDisplay = false,
+				BLStyle0UseNewSpellCastAnimFrame = false,
+				BLStyle0UseNewCooldownFlash = false,
+				BLStyle0UseNewChargeCooldownEdgeTexture = false,
+				BLStyle0HideCooldownBlingAnim = false
 			},
 			['SpellFlyoutButtons'] = {
 				BLStyle = 0,	-- 0 = Classic, 1 = Dragonflight
@@ -158,7 +168,14 @@ ClassicUI.defaults = {
 				BLStyle0UseNewCheckedTexture = false,
 				BLStyle0UseNewHighlightTexture = false,
 				BLStyle0UseNewSpellHighlightTexture = false,
-				BLStyle0UseNewFlyoutBorder = false
+				BLStyle0UseNewFlyoutBorder = false,
+				BLStyle0UseNewSpellActivationAlert = false,
+				BLStyle0UseNewTargetReticleAnimFrame = false,
+				BLStyle0UseNewInterruptDisplay = false,
+				BLStyle0UseNewSpellCastAnimFrame = false,
+				BLStyle0UseNewCooldownFlash = false,
+				BLStyle0UseNewChargeCooldownEdgeTexture = false,
+				BLStyle0HideCooldownBlingAnim = false
 			},
 			['MicroButtons'] = {
 				scale = 1,
@@ -183,7 +200,14 @@ ClassicUI.defaults = {
 				BLStyle0UseNewCheckedTexture = false,
 				BLStyle0UseNewHighlightTexture = false,
 				BLStyle0UseNewSpellHighlightTexture = false,
-				BLStyle0UseNewFlyoutBorder = false
+				BLStyle0UseNewFlyoutBorder = false,
+				BLStyle0UseNewSpellActivationAlert = false,
+				BLStyle0UseNewTargetReticleAnimFrame = false,
+				BLStyle0UseNewInterruptDisplay = false,
+				BLStyle0UseNewSpellCastAnimFrame = false,
+				BLStyle0UseNewCooldownFlash = false,
+				BLStyle0UseNewChargeCooldownEdgeTexture = false,
+				BLStyle0HideCooldownBlingAnim = false
 			},
 			['PetBattleFrameBar'] = {
 				scale = 1
@@ -202,7 +226,14 @@ ClassicUI.defaults = {
 				BLStyle0UseNewCheckedTexture = false,
 				BLStyle0UseNewHighlightTexture = false,
 				BLStyle0UseNewSpellHighlightTexture = false,
-				BLStyle0UseNewFlyoutBorder = false
+				BLStyle0UseNewFlyoutBorder = false,
+				BLStyle0UseNewSpellActivationAlert = false,
+				BLStyle0UseNewTargetReticleAnimFrame = false,
+				BLStyle0UseNewInterruptDisplay = false,
+				BLStyle0UseNewSpellCastAnimFrame = false,
+				BLStyle0UseNewCooldownFlash = false,
+				BLStyle0UseNewChargeCooldownEdgeTexture = false,
+				BLStyle0HideCooldownBlingAnim = false
 			},
 			['RightMultiActionBars'] = {
 				ignoreyOffsetStatusBar = false,
@@ -218,7 +249,14 @@ ClassicUI.defaults = {
 				BLStyle0UseNewCheckedTexture = false,
 				BLStyle0UseNewHighlightTexture = false,
 				BLStyle0UseNewSpellHighlightTexture = false,
-				BLStyle0UseNewFlyoutBorder = false
+				BLStyle0UseNewFlyoutBorder = false,
+				BLStyle0UseNewSpellActivationAlert = false,
+				BLStyle0UseNewTargetReticleAnimFrame = false,
+				BLStyle0UseNewInterruptDisplay = false,
+				BLStyle0UseNewSpellCastAnimFrame = false,
+				BLStyle0UseNewCooldownFlash = false,
+				BLStyle0UseNewChargeCooldownEdgeTexture = false,
+				BLStyle0HideCooldownBlingAnim = false
 			},
 			['PetActionBarFrame'] = {
 				normalizeButtonsSpacing = false,
@@ -238,7 +276,14 @@ ClassicUI.defaults = {
 				BLStyle0UseNewCheckedTexture = false,
 				BLStyle0UseNewHighlightTexture = false,
 				BLStyle0UseNewSpellHighlightTexture = false,
-				BLStyle0UseNewFlyoutBorder = false
+				BLStyle0UseNewFlyoutBorder = false,
+				BLStyle0UseNewSpellActivationAlert = false,
+				BLStyle0UseNewTargetReticleAnimFrame = false,
+				BLStyle0UseNewInterruptDisplay = false,
+				BLStyle0UseNewSpellCastAnimFrame = false,
+				BLStyle0UseNewCooldownFlash = false,
+				BLStyle0UseNewChargeCooldownEdgeTexture = false,
+				BLStyle0HideCooldownBlingAnim = false
 			},
 			['StanceBarFrame'] = {
 				ignoreyOffsetStatusBar = false,
@@ -254,7 +299,14 @@ ClassicUI.defaults = {
 				BLStyle0UseNewCheckedTexture = false,
 				BLStyle0UseNewHighlightTexture = false,
 				BLStyle0UseNewSpellHighlightTexture = false,
-				BLStyle0UseNewFlyoutBorder = false
+				BLStyle0UseNewFlyoutBorder = false,
+				BLStyle0UseNewSpellActivationAlert = false,
+				BLStyle0UseNewTargetReticleAnimFrame = false,
+				BLStyle0UseNewInterruptDisplay = false,
+				BLStyle0UseNewSpellCastAnimFrame = false,
+				BLStyle0UseNewCooldownFlash = false,
+				BLStyle0UseNewChargeCooldownEdgeTexture = false,
+				BLStyle0HideCooldownBlingAnim = false
 			},
 			['PossessBarFrame'] = {
 				ignoreyOffsetStatusBar = false,
@@ -270,7 +322,14 @@ ClassicUI.defaults = {
 				BLStyle0UseNewCheckedTexture = false,
 				BLStyle0UseNewHighlightTexture = false,
 				BLStyle0UseNewSpellHighlightTexture = false,
-				BLStyle0UseNewFlyoutBorder = false
+				BLStyle0UseNewFlyoutBorder = false,
+				BLStyle0UseNewSpellActivationAlert = false,
+				BLStyle0UseNewTargetReticleAnimFrame = false,
+				BLStyle0UseNewInterruptDisplay = false,
+				BLStyle0UseNewSpellCastAnimFrame = false,
+				BLStyle0UseNewCooldownFlash = false,
+				BLStyle0UseNewChargeCooldownEdgeTexture = false,
+				BLStyle0HideCooldownBlingAnim = false
 			},
 			['SingleStatusBar'] = {
 				hide = {
@@ -691,7 +750,6 @@ end
 -- Function to update some DB cached values
 function ClassicUI:UpdateDBValuesCache()
 	if self.databaseCleaned then return end	-- [DB Integrity Check]	Cache
-	self.cached_db_profile.extraFrames_Bags_freeSlotCounterMod = self.db.profile.extraFrames.Bags.freeSlotCounterMod
 	self.cached_db_profile.barsConfig_SingleStatusBar_expBarAlwaysShowRestedBar = self.db.profile.barsConfig.SingleStatusBar.expBarAlwaysShowRestedBar
 	self.cached_db_profile.barsConfig_MainMenuBar_scale = self.db.profile.barsConfig.MainMenuBar.scale
 	self.cached_db_profile.barsConfig_BottomMultiActionBars_scale = self.db.profile.barsConfig.BottomMultiActionBars.scale
@@ -710,6 +768,7 @@ function ClassicUI:UpdateDBValuesCache()
 	self.cached_db_profile.extraFrames_Minimap_hideAddonCompartment = self.db.profile.extraFrames.Minimap.hideAddonCompartment
 	self.cached_db_profile.extraFrames_Minimap_xOffsetQueueButton = self.db.profile.extraFrames.Minimap.xOffsetQueueButton
 	self.cached_db_profile.extraFrames_Minimap_yOffsetQueueButton = self.db.profile.extraFrames.Minimap.yOffsetQueueButton
+	self.cached_db_profile.extraFrames_Bags_freeSlotCounterMod = self.db.profile.extraFrames.Bags.freeSlotCounterMod
 	self.cached_db_profile.extraFrames_Chat_restoreBottomScrollButton = self.db.profile.extraFrames.Chat.restoreBottomScrollButton
 	self.cached_db_profile.extraFrames_Chat_socialButtonToBottom = self.db.profile.extraFrames.Chat.socialButtonToBottom
 	self.cached_db_profile.extraConfigs_KeybindsConfig_hideKeybindsMode = self.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode
@@ -816,7 +875,7 @@ function ClassicUI:BagsFreeSlotsCounterMod()
 				local totalFree, freeSlots, bagFamily = 0
 				local reagentFree = 0
 				for i = BACKPACK_CONTAINER, NUM_TOTAL_EQUIPPED_BAG_SLOTS do
-					freeSlots, bagFamily = C_Container.GetContainerNumFreeSlots(i)
+					freeSlots, bagFamily = C_Container_GetContainerNumFreeSlots(i)
 					if (bagFamily == 0) then
 						if not(ContainerFrame_IsReagentBag(i)) then
 							totalFree = totalFree + freeSlots
@@ -2046,7 +2105,7 @@ function ClassicUI:EnableOldMinimap()
 	CUI_GuildInstanceDifficultyBorder:SetSize(41, 53)
 	CUI_GuildInstanceDifficultyBorder:SetTexture("Interface\\GuildFrame\\GuildDifficulty")
 	CUI_GuildInstanceDifficultyBorder:SetTexCoord(0.34375, 0.6640625, 0.015625, 0.84375)
-	CUI_GuildInstanceDifficultyBorder:SetPoint("BOTTOMLEFT", CUI_GuildInstanceDifficulty, "BOTTOMLEFT", 0, 0)
+	CUI_GuildInstanceDifficultyBorder:SetPoint("TOPLEFT", CUI_GuildInstanceDifficulty, "TOPLEFT", 0, 0)
 	local CUI_GuildInstanceDifficultyHeroicTexture = CUI_GuildInstanceDifficulty:CreateTexture("CUI_GuildInstanceDifficultyHeroicTexture", "ARTWORK")
 	CUI_GuildInstanceDifficultyHeroicTexture:SetSize(12, 13)
 	CUI_GuildInstanceDifficultyHeroicTexture:SetTexture("Interface\\GuildFrame\\GuildDifficulty")
@@ -2731,6 +2790,15 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 					end
 					if ClassicUI.cached_ActionButtonInfo.hooked_UpdateFlyout[button] == nil then
 						ClassicUI.cached_ActionButtonInfo.hooked_UpdateFlyout[button] = false
+					end
+					if ClassicUI.cached_ActionButtonInfo.hooked_PlaySpellCastAnim[button] == nil then
+						ClassicUI.cached_ActionButtonInfo.hooked_PlaySpellCastAnim[button] = false
+					end
+					if ClassicUI.cached_ActionButtonInfo.spellActivationAlertAdjusted[button] == nil then
+						ClassicUI.cached_ActionButtonInfo.spellActivationAlertAdjusted[button] = false
+					end
+					if ClassicUI.cached_ActionButtonInfo.typeActionButton[button] == nil then
+						ClassicUI.cached_ActionButtonInfo.typeActionButton[button] = 6
 					end
 					if ClassicUI.cached_ActionButtonInfo.currentScale[button] == nil then
 						ClassicUI.cached_ActionButtonInfo.currentScale[button] = 1
@@ -3769,6 +3837,23 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		LFDMicroButton:SetPoint("TOPLEFT", CharacterMicroButton, "BOTTOMLEFT", 0, 4)
 	end)
 	
+	-- [MicroButtons]
+	ClassicUI.hook_MicroButtonSetStateFunc = function(self)
+		if self.Background:IsShown() then
+			self.Background:Hide()
+		end
+		if self.PushedBackground:IsShown() then
+			self.PushedBackground:Hide()
+		end
+		self:SetHighlightAtlas("hud-microbutton-highlight")
+		self:SetHighlightTexture("Interface\\Buttons\\UI-MicroButton-Hilight", "ADD")
+		self:GetHighlightTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
+		self:GetHighlightTexture():SetAlpha(1)
+	end
+	ClassicUI.hookscript_MicroButtonOnEnter = function(self)
+		self:GetNormalTexture():SetAlpha(1)
+	end
+	
 	-- [MicroButtons] CharacterMicroButton
 	CharacterMicroButton:SetParent(CUI_MainMenuBarArtFrame)
 	CharacterMicroButton:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
@@ -3783,46 +3868,55 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	CharacterMicroButton:SetNormalTexture("Interface\\Buttons\\UI-MicroButtonCharacter-Up")
 	CharacterMicroButton:SetPushedTexture("Interface\\Buttons\\UI-MicroButtonCharacter-Down")
 	CharacterMicroButton:SetHighlightTexture("Interface\\Buttons\\UI-MicroButton-Hilight", "ADD")
-	CharacterMicroButton:SetDisabledTexture("Interface\\Buttons\\UI-MicroButtonCharacter-Disabled")
+	CharacterMicroButton:SetDisabledTexture("Interface\\Buttons\\UI-MicroButtonCharacter-Up")	-- "UI-MicroButtonCharacter-Disabled" does not exists
 	CharacterMicroButton:GetNormalTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 	CharacterMicroButton:GetPushedTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 	CharacterMicroButton:GetHighlightTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 	CharacterMicroButton:GetDisabledTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
+	CharacterMicroButton:GetNormalTexture():SetVertexColor(1, 1, 1)
+	CharacterMicroButton:GetPushedTexture():SetVertexColor(1, 1, 1)
+	CharacterMicroButton:GetDisabledTexture():SetVertexColor(1, 1, 1)
+	CharacterMicroButton:GetHighlightTexture():SetVertexColor(1, 1, 1)
+	CharacterMicroButton.Background:Hide()
+	CharacterMicroButton.Background:SetAlpha(0)
+	CharacterMicroButton.PushedBackground:Hide()
+	CharacterMicroButton.PushedBackground:SetAlpha(0)
+	CharacterMicroButton.FlashBorder:SetAtlas(nil)
+	CharacterMicroButton.FlashBorder:SetTexture("Interface\\Addons\\ClassicUI\\Textures\\UI-MicroButton-FlashBorderHilight")
+	CharacterMicroButton.FlashBorder:SetTexCoord(0/128, 66/128, 0/128, 80/128)
+	CharacterMicroButton.FlashBorder:SetBlendMode("ADD")
+	CharacterMicroButton.FlashBorder:ClearAllPoints()
 	CharacterMicroButton.FlashBorder:SetSize(34, 44)
+	CharacterMicroButton.FlashBorder:SetDrawLayer("OVERLAY", 0)
 	CharacterMicroButton.FlashBorder:SetPoint("TOPLEFT", TalentMicroButton, "TOPLEFT", -2, 3)
-	
-	-- [MicroButtons] CharacterMicroButton -> Portrait texture
-	local CUI_MicroButtonPortrait = CharacterMicroButton:CreateTexture("CUI_MicroButtonPortrait")
-	CUI_MicroButtonPortrait:SetPoint("TOP", CharacterMicroButton, "TOP", 0, -7)
-	CUI_MicroButtonPortrait:SetTexCoord(0.2, 0.8, 0.0666, 0.9)
-	CUI_MicroButtonPortrait:SetAlpha(1)
-	CUI_MicroButtonPortrait:SetSize(18, 25)
-	CUI_MicroButtonPortrait:SetDrawLayer("OVERLAY", 0)
 	hooksecurefunc(CharacterMicroButton, "SetPushed", function(self)
-		CUI_MicroButtonPortrait:SetTexCoord(0.2666, 0.8666, 0, 0.8333)
-		CUI_MicroButtonPortrait:SetAlpha(0.5)
+		self.PushedBackground:Hide()
+		self.Portrait:ClearAllPoints()
+		self.Portrait:SetPoint("TOP", self, "TOP", 0, -7)
+		self.Portrait:SetTexCoord(0.2666, 0.8666, 0, 0.8333)
+		self.Portrait:SetAlpha(0.5)
 	end)
 	hooksecurefunc(CharacterMicroButton, "SetNormal", function(self)
-		CUI_MicroButtonPortrait:SetTexCoord(0.2, 0.8, 0.0666, 0.9)
-		CUI_MicroButtonPortrait:SetAlpha(1.0)
+		self.Background:Hide()
+		self.Portrait:ClearAllPoints()
+		self.Portrait:SetPoint("TOP", self, "TOP", 0, -7)
+		self.Portrait:SetTexCoord(0.2, 0.8, 0.0666, 0.9)
+		self.Portrait:SetAlpha(1.0)
 	end)
-	CharacterMicroButton:HookScript("OnEvent", function(self, event, ...)
-		if (event == "UNIT_PORTRAIT_UPDATE") then
-			local unit = ...
-			if (unit == "player") then
-				SetPortraitTexture(CUI_MicroButtonPortrait, "player")
-			end
-		elseif (event == "PORTRAITS_UPDATED") then
-			SetPortraitTexture(CUI_MicroButtonPortrait, "player")
-		elseif (event == "PLAYER_ENTERING_WORLD") then
-			SetPortraitTexture(CUI_MicroButtonPortrait, "player")
-		end
-	end)
-	CharacterMicroButton:RegisterEvent("PLAYER_ENTERING_WORLD")
-	CharacterMicroButton:RegisterEvent("UNIT_PORTRAIT_UPDATE")
-	CharacterMicroButton:RegisterEvent("PORTRAITS_UPDATED")
-	SetPortraitTexture(CUI_MicroButtonPortrait, "player")
-	CUI_MicroButtonPortrait:Show()
+	CharacterMicroButton:HookScript("OnEnter", ClassicUI.hookscript_MicroButtonOnEnter)
+	
+	-- [MicroButtons] CharacterMicroButton -> Portrait texture
+	CharacterMicroButton.PortraitMask:Hide()
+	CharacterMicroButton.PortraitMask:SetAlpha(0)
+	CharacterMicroButton.Shadow:Hide()
+	CharacterMicroButton.Shadow:SetAlpha(0)
+	CharacterMicroButton.PushedShadow:Hide()
+	CharacterMicroButton.PushedShadow:SetAlpha(0)
+	CharacterMicroButton.Portrait:SetPoint("TOP", CharacterMicroButton, "TOP", 0, -7)
+	CharacterMicroButton.Portrait:SetTexCoord(0.2, 0.8, 0.0666, 0.9)
+	CharacterMicroButton.Portrait:SetAlpha(1.0)
+	CharacterMicroButton.Portrait:SetSize(18, 25)
+	CharacterMicroButton.Portrait:SetDrawLayer("OVERLAY", 0)
 	
 	-- [MicroButtons] SpellbookMicroButton
 	SpellbookMicroButton:SetParent(CUI_MainMenuBarArtFrame)
@@ -3843,8 +3937,25 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	SpellbookMicroButton:GetPushedTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 	SpellbookMicroButton:GetHighlightTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 	SpellbookMicroButton:GetDisabledTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
+	SpellbookMicroButton:GetNormalTexture():SetVertexColor(1, 1, 1)
+	SpellbookMicroButton:GetPushedTexture():SetVertexColor(1, 1, 1)
+	SpellbookMicroButton:GetDisabledTexture():SetVertexColor(1, 1, 1)
+	SpellbookMicroButton:GetHighlightTexture():SetVertexColor(1, 1, 1)
+	SpellbookMicroButton.Background:Hide()
+	SpellbookMicroButton.Background:SetAlpha(0)
+	SpellbookMicroButton.PushedBackground:Hide()
+	SpellbookMicroButton.PushedBackground:SetAlpha(0)
+	SpellbookMicroButton.FlashBorder:SetAtlas(nil)
+	SpellbookMicroButton.FlashBorder:SetTexture("Interface\\Addons\\ClassicUI\\Textures\\UI-MicroButton-FlashBorderHilight")
+	SpellbookMicroButton.FlashBorder:SetTexCoord(0/128, 66/128, 0/128, 80/128)
+	SpellbookMicroButton.FlashBorder:SetBlendMode("ADD")
+	SpellbookMicroButton.FlashBorder:ClearAllPoints()
 	SpellbookMicroButton.FlashBorder:SetSize(34, 44)
+	SpellbookMicroButton.FlashBorder:SetDrawLayer("OVERLAY", 0)
 	SpellbookMicroButton.FlashBorder:SetPoint("TOPLEFT", SpellbookMicroButton, "TOPLEFT", -2, 3)
+	hooksecurefunc(SpellbookMicroButton, "SetPushed", ClassicUI.hook_MicroButtonSetStateFunc)
+	hooksecurefunc(SpellbookMicroButton, "SetNormal", ClassicUI.hook_MicroButtonSetStateFunc)
+	SpellbookMicroButton:HookScript("OnEnter", ClassicUI.hookscript_MicroButtonOnEnter)
 	
 	-- [MicroButtons] TalentMicroButton
 	TalentMicroButton:SetParent(CUI_MainMenuBarArtFrame)
@@ -3865,8 +3976,25 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	TalentMicroButton:GetPushedTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 	TalentMicroButton:GetHighlightTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 	TalentMicroButton:GetDisabledTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
+	TalentMicroButton:GetNormalTexture():SetVertexColor(1, 1, 1)
+	TalentMicroButton:GetPushedTexture():SetVertexColor(1, 1, 1)
+	TalentMicroButton:GetDisabledTexture():SetVertexColor(1, 1, 1)
+	TalentMicroButton:GetHighlightTexture():SetVertexColor(1, 1, 1)
+	TalentMicroButton.Background:Hide()
+	TalentMicroButton.Background:SetAlpha(0)
+	TalentMicroButton.PushedBackground:Hide()
+	TalentMicroButton.PushedBackground:SetAlpha(0)
+	TalentMicroButton.FlashBorder:SetAtlas(nil)
+	TalentMicroButton.FlashBorder:SetTexture("Interface\\Addons\\ClassicUI\\Textures\\UI-MicroButton-FlashBorderHilight")
+	TalentMicroButton.FlashBorder:SetTexCoord(0/128, 66/128, 0/128, 80/128)
+	TalentMicroButton.FlashBorder:SetBlendMode("ADD")
+	TalentMicroButton.FlashBorder:ClearAllPoints()
 	TalentMicroButton.FlashBorder:SetSize(34, 44)
+	TalentMicroButton.FlashBorder:SetDrawLayer("OVERLAY", 0)
 	TalentMicroButton.FlashBorder:SetPoint("TOPLEFT", TalentMicroButton, "TOPLEFT", -2, 3)
+	hooksecurefunc(TalentMicroButton, "SetPushed", ClassicUI.hook_MicroButtonSetStateFunc)
+	hooksecurefunc(TalentMicroButton, "SetNormal", ClassicUI.hook_MicroButtonSetStateFunc)
+	TalentMicroButton:HookScript("OnEnter", ClassicUI.hookscript_MicroButtonOnEnter)
 	
 	-- [MicroButtons] AchievementMicroButton
 	AchievementMicroButton:SetParent(CUI_MainMenuBarArtFrame)
@@ -3887,8 +4015,25 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	AchievementMicroButton:GetPushedTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 	AchievementMicroButton:GetHighlightTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 	AchievementMicroButton:GetDisabledTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
+	AchievementMicroButton:GetNormalTexture():SetVertexColor(1, 1, 1)
+	AchievementMicroButton:GetPushedTexture():SetVertexColor(1, 1, 1)
+	AchievementMicroButton:GetDisabledTexture():SetVertexColor(1, 1, 1)
+	AchievementMicroButton:GetHighlightTexture():SetVertexColor(1, 1, 1)
+	AchievementMicroButton.Background:Hide()
+	AchievementMicroButton.Background:SetAlpha(0)
+	AchievementMicroButton.PushedBackground:Hide()
+	AchievementMicroButton.PushedBackground:SetAlpha(0)
+	AchievementMicroButton.FlashBorder:SetAtlas(nil)
+	AchievementMicroButton.FlashBorder:SetTexture("Interface\\Addons\\ClassicUI\\Textures\\UI-MicroButton-FlashBorderHilight")
+	AchievementMicroButton.FlashBorder:SetTexCoord(0/128, 66/128, 0/128, 80/128)
+	AchievementMicroButton.FlashBorder:SetBlendMode("ADD")
+	AchievementMicroButton.FlashBorder:ClearAllPoints()
 	AchievementMicroButton.FlashBorder:SetSize(34, 44)
+	AchievementMicroButton.FlashBorder:SetDrawLayer("OVERLAY", 0)
 	AchievementMicroButton.FlashBorder:SetPoint("TOPLEFT", AchievementMicroButton, "TOPLEFT", -2, 3)
+	hooksecurefunc(AchievementMicroButton, "SetPushed", ClassicUI.hook_MicroButtonSetStateFunc)
+	hooksecurefunc(AchievementMicroButton, "SetNormal", ClassicUI.hook_MicroButtonSetStateFunc)
+	AchievementMicroButton:HookScript("OnEnter", ClassicUI.hookscript_MicroButtonOnEnter)
 	
 	-- [MicroButtons] QuestLogMicroButton
 	QuestLogMicroButton:SetParent(CUI_MainMenuBarArtFrame)
@@ -3915,8 +4060,25 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	QuestLogMicroButton:GetPushedTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 	QuestLogMicroButton:GetHighlightTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 	QuestLogMicroButton:GetDisabledTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
+	QuestLogMicroButton:GetNormalTexture():SetVertexColor(1, 1, 1)
+	QuestLogMicroButton:GetPushedTexture():SetVertexColor(1, 1, 1)
+	QuestLogMicroButton:GetDisabledTexture():SetVertexColor(1, 1, 1)
+	QuestLogMicroButton:GetHighlightTexture():SetVertexColor(1, 1, 1)
+	QuestLogMicroButton.Background:Hide()
+	QuestLogMicroButton.Background:SetAlpha(0)
+	QuestLogMicroButton.PushedBackground:Hide()
+	QuestLogMicroButton.PushedBackground:SetAlpha(0)
+	QuestLogMicroButton.FlashBorder:SetAtlas(nil)
+	QuestLogMicroButton.FlashBorder:SetTexture("Interface\\Addons\\ClassicUI\\Textures\\UI-MicroButton-FlashBorderHilight")
+	QuestLogMicroButton.FlashBorder:SetTexCoord(0/128, 66/128, 0/128, 80/128)
+	QuestLogMicroButton.FlashBorder:SetBlendMode("ADD")
+	QuestLogMicroButton.FlashBorder:ClearAllPoints()
 	QuestLogMicroButton.FlashBorder:SetSize(34, 44)
+	QuestLogMicroButton.FlashBorder:SetDrawLayer("OVERLAY", 0)
 	QuestLogMicroButton.FlashBorder:SetPoint("TOPLEFT", QuestLogMicroButton, "TOPLEFT", -2, 3)
+	hooksecurefunc(QuestLogMicroButton, "SetPushed", ClassicUI.hook_MicroButtonSetStateFunc)
+	hooksecurefunc(QuestLogMicroButton, "SetNormal", ClassicUI.hook_MicroButtonSetStateFunc)
+	QuestLogMicroButton:HookScript("OnEnter", ClassicUI.hookscript_MicroButtonOnEnter)
 	
 	-- [MicroButtons] GuildMicroButton
 	GuildMicroButton:SetParent(CUI_MainMenuBarArtFrame)
@@ -3943,7 +4105,21 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	GuildMicroButton:GetPushedTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 	GuildMicroButton:GetHighlightTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 	GuildMicroButton:GetDisabledTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
+	GuildMicroButton:GetNormalTexture():SetVertexColor(1, 1, 1)
+	GuildMicroButton:GetPushedTexture():SetVertexColor(1, 1, 1)
+	GuildMicroButton:GetDisabledTexture():SetVertexColor(1, 1, 1)
+	GuildMicroButton:GetHighlightTexture():SetVertexColor(1, 1, 1)
+	GuildMicroButton.Background:Hide()
+	GuildMicroButton.Background:SetAlpha(0)
+	GuildMicroButton.PushedBackground:Hide()
+	GuildMicroButton.PushedBackground:SetAlpha(0)
+	GuildMicroButton.FlashBorder:SetAtlas(nil)
+	GuildMicroButton.FlashBorder:SetTexture("Interface\\Addons\\ClassicUI\\Textures\\UI-MicroButton-FlashBorderHilight")
+	GuildMicroButton.FlashBorder:SetTexCoord(0/128, 66/128, 0/128, 80/128)
+	GuildMicroButton.FlashBorder:SetBlendMode("ADD")
+	GuildMicroButton.FlashBorder:ClearAllPoints()
 	GuildMicroButton.FlashBorder:SetSize(34, 44)
+	GuildMicroButton.FlashBorder:SetDrawLayer("OVERLAY", 0)
 	GuildMicroButton.FlashBorder:SetPoint("TOPLEFT", GuildMicroButton, "TOPLEFT", -2, 3)
 	GuildMicroButton.NotificationOverlay:SetFrameStrata("MEDIUM")
 	GuildMicroButton.NotificationOverlay:SetFrameLevel(500)
@@ -3951,6 +4127,13 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	GuildMicroButton.NotificationOverlay.UnreadNotificationIcon:SetSize(18, 18)
 	GuildMicroButton.NotificationOverlay.UnreadNotificationIcon:ClearAllPoints()
 	GuildMicroButton.NotificationOverlay.UnreadNotificationIcon:SetPoint("CENTER", GuildMicroButton.NotificationOverlay, "TOP", 0, -5)
+	GuildMicroButton.Emblem:Hide()
+	GuildMicroButton.Emblem:SetAlpha(0)
+	GuildMicroButton.HighlightEmblem:Hide()
+	GuildMicroButton.HighlightEmblem:SetAlpha(0)
+	hooksecurefunc(GuildMicroButton, "SetPushed", ClassicUI.hook_MicroButtonSetStateFunc)
+	hooksecurefunc(GuildMicroButton, "SetNormal", ClassicUI.hook_MicroButtonSetStateFunc)
+	GuildMicroButton:HookScript("OnEnter", ClassicUI.hookscript_MicroButtonOnEnter)
 	
 	local GuildMicroButtonTabard = CreateFrame("Frame", "GuildMicroButtonTabard", GuildMicroButton)
 	GuildMicroButtonTabard:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
@@ -3982,43 +4165,52 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	end
 	
 	ClassicUI.GuildMicroButton_UpdateTabard = function(forceUpdate)
-		local tabard = GuildMicroButtonTabard
-		if (not tabard.needsUpdate and not forceUpdate) then
+		local button = GuildMicroButton
+		if (not(forceUpdate) and (button:GetNormalTexture():GetAtlas() == nil)) then
 			return
 		end
+		button.Emblem:Hide()
+		button.Emblem:SetAlpha(0)
+		button.HighlightEmblem:Hide()
+		button.HighlightEmblem:SetAlpha(0)
+		button:SetNormalAtlas("hud-microbutton-Socials-Up", true)
+		button:SetPushedAtlas("hud-microbutton-Socials-Down", true)
+		button:SetDisabledAtlas("hud-microbutton-Socials-Disabled", true)
+		button:SetHighlightAtlas("hud-microbutton-highlight")
+		button:SetHighlightTexture("Interface\\Buttons\\UI-MicroButton-Hilight", "ADD")
+		button:GetNormalTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
+		button:GetPushedTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
+		button:GetHighlightTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
+		button:GetDisabledTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
+		button:GetNormalTexture():SetVertexColor(1, 1, 1)
+		button:GetPushedTexture():SetVertexColor(1, 1, 1)
+		button:GetDisabledTexture():SetVertexColor(1, 1, 1)
+		button:GetHighlightTexture():SetVertexColor(1, 1, 1)
 		if not(ClassicUI.db.profile.barsConfig.MicroButtons.useClassicGuildIcon) then
 			local emblemFilename = select(10, GetGuildLogoInfo())
+			local tabard = GuildMicroButtonTabard
 			if (emblemFilename) then
+				button:SetNormalTexture("Interface\\Buttons\\UI-MicroButtonCharacter-Up")
+				button:SetPushedTexture("Interface\\Buttons\\UI-MicroButtonCharacter-Down")
+				button:SetDisabledTexture("Interface\\Buttons\\UI-MicroButton-Socials-Disabled")
 				if (not tabard:IsShown()) then
-					local button = GuildMicroButton
-					button:SetNormalTexture("Interface\\Buttons\\UI-MicroButtonCharacter-Up")
-					button:SetPushedTexture("Interface\\Buttons\\UI-MicroButtonCharacter-Down")
 					tabard:Show()
 				end
 				SetSmallGuildTabardTextures("player", tabard.emblem, tabard.background)
 			else
+				button:SetNormalTexture("Interface\\Buttons\\UI-MicroButton-Socials-Up")
+				button:SetPushedTexture("Interface\\Buttons\\UI-MicroButton-Socials-Down")
+				button:SetDisabledTexture("Interface\\Buttons\\UI-MicroButton-Socials-Disabled")
 				if (tabard:IsShown()) then
-					local button = GuildMicroButton
-					button:SetDisabledAtlas("hud-microbutton-Socials-Disabled", true)
-					button:SetNormalTexture("Interface\\Buttons\\UI-MicroButton-Socials-Up")
-					button:SetPushedTexture("Interface\\Buttons\\UI-MicroButton-Socials-Down")
-					button:SetDisabledTexture("Interface\\Buttons\\UI-MicroButton-Socials-Disabled")
 					tabard:Hide()
 				end
 			end
+		else
+			button:SetNormalTexture("Interface\\Addons\\ClassicUI\\Textures\\UI-MicroButton-Socials-Up-classic")
+			button:SetPushedTexture("Interface\\Addons\\ClassicUI\\Textures\\UI-MicroButton-Socials-Down-classic")
+			button:SetDisabledTexture("Interface\\Addons\\ClassicUI\\Textures\\UI-MicroButton-Socials-Disabled-classic")
 		end
-		tabard.needsUpdate = nil
 	end
-	
-	GuildMicroButtonTabard:SetScript("OnEvent", function(self, event, ...)
-		if (Kiosk_IsEnabled()) then
-			return
-		end
-		if (event == "PLAYER_GUILD_UPDATE" or event == "NEUTRAL_FACTION_SELECT_RESULT") then
-			self.needsUpdate = true
-			ClassicUI.GuildMicroButton_UpdateTabard()
-		end
-	end)
 	
 	hooksecurefunc("UpdateMicroButtons", function(self)
 		ClassicUI.GuildMicroButton_UpdateTabard()
@@ -4035,8 +4227,6 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		end
 	end)
 
-	GuildMicroButtonTabard:RegisterEvent("PLAYER_GUILD_UPDATE")
-	GuildMicroButtonTabard:RegisterEvent("NEUTRAL_FACTION_SELECT_RESULT")
 	ClassicUI.GuildMicroButton_UpdateTabard(true)
 	
 	-- [MicroButtons] LFDMicroButton
@@ -4058,8 +4248,25 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	LFDMicroButton:GetPushedTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 	LFDMicroButton:GetHighlightTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 	LFDMicroButton:GetDisabledTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
+	LFDMicroButton:GetNormalTexture():SetVertexColor(1, 1, 1)
+	LFDMicroButton:GetPushedTexture():SetVertexColor(1, 1, 1)
+	LFDMicroButton:GetDisabledTexture():SetVertexColor(1, 1, 1)
+	LFDMicroButton:GetHighlightTexture():SetVertexColor(1, 1, 1)
+	LFDMicroButton.Background:Hide()
+	LFDMicroButton.Background:SetAlpha(0)
+	LFDMicroButton.PushedBackground:Hide()
+	LFDMicroButton.PushedBackground:SetAlpha(0)
+	LFDMicroButton.FlashBorder:SetAtlas(nil)
+	LFDMicroButton.FlashBorder:SetTexture("Interface\\Addons\\ClassicUI\\Textures\\UI-MicroButton-FlashBorderHilight")
+	LFDMicroButton.FlashBorder:SetTexCoord(0/128, 66/128, 0/128, 80/128)
+	LFDMicroButton.FlashBorder:SetBlendMode("ADD")
+	LFDMicroButton.FlashBorder:ClearAllPoints()
 	LFDMicroButton.FlashBorder:SetSize(34, 44)
+	LFDMicroButton.FlashBorder:SetDrawLayer("OVERLAY", 0)
 	LFDMicroButton.FlashBorder:SetPoint("TOPLEFT", LFDMicroButton, "TOPLEFT", -2, 3)
+	hooksecurefunc(LFDMicroButton, "SetPushed", ClassicUI.hook_MicroButtonSetStateFunc)
+	hooksecurefunc(LFDMicroButton, "SetNormal", ClassicUI.hook_MicroButtonSetStateFunc)
+	LFDMicroButton:HookScript("OnEnter", ClassicUI.hookscript_MicroButtonOnEnter)
 	
 	-- [MicroButtons] CollectionsMicroButton
 	CollectionsMicroButton:SetParent(CUI_MainMenuBarArtFrame)
@@ -4080,8 +4287,25 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	CollectionsMicroButton:GetPushedTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 	CollectionsMicroButton:GetHighlightTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 	CollectionsMicroButton:GetDisabledTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
+	CollectionsMicroButton:GetNormalTexture():SetVertexColor(1, 1, 1)
+	CollectionsMicroButton:GetPushedTexture():SetVertexColor(1, 1, 1)
+	CollectionsMicroButton:GetDisabledTexture():SetVertexColor(1, 1, 1)
+	CollectionsMicroButton:GetHighlightTexture():SetVertexColor(1, 1, 1)
+	CollectionsMicroButton.Background:Hide()
+	CollectionsMicroButton.Background:SetAlpha(0)
+	CollectionsMicroButton.PushedBackground:Hide()
+	CollectionsMicroButton.PushedBackground:SetAlpha(0)
+	CollectionsMicroButton.FlashBorder:SetAtlas(nil)
+	CollectionsMicroButton.FlashBorder:SetTexture("Interface\\Addons\\ClassicUI\\Textures\\UI-MicroButton-FlashBorderHilight")
+	CollectionsMicroButton.FlashBorder:SetTexCoord(0/128, 66/128, 0/128, 80/128)
+	CollectionsMicroButton.FlashBorder:SetBlendMode("ADD")
+	CollectionsMicroButton.FlashBorder:ClearAllPoints()
 	CollectionsMicroButton.FlashBorder:SetSize(34, 44)
+	CollectionsMicroButton.FlashBorder:SetDrawLayer("OVERLAY", 0)
 	CollectionsMicroButton.FlashBorder:SetPoint("TOPLEFT", CollectionsMicroButton, "TOPLEFT", -2, 3)
+	hooksecurefunc(CollectionsMicroButton, "SetPushed", ClassicUI.hook_MicroButtonSetStateFunc)
+	hooksecurefunc(CollectionsMicroButton, "SetNormal", ClassicUI.hook_MicroButtonSetStateFunc)
+	CollectionsMicroButton:HookScript("OnEnter", ClassicUI.hookscript_MicroButtonOnEnter)
 	
 	-- [MicroButtons] EJMicroButton
 	EJMicroButton:SetParent(CUI_MainMenuBarArtFrame)
@@ -4102,8 +4326,25 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	EJMicroButton:GetPushedTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 	EJMicroButton:GetHighlightTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 	EJMicroButton:GetDisabledTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
+	EJMicroButton:GetNormalTexture():SetVertexColor(1, 1, 1)
+	EJMicroButton:GetPushedTexture():SetVertexColor(1, 1, 1)
+	EJMicroButton:GetDisabledTexture():SetVertexColor(1, 1, 1)
+	EJMicroButton:GetHighlightTexture():SetVertexColor(1, 1, 1)
+	EJMicroButton.Background:Hide()
+	EJMicroButton.Background:SetAlpha(0)
+	EJMicroButton.PushedBackground:Hide()
+	EJMicroButton.PushedBackground:SetAlpha(0)
+	EJMicroButton.FlashBorder:SetAtlas(nil)
+	EJMicroButton.FlashBorder:SetTexture("Interface\\Addons\\ClassicUI\\Textures\\UI-MicroButton-FlashBorderHilight")
+	EJMicroButton.FlashBorder:SetTexCoord(0/128, 66/128, 0/128, 80/128)
+	EJMicroButton.FlashBorder:SetBlendMode("ADD")
+	EJMicroButton.FlashBorder:ClearAllPoints()
 	EJMicroButton.FlashBorder:SetSize(34, 44)
+	EJMicroButton.FlashBorder:SetDrawLayer("OVERLAY", 0)
 	EJMicroButton.FlashBorder:SetPoint("TOPLEFT", EJMicroButton, "TOPLEFT", -2, 3)
+	hooksecurefunc(EJMicroButton, "SetPushed", ClassicUI.hook_MicroButtonSetStateFunc)
+	hooksecurefunc(EJMicroButton, "SetNormal", ClassicUI.hook_MicroButtonSetStateFunc)
+	EJMicroButton:HookScript("OnEnter", ClassicUI.hookscript_MicroButtonOnEnter)
 	
 	-- [MicroButtons] StoreMicroButton
 	StoreMicroButton:SetParent(CUI_MainMenuBarArtFrame)
@@ -4124,8 +4365,25 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	StoreMicroButton:GetPushedTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 	StoreMicroButton:GetHighlightTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 	StoreMicroButton:GetDisabledTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
+	StoreMicroButton:GetNormalTexture():SetVertexColor(1, 1, 1)
+	StoreMicroButton:GetPushedTexture():SetVertexColor(1, 1, 1)
+	StoreMicroButton:GetDisabledTexture():SetVertexColor(1, 1, 1)
+	StoreMicroButton:GetHighlightTexture():SetVertexColor(1, 1, 1)
+	StoreMicroButton.Background:Hide()
+	StoreMicroButton.Background:SetAlpha(0)
+	StoreMicroButton.PushedBackground:Hide()
+	StoreMicroButton.PushedBackground:SetAlpha(0)
+	StoreMicroButton.FlashBorder:SetAtlas(nil)
+	StoreMicroButton.FlashBorder:SetTexture("Interface\\Addons\\ClassicUI\\Textures\\UI-MicroButton-FlashBorderHilight")
+	StoreMicroButton.FlashBorder:SetTexCoord(0/128, 66/128, 0/128, 80/128)
+	StoreMicroButton.FlashBorder:SetBlendMode("ADD")
+	StoreMicroButton.FlashBorder:ClearAllPoints()
 	StoreMicroButton.FlashBorder:SetSize(34, 44)
+	StoreMicroButton.FlashBorder:SetDrawLayer("OVERLAY", 0)
 	StoreMicroButton.FlashBorder:SetPoint("TOPLEFT", StoreMicroButton, "TOPLEFT", -2, 3)
+	hooksecurefunc(StoreMicroButton, "SetPushed", ClassicUI.hook_MicroButtonSetStateFunc)
+	hooksecurefunc(StoreMicroButton, "SetNormal", ClassicUI.hook_MicroButtonSetStateFunc)
+	StoreMicroButton:HookScript("OnEnter", ClassicUI.hookscript_MicroButtonOnEnter)
 	
 	-- [MicroButtons] MainMenuMicroButton
 	MainMenuMicroButton:SetParent(CUI_MainMenuBarArtFrame)
@@ -4152,8 +4410,24 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	MainMenuMicroButton:GetPushedTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 	MainMenuMicroButton:GetHighlightTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
 	MainMenuMicroButton:GetDisabledTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
+	MainMenuMicroButton:GetNormalTexture():SetVertexColor(1, 1, 1)
+	MainMenuMicroButton:GetPushedTexture():SetVertexColor(1, 1, 1)
+	MainMenuMicroButton:GetDisabledTexture():SetVertexColor(1, 1, 1)
+	MainMenuMicroButton:GetHighlightTexture():SetVertexColor(1, 1, 1)
+	MainMenuMicroButton.Background:Hide()
+	MainMenuMicroButton.Background:SetAlpha(0)
+	MainMenuMicroButton.PushedBackground:Hide()
+	MainMenuMicroButton.PushedBackground:SetAlpha(0)
+	MainMenuMicroButton.FlashBorder:SetAtlas(nil)
+	MainMenuMicroButton.FlashBorder:SetTexture("Interface\\Addons\\ClassicUI\\Textures\\UI-MicroButton-FlashBorderHilight")
+	MainMenuMicroButton.FlashBorder:SetTexCoord(0/128, 66/128, 0/128, 80/128)
+	MainMenuMicroButton.FlashBorder:SetBlendMode("ADD")
+	MainMenuMicroButton.FlashBorder:ClearAllPoints()
 	MainMenuMicroButton.FlashBorder:SetSize(34, 44)
+	MainMenuMicroButton.FlashBorder:SetDrawLayer("OVERLAY", 0)
 	MainMenuMicroButton.FlashBorder:SetPoint("TOPLEFT", MainMenuMicroButton, "TOPLEFT", -2, 3)
+	hooksecurefunc(MainMenuMicroButton, "SetPushed", ClassicUI.hook_MicroButtonSetStateFunc)
+	hooksecurefunc(MainMenuMicroButton, "SetNormal", ClassicUI.hook_MicroButtonSetStateFunc)
 	
 	if (MainMenuMicroButton.MainMenuBarPerformanceBar ~= nil) then
 		MainMenuMicroButton.MainMenuBarPerformanceBar:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
@@ -4167,7 +4441,6 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	
 	local CUI_MicroButtonPulseHiddenFrame = CreateFrame("Frame", "CUI_MicroButtonPulseHiddenFrame", UIParent)
 	CUI_MicroButtonPulseHiddenFrame:Hide()
-	CharacterMicroButton.FlashContent:SetParent(CUI_MicroButtonPulseHiddenFrame)
 	SpellbookMicroButton.FlashContent:SetParent(CUI_MicroButtonPulseHiddenFrame)
 	TalentMicroButton.FlashContent:SetParent(CUI_MicroButtonPulseHiddenFrame)
 	AchievementMicroButton.FlashContent:SetParent(CUI_MicroButtonPulseHiddenFrame)
@@ -4852,6 +5125,284 @@ function ClassicUI:PLAYER_ENTERING_WORLD()
 	end
 end
 
+-- Function to recreate the classic SpellActivationAlert animation frame for an ActionButton
+ClassicUI.CreateClassicSpellActivationAlertFrame = function(iActionButton)
+	if (iActionButton.ClassicSpellActivationAlert) then return end
+	
+	-- Recreate the classic animation frames and animations
+	local parentName = iActionButton:GetName()
+	local iabcsaa = CreateFrame("Frame", nil, iActionButton)
+	
+	iabcsaa.spark = iabcsaa:CreateTexture(parentName.."Spark", "BACKGROUND")
+	iabcsaa.spark:SetTexCoord(0.00781250, 0.61718750, 0.00390625, 0.26953125)
+	iabcsaa.spark:SetTexture("Interface\\SpellActivationOverlay\\IconAlert")
+	iabcsaa.spark:ClearAllPoints()
+	iabcsaa.spark:SetAllPoints(iabcsaa)
+	iabcsaa.spark:ClearAllPoints()
+	iabcsaa.spark:SetPoint("CENTER")
+	iabcsaa.spark:SetAlpha(0)
+	
+	iabcsaa.innerGlow = iabcsaa:CreateTexture(parentName.."InnerGlow", "ARTWORK")
+	iabcsaa.innerGlow:SetTexCoord(0.00781250, 0.50781250, 0.27734375, 0.52734375)
+	iabcsaa.innerGlow:SetTexture("Interface\\SpellActivationOverlay\\IconAlert")
+	iabcsaa.innerGlow:ClearAllPoints()
+	iabcsaa.innerGlow:SetAllPoints(iabcsaa)
+	iabcsaa.innerGlow:ClearAllPoints()
+	iabcsaa.innerGlow:SetPoint("CENTER")
+	iabcsaa.innerGlow:SetAlpha(0)
+	
+	iabcsaa.innerGlowOver = iabcsaa:CreateTexture(parentName.."InnerGlowOver", "ARTWORK")
+	iabcsaa.innerGlowOver:SetTexCoord(0.00781250, 0.50781250, 0.53515625, 0.78515625)
+	iabcsaa.innerGlowOver:SetTexture("Interface\\SpellActivationOverlay\\IconAlert")
+	iabcsaa.innerGlowOver:ClearAllPoints()
+	iabcsaa.innerGlowOver:SetPoint("TOPLEFT", iabcsaa.innerGlow, "TOPLEFT")
+	iabcsaa.innerGlowOver:SetPoint("BOTTOMRIGHT", iabcsaa.innerGlow, "BOTTOMRIGHT")
+	iabcsaa.innerGlowOver:SetAlpha(0)
+	
+	iabcsaa.outerGlow = iabcsaa:CreateTexture(parentName.."OuterGlow", "ARTWORK")
+	iabcsaa.outerGlow:SetTexCoord(0.00781250, 0.50781250, 0.27734375, 0.52734375)
+	iabcsaa.outerGlow:SetTexture("Interface\\SpellActivationOverlay\\IconAlert")
+	iabcsaa.outerGlow:ClearAllPoints()
+	iabcsaa.outerGlow:SetAllPoints(iabcsaa)
+	iabcsaa.outerGlow:ClearAllPoints()
+	iabcsaa.outerGlow:SetPoint("CENTER")
+	iabcsaa.outerGlow:SetAlpha(0)
+	
+	iabcsaa.outerGlowOver = iabcsaa:CreateTexture(parentName.."OuterGlowOver", "ARTWORK")
+	iabcsaa.outerGlowOver:SetTexCoord(0.00781250, 0.50781250, 0.53515625, 0.78515625)
+	iabcsaa.outerGlowOver:SetTexture("Interface\\SpellActivationOverlay\\IconAlert")
+	iabcsaa.outerGlowOver:ClearAllPoints()
+	iabcsaa.outerGlowOver:SetPoint("TOPLEFT", iabcsaa.outerGlow, "TOPLEFT")
+	iabcsaa.outerGlowOver:SetPoint("BOTTOMRIGHT", iabcsaa.outerGlow, "BOTTOMRIGHT")
+	iabcsaa.outerGlowOver:SetAlpha(0)
+	
+	iabcsaa.ants = iabcsaa:CreateTexture(parentName.."Ants", "OVERLAY")
+	iabcsaa.ants:SetTexture("Interface\\SpellActivationOverlay\\IconAlertAnts")
+	iabcsaa.ants:ClearAllPoints()
+	iabcsaa.ants:SetAllPoints(iabcsaa)
+	iabcsaa.ants:ClearAllPoints()
+	iabcsaa.ants:SetPoint("CENTER")
+	iabcsaa.ants:SetAlpha(0)
+	
+	iabcsaa.OnUpdate = function(self, elapsed)
+		AnimateTexCoords(self.ants, 256, 256, 48, 48, 22, elapsed, 0.01)
+		local cooldown = self:GetParent().cooldown
+		-- we need some threshold to avoid dimming the glow during the gdc
+		-- (using 1500 exactly seems risky, what if casting speed is slowed or something?)
+		if(cooldown and cooldown:IsShown() and cooldown:GetCooldownDuration() > 3000) then
+			self:SetAlpha(0.5)
+		else
+			self:SetAlpha(1.0)
+		end
+	end
+	iabcsaa:SetScript("OnUpdate", iabcsaa.OnUpdate)
+	
+	iabcsaa.OnHide = function(self)
+		if ( self.animOut:IsPlaying() ) then
+			self.animOut:Stop()
+			self.animOut:OnFinished()
+		end
+	end
+	iabcsaa:SetScript("OnHide", iabcsaa.OnHide)
+	
+	local tmpanim
+	iabcsaa.animIn = iabcsaa:CreateAnimationGroup()
+	
+	tmpanim = iabcsaa.animIn:CreateAnimation("Scale")
+	tmpanim:SetTarget(iabcsaa.spark)
+	tmpanim:SetDuration(0.2)
+	tmpanim:SetScale(1.5, 1.5)
+	tmpanim:SetOrder(1)
+	
+	tmpanim = iabcsaa.animIn:CreateAnimation("Alpha")
+	tmpanim:SetTarget(iabcsaa.spark)
+	tmpanim:SetDuration(0.2)
+	tmpanim:SetFromAlpha(0)
+	tmpanim:SetToAlpha(1)
+	tmpanim:SetOrder(1)
+	
+	tmpanim = iabcsaa.animIn:CreateAnimation("Scale")
+	tmpanim:SetTarget(iabcsaa.innerGlow)
+	tmpanim:SetDuration(0.3)
+	tmpanim:SetScale(2, 2)
+	tmpanim:SetOrder(1)
+	
+	tmpanim = iabcsaa.animIn:CreateAnimation("Scale")
+	tmpanim:SetTarget(iabcsaa.innerGlowOver)
+	tmpanim:SetDuration(0.3)
+	tmpanim:SetScale(2, 2)
+	tmpanim:SetOrder(1)
+	
+	tmpanim = iabcsaa.animIn:CreateAnimation("Alpha")
+	tmpanim:SetTarget(iabcsaa.innerGlowOver)
+	tmpanim:SetDuration(0.3)
+	tmpanim:SetFromAlpha(1)
+	tmpanim:SetToAlpha(0)
+	tmpanim:SetOrder(1)
+	
+	tmpanim = iabcsaa.animIn:CreateAnimation("Scale")
+	tmpanim:SetTarget(iabcsaa.outerGlow)
+	tmpanim:SetDuration(0.3)
+	tmpanim:SetScale(0.5, 0.5)
+	tmpanim:SetOrder(1)
+	
+	tmpanim = iabcsaa.animIn:CreateAnimation("Scale")
+	tmpanim:SetTarget(iabcsaa.outerGlowOver)
+	tmpanim:SetDuration(0.3)
+	tmpanim:SetScale(0.5, 0.5)
+	tmpanim:SetOrder(1)
+	
+	tmpanim = iabcsaa.animIn:CreateAnimation("Alpha")
+	tmpanim:SetTarget(iabcsaa.outerGlowOver)
+	tmpanim:SetDuration(0.3)
+	tmpanim:SetFromAlpha(1)
+	tmpanim:SetToAlpha(0)
+	tmpanim:SetOrder(1)
+	
+	tmpanim = iabcsaa.animIn:CreateAnimation("Scale")
+	tmpanim:SetTarget(iabcsaa.spark)
+	tmpanim:SetStartDelay(0.2)
+	tmpanim:SetDuration(0.2)
+	tmpanim:SetScale(0.666666, 0.666666)
+	tmpanim:SetOrder(1)
+	
+	tmpanim = iabcsaa.animIn:CreateAnimation("Alpha")
+	tmpanim:SetTarget(iabcsaa.spark)
+	tmpanim:SetStartDelay(0.2)
+	tmpanim:SetDuration(0.2)
+	tmpanim:SetFromAlpha(1)
+	tmpanim:SetToAlpha(0)
+	tmpanim:SetOrder(1)
+	
+	tmpanim = iabcsaa.animIn:CreateAnimation("Alpha")
+	tmpanim:SetTarget(iabcsaa.innerGlow)
+	tmpanim:SetStartDelay(0.3)
+	tmpanim:SetDuration(0.2)
+	tmpanim:SetFromAlpha(1)
+	tmpanim:SetToAlpha(0)
+	tmpanim:SetOrder(1)
+	
+	tmpanim = iabcsaa.animIn:CreateAnimation("Alpha")
+	tmpanim:SetTarget(iabcsaa.ants)
+	tmpanim:SetStartDelay(0.3)
+	tmpanim:SetDuration(0.2)
+	tmpanim:SetFromAlpha(0)
+	tmpanim:SetToAlpha(1)
+	tmpanim:SetOrder(1)
+	
+	iabcsaa.animIn.OnPlay = function(self)
+		local frame = self:GetParent()
+		local frameWidth, frameHeight = frame:GetSize()
+		frame.spark:SetSize(frameWidth, frameHeight)
+		frame.spark:SetAlpha(0.3)
+		frame.innerGlow:SetSize(frameWidth / 2, frameHeight / 2)
+		frame.innerGlow:SetAlpha(1.0)
+		frame.innerGlowOver:SetAlpha(1.0)
+		frame.outerGlow:SetSize(frameWidth * 2, frameHeight * 2)
+		frame.outerGlow:SetAlpha(1.0)
+		frame.outerGlowOver:SetAlpha(1.0)
+		frame.ants:SetSize(frameWidth * 0.85, frameHeight * 0.85)
+		frame.ants:SetAlpha(0)
+		frame:Show()
+	end
+	iabcsaa.animIn:SetScript("OnPlay", iabcsaa.animIn.OnPlay)
+	
+	iabcsaa.animIn.OnFinished = function(self)
+		local frame = self:GetParent()
+		local frameWidth, frameHeight = frame:GetSize()
+		frame.spark:SetAlpha(0)
+		frame.innerGlow:SetAlpha(0)
+		frame.innerGlow:SetSize(frameWidth, frameHeight)
+		frame.innerGlowOver:SetAlpha(0.0)
+		frame.outerGlow:SetSize(frameWidth, frameHeight)
+		frame.outerGlowOver:SetAlpha(0.0)
+		frame.outerGlowOver:SetSize(frameWidth, frameHeight)
+		frame.ants:SetAlpha(1.0)
+	end
+	iabcsaa.animIn:SetScript("OnFinished", iabcsaa.animIn.OnFinished)
+	
+	iabcsaa.animOut = iabcsaa:CreateAnimationGroup()
+	
+	tmpanim = iabcsaa.animOut:CreateAnimation("Alpha")
+	tmpanim:SetTarget(iabcsaa.outerGlowOver)
+	tmpanim:SetDuration(0.2)
+	tmpanim:SetFromAlpha(0)
+	tmpanim:SetToAlpha(1)
+	tmpanim:SetOrder(1)
+	
+	tmpanim = iabcsaa.animOut:CreateAnimation("Alpha")
+	tmpanim:SetTarget(iabcsaa.ants)
+	tmpanim:SetDuration(0.2)
+	tmpanim:SetFromAlpha(1)
+	tmpanim:SetToAlpha(0)
+	tmpanim:SetOrder(1)
+	
+	tmpanim = iabcsaa.animOut:CreateAnimation("Alpha")
+	tmpanim:SetTarget(iabcsaa.outerGlowOver)
+	tmpanim:SetDuration(0.2)
+	tmpanim:SetFromAlpha(1)
+	tmpanim:SetToAlpha(0)
+	tmpanim:SetOrder(2)
+	
+	tmpanim = iabcsaa.animOut:CreateAnimation("Alpha")
+	tmpanim:SetTarget(iabcsaa.outerGlow)
+	tmpanim:SetDuration(0.2)
+	tmpanim:SetFromAlpha(1)
+	tmpanim:SetToAlpha(0)
+	tmpanim:SetOrder(2)
+	
+	iabcsaa.animOut.OnFinished = function(self)
+		local frame = self:GetParent()
+		frame:Hide()
+	end
+	iabcsaa.animOut:SetScript("OnFinished", iabcsaa.animOut.OnFinished)
+	
+	-- Create an intermediary parent frame to easily hide this animation if desired
+	local iabpcsaa = CreateFrame("Frame", nil, iActionButton)
+	iabpcsaa.cooldown = iActionButton.cooldown
+	iabpcsaa:SetPoint("CENTER", iActionButton, "CENTER", 0, 0)
+	iabpcsaa:SetAlpha(1)
+	iabpcsaa:Show()
+	iabcsaa:SetParent(iabpcsaa)
+	
+	iActionButton.ParentClassicSpellActivationAlert = iabpcsaa
+	iActionButton.ClassicSpellActivationAlert = iabcsaa
+	local frameWidth, frameHeight = iActionButton:GetSize()
+	iabcsaa:SetSize(frameWidth * 1.4, frameHeight * 1.4)
+	iabcsaa:SetPoint("CENTER", iActionButton, "CENTER", 0, 0)
+	iabcsaa:Hide()
+	
+	-- Global hooks to the main functions that show/hide these animations
+	if not ClassicUI.hooked_ActionButton_ShowHideOverlayGlow then
+		hooksecurefunc("ActionButton_ShowOverlayGlow", function(button)
+			if not(button.ClassicSpellActivationAlert) then
+				return
+			end
+			if button.ClassicSpellActivationAlert.animOut:IsPlaying() then
+				button.ClassicSpellActivationAlert.animOut:Stop()
+			end
+			if not button.ClassicSpellActivationAlert:IsShown() then
+				button.ClassicSpellActivationAlert.animIn:Play()
+			end
+		end)
+		hooksecurefunc("ActionButton_HideOverlayGlow", function(button)
+			if not(button.ClassicSpellActivationAlert) then
+				return
+			end
+			if button.ClassicSpellActivationAlert.animIn:IsPlaying() then
+				button.ClassicSpellActivationAlert.animIn:Stop()
+			end
+			if button:IsVisible() then
+				button.ClassicSpellActivationAlert.animOut:Play()
+			else
+				button.ClassicSpellActivationAlert.animOut:OnFinished()	--We aren't shown anyway, so we'll instantly hide it.
+			end
+		end)
+		ClassicUI.hooked_ActionButton_ShowHideOverlayGlow = true
+	end
+	return iabcsaa
+end
+
 -- Function that handles a queue of pending functions that set the scale of combat-protected frames
 function ClassicUI:BarHookProtectedApplySetScale()
 	if InCombatLockdown() then
@@ -4973,7 +5524,7 @@ ClassicUI.RestoreDragonflightLayoutActionButton = function(iActionButton, typeAc
 			iabHt:SetFont(iabHt_f1, iabHt_f2, "OUTLINE")
 		end
 	end
-	local iabcdt = _G[name.."Cooldown"]
+	local iabcdt = _G[name.."Cooldown"] or iActionButton.cooldown
 	if (iabcdt ~= nil) then
 		iabcdt:ClearAllPoints()
 		if (typeActionButton <= 2 or typeActionButton == 7) then
@@ -4985,6 +5536,7 @@ ClassicUI.RestoreDragonflightLayoutActionButton = function(iActionButton, typeAc
 			iabcdt:SetPoint("BOTTOMRIGHT", iActionButton, "BOTTOMRIGHT", -1, 1)
 			iabcdt:SetSize(27.3, 27.3)
 		end
+		iabcdt:SetDrawBling(false)
 	end
 	local iabft = _G[name.."Flash"]
 	if (iabft ~= nil) then
@@ -5060,6 +5612,48 @@ ClassicUI.RestoreDragonflightLayoutActionButton = function(iActionButton, typeAc
 	local iabfbt = iActionButton.FlyoutBorder
 	if (iabfbt ~= nil) then
 		iabfbt:Hide()
+	end
+	local iabsaa = iActionButton.SpellActivationAlert
+	if (iabsaa ~= nil) then
+		local frameWidth, frameHeight = iActionButton:GetSize()
+		iabsaa:SetSize(frameWidth * 1.4, frameHeight * 1.4)
+		iabsaa.ProcStartFlipbook:SetSize(150, 150)
+		iabsaa:SetAlpha(1)
+		local iabcsaa = iActionButton.ClassicSpellActivationAlert
+		if (iabcsaa ~= nil) then
+			iabcsaa.spark:Hide()
+			iabcsaa.innerGlow:Hide()
+			iabcsaa.innerGlowOver:Hide()
+			iabcsaa.outerGlow:Hide()
+			iabcsaa.outerGlowOver:Hide()
+			iabcsaa.ants:Hide()
+			iabcsaa:GetParent():Hide()
+			iabcsaa:GetParent():SetAlpha(0)
+		end
+	end
+	local iabtraf = iActionButton.TargetReticleAnimFrame
+	if (iabtraf ~= nil) then
+		iabtraf:SetScale(1)
+		iabtraf:SetAlpha(1)
+	end
+	local iabid = iActionButton.InterruptDisplay
+	if (iabid ~= nil) then
+		iabid:SetScale(1)
+		iabid:SetAlpha(1)
+	end
+	local iabscaf = iActionButton.SpellCastAnimFrame
+	if (iabscaf ~= nil) then
+		iabscaf:SetScale(1)
+		iabscaf:SetAlpha(1)
+	end
+	local iabcf = iActionButton.CooldownFlash
+	if (iabcf ~= nil) then
+		iabcf:SetScale(1)
+		iabcf:SetAlpha(1)
+	end
+	local iabcc = iActionButton.chargeCooldown
+	if (iabcc ~= nil) then
+		iabcc:SetEdgeTexture("Interface\\HUD\\UI-HUD-ActionBar-StackCooldown")
 	end
 end
 
@@ -5489,7 +6083,7 @@ ClassicUI.LayoutActionButton = function(iActionButton, typeActionButton)
 				end
 			end
 		end
-		local iabcdt = _G[name.."Cooldown"]
+		local iabcdt = _G[name.."Cooldown"] or iActionButton.cooldown
 		if (iabcdt ~= nil) then
 			if (typeActionButton == 3) then
 				iabcdt:SetSize(33, 33)
@@ -5504,6 +6098,11 @@ ClassicUI.LayoutActionButton = function(iActionButton, typeActionButton)
 			iabcdt:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", 0, 0)
 			iabcdt:SetPoint("CENTER", iActionButton, "CENTER", 0, -1)
 			iabcdt:SetPoint("BOTTOMRIGHT", iActionButton, "BOTTOMRIGHT", 0, 0)
+			if not typeABprofile.BLStyle0HideCooldownBlingAnim then
+				iabcdt:SetDrawBling(true)
+			else
+				iabcdt:SetDrawBling(false)
+			end
 		end
 		local iabft = _G[name.."Flash"]
 		if (iabft ~= nil) then
@@ -5707,6 +6306,203 @@ ClassicUI.LayoutActionButton = function(iActionButton, typeActionButton)
 			end)
 			ClassicUI.cached_ActionButtonInfo.hooked_UpdateFlyout[iActionButton] = true
 		end
+		local iabsaa = iActionButton.SpellActivationAlert
+		if (iabsaa ~= nil) then
+			local iabcsaa = iActionButton.ClassicSpellActivationAlert
+			if not(typeABprofile.BLStyle0UseNewSpellActivationAlert) then
+				iabsaa:SetAlpha(0)
+				if (not iabcsaa) then
+					iabcsaa = ClassicUI.CreateClassicSpellActivationAlertFrame(iActionButton)
+				end
+				iabcsaa.spark:Show()
+				iabcsaa.innerGlow:Show()
+				iabcsaa.innerGlowOver:Show()
+				iabcsaa.outerGlow:Show()
+				iabcsaa.outerGlowOver:Show()
+				iabcsaa.ants:Show()
+				iabcsaa:GetParent():Show()
+				iabcsaa:GetParent():SetAlpha(1)
+			else
+				local frameWidth, frameHeight = iActionButton:GetSize()
+				iabsaa:SetSize(frameWidth * 1.4, frameHeight * 1.4)
+				iabsaa.ProcStartFlipbook:SetSize(128, 128)
+				iabsaa:SetAlpha(1)
+				if (iabcsaa ~= nil) then
+					iabcsaa.spark:Hide()
+					iabcsaa.innerGlow:Hide()
+					iabcsaa.innerGlowOver:Hide()
+					iabcsaa.outerGlow:Hide()
+					iabcsaa.outerGlowOver:Hide()
+					iabcsaa.ants:Hide()
+					iabcsaa:GetParent():Hide()
+					iabcsaa:GetParent():SetAlpha(0)
+				end
+			end
+		else
+			if not ClassicUI.hooked_ActionButton_SetupOverlayGlow then
+				hooksecurefunc("ActionButton_SetupOverlayGlow", function(button)
+					if ClassicUI.databaseCleaned then return end	-- [DB Integrity Check]
+					local iabsaa = button.SpellActivationAlert
+					local iabcsaa = button.ClassicSpellActivationAlert
+					local typeActionButton = ClassicUI.cached_ActionButtonInfo.typeActionButton[button]
+					local typeABprofile
+					if (typeActionButton == 0) then
+						typeABprofile = ClassicUI.db.profile.barsConfig.MainMenuBar
+					elseif (typeActionButton == 1) then
+						typeABprofile = ClassicUI.db.profile.barsConfig.BottomMultiActionBars
+					elseif (typeActionButton == 2) then
+						typeABprofile = ClassicUI.db.profile.barsConfig.RightMultiActionBars
+					elseif (typeActionButton == 3) then
+						typeABprofile = ClassicUI.db.profile.barsConfig.PetActionBarFrame
+					elseif (typeActionButton == 4) then
+						typeABprofile = ClassicUI.db.profile.barsConfig.StanceBarFrame
+					elseif (typeActionButton == 5) then
+						typeABprofile = ClassicUI.db.profile.barsConfig.PossessBarFrame
+					elseif (typeActionButton == 6) then
+						typeABprofile = ClassicUI.db.profile.barsConfig.SpellFlyoutButtons
+					elseif (typeActionButton == 7) then
+						typeABprofile = ClassicUI.db.profile.barsConfig.OverrideActionBar
+					else
+						return
+					end
+					if ((typeABprofile.BLStyle == 0) and not(typeABprofile.BLStyle0UseNewSpellActivationAlert)) then
+						if (iabsaa ~= nil) then
+							iabsaa:SetAlpha(0)
+						end
+						if (not iabcsaa) then
+							iabcsaa = ClassicUI.CreateClassicSpellActivationAlertFrame(button)
+						end
+						iabcsaa.spark:Show()
+						iabcsaa.innerGlow:Show()
+						iabcsaa.innerGlowOver:Show()
+						iabcsaa.outerGlow:Show()
+						iabcsaa.outerGlowOver:Show()
+						iabcsaa.ants:Show()
+						iabcsaa:GetParent():Show()
+						iabcsaa:GetParent():SetAlpha(1)
+					else
+						if (iabcsaa ~= nil) then
+							iabcsaa.spark:Hide()
+							iabcsaa.innerGlow:Hide()
+							iabcsaa.innerGlowOver:Hide()
+							iabcsaa.outerGlow:Hide()
+							iabcsaa.outerGlowOver:Hide()
+							iabcsaa.ants:Hide()
+							iabcsaa:GetParent():Hide()
+							iabcsaa:GetParent():SetAlpha(0)
+						end
+						if (iabsaa ~= nil) then
+							if not(ClassicUI.cached_ActionButtonInfo.spellActivationAlertAdjusted[button]) then
+								local frameWidth, frameHeight = button:GetSize()
+								iabsaa:SetSize(frameWidth * 1.4, frameHeight * 1.4)
+								if (typeABprofile.BLStyle == 0) then
+									iabsaa.ProcStartFlipbook:SetSize(128, 128)
+								else
+									iabsaa.ProcStartFlipbook:SetSize(150, 150)
+								end
+								ClassicUI.cached_ActionButtonInfo.spellActivationAlertAdjusted[button] = true
+							end
+							iabsaa:SetAlpha(1)
+						end
+					end
+				end)
+				ClassicUI.hooked_ActionButton_SetupOverlayGlow = true
+			end
+		end
+		local iabtraf = iActionButton.TargetReticleAnimFrame
+		if (iabtraf ~= nil) then
+			if not(typeABprofile.BLStyle0UseNewTargetReticleAnimFrame) then
+				iabtraf:SetAlpha(0)
+				iabtraf:SetScale(1)
+			else
+				iabtraf:SetAlpha(1)
+				iabtraf:SetScale(ClassicUI.ACTIONBUTTON_NEWLAYOUT_SCALE)
+			end
+		end
+		local iabid = iActionButton.InterruptDisplay
+		if (iabid ~= nil) then
+			if not(typeABprofile.BLStyle0UseNewInterruptDisplay) then
+				iabid:SetAlpha(0)
+				iabid:SetScale(1)
+			else
+				iabid:SetAlpha(1)
+				iabid:SetScale(ClassicUI.ACTIONBUTTON_NEWLAYOUT_SCALE)
+			end
+		end
+		local iabscaf = iActionButton.SpellCastAnimFrame
+		if (iabscaf ~= nil) then
+			if not(typeABprofile.BLStyle0UseNewSpellCastAnimFrame) then
+				iabscaf:SetAlpha(0)
+				iabscaf:SetScale(1)
+				if (type(iActionButton.PlaySpellCastAnim) == "function") then
+					if not ClassicUI.cached_ActionButtonInfo.hooked_PlaySpellCastAnim[iActionButton] then
+						hooksecurefunc(iActionButton, "PlaySpellCastAnim", function(self, actionButtonCastType)
+							--if ClassicUI.databaseCleaned then return end	-- not needed because typeABprofile is an upvalue local table variable (the upvalue table can become empty but never nil, not an issue)
+							if ((typeABprofile.BLStyle == 0) and not(typeABprofile.BLStyle0UseNewSpellCastAnimFrame)) then
+								self.cooldown:SetSwipeColor(0, 0, 0, 1)
+							end
+						end)
+						ClassicUI.cached_ActionButtonInfo.hooked_PlaySpellCastAnim[iActionButton] = true
+					end
+				end
+			else
+				iabscaf:SetAlpha(1)
+				iabscaf:SetScale(ClassicUI.ACTIONBUTTON_NEWLAYOUT_SCALE)
+			end
+		end
+		local iabcf = iActionButton.CooldownFlash
+		if (iabcf ~= nil) then
+			if not(typeABprofile.BLStyle0UseNewCooldownFlash) then
+				iabcf:SetAlpha(0)
+				iabcf:SetScale(1)
+			else
+				iabcf:SetAlpha(1)
+				iabcf:SetScale(ClassicUI.ACTIONBUTTON_NEWLAYOUT_SCALE)
+			end
+		end
+		local iabcc = iActionButton.chargeCooldown
+		if (iabcc ~= nil) then
+			if not typeABprofile.BLStyle0UseNewChargeCooldownEdgeTexture then
+				iabcc:SetEdgeTexture("Interface\\Cooldown\\edge")
+			else
+				iabcc:SetEdgeTexture("Interface\\HUD\\UI-HUD-ActionBar-StackCooldown")
+			end
+		else
+			if not typeABprofile.BLStyle0UseNewChargeCooldownEdgeTexture then
+				if not ClassicUI.hooked_ActionButton_StartChargeCooldown then
+					hooksecurefunc("StartChargeCooldown", function(parent, chargeStart, chargeDuration, chargeModRate)
+						if ClassicUI.databaseCleaned then return end	-- [DB Integrity Check]
+						local iabcc = parent.chargeCooldown
+						if (iabcc == nil) then return end
+						local typeActionButton = ClassicUI.cached_ActionButtonInfo.typeActionButton[parent]
+						local typeABprofile
+						if (typeActionButton == 0) then
+							typeABprofile = ClassicUI.db.profile.barsConfig.MainMenuBar
+						elseif (typeActionButton == 1) then
+							typeABprofile = ClassicUI.db.profile.barsConfig.BottomMultiActionBars
+						elseif (typeActionButton == 2) then
+							typeABprofile = ClassicUI.db.profile.barsConfig.RightMultiActionBars
+						elseif (typeActionButton == 3) then
+							typeABprofile = ClassicUI.db.profile.barsConfig.PetActionBarFrame
+						elseif (typeActionButton == 4) then
+							typeABprofile = ClassicUI.db.profile.barsConfig.StanceBarFrame
+						elseif (typeActionButton == 5) then
+							typeABprofile = ClassicUI.db.profile.barsConfig.PossessBarFrame
+						elseif (typeActionButton == 6) then
+							typeABprofile = ClassicUI.db.profile.barsConfig.SpellFlyoutButtons
+						elseif (typeActionButton == 7) then
+							typeABprofile = ClassicUI.db.profile.barsConfig.OverrideActionBar
+						else
+							return
+						end
+						if ((typeABprofile.BLStyle == 0) and not(typeABprofile.BLStyle0UseNewChargeCooldownEdgeTexture)) then
+							iabcc:SetEdgeTexture("Interface\\Cooldown\\edge")
+						end
+					end)
+					ClassicUI.hooked_ActionButton_StartChargeCooldown = true
+				end
+			end
+		end
 	end
 	ClassicUI.cached_ActionButtonInfo.currLayout[iActionButton] = typeABprofile.BLStyle
 end
@@ -5797,99 +6593,86 @@ end
 -- Function that initializes the cache with the information of all the ActionButtons to the default values
 function ClassicUI:InitActionButtonInfoCache()
 	for i = 1, 12 do
-		self.cached_ActionButtonInfo.hooked_UpdateButtonArt = {
-			[_G["ActionButton"..i]] = false,
-			[_G["MultiBarBottomLeftButton"..i]] = false,
-			[_G["MultiBarBottomRightButton"..i]] = false,
-			[_G["MultiBarRightButton"..i]] = false,
-			[_G["MultiBarLeftButton"..i]] = false
-		}
-		self.cached_ActionButtonInfo.hooked_UpdateHotkeys = {
-			[_G["ActionButton"..i]] = false,
-			[_G["MultiBarBottomLeftButton"..i]] = false,
-			[_G["MultiBarBottomRightButton"..i]] = false,
-			[_G["MultiBarRightButton"..i]] = false,
-			[_G["MultiBarLeftButton"..i]] = false
-		}
-		self.cached_ActionButtonInfo.hooked_UpdateFlyout = {
-			[_G["ActionButton"..i]] = false,
-			[_G["MultiBarBottomLeftButton"..i]] = false,
-			[_G["MultiBarBottomRightButton"..i]] = false,
-			[_G["MultiBarRightButton"..i]] = false,
-			[_G["MultiBarLeftButton"..i]] = false
-		}
-		self.cached_ActionButtonInfo.currentScale = {
-			[_G["ActionButton"..i]] = 1,
-			[_G["MultiBarBottomLeftButton"..i]] = 1,
-			[_G["MultiBarBottomRightButton"..i]] = 1,
-			[_G["MultiBarRightButton"..i]] = 1,
-			[_G["MultiBarLeftButton"..i]] = 1
-		}
-		self.cached_ActionButtonInfo.currLayout = {
-			[_G["ActionButton"..i]] = 1,
-			[_G["MultiBarBottomLeftButton"..i]] = 1,
-			[_G["MultiBarBottomRightButton"..i]] = 1,
-			[_G["MultiBarRightButton"..i]] = 1,
-			[_G["MultiBarLeftButton"..i]] = 1
-		}
+		self.cached_ActionButtonInfo.hooked_UpdateButtonArt[_G["ActionButton"..i]] = false
+		self.cached_ActionButtonInfo.hooked_UpdateButtonArt[_G["MultiBarBottomLeftButton"..i]] = false
+		self.cached_ActionButtonInfo.hooked_UpdateButtonArt[_G["MultiBarBottomRightButton"..i]] = false
+		self.cached_ActionButtonInfo.hooked_UpdateButtonArt[_G["MultiBarRightButton"..i]] = false
+		self.cached_ActionButtonInfo.hooked_UpdateButtonArt[_G["MultiBarLeftButton"..i]] = false
+		self.cached_ActionButtonInfo.hooked_UpdateHotkeys[_G["ActionButton"..i]] = false
+		self.cached_ActionButtonInfo.hooked_UpdateHotkeys[_G["MultiBarBottomLeftButton"..i]] = false
+		self.cached_ActionButtonInfo.hooked_UpdateHotkeys[_G["MultiBarBottomRightButton"..i]] = false
+		self.cached_ActionButtonInfo.hooked_UpdateHotkeys[_G["MultiBarRightButton"..i]] = false
+		self.cached_ActionButtonInfo.hooked_UpdateHotkeys[_G["MultiBarLeftButton"..i]] = false
+		self.cached_ActionButtonInfo.hooked_UpdateFlyout[_G["ActionButton"..i]] = false
+		self.cached_ActionButtonInfo.hooked_UpdateFlyout[_G["MultiBarBottomLeftButton"..i]] = false
+		self.cached_ActionButtonInfo.hooked_UpdateFlyout[_G["MultiBarBottomRightButton"..i]] = false
+		self.cached_ActionButtonInfo.hooked_UpdateFlyout[_G["MultiBarRightButton"..i]] = false
+		self.cached_ActionButtonInfo.hooked_UpdateFlyout[_G["MultiBarLeftButton"..i]] = false
+		self.cached_ActionButtonInfo.hooked_PlaySpellCastAnim[_G["ActionButton"..i]] = false
+		self.cached_ActionButtonInfo.hooked_PlaySpellCastAnim[_G["MultiBarBottomLeftButton"..i]] = false
+		self.cached_ActionButtonInfo.hooked_PlaySpellCastAnim[_G["MultiBarBottomRightButton"..i]] = false
+		self.cached_ActionButtonInfo.hooked_PlaySpellCastAnim[_G["MultiBarRightButton"..i]] = false
+		self.cached_ActionButtonInfo.hooked_PlaySpellCastAnim[_G["MultiBarLeftButton"..i]] = false
+		self.cached_ActionButtonInfo.spellActivationAlertAdjusted[_G["ActionButton"..i]] = false
+		self.cached_ActionButtonInfo.spellActivationAlertAdjusted[_G["MultiBarBottomLeftButton"..i]] = false
+		self.cached_ActionButtonInfo.spellActivationAlertAdjusted[_G["MultiBarBottomRightButton"..i]] = false
+		self.cached_ActionButtonInfo.spellActivationAlertAdjusted[_G["MultiBarRightButton"..i]] = false
+		self.cached_ActionButtonInfo.spellActivationAlertAdjusted[_G["MultiBarLeftButton"..i]] = false
+		self.cached_ActionButtonInfo.typeActionButton[_G["ActionButton"..i]] = 0
+		self.cached_ActionButtonInfo.typeActionButton[_G["MultiBarBottomLeftButton"..i]] = 1
+		self.cached_ActionButtonInfo.typeActionButton[_G["MultiBarBottomRightButton"..i]] = 1
+		self.cached_ActionButtonInfo.typeActionButton[_G["MultiBarRightButton"..i]] = 2
+		self.cached_ActionButtonInfo.typeActionButton[_G["MultiBarLeftButton"..i]] = 2
+		self.cached_ActionButtonInfo.currentScale[_G["ActionButton"..i]] = 1
+		self.cached_ActionButtonInfo.currentScale[_G["MultiBarBottomLeftButton"..i]] = 1
+		self.cached_ActionButtonInfo.currentScale[_G["MultiBarBottomRightButton"..i]] = 1
+		self.cached_ActionButtonInfo.currentScale[_G["MultiBarRightButton"..i]] = 1
+		self.cached_ActionButtonInfo.currentScale[_G["MultiBarLeftButton"..i]] = 1
+		self.cached_ActionButtonInfo.currLayout[_G["ActionButton"..i]] = 1
+		self.cached_ActionButtonInfo.currLayout[_G["MultiBarBottomLeftButton"..i]] = 1
+		self.cached_ActionButtonInfo.currLayout[_G["MultiBarBottomRightButton"..i]] = 1
+		self.cached_ActionButtonInfo.currLayout[_G["MultiBarRightButton"..i]] = 1
+		self.cached_ActionButtonInfo.currLayout[_G["MultiBarLeftButton"..i]] = 1
 	end
 	for i = 1, 10 do
-		self.cached_ActionButtonInfo.hooked_UpdateButtonArt = {
-			[_G["PetActionButton"..i]] = false,
-			[_G["StanceButton"..i]] = false
-		}
-		self.cached_ActionButtonInfo.hooked_UpdateHotkeys = {
-			[_G["PetActionButton"..i]] = false,
-			[_G["StanceButton"..i]] = false
-		}
-		self.cached_ActionButtonInfo.hooked_UpdateFlyout = {
-			[_G["PetActionButton"..i]] = false,
-			[_G["StanceButton"..i]] = false
-		}
-		self.cached_ActionButtonInfo.currentScale = {
-			[_G["PetActionButton"..i]] = 1,
-			[_G["StanceButton"..i]] = 1
-		}
-		self.cached_ActionButtonInfo.currLayout = {
-			[_G["PetActionButton"..i]] = 1,
-			[_G["StanceButton"..i]] = 1
-		}
+		self.cached_ActionButtonInfo.hooked_UpdateButtonArt[_G["PetActionButton"..i]] = false
+		self.cached_ActionButtonInfo.hooked_UpdateButtonArt[_G["StanceButton"..i]] = false
+		self.cached_ActionButtonInfo.hooked_UpdateHotkeys[_G["PetActionButton"..i]] = false
+		self.cached_ActionButtonInfo.hooked_UpdateHotkeys[_G["StanceButton"..i]] = false
+		self.cached_ActionButtonInfo.hooked_UpdateFlyout[_G["PetActionButton"..i]] = false
+		self.cached_ActionButtonInfo.hooked_UpdateFlyout[_G["StanceButton"..i]] = false
+		self.cached_ActionButtonInfo.hooked_PlaySpellCastAnim[_G["PetActionButton"..i]] = false
+		self.cached_ActionButtonInfo.hooked_PlaySpellCastAnim[_G["StanceButton"..i]] = false
+		self.cached_ActionButtonInfo.spellActivationAlertAdjusted[_G["PetActionButton"..i]] = false
+		self.cached_ActionButtonInfo.spellActivationAlertAdjusted[_G["StanceButton"..i]] = false
+		self.cached_ActionButtonInfo.typeActionButton[_G["PetActionButton"..i]] = 3
+		self.cached_ActionButtonInfo.typeActionButton[_G["StanceButton"..i]] = 4
+		self.cached_ActionButtonInfo.currentScale[_G["PetActionButton"..i]] = 1
+		self.cached_ActionButtonInfo.currentScale[_G["StanceButton"..i]] = 1
+		self.cached_ActionButtonInfo.currLayout[_G["PetActionButton"..i]] = 1
+		self.cached_ActionButtonInfo.currLayout[_G["StanceButton"..i]] = 1
 	end
 	for i = 1, 6 do
-		self.cached_ActionButtonInfo.hooked_UpdateButtonArt = {
-			[_G["OverrideActionBarButton"..i]] = false
-		}
-		self.cached_ActionButtonInfo.hooked_UpdateHotkeys = {
-			[_G["OverrideActionBarButton"..i]] = false
-		}
-		self.cached_ActionButtonInfo.hooked_UpdateFlyout = {
-			[_G["OverrideActionBarButton"..i]] = false
-		}
-		self.cached_ActionButtonInfo.currentScale = {
-			[_G["OverrideActionBarButton"..i]] = 1
-		}
-		self.cached_ActionButtonInfo.currLayout = {
-			[_G["OverrideActionBarButton"..i]] = 1
-		}
+		self.cached_ActionButtonInfo.hooked_UpdateButtonArt[_G["OverrideActionBarButton"..i]] = false
+		self.cached_ActionButtonInfo.hooked_UpdateHotkeys[_G["OverrideActionBarButton"..i]] = false
+		self.cached_ActionButtonInfo.hooked_UpdateFlyout[_G["OverrideActionBarButton"..i]] = false
+		self.cached_ActionButtonInfo.hooked_PlaySpellCastAnim[_G["OverrideActionBarButton"..i]] = false
+		self.cached_ActionButtonInfo.spellActivationAlertAdjusted[_G["OverrideActionBarButton"..i]] = false
+		self.cached_ActionButtonInfo.typeActionButton[_G["OverrideActionBarButton"..i]] = 7
+		self.cached_ActionButtonInfo.currentScale[_G["OverrideActionBarButton"..i]] = 1
+		self.cached_ActionButtonInfo.currLayout[_G["OverrideActionBarButton"..i]] = 1
 	end
 	for i = 1, 40 do
 		local button = _G["SpellFlyoutButton"..i]
 		if (button ~= nil) then
-			self.cached_ActionButtonInfo.hooked_UpdateButtonArt = {
-				[button] = false
-			}
-			self.cached_ActionButtonInfo.hooked_UpdateHotkeys = {
-				[button] = false
-			}
-			self.cached_ActionButtonInfo.hooked_UpdateFlyout = {
-				[button] = false
-			}
-			self.cached_ActionButtonInfo.currentScale = {
-				[button] = 1
-			}
-			self.cached_ActionButtonInfo.currLayout = {
-				[button] = 1
-			}
+			self.cached_ActionButtonInfo.hooked_UpdateButtonArt[button] = false
+			self.cached_ActionButtonInfo.hooked_UpdateHotkeys[button] = false
+			self.cached_ActionButtonInfo.hooked_UpdateFlyout[button] = false
+			self.cached_ActionButtonInfo.hooked_PlaySpellCastAnim[button] = false
+			self.cached_ActionButtonInfo.spellActivationAlertAdjusted[button] = false
+			self.cached_ActionButtonInfo.typeActionButton[button] = 6
+			self.cached_ActionButtonInfo.currentScale[button] = 1
+			self.cached_ActionButtonInfo.currLayout[button] = 1
 		else
 			break
 		end
@@ -5900,6 +6683,12 @@ function ClassicUI:InitActionButtonInfoCache()
 	self.cached_ActionButtonInfo.hooked_UpdateHotkeys[PossessButton2] = false
 	self.cached_ActionButtonInfo.hooked_UpdateFlyout[PossessButton1] = false
 	self.cached_ActionButtonInfo.hooked_UpdateFlyout[PossessButton2] = false
+	self.cached_ActionButtonInfo.hooked_PlaySpellCastAnim[PossessButton1] = false
+	self.cached_ActionButtonInfo.hooked_PlaySpellCastAnim[PossessButton2] = false
+	self.cached_ActionButtonInfo.spellActivationAlertAdjusted[PossessButton1] = false
+	self.cached_ActionButtonInfo.spellActivationAlertAdjusted[PossessButton2] = false
+	self.cached_ActionButtonInfo.typeActionButton[PossessButton1] = 5
+	self.cached_ActionButtonInfo.typeActionButton[PossessButton2] = 5
 	self.cached_ActionButtonInfo.currentScale[PossessButton1] = 1
 	self.cached_ActionButtonInfo.currentScale[PossessButton2] = 1
 	self.cached_ActionButtonInfo.currLayout[PossessButton1] = 1
@@ -6477,6 +7266,19 @@ function ClassicUI:HookRedRangeIcons()
 				HookActionBarButtonUpdateUsable(actionButton)
 			end
 		end
+		ActionBarController:HookScript("OnEvent", function(self, event, ...)	-- Needed because Blizzard doesn't update the range text color on action bar page change
+			if (event == "ACTIONBAR_PAGE_CHANGED") then
+				for i = 1, 12 do
+					local actionButton = _G["ActionButton"..i]
+					if (actionButton) then
+						local valid = IsActionInRange(actionButton.action)
+						local checksRange = (valid ~= nil)
+						local inRange = checksRange and valid
+						ActionButton_UpdateRangeIndicator(actionButton, checksRange, inRange)
+					end
+				end
+			end
+		end)
 		REDRANGEICONS_HOOKED = true
 	end
 end
@@ -6571,11 +7373,11 @@ function ClassicUI:HookOpenGuildPanelMode()
 				return
 			end
 			if (IsInGuild()) then
-				local loaded, reason = LoadAddOn("ClassicUI_ClassicBlizzGuildUI");
+				local loaded, reason = LoadAddOn("ClassicUI_ClassicBlizzGuildUI")
 				if (not loaded) then
 					if (not ClassicUI.addonloadfailed_ClassicBlizzGuildUI) then
 						ClassicUI.addonloadfailed_ClassicBlizzGuildUI = true
-						message(format(ADDON_LOAD_FAILED, "ClassicUI_ClassicBlizzGuildUI", _G["ADDON_"..reason]));
+						message(format(ADDON_LOAD_FAILED, "ClassicUI_ClassicBlizzGuildUI", _G["ADDON_"..reason]))
 					end
 					ToggleNewGuildFrame()
 				else

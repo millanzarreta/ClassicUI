@@ -668,7 +668,8 @@
 						<Scripts>
 							<OnClick>
 								if IsGuildLeader() then
-									SubmitRequiredGuildRename(self:GetParent().editBox:GetText());
+									--SubmitRequiredGuildRename(self:GetParent().editBox:GetText());	-- removed because is restricted-protected
+									StaticPopup_Show("CUI_GUILD_PROTECTEDFUNC_W");
 								else
 									CUI_GuildNameChangeAlertFrame.topAnchored = true;
 									CUI_GuildFrame_CheckName()

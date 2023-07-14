@@ -635,40 +635,6 @@ end
 
 --****** Promote/Demote *********************************************************
 
-function CUI_GuildFrameDemoteButton_OnClick(self)
-	local memberIndex = GetGuildRosterSelection();
-	local fullName, rank, rankIndex = GetGuildRosterInfo(memberIndex);
-	local targetRank = rankIndex + 1;	-- demoting increases rank index
-	local validRank = GetDemotionRank(memberIndex);
-	if ( validRank > targetRank ) then
-		local badRankName = GuildControlGetRankName(targetRank + 1);		-- GuildControlGetRankName uses 1-based index
-		local goodRankName = GuildControlGetRankName(validRank + 1);		-- GuildControlGetRankName uses 1-based index
-		local dialog = StaticPopup_Show("GUILD_DEMOTE_CONFIRM", string.format(AUTHENTICATOR_CONFIRM_GUILD_DEMOTE, Ambiguate(fullName, "guild"), badRankName, goodRankName));
-		dialog.data = fullName;
-	else
-		GuildDemote(CUI_GuildFrame.selectedName);
-		PlaySound(SOUNDKIT.U_CHAT_SCROLL_BUTTON);
-		CUI_GuildFrameDemoteButton:Disable();
-	end
-end
-
-function CUI_GuildFramePromoteButton_OnClick(self)
-	local memberIndex = GetGuildRosterSelection();
-	local fullName, rank, rankIndex = GetGuildRosterInfo(memberIndex);
-	local targetRank = rankIndex - 1;	-- promoting decreases rank index
-	local validRank = GetPromotionRank(memberIndex);
-	if ( validRank < targetRank ) then
-		local badRankName = GuildControlGetRankName(targetRank + 1);		-- GuildControlGetRankName uses 1-based index
-		local goodRankName = GuildControlGetRankName(validRank + 1);		-- GuildControlGetRankName uses 1-based index
-		local dialog = StaticPopup_Show("GUILD_PROMOTE_CONFIRM", string.format(AUTHENTICATOR_CONFIRM_GUILD_PROMOTE, Ambiguate(fullName, "guild"), badRankName, goodRankName));
-		dialog.data = fullName;
-	else
-		GuildPromote(CUI_GuildFrame.selectedName);
-		PlaySound(SOUNDKIT.U_CHAT_SCROLL_BUTTON);
-		CUI_GuildFramePromoteButton:Disable();
-	end
-end
-
 function CUI_GuildMemberRankDropdown_OnLoad(self)
 	UIDropDownMenu_Initialize(self, CUI_GuildMemberRankDropdown_Initialize);
 	UIDropDownMenu_SetWidth(CUI_GuildMemberRankDropdown, 159 - CUI_GuildMemberDetailRankLabel:GetWidth());
@@ -718,6 +684,7 @@ function CUI_GuildMemberRankDropdown_OnClick(self, newRankIndex)
 	local fullName, rank, rankIndex = GetGuildRosterInfo(GetGuildRosterSelection());
 	rankIndex = rankIndex + 1;
 	if ( rankIndex ~= newRankIndex ) then
-		SetGuildMemberRank(GetGuildRosterSelection(), newRankIndex);
+		--SetGuildMemberRank(GetGuildRosterSelection(), newRankIndex);	-- removed because is restricted-protected
+		StaticPopup_Show("CUI_GUILD_PROTECTEDFUNC_W");
 	end
 end
