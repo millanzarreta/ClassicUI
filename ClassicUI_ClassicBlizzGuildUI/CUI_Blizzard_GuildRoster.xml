@@ -402,7 +402,8 @@
 				</Anchors>
 				<Scripts>
 					<OnClick>
-						StaticPopup_Show("REMOVE_GUILDMEMBER");
+						--StaticPopup_Show("REMOVE_GUILDMEMBER");	-- removed because is restricted-protected
+						StaticPopup_Show("CUI_GUILD_PROTECTEDFUNC_W");
 					</OnClick>
 				</Scripts>
 				<NormalFont style="GameFontNormalSmall"/>

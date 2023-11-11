@@ -1,7 +1,7 @@
 -- ------------------------------------------------------------ --
 -- Addon: ClassicUI                                             --
 --                                                              --
--- Version: 2.0.4                                               --
+-- Version: 2.0.5                                               --
 -- Author: Millán - Sanguino                                    --
 --                                                              --
 -- License: GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007 --
@@ -81,7 +81,7 @@ local GetGuildInfo = GetGuildInfo
 local InGuildParty = InGuildParty
 
 -- Global constants
-ClassicUI.VERSION = "2.0.4"
+ClassicUI.VERSION = "2.0.5"
 ClassicUI.ACTIONBUTTON_NEWLAYOUT_SCALE = 0.826
 ClassicUI.ACTION_BAR_OFFSET = 45
 ClassicUI.SPELLFLYOUT_DEFAULT_SPACING = 4
@@ -1050,7 +1050,7 @@ function ClassicUI:RestoreChatScrollButtons()
 				PlaySound(SOUNDKIT.IG_CHAT_BOTTOM)
 				self:GetParent():GetParent():ScrollToBottom()
 			end)
-			CUI_ChatFrame1ButtonFrameBottomButton.func_ChatFrame_OnUpdate = function(self, elapsed)	
+			CUI_ChatFrame1ButtonFrameBottomButton.func_ChatFrame_OnUpdate = function(self, elapsed)
 				local flash = CUI_ChatFrame1ButtonFrameBottomButtonFlash
 				local cflash = self.ScrollToBottomButton.Flash
 				if flash and cflash then
@@ -1662,7 +1662,11 @@ function ClassicUI:ReloadMainFramesSettings()
 		if not(self.db.profile.barsConfig.MicroButtons.useClassicGuildIcon) then
 			GuildMicroButton:SetNormalTexture("Interface\\Buttons\\UI-MicroButton-Socials-Up")
 			GuildMicroButton:SetPushedTexture("Interface\\Buttons\\UI-MicroButton-Socials-Down")
-			GuildMicroButton:SetDisabledTexture("Interface\\Buttons\\UI-MicroButton-Socials-Disabled")
+			if IsInGuild() then
+				GuildMicroButton:SetDisabledTexture("Interface\\Buttons\\UI-MicroButtonCharacter-Up")	-- alt version: "Interface\\Buttons\\UI-MicroButton-Socials-Disabled"
+			else
+				GuildMicroButton:SetDisabledTexture("Interface\\Buttons\\UI-MicroButton-Socials-Disabled")
+			end
 			GuildMicroButtonTabardEmblem:SetAlpha(1)
 			GuildMicroButtonTabardEmblem:Show()
 			GuildMicroButtonTabardBackground:SetAlpha(1)
@@ -1802,6 +1806,23 @@ function ClassicUI:EnableOldMinimap()
 		self:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", ClassicUI.cached_db_profile.extraFrames_Minimap_xOffset, ClassicUI.cached_db_profile.extraFrames_Minimap_yOffset)	-- cached db value
 	end)
 	
+	-- Make ClassicUI compatible with 'Garrison Order Hall Report' addon
+	if (not(ClassicUI.hooked_GarrisonOrderHallReportSetButtonLook) and GarrisonOrderHallReportSetButtonLook ~= nil and type(GarrisonOrderHallReportSetButtonLook) == "function") then
+		hooksecurefunc("GarrisonOrderHallReportSetButtonLook", function()
+			ExpansionLandingPageMinimapButton:ClearAllPoints()
+			if (ExpansionLandingPageMinimapButton:GetNormalTexture():GetAtlas() == "dragonflight-landingbutton-up") then
+				ExpansionLandingPageMinimapButton:SetPoint("CENTER", MinimapBackdrop, "TOPLEFT", 32 + 4 + 26.5 + ClassicUI.cached_db_profile.extraFrames_Minimap_xOffsetExpansionLandingPage, -105 - 6 - 26.5 + ClassicUI.cached_db_profile.extraFrames_Minimap_yOffsetExpansionLandingPage)	-- cached db value
+				if (ClassicUI.elpmbSizeW == 0 or ClassicUI.elpmbSizeH == 0) then
+					ClassicUI.elpmbSizeW = ExpansionLandingPageMinimapButton:GetWidth()
+					ClassicUI.elpmbSizeH = ExpansionLandingPageMinimapButton:GetHeight()
+				end
+				ExpansionLandingPageMinimapButton:SetSize(mathfloor(ClassicUI.elpmbSizeW * ClassicUI.cached_db_profile.extraFrames_Minimap_scaleExpansionLandingPageDragonflight + 0.5), mathfloor(ClassicUI.elpmbSizeH * ClassicUI.cached_db_profile.extraFrames_Minimap_scaleExpansionLandingPageDragonflight + 0.5))	-- cached db value
+			else
+				ExpansionLandingPageMinimapButton:SetPoint("CENTER", MinimapBackdrop, "TOPLEFT", 32 + 6 + 26.5 + ClassicUI.cached_db_profile.extraFrames_Minimap_xOffsetExpansionLandingPage, -105 - 7 - 26.5 + ClassicUI.cached_db_profile.extraFrames_Minimap_yOffsetExpansionLandingPage)	-- cached db value
+			end
+		end)
+		ClassicUI.hooked_GarrisonOrderHallReportSetButtonLook = true
+	end
 	hooksecurefunc(ExpansionLandingPageMinimapButton, "UpdateIconForGarrison", function(self)
 		self:ClearAllPoints()
 		if (self:GetNormalTexture():GetAtlas() == "dragonflight-landingbutton-up") then
@@ -2042,6 +2063,22 @@ function ClassicUI:EnableOldMinimap()
 	MiniMapMailBorder2:SetTexture("Interface\\Addons\\ClassicUI\\Textures\\MiniMap-TrackingBorder")
 	MiniMapMailBorder2:SetSize(52, 52)
 	MiniMapMailBorder2:SetDrawLayer("OVERLAY", 0)
+	
+	MinimapCluster.IndicatorFrame.MailFrame.MailReminderAnim:HookScript("OnPlay", function()
+		MiniMapMailIcon:Show()
+	end)
+	MinimapCluster.IndicatorFrame.MailFrame.MailReminderAnim:HookScript("OnFinished", function()
+		MiniMapMailIcon:Show()
+	end)
+	MinimapCluster.IndicatorFrame.MailFrame.NewMailAnim:HookScript("OnPlay", function()
+		MiniMapMailIcon:Show()
+	end)
+	MinimapCluster.IndicatorFrame.MailFrame.NewMailAnim:HookScript("OnFinished", function()
+		MiniMapMailIcon:Show()
+	end)
+	hooksecurefunc(MinimapCluster.IndicatorFrame.MailFrame, "ResetMailIcon", function(self)
+		self.MailIcon:Show()
+	end)
 	
 	hooksecurefunc(AddonCompartmentFrame, "UpdateDisplay", function(self)
 		if (ClassicUI.cached_db_profile.extraFrames_Minimap_hideAddonCompartment) then	-- cached db value
@@ -4094,7 +4131,11 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	if not(ClassicUI.db.profile.barsConfig.MicroButtons.useClassicGuildIcon) then
 		GuildMicroButton:SetNormalTexture("Interface\\Buttons\\UI-MicroButton-Socials-Up")
 		GuildMicroButton:SetPushedTexture("Interface\\Buttons\\UI-MicroButton-Socials-Down")
-		GuildMicroButton:SetDisabledTexture("Interface\\Buttons\\UI-MicroButton-Socials-Disabled")
+		if IsInGuild() then
+			GuildMicroButton:SetDisabledTexture("Interface\\Buttons\\UI-MicroButtonCharacter-Up")	-- alt version: "Interface\\Buttons\\UI-MicroButton-Socials-Disabled"
+		else
+			GuildMicroButton:SetDisabledTexture("Interface\\Buttons\\UI-MicroButton-Socials-Disabled")
+		end
 	else
 		GuildMicroButton:SetNormalTexture("Interface\\Addons\\ClassicUI\\Textures\\UI-MicroButton-Socials-Up-classic")
 		GuildMicroButton:SetPushedTexture("Interface\\Addons\\ClassicUI\\Textures\\UI-MicroButton-Socials-Down-classic")
@@ -4192,7 +4233,11 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 			if (emblemFilename) then
 				button:SetNormalTexture("Interface\\Buttons\\UI-MicroButtonCharacter-Up")
 				button:SetPushedTexture("Interface\\Buttons\\UI-MicroButtonCharacter-Down")
-				button:SetDisabledTexture("Interface\\Buttons\\UI-MicroButton-Socials-Disabled")
+				if IsInGuild() then
+					button:SetDisabledTexture("Interface\\Buttons\\UI-MicroButtonCharacter-Up")	-- alt version: "Interface\\Buttons\\UI-MicroButton-Socials-Disabled"
+				else
+					button:SetDisabledTexture("Interface\\Buttons\\UI-MicroButton-Socials-Disabled")
+				end
 				if (not tabard:IsShown()) then
 					tabard:Show()
 				end
@@ -4200,7 +4245,11 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 			else
 				button:SetNormalTexture("Interface\\Buttons\\UI-MicroButton-Socials-Up")
 				button:SetPushedTexture("Interface\\Buttons\\UI-MicroButton-Socials-Down")
-				button:SetDisabledTexture("Interface\\Buttons\\UI-MicroButton-Socials-Disabled")
+				if IsInGuild() then
+					button:SetDisabledTexture("Interface\\Buttons\\UI-MicroButtonCharacter-Up")	-- alt version: "Interface\\Buttons\\UI-MicroButton-Socials-Disabled"
+				else
+					button:SetDisabledTexture("Interface\\Buttons\\UI-MicroButton-Socials-Disabled")
+				end
 				if (tabard:IsShown()) then
 					tabard:Hide()
 				end
@@ -4212,7 +4261,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		end
 	end
 	
-	hooksecurefunc("UpdateMicroButtons", function(self)
+	hooksecurefunc(GuildMicroButton, "UpdateMicroButton", function(self)
 		ClassicUI.GuildMicroButton_UpdateTabard()
 		local factionGroup = UnitFactionGroup("player")
 		if not(IsCommunitiesUIDisabledByTrialAccount() or factionGroup == "Neutral" or Kiosk_IsEnabled()) and
@@ -5207,6 +5256,7 @@ ClassicUI.CreateClassicSpellActivationAlertFrame = function(iActionButton)
 	
 	local tmpanim
 	iabcsaa.animIn = iabcsaa:CreateAnimationGroup()
+	iabcsaa.animIn.pstatus = 0	-- Add extra status info for this AnimationGroup: 0 = Finished, 1 = Playing, 2 = Stopped, 3 = Paused
 	
 	tmpanim = iabcsaa.animIn:CreateAnimation("Scale")
 	tmpanim:SetTarget(iabcsaa.spark)
@@ -5303,6 +5353,7 @@ ClassicUI.CreateClassicSpellActivationAlertFrame = function(iActionButton)
 		frame.outerGlowOver:SetAlpha(1.0)
 		frame.ants:SetSize(frameWidth * 0.85, frameHeight * 0.85)
 		frame.ants:SetAlpha(0)
+		self.pstatus = 1
 		frame:Show()
 	end
 	iabcsaa.animIn:SetScript("OnPlay", iabcsaa.animIn.OnPlay)
@@ -5318,8 +5369,27 @@ ClassicUI.CreateClassicSpellActivationAlertFrame = function(iActionButton)
 		frame.outerGlowOver:SetAlpha(0.0)
 		frame.outerGlowOver:SetSize(frameWidth, frameHeight)
 		frame.ants:SetAlpha(1.0)
+		self.pstatus = 0
 	end
 	iabcsaa.animIn:SetScript("OnFinished", iabcsaa.animIn.OnFinished)
+	
+	iabcsaa.animIn.OnStop = function(self)
+		self.pstatus = 2
+	end
+	iabcsaa.animIn:SetScript("OnStop", iabcsaa.animIn.OnStop)
+	
+	iabcsaa.animIn.OnPause = function(self)
+		self.pstatus = 3
+	end
+	iabcsaa.animIn:SetScript("OnPause", iabcsaa.animIn.OnPause)
+	
+	iabcsaa.animIn.IsStopped = function(self)
+		return (self.pstatus == 2)
+	end
+	
+	iabcsaa.animIn.IsStoppedOrPaused = function(self)
+		return (self.pstatus >= 2)
+	end
 	
 	iabcsaa.animOut = iabcsaa:CreateAnimationGroup()
 	
@@ -5381,7 +5451,7 @@ ClassicUI.CreateClassicSpellActivationAlertFrame = function(iActionButton)
 			if button.ClassicSpellActivationAlert.animOut:IsPlaying() then
 				button.ClassicSpellActivationAlert.animOut:Stop()
 			end
-			if not button.ClassicSpellActivationAlert:IsShown() then
+			if not button.ClassicSpellActivationAlert:IsShown() or button.ClassicSpellActivationAlert.animIn:IsStopped() then
 				button.ClassicSpellActivationAlert.animIn:Play()
 			end
 		end)
@@ -5536,6 +5606,7 @@ ClassicUI.RestoreDragonflightLayoutActionButton = function(iActionButton, typeAc
 			iabcdt:SetPoint("BOTTOMRIGHT", iActionButton, "BOTTOMRIGHT", -1, 1)
 			iabcdt:SetSize(27.3, 27.3)
 		end
+		iabcdt:SetEdgeTexture("Interface\\Cooldown\\UI-HUD-ActionBar-SecondaryCooldown")
 		iabcdt:SetDrawBling(false)
 	end
 	local iabft = _G[name.."Flash"]
@@ -5649,11 +5720,11 @@ ClassicUI.RestoreDragonflightLayoutActionButton = function(iActionButton, typeAc
 	local iabcf = iActionButton.CooldownFlash
 	if (iabcf ~= nil) then
 		iabcf:SetScale(1)
-		iabcf:SetAlpha(1)
+		iabcf:SetAlpha(0)	-- should be 1, but this effect is unused since 10.1.7 patch (there is an option to restore this effect, but it should only take effect for the classic layout, so we hide it)
 	end
 	local iabcc = iActionButton.chargeCooldown
 	if (iabcc ~= nil) then
-		iabcc:SetEdgeTexture("Interface\\HUD\\UI-HUD-ActionBar-StackCooldown")
+		iabcc:SetEdgeTexture("Interface\\Cooldown\\UI-HUD-ActionBar-SecondaryCooldown")
 	end
 end
 
@@ -5839,6 +5910,10 @@ ClassicUI.LayoutActionButton = function(iActionButton, typeActionButton)
 					end
 				end
 			end
+		end
+		local iabcf = iActionButton.CooldownFlash
+		if (iabcf ~= nil) then
+			iabcf:SetAlpha(0)	-- should be 1, but this effect is unused since 10.1.7 patch (there is an option to restore this effect, but it should only take effect for the classic layout, so we hide it)
 		end
 		if (ClassicUI.cached_ActionButtonInfo.currLayout[iActionButton] == 0) then
 			ClassicUI.RestoreDragonflightLayoutActionButton(iActionButton, typeActionButton)
@@ -6098,6 +6173,7 @@ ClassicUI.LayoutActionButton = function(iActionButton, typeActionButton)
 			iabcdt:SetPoint("TOPLEFT", iActionButton, "TOPLEFT", 0, 0)
 			iabcdt:SetPoint("CENTER", iActionButton, "CENTER", 0, -1)
 			iabcdt:SetPoint("BOTTOMRIGHT", iActionButton, "BOTTOMRIGHT", 0, 0)
+			iabcdt:SetEdgeTexture("Interface\\Cooldown\\edge")
 			if not typeABprofile.BLStyle0HideCooldownBlingAnim then
 				iabcdt:SetDrawBling(true)
 			else
@@ -6458,6 +6534,18 @@ ClassicUI.LayoutActionButton = function(iActionButton, typeActionButton)
 			else
 				iabcf:SetAlpha(1)
 				iabcf:SetScale(ClassicUI.ACTIONBUTTON_NEWLAYOUT_SCALE)
+				if not ClassicUI.hooked_ActionButtonCooldown_OnCooldownDone then
+					hooksecurefunc("ActionButtonCooldown_OnCooldownDone", function(self, requireCooldownUpdate)
+						local cooldownFlash = self:GetParent().CooldownFlash
+						local spellCastAnimFrame = self:GetParent().SpellCastAnimFrame
+						if (cooldownFlash) then
+							if (not spellCastAnimFrame or (spellCastAnimFrame and not spellCastAnimFrame:IsShown())) then
+								cooldownFlash:Setup()
+							end
+						end
+					end)
+					ClassicUI.hooked_ActionButtonCooldown_OnCooldownDone = true
+				end
 			end
 		end
 		local iabcc = iActionButton.chargeCooldown
@@ -6465,7 +6553,7 @@ ClassicUI.LayoutActionButton = function(iActionButton, typeActionButton)
 			if not typeABprofile.BLStyle0UseNewChargeCooldownEdgeTexture then
 				iabcc:SetEdgeTexture("Interface\\Cooldown\\edge")
 			else
-				iabcc:SetEdgeTexture("Interface\\HUD\\UI-HUD-ActionBar-StackCooldown")
+				iabcc:SetEdgeTexture("Interface\\Cooldown\\UI-HUD-ActionBar-SecondaryCooldown")
 			end
 		else
 			if not typeABprofile.BLStyle0UseNewChargeCooldownEdgeTexture then
@@ -7150,18 +7238,23 @@ function ClassicUI:HookRedRangeIcons()
 	if (not REDRANGEICONS_HOOKED) then
 		local function HookActionBarButtonUpdateUsable(actionBarButton)
 			if (actionBarButton.UpdateUsable ~= nil) then
-				hooksecurefunc(actionBarButton, "UpdateUsable", function(self)
-					local action = self.action
+				hooksecurefunc(actionBarButton, "UpdateUsable", function(self, action, isUsable, notEnoughMana)
+					if (action ~= nil and action ~= self.action) then
+						isUsable = nil
+						notEnoughMana = nil
+					end
 					local icon = self.icon
 					local normalTexture = self.NormalTexture
-					if (ActionHasRange(action) and IsActionInRange(action) == false) then
+					if (ActionHasRange(self.action) and IsActionInRange(self.action) == false) then
 						icon:SetVertexColor(0.8, 0.1, 0.1)
 						if (normalTexture ~= nil) then
 							normalTexture:SetVertexColor(0.8, 0.1, 0.1)
 						end
 						self.redRangeRed = true
 					else
-						local isUsable, notEnoughMana = IsUsableAction(action)
+						if isUsable == nil or notEnoughMana == nil then
+							isUsable, notEnoughMana = IsUsableAction(self.action)
+						end
 						if (isUsable) then
 							icon:SetVertexColor(1.0, 1.0, 1.0)
 							if (normalTexture ~= nil) then
@@ -7373,7 +7466,7 @@ function ClassicUI:HookOpenGuildPanelMode()
 				return
 			end
 			if (IsInGuild()) then
-				local loaded, reason = LoadAddOn("ClassicUI_ClassicBlizzGuildUI")
+				local loaded, reason = C_AddOns.LoadAddOn("ClassicUI_ClassicBlizzGuildUI")
 				if (not loaded) then
 					if (not ClassicUI.addonloadfailed_ClassicBlizzGuildUI) then
 						ClassicUI.addonloadfailed_ClassicBlizzGuildUI = true

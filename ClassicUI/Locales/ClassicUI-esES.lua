@@ -150,7 +150,7 @@ L['BLStyle0UseNewSpellActivationAlert'] = 'Utilizar la nueva animación SpellAct
 L['BLStyle0UseNewTargetReticleAnimFrame'] = 'Utilizar la nueva animación TargetReticleAnim'
 L['BLStyle0UseNewInterruptDisplay'] = 'Utilizar la nueva animación InterruptDisplay'
 L['BLStyle0UseNewSpellCastAnimFrame'] = 'Utilizar la nueva animación SpellCastAnim'
-L['BLStyle0UseNewCooldownFlash'] = 'Utilizar la nueva animación CooldownFlash'
+L['BLStyle0UseNewCooldownFlash'] = 'Utilizar la animación CooldownFlash del parche 10.1.5'
 L['BLStyle0HideCooldownBlingAnim'] = 'Ocultar la animación CooldownBling como hace el nuevo diseño de Dragonflight'
 L['BLStyle0UseNewChargeCooldownEdgeTexture'] = 'Utilizar la nueva textura ChargeCooldownEdge en lugar de la clásica'
 L['BLStyleDesc0'] = 'Selecciona el diseño principal de los ActionButtons de la MainMenuBar'
@@ -172,7 +172,7 @@ L['BLStyle0UseNewSpellActivationAlertDesc'] = 'Utilizar la nueva animación Spel
 L['BLStyle0UseNewTargetReticleAnimFrameDesc'] = 'Utilizar la nueva animación TargetReticleAnim introducida en el parche 10.1.5 de Dragonflight aún utilizando como estilo principal el diseño clásico.'
 L['BLStyle0UseNewInterruptDisplayDesc'] = 'Utilizar la nueva animación InterruptDisplay introducida en el parche 10.1.5 de Dragonflight aún utilizando como estilo principal el diseño clásico.'
 L['BLStyle0UseNewSpellCastAnimFrameDesc'] = 'Utilizar la nueva animación SpellCastAnim introducida en el parche 10.1.5 de Dragonflight aún utilizando como estilo principal el diseño clásico.'
-L['BLStyle0UseNewCooldownFlashDesc'] = 'Utilizar la nueva animación CooldownFlash introducida en el parche 10.1.5 de Dragonflight aún utilizando como estilo principal el diseño clásico.'
+L['BLStyle0UseNewCooldownFlashDesc'] = 'Utilizar la animación CooldownFlash introducida en el parche 10.1.5 de Dragonflight (y eliminada a partir del 10.1.7) aún utilizando como estilo principal el diseño clásico.'
 L['BLStyle0HideCooldownBlingAnimDesc'] = 'Ocultar la animación CooldownBling (la animación al final del cooldown) tal y como se hace en el nuevo diseño de Dragonflight desde el parche 10.1.5.'
 L['BLStyle0UseNewChargeCooldownEdgeTextureDesc'] = 'Utilizar la nueva textura ChargeCooldownEdge (la textura que \'sigue\' al borde móvil del cooldown) (solamente para hechizos con cargas) introducida en el parche 10.1.5 de Dragonflight aún utilizando como estilo principal el diseño clásico.'
 

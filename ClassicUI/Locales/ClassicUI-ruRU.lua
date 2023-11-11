@@ -150,7 +150,7 @@ L['BLStyle0UseNewSpellActivationAlert'] = 'Use the new SpellActivationAlert anim
 L['BLStyle0UseNewTargetReticleAnimFrame'] = 'Use the new TargetReticleAnim animation'
 L['BLStyle0UseNewInterruptDisplay'] = 'Use the new InterruptDisplay animation'
 L['BLStyle0UseNewSpellCastAnimFrame'] = 'Use the new SpellCastAnim animation'
-L['BLStyle0UseNewCooldownFlash'] = 'Use the new CooldownFlash animation'
+L['BLStyle0UseNewCooldownFlash'] = 'Use the CooldownFlash animation from patch 10.1.5'
 L['BLStyle0HideCooldownBlingAnim'] = 'Hide CooldownBling animation like the new Dragonflight layout does'
 L['BLStyle0UseNewChargeCooldownEdgeTexture'] = 'Use the new ChargeCooldownEdge texture instead of the classic one'
 L['BLStyleDesc0'] = 'Выберите основной макет кнопок действий в Главной панели.'
@@ -172,7 +172,7 @@ L['BLStyle0UseNewSpellActivationAlertDesc'] = 'Use the new SpellActivationAlert 
 L['BLStyle0UseNewTargetReticleAnimFrameDesc'] = 'Use the new TargetReticleAnim animation introduced in Dragonflight patch 10.1.5 while still using the classic layout as the main layout.'
 L['BLStyle0UseNewInterruptDisplayDesc'] = 'Use the new InterruptDisplay animation introduced in Dragonflight patch 10.1.5 while still using the classic layout as the main layout.'
 L['BLStyle0UseNewSpellCastAnimFrameDesc'] = 'Use the new SpellCastAnim animation introduced in Dragonflight patch 10.1.5 while still using the classic layout as the main layout.'
-L['BLStyle0UseNewCooldownFlashDesc'] = 'Use the new CooldownFlash animation introduced in Dragonflight patch 10.1.5 while still using the classic layout as the main layout.'
+L['BLStyle0UseNewCooldownFlashDesc'] = 'Use the CooldownFlash animation introduced in Dragonflight patch 10.1.5 (and removed as of patch 10.1.7) while still using the classic layout as the main layout.'
 L['BLStyle0HideCooldownBlingAnimDesc'] = 'Hide the CooldownBling animation (the animation at the end of the cooldown) in the same way as it is done in the Dragonflight layout since patch 10.1.5'
 L['BLStyle0UseNewChargeCooldownEdgeTextureDesc'] = 'Use the new ChargeCooldownEdge texture (the texture which \'follows\' the moving edge of the cooldown) (only for spells with charges) introduced in Dragonflight patch 10.1.5 while still using the classic layout as the main layout.'
 
