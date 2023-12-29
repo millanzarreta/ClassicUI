@@ -1,7 +1,7 @@
 -- ------------------------------------------------------------ --
 -- Addon: ClassicUI                                             --
 --                                                              --
--- Version: 2.0.5                                               --
+-- Version: 2.0.6                                               --
 -- Author: Millán - Sanguino                                    --
 --                                                              --
 -- License: GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007 --
@@ -40,7 +40,6 @@ local type = type
 local pairs = pairs
 local ipairs = ipairs
 local next = next
-local SetClampedTextureRotation = SetClampedTextureRotation
 local InCombatLockdown = InCombatLockdown
 local ActionHasRange = ActionHasRange
 local AnimateTexCoords = AnimateTexCoords
@@ -62,8 +61,6 @@ local Kiosk_IsEnabled = Kiosk.IsEnabled
 local UnitXP = UnitXP
 local UnitXPMax = UnitXPMax
 local UnitFactionGroup = UnitFactionGroup
-local Clamp = Clamp
-local GetUnscaledFrameRect = GetUnscaledFrameRect
 local GetXPExhaustion = GetXPExhaustion
 local GetRestState = GetRestState
 local GetFlyoutInfo = GetFlyoutInfo
@@ -81,7 +78,7 @@ local GetGuildInfo = GetGuildInfo
 local InGuildParty = InGuildParty
 
 -- Global constants
-ClassicUI.VERSION = "2.0.5"
+ClassicUI.VERSION = "2.0.6"
 ClassicUI.ACTIONBUTTON_NEWLAYOUT_SCALE = 0.826
 ClassicUI.ACTION_BAR_OFFSET = 45
 ClassicUI.SPELLFLYOUT_DEFAULT_SPACING = 4
@@ -1256,13 +1253,10 @@ end
 
 -- Function that modifies some attributes of the original frames
 function ClassicUI:ModifyOriginalFrames()
+	-- Modify FrameStrata and FrameLevel and make the ActionBar frames non-clickable
 	MainMenuBar:SetFrameStrata("MEDIUM")
 	MainMenuBar:SetFrameLevel(1)
 	MainMenuBar:EnableMouse(false)
-	-- It is preferable not to modify the size and position of the original frames
-	--MainMenuBar:SetSize(1024, 53)
-	--MainMenuBar:ClearAllPoints()
-	--MainMenuBar:SetPoint("BOTTOM", UIParent, "BOTTOM", 0 + ClassicUI.db.profile.barsConfig.MainMenuBar.xOffset, 0 + ClassicUI.db.profile.barsConfig.MainMenuBar.yOffset)
 	PetActionBar:SetFrameStrata("LOW")
 	PetActionBar:SetFrameLevel(2)
 	PetActionBar:EnableMouse(false)
@@ -1286,6 +1280,15 @@ function ClassicUI:ModifyOriginalFrames()
 	StanceBar:EnableMouse(false)
 	MainMenuBarVehicleLeaveButton:SetFrameStrata("MEDIUM")
 	MainMenuBarVehicleLeaveButton:SetFrameLevel(2)
+	-- Modify the size of ActionBars
+	MainMenuBar:SetSize(1024, 53)
+	MultiBarBottomLeft:SetSize(500, 38)
+	MultiBarBottomRight:SetSize(500, 38)
+	MultiBarRight:SetSize(38, 500)
+	MultiBarLeft:SetSize(38, 500)
+	-- Modify the position of some ActionBars
+	ClassicUI:UpdateRightActionBarPositions()
+	ClassicUI:UpdateBottomActionBarPositions()
 end
 
 -- Function that restores the FrameStrata and FrameLevel of the most significant frames
@@ -1333,50 +1336,73 @@ function ClassicUI:SetStrataForMainFrames()
 	CUI_PetActionBarFrame:SetFrameLevel(2)
 end
 
--- Helper function for 'ResizeLayoutCUIFunc'. Is a copy from 'GetExtents' local function of 'LayoutFrame.lua'
-ClassicUI.ResizeLayoutCUIGetExtents = function(childFrame, left, right, top, bottom, layoutFrameScale)
-	local frameLeft, frameBottom, frameWidth, frameHeight, defaulted = GetUnscaledFrameRect(childFrame, layoutFrameScale)
-	local frameRight = frameLeft + frameWidth
-	local frameTop = frameBottom + frameHeight
-	left = left and mathmin(frameLeft, left) or frameLeft
-	right = right and mathmax(frameRight, right) or frameRight
-	top = top and mathmax(frameTop, top) or frameTop
-	bottom = bottom and mathmin(frameBottom, bottom) or frameBottom
-	return left, right, top, bottom, defaulted
-end
-
--- Helper function for 'ResizeLayoutCUIFunc'. Is a copy from 'GetSize' local function of 'LayoutFrame.lua'
-ClassicUI.ResizeLayoutCUIGetSize = function(desired, fixed, minimum, maximum)
-	return fixed or Clamp(desired, minimum or desired, maximum or desired)
-end
-
--- Function that allows to readjust the size of an ActionBar. We cannot execute the function 'ResizeLayoutMixin:Layout()' on demand because it will cause taints. This function does the same but avoiding the taints.
-ClassicUI.ResizeLayoutCUIFunc = function(bar)
-	-- GetExtents will fail if the LayoutFrame has 0 width or height, so set them to 1 to start, and it is also necessary to set it like this initially for correct function operation
-	bar:SetSize(1, 1)
-	-- GetExtents will also fail if the LayoutFrame has no anchors set
-	local hadNoAnchors = (bar:GetNumPoints() == 0)
-	if hadNoAnchors then
-		-- Normally we would set the anchor here, but in order not to cause taints we prefer to exit the function and not perform the layout
+-- Function that mimics 'EditModeManagerFrame.UpdateBottomActionBarPositions' to calculate and set the position of the right side ActionBars (other modifications are ignored)
+function ClassicUI:UpdateRightActionBarPositions()
+	if ((EditModeManagerFrame == nil) or not(EditModeManagerFrame:IsInitialized()) or EditModeManagerFrame.layoutApplyInProgress) then
 		return
 	end
-	local left, right, top, bottom, defaulted
-	local layoutFrameScale = bar:GetEffectiveScale()
-	for childIndex, child in ipairs(bar:GetLayoutChildren()) do
-		-- We avoid making the Layout of the child frames, it does not seem necessary
-		local l, r, t, b, d = ClassicUI.ResizeLayoutCUIGetExtents(child, left, right, top, bottom, layoutFrameScale)
-		left, right, top, bottom = l, r, t, b
-		defaulted = defaulted or d
+	local barsToUpdate = { MultiBarRight, MultiBarLeft }
+	local offsetX = RIGHT_ACTION_BAR_DEFAULT_OFFSET_X
+	local offsetY = RIGHT_ACTION_BAR_DEFAULT_OFFSET_Y
+	local leftMostBar = nil
+	for index, bar in ipairs(barsToUpdate) do
+		if bar and bar:IsShown() then
+			local isInDefaultPosition = bar:IsInDefaultPosition()
+			if isInDefaultPosition then
+				local leftMostBarWidth = leftMostBar and -leftMostBar:GetWidth() - 5 or 0
+				offsetX = offsetX + leftMostBarWidth
+				bar:ClearAllPoints()
+				bar:SetPoint("RIGHT", UIParent, "RIGHT", offsetX, offsetY)
+				leftMostBar = bar
+			end
+		end
 	end
-	if left and right and top and bottom then
-		local width = ClassicUI.ResizeLayoutCUIGetSize((right - left) + (bar.widthPadding or 0), bar.fixedWidth, bar.minimumWidth, bar.maximumWidth)
-		local height = ClassicUI.ResizeLayoutCUIGetSize((top - bottom) + (bar.heightPadding or 0), bar.fixedHeight, bar.minimumHeight, bar.maximumHeight)
-		bar:SetSize(width, height)
-	end
-	-- It is not necessary to perform the ClearAllPoints here if the bar does not have anchors, and we avoid the MarkClean function that would cause a taint
 end
 
--- Function to ReLayout all main frames to adjust its size, avoiding the issue that sometimes happens that causes them to fill the entire screen
+-- Function that mimics 'EditModeManagerFrame.UpdateBottomActionBarPositions' to calculate and set the position of the bottom side ActionBars (other modifications are ignored)
+function ClassicUI:UpdateBottomActionBarPositions()
+	if ((EditModeManagerFrame == nil) or not(EditModeManagerFrame:IsInitialized()) or EditModeManagerFrame.layoutApplyInProgress) then
+		return
+	end
+	local barsToUpdate = { MainMenuBar, MultiBarBottomLeft, MultiBarBottomRight, StanceBar, PetActionBar, PossessActionBar, MainMenuBarVehicleLeaveButton }
+	local offsetX = 0
+	local offsetY = MAIN_ACTION_BAR_DEFAULT_OFFSET_Y
+	if OverrideActionBar and OverrideActionBar:IsShown() then
+		local xpBarHeight = OverrideActionBar.xpBar:IsShown() and OverrideActionBar.xpBar:GetHeight() or 0
+		offsetY = OverrideActionBar:GetHeight() + xpBarHeight + 10
+	end
+	local topMostBar = nil
+	local layoutInfo = EditModeManagerFrame:GetActiveLayoutInfo()
+	local isPresetLayout = layoutInfo.layoutType == Enum.EditModeLayoutType.Preset
+	local isOverrideLayout = layoutInfo.layoutType == Enum.EditModeLayoutType.Override 
+	for index, bar in ipairs(barsToUpdate) do
+		if bar and bar:IsShown() and bar:IsInDefaultPosition() then
+			if (bar ~= MainMenuBarVehicleLeaveButton) then	-- exception for 'MainMenuBarVehicleLeaveButton', its position is controlled with a custom function
+				bar:ClearAllPoints()
+				if bar.useDefaultAnchors and isPresetLayout then
+					local anchorInfo = EditModePresetLayoutManager:GetPresetLayoutSystemAnchorInfo(layoutInfo.layoutIndex, bar.system, bar.systemIndex)
+					bar:SetPoint(anchorInfo.point, anchorInfo.relativeTo, anchorInfo.relativePoint, anchorInfo.offsetX, anchorInfo.offsetY)
+				elseif bar.useDefaultAnchors and isOverrideLayout then
+					local anchorInfo = EditModePresetLayoutManager:GetOverrideLayoutSystemAnchorInfo(layoutInfo.layoutIndex, bar.system, bar.systemIndex)
+					bar:SetPoint(anchorInfo.point, anchorInfo.relativeTo, anchorInfo.relativePoint, anchorInfo.offsetX, anchorInfo.offsetY)
+				else
+					if not topMostBar then
+						offsetX = -bar:GetWidth() / 2
+					end
+					local topBarHeight = topMostBar and topMostBar:GetHeight() + 5 or 0
+					offsetY = offsetY + topBarHeight
+					bar:ClearAllPoints()
+					bar:SetPoint("BOTTOMLEFT", UIParent, "BOTTOM", offsetX, offsetY)
+					topMostBar = bar
+				end
+			else
+				ClassicUI.MainMenuBarVehicleLeaveButton_Relocate(MainMenuBarVehicleLeaveButton)
+			end
+		end
+	end
+end
+
+-- Function to ReLayout all main frames to adjust its size and position, avoiding the issue that sometimes happens that causes them to fill the entire screen
 function ClassicUI:ReLayoutMainFrames()
 	if InCombatLockdown() then
 		delayFunc_ReLayoutMainFrames = true
@@ -1385,13 +1411,8 @@ function ClassicUI:ReLayoutMainFrames()
 		end
 		return
 	end
-	-- ReLayout the main frames (MainMenuBar, MultiBarBottomLeft, MultiBarBottomRight, MultiBarRight, MultiBarLeft)
-	ClassicUI.ResizeLayoutCUIFunc(MainMenuBar)
-	ClassicUI.ResizeLayoutCUIFunc(MultiBarBottomLeft)
-	ClassicUI.ResizeLayoutCUIFunc(MultiBarBottomRight)
-	ClassicUI.ResizeLayoutCUIFunc(MultiBarRight)
-	ClassicUI.ResizeLayoutCUIFunc(MultiBarLeft)
-	-- Some additional adjustments from the 'FramePositionDelegate:UIParentManageFramePositions()' function
+	ClassicUI:ModifyOriginalFrames()
+	ClassicUI:ReloadMainFramesSettings()
 	local rightAnchor = (EditModeUtil ~= nil) and EditModeUtil:GetRightContainerAnchor() or nil
 	if (rightAnchor and UIParentRightManagedFrameContainer) then
 		rightAnchor:SetPoint(UIParentRightManagedFrameContainer, true)
@@ -1719,6 +1740,7 @@ function ClassicUI:ReloadMainFramesSettings()
 		OverrideActionBar:SetScale(self.db.profile.barsConfig.OverrideActionBar.scale)
 		PetBattleFrame.BottomFrame:SetPoint("BOTTOM", PetBattleFrame.BottomFrame:GetParent(), "BOTTOM", self.db.profile.barsConfig.PetBattleFrameBar.xOffset, self.db.profile.barsConfig.PetBattleFrameBar.yOffset)
 		PetBattleFrame.BottomFrame:SetScale(self.db.profile.barsConfig.PetBattleFrameBar.scale)
+		ClassicUI.MainMenuBarVehicleLeaveButton_Relocate(MainMenuBarVehicleLeaveButton)
 		
 		CUI_MainMenuBar.oldOrigScale = nil
 		CUI_MultiBarBottomLeft.oldOrigScale = nil
@@ -2854,8 +2876,18 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 			return
 		end
 		self.Background.Start:Hide()
-		SetClampedTextureRotation(self.Background.VerticalMiddle, 0)
-		SetClampedTextureRotation(self.Background.HorizontalMiddle, 0)
+		--SetClampedTextureRotation(self.Background.VerticalMiddle, 0)	-- Calls to 'SetClampedTextureRotation' cause taints, so we do the texture rotation manually to avoid these taints
+		if self.Background.VerticalMiddle.origTexCoords ~= nil and self.Background.VerticalMiddle.origWidth ~= nil and self.Background.VerticalMiddle.origHeight ~= nil then
+			self.Background.VerticalMiddle:SetWidth(self.Background.VerticalMiddle.origWidth)
+			self.Background.VerticalMiddle:SetHeight(self.Background.VerticalMiddle.origHeight)
+			self.Background.VerticalMiddle:SetTexCoord(self.Background.VerticalMiddle.origTexCoords[1], self.Background.VerticalMiddle.origTexCoords[2], self.Background.VerticalMiddle.origTexCoords[3], self.Background.VerticalMiddle.origTexCoords[4], self.Background.VerticalMiddle.origTexCoords[5], self.Background.VerticalMiddle.origTexCoords[6], self.Background.VerticalMiddle.origTexCoords[7], self.Background.VerticalMiddle.origTexCoords[8])
+		end
+		--SetClampedTextureRotation(self.Background.HorizontalMiddle, 0)	-- Calls to 'SetClampedTextureRotation' cause taints, so we do the texture rotation manually to avoid these taints
+		if self.Background.HorizontalMiddle.origTexCoords ~= nil and self.Background.HorizontalMiddle.origWidth ~= nil and self.Background.HorizontalMiddle.origHeight ~= nil then
+			self.Background.HorizontalMiddle:SetWidth(self.Background.HorizontalMiddle.origWidth)
+			self.Background.HorizontalMiddle:SetHeight(self.Background.HorizontalMiddle.origHeight)
+			self.Background.HorizontalMiddle:SetTexCoord(self.Background.HorizontalMiddle.origTexCoords[1], self.Background.HorizontalMiddle.origTexCoords[2], self.Background.HorizontalMiddle.origTexCoords[3], self.Background.HorizontalMiddle.origTexCoords[4], self.Background.HorizontalMiddle.origTexCoords[5], self.Background.HorizontalMiddle.origTexCoords[6], self.Background.HorizontalMiddle.origTexCoords[7], self.Background.HorizontalMiddle.origTexCoords[8])
+		end
 		if (direction == "UP") then
 			self.Background.End:SetPoint("TOP", 0, 0)
 		elseif (direction == "DOWN") then
@@ -2865,12 +2897,15 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		elseif (direction == "RIGHT") then
 			self.Background.End:SetPoint("RIGHT", 0, 0)
 		end
-		if (direction == "UP" or direction == "DOWN") then
-			self:SetWidth(prevButton:GetWidth())
-			self:SetHeight((prevButton:GetHeight()+ClassicUI.SPELLFLYOUT_DEFAULT_SPACING) * numButtons - ClassicUI.SPELLFLYOUT_DEFAULT_SPACING + ClassicUI.SPELLFLYOUT_INITIAL_SPACING + ClassicUI.SPELLFLYOUT_FINAL_SPACING)
-		else
-			self:SetHeight(prevButton:GetHeight())
-			self:SetWidth((prevButton:GetWidth()+ClassicUI.SPELLFLYOUT_DEFAULT_SPACING) * numButtons - ClassicUI.SPELLFLYOUT_DEFAULT_SPACING + ClassicUI.SPELLFLYOUT_INITIAL_SPACING + ClassicUI.SPELLFLYOUT_FINAL_SPACING)
+		-- Setting 'SpellFlyout' size is restricted in combat. It is only a minor adjustment, so it is not necessary to delay it, we just skip it if we're in combat lockdown
+		if not(InCombatLockdown()) then
+			if (direction == "UP" or direction == "DOWN") then
+				self:SetWidth(prevButton:GetWidth())
+				self:SetHeight((prevButton:GetHeight()+ClassicUI.SPELLFLYOUT_DEFAULT_SPACING) * numButtons - ClassicUI.SPELLFLYOUT_DEFAULT_SPACING + ClassicUI.SPELLFLYOUT_INITIAL_SPACING + ClassicUI.SPELLFLYOUT_FINAL_SPACING)
+			else
+				self:SetHeight(prevButton:GetHeight())
+				self:SetWidth((prevButton:GetWidth()+ClassicUI.SPELLFLYOUT_DEFAULT_SPACING) * numButtons - ClassicUI.SPELLFLYOUT_DEFAULT_SPACING + ClassicUI.SPELLFLYOUT_INITIAL_SPACING + ClassicUI.SPELLFLYOUT_FINAL_SPACING)
+			end
 		end
 		self:SetBorderSize(37)
 	end)
@@ -3175,8 +3210,11 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 			hooksecurefunc(iMultiBarRightButton:GetParent(), "SetScale", CUI_MultiBarRight.actionButtons[iMultiBarRightButton].hook_SetScale)
 		end
 	end
+	MultiBarRight:HookScript("OnShow", function(self)
+		ClassicUI:ReLayoutMainFrames()
+	end)
 	
-	-- [ActionBars] MultiBarLeft
+	-- [ActionBars] MultiBarLeft 
 	local CUI_MultiBarLeft = CreateFrame("Frame", "CUI_MultiBarLeft", MultiBarLeft)
 	function CUI_MultiBarLeft:RelocateBar()
 		self:ClearAllPoints()
@@ -3264,6 +3302,9 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 			hooksecurefunc(iMultiBarLeftButton:GetParent(), "SetScale", CUI_MultiBarLeft.actionButtons[iMultiBarLeftButton].hook_SetScale)
 		end
 	end
+	MultiBarLeft:HookScript("OnShow", function(self)
+		ClassicUI:ReLayoutMainFrames()
+	end)
 	
 	-- [ActionBars] PetActionBarFrame (a.k.a. PetActionBar)
 	local CUI_PetActionBarFrame = CreateFrame("Frame", "CUI_PetActionBarFrame", PetActionBar)
@@ -7397,11 +7438,11 @@ function ClassicUI:HookGreyOnCooldownIcons()
 					end
 					if ((not self.onCooldown) or (self.onCooldown == 0)) then
 						self.onCooldown = start + duration
-						local nextTime = start + duration - GetTime() - 1.0
-						if (nextTime < -1.0) then
-							nextTime = 0.05
+						local nextTime = start + duration - GetTime() - 0.1
+						if (nextTime < -0.1) then
+							nextTime = 0.025
 						elseif (nextTime < 0) then
-							nextTime = -nextTime / 2
+							nextTime = 0.051
 						end
 						if nextTime <= 4294967.295 then
 							local func = UpdateFuncCache[self]
@@ -7411,16 +7452,14 @@ function ClassicUI:HookGreyOnCooldownIcons()
 							end
 							C_Timer.After(nextTime, func)
 						end
-					elseif (expectedUpdate or (self.onCooldown > start + duration + 0.05)) then
+					elseif (expectedUpdate or (self.onCooldown > start + duration + 0.025)) then
 						if (self.onCooldown ~= start + duration) then
 							self.onCooldown = start + duration
 						end
-						local nextTime = 0.05
-						local timeRemains = self.onCooldown-GetTime()
-						if (timeRemains > 0.31) then
-							nextTime = timeRemains / 5
-						elseif (timeRemains < 0) then
-							nextTime = 0.05
+						local nextTime = 0.025
+						local timeRemains = self.onCooldown - GetTime()
+						if (timeRemains > 0.041) then
+							nextTime = timeRemains / 1.5
 						end
 						if nextTime <= 4294967.295 then
 							local func = UpdateFuncCache[self]
