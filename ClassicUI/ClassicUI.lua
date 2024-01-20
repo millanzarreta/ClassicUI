@@ -1,7 +1,7 @@
 -- ------------------------------------------------------------ --
 -- Addon: ClassicUI                                             --
 --                                                              --
--- Version: 2.0.6                                               --
+-- Version: 2.0.7                                               --
 -- Author: Millán - Sanguino                                    --
 --                                                              --
 -- License: GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007 --
@@ -78,7 +78,7 @@ local GetGuildInfo = GetGuildInfo
 local InGuildParty = InGuildParty
 
 -- Global constants
-ClassicUI.VERSION = "2.0.6"
+ClassicUI.VERSION = "2.0.7"
 ClassicUI.ACTIONBUTTON_NEWLAYOUT_SCALE = 0.826
 ClassicUI.ACTION_BAR_OFFSET = 45
 ClassicUI.SPELLFLYOUT_DEFAULT_SPACING = 4
@@ -112,6 +112,7 @@ ClassicUI.queuePending_HookSetScale = { }
 ClassicUI.STBMbars = { }
 ClassicUI.STBMMainBars = { }
 ClassicUI.STBMSecBars = { }
+ClassicUI.UpdateBagItemButtonQualityFuncCache = { }
 
 -- Default settings
 ClassicUI.defaults = {
@@ -1759,6 +1760,31 @@ function ClassicUI:ReloadMainFramesSettings()
 		CUI_PetActionBarFrame.hook_SetScale(PetActionBar, PetActionBar:GetScale())
 		CUI_PossessBarFrame.hook_SetScale(PossessActionBar, PossessActionBar:GetScale())
 		CUI_StanceBarFrame.hook_SetScale(StanceBar, StanceBar:GetScale())
+	end
+end
+
+-- Function that updates the quality of bag items and tries again if fails (the 'GetInventoryItemQuality' function loads asynchronously, so it can return 'nil')
+function ClassicUI:TrySetBagItemButtonQuality(button, bagQuality, itemIDOrLink, suppressOverlays, isBound)
+	if (button ~= nil) then
+		if (bagQuality == nil) then
+			bagQuality = GetInventoryItemQuality("player", button:GetID())
+		end
+		if (itemIDOrLink == nil) then
+			itemIDOrLink = GetInventoryItemID("player", button:GetID())
+		end
+		if (suppressOverlays == nil) then
+			suppressOverlays = button.HasPaperDollAzeriteItemOverlay
+		end
+		if (bagQuality ~= nil) then
+			ItemButtonMixin.SetItemButtonQuality(button, bagQuality, itemIDOrLink, suppressOverlays, isBound)
+		elseif (itemIDOrLink ~= nil) then
+			local func = self.UpdateBagItemButtonQualityFuncCache[button]
+			if not func then
+				func = function() ClassicUI:TrySetBagItemButtonQuality(button) end
+				self.UpdateBagItemButtonQualityFuncCache[button] = func
+			end
+			C_Timer.After(4, func)
+		end
 	end
 end
 
@@ -4683,7 +4709,9 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		bagSlot.IconBorder:SetDrawLayer("OVERLAY")
 		bagSlot.IconBorder:SetAlpha(ClassicUI.db.profile.barsConfig.BagsIcons.iconBorderAlpha)
 		bagSlot.IconBorder:SetPoint("CENTER", bagSlot, "CENTER", 0, 0)
-		hooksecurefunc(bagSlot, "SetItemButtonQuality", ItemButtonMixin.SetItemButtonQuality)
+		hooksecurefunc(bagSlot, "SetItemButtonQuality", function(self, quality, itemIDOrLink, suppressOverlays, isBound)
+			ClassicUI:TrySetBagItemButtonQuality(self, quality, itemIDOrLink, suppressOverlays, isBound)
+		end)
 		hooksecurefunc(bagSlot, "UpdateTextures", ClassicUI.BaseBagSlotButton_UpdateTextures)
 	end
 	hooksecurefunc(MainMenuBarBackpackButton, "UpdateTextures", ClassicUI.BaseBagSlotButton_UpdateTextures)
@@ -4706,16 +4734,11 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		EventRegistry:RegisterCallback("MainMenuBarManager.OnExpandChanged", ClassicUI.onExpandChangedMainMenuBarManager, BagsBar)
 	end
 	
-	ItemButtonMixin.SetItemButtonQuality(CharacterBag0Slot, GetInventoryItemQuality("player", CharacterBag0Slot:GetID()), GetInventoryItemID("player", CharacterBag0Slot:GetID()), CharacterBag0Slot.HasPaperDollAzeriteItemOverlay)
-	ItemButtonMixin.SetItemButtonQuality(CharacterBag1Slot, GetInventoryItemQuality("player", CharacterBag1Slot:GetID()), GetInventoryItemID("player", CharacterBag1Slot:GetID()), CharacterBag1Slot.HasPaperDollAzeriteItemOverlay)
-	ItemButtonMixin.SetItemButtonQuality(CharacterBag2Slot, GetInventoryItemQuality("player", CharacterBag2Slot:GetID()), GetInventoryItemID("player", CharacterBag2Slot:GetID()), CharacterBag2Slot.HasPaperDollAzeriteItemOverlay)
-	ItemButtonMixin.SetItemButtonQuality(CharacterBag3Slot, GetInventoryItemQuality("player", CharacterBag3Slot:GetID()), GetInventoryItemID("player", CharacterBag3Slot:GetID()), CharacterBag3Slot.HasPaperDollAzeriteItemOverlay)
-	C_Timer.After(8, function()
-		ItemButtonMixin.SetItemButtonQuality(CharacterBag0Slot, GetInventoryItemQuality("player", CharacterBag0Slot:GetID()), GetInventoryItemID("player", CharacterBag0Slot:GetID()), CharacterBag0Slot.HasPaperDollAzeriteItemOverlay)
-		ItemButtonMixin.SetItemButtonQuality(CharacterBag1Slot, GetInventoryItemQuality("player", CharacterBag1Slot:GetID()), GetInventoryItemID("player", CharacterBag1Slot:GetID()), CharacterBag1Slot.HasPaperDollAzeriteItemOverlay)
-		ItemButtonMixin.SetItemButtonQuality(CharacterBag2Slot, GetInventoryItemQuality("player", CharacterBag2Slot:GetID()), GetInventoryItemID("player", CharacterBag2Slot:GetID()), CharacterBag2Slot.HasPaperDollAzeriteItemOverlay)
-		ItemButtonMixin.SetItemButtonQuality(CharacterBag3Slot, GetInventoryItemQuality("player", CharacterBag3Slot:GetID()), GetInventoryItemID("player", CharacterBag3Slot:GetID()), CharacterBag3Slot.HasPaperDollAzeriteItemOverlay)
-	end)
+	-- 'GetInventoryItemQuality' function seems to laod asynchronously, so it can return 'nil' sometimes
+	ClassicUI:TrySetBagItemButtonQuality(CharacterBag0Slot)
+	ClassicUI:TrySetBagItemButtonQuality(CharacterBag1Slot)
+	ClassicUI:TrySetBagItemButtonQuality(CharacterBag2Slot)
+	ClassicUI:TrySetBagItemButtonQuality(CharacterBag3Slot)
 	
 	CharacterBag0Slot.CircleMask:Hide()
 	ClassicUI.BaseBagSlotButton_UpdateTextures(CharacterBag0Slot)
@@ -5212,6 +5235,20 @@ function ClassicUI:PLAYER_ENTERING_WORLD()
 	if (ClassicUI.OnEvent_PEW_eff) then
 		ClassicUI.OnEvent_PEW_eff = false
 		ClassicUI:EFF_PLAYER_ENTERING_WORLD()
+	end
+end
+
+-- Function that hides the dividers of the MainMenuBar
+function ClassicUI:HideMainMenuBarDividers(actionBar, forceHide)
+	if (actionBar == nil) then actionBar = MainMenuBar end
+	local actionBarDividersPool = actionBar.isHorizontal and actionBar.HorizontalDividersPool or actionBar.VerticalDividersPool
+	if (actionBarDividersPool ~= nil and actionBarDividersPool.activeObjects ~= nil) then
+		for divider, _ in pairs(actionBarDividersPool.activeObjects) do
+			if (divider:IsShown() or forceHide) then
+				divider:SetAlpha(0)
+				divider:Hide()
+			end
+		end
 	end
 end
 
@@ -5797,10 +5834,6 @@ ClassicUI.LayoutActionButton = function(iActionButton, typeActionButton)
 	local newBLScale = typeABprofile.scale or 1
 	
 	local name = iActionButton:GetName()
-	iActionButton.RightDivider:SetAlpha(0)
-	iActionButton.BottomDivider:SetAlpha(0)
-	iActionButton.RightDivider:Hide()
-	iActionButton.BottomDivider:Hide()
 	if not(typeABprofile.BLStyle0AllowNewBackgroundArt) then
 		iActionButton.SlotArt:SetAlpha(0)
 		iActionButton.SlotBackground:SetAlpha(0)
@@ -5821,16 +5854,10 @@ ClassicUI.LayoutActionButton = function(iActionButton, typeActionButton)
 	local iabnt = iActionButton:GetNormalTexture()
 	local iabpt = iActionButton:GetPushedTexture()
 	if ((iActionButton.UpdateButtonArt ~= nil) and (iabnt ~= nil) and (iabpt ~= nil) and not(ClassicUI.cached_ActionButtonInfo.hooked_UpdateButtonArt[iActionButton])) then
-		hooksecurefunc(iActionButton, "UpdateButtonArt", function(self, hideDivider)
+		hooksecurefunc(iActionButton, "UpdateButtonArt", function(self)
 			--if ClassicUI.databaseCleaned then return end	-- not needed because typeABprofile is an upvalue local table variable (the upvalue table can become empty but never nil, not an issue)
 			if (not self.SlotArt or not self.SlotBackground) then
 				return
-			end
-			if (self.RightDivider:IsShown()) then
-				self.RightDivider:Hide()
-			end
-			if (self.BottomDivider:IsShown()) then
-				self.BottomDivider:Hide()
 			end
 			if not(typeABprofile.BLStyle0AllowNewBackgroundArt) then
 				if (self.SlotArt:IsShown()) then
@@ -5842,7 +5869,7 @@ ClassicUI.LayoutActionButton = function(iActionButton, typeActionButton)
 			end
 			if (typeABprofile.BLStyle == 1) then
 				-- Dragonflight Layout
-				if (self.showButtonArt) then
+				if (self.bar and not self.bar.hideBarArt) then
 					if (self.NormalTexture:GetAtlas() ~= "UI-HUD-ActionBar-IconFrame-AddRow") then
 						self:SetNormalAtlas("UI-HUD-ActionBar-IconFrame-AddRow")
 						if (typeActionButton <= 2) then
@@ -6859,10 +6886,12 @@ function ClassicUI:MainFunction(isLogin)
 	MainMenuBar.EndCaps:Hide()
 	hooksecurefunc(MainMenuBar, "UpdateSystemSettingHideBarArt", function(self)
 		self.BorderArt:SetShown(false)
-		self.Background:SetShown(false)
 	end)
 	MainMenuBar.BorderArt:SetShown(false)
-	MainMenuBar.Background:SetShown(false)
+	hooksecurefunc(MainMenuBar, "UpdateDividers", function(self)
+		ClassicUI:HideMainMenuBarDividers(self)
+	end)
+	ClassicUI:HideMainMenuBarDividers(MainMenuBar, true)
 
 	if (not ClassicUI.frame:IsEventRegistered("PLAYER_SPECIALIZATION_CHANGED")) then
 		ClassicUI.frame:RegisterUnitEvent("PLAYER_SPECIALIZATION_CHANGED", "player")
