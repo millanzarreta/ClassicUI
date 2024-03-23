@@ -1,7 +1,7 @@
 -- ------------------------------------------------------------ --
 -- Addon: ClassicUI                                             --
 --                                                              --
--- Version: 2.0.7                                               --
+-- Version: 2.0.8                                               --
 -- Author: Millán - Sanguino                                    --
 --                                                              --
 -- License: GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007 --
@@ -78,7 +78,7 @@ local GetGuildInfo = GetGuildInfo
 local InGuildParty = InGuildParty
 
 -- Global constants
-ClassicUI.VERSION = "2.0.7"
+ClassicUI.VERSION = "2.0.8"
 ClassicUI.ACTIONBUTTON_NEWLAYOUT_SCALE = 0.826
 ClassicUI.ACTION_BAR_OFFSET = 45
 ClassicUI.SPELLFLYOUT_DEFAULT_SPACING = 4
@@ -1965,60 +1965,60 @@ function ClassicUI:EnableOldMinimap()
 	GameTimeFrame:GetFontString():SetDrawLayer("BACKGROUND")
 	GameTimeFrame:SetText(C_DateAndTime_GetCurrentCalendarTime().monthDay)
 	
-	MinimapCluster.Tracking:SetParent(MinimapBackdrop)
-	MinimapCluster.Tracking:ClearAllPoints()
-	MinimapCluster.Tracking:SetPoint("TOPLEFT", MinimapBackdrop, "TOPLEFT", 9, -45)
-	MinimapCluster.Tracking:SetFrameStrata("LOW")
-	MinimapCluster.Tracking:SetFrameLevel(4)
-	MinimapCluster.Tracking:SetSize(32, 32)
-	MinimapCluster.Tracking.Background:SetParent(MinimapCluster.Tracking)
-	MinimapCluster.Tracking.Background:ClearAllPoints()
-	MinimapCluster.Tracking.Background:SetPoint("TOPLEFT", MinimapCluster.Tracking, "TOPLEFT", 2, -4)
-	MinimapCluster.Tracking.Background:SetTexture("Interface\\Minimap\\UI-Minimap-Background")
-	MinimapCluster.Tracking.Background:SetSize(25, 25)
-	MinimapCluster.Tracking.Background:SetAlpha(0.6)
-	MinimapCluster.Tracking.Button:SetParent(MinimapCluster.Tracking)
-	MinimapCluster.Tracking.Button:ClearAllPoints()
-	MinimapCluster.Tracking.Button:SetPoint("TOPLEFT", MinimapCluster.Tracking, "TOPLEFT", 0, 0)
-	MinimapCluster.Tracking.Button:SetFrameStrata("LOW")
-	MinimapCluster.Tracking.Button:SetFrameLevel(5)
-	MinimapCluster.Tracking.Button:SetSize(32, 32)
-	MinimapCluster.Tracking.Button:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight", "ADD")
+	MinimapCluster.TrackingFrame:SetParent(MinimapBackdrop)
+	MinimapCluster.TrackingFrame:ClearAllPoints()
+	MinimapCluster.TrackingFrame:SetPoint("TOPLEFT", MinimapBackdrop, "TOPLEFT", 9, -45)
+	MinimapCluster.TrackingFrame:SetFrameStrata("LOW")
+	MinimapCluster.TrackingFrame:SetFrameLevel(4)
+	MinimapCluster.TrackingFrame:SetSize(32, 32)
+	MinimapCluster.TrackingFrame.Background:SetParent(MinimapCluster.TrackingFrame)
+	MinimapCluster.TrackingFrame.Background:ClearAllPoints()
+	MinimapCluster.TrackingFrame.Background:SetPoint("TOPLEFT", MinimapCluster.TrackingFrame, "TOPLEFT", 2, -4)
+	MinimapCluster.TrackingFrame.Background:SetTexture("Interface\\Minimap\\UI-Minimap-Background")
+	MinimapCluster.TrackingFrame.Background:SetSize(25, 25)
+	MinimapCluster.TrackingFrame.Background:SetAlpha(0.6)
+	MinimapCluster.TrackingFrame.Button:SetParent(MinimapCluster.TrackingFrame)
+	MinimapCluster.TrackingFrame.Button:ClearAllPoints()
+	MinimapCluster.TrackingFrame.Button:SetPoint("TOPLEFT", MinimapCluster.TrackingFrame, "TOPLEFT", 0, 0)
+	MinimapCluster.TrackingFrame.Button:SetFrameStrata("LOW")
+	MinimapCluster.TrackingFrame.Button:SetFrameLevel(5)
+	MinimapCluster.TrackingFrame.Button:SetSize(32, 32)
+	MinimapCluster.TrackingFrame.Button:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight", "ADD")
 	
-	MinimapCluster.Tracking.Button:GetNormalTexture():SetTexture(nil)
-	MinimapCluster.Tracking.Button:GetNormalTexture():SetAlpha(0)
-	MinimapCluster.Tracking.Button:GetNormalTexture():Hide()
-	MinimapCluster.Tracking.Button:GetPushedTexture():SetTexture(nil)
-	MinimapCluster.Tracking.Button:GetNormalTexture():SetAlpha(0)
-	MinimapCluster.Tracking.Button:GetNormalTexture():Hide()
-	MinimapCluster.Tracking.Button:CreateTexture("MiniMapTrackingButtonBorder", "BORDER")
-	MinimapCluster.Tracking.ButtonBorder = MiniMapTrackingButtonBorder
-	MinimapCluster.Tracking.ButtonBorder:ClearAllPoints()
-	MinimapCluster.Tracking.ButtonBorder:SetPoint("TOPLEFT", MinimapCluster.Tracking.Button, "TOPLEFT", 0, 0)
-	MinimapCluster.Tracking.ButtonBorder:SetTexture("Interface\\Addons\\ClassicUI\\Textures\\MiniMap-TrackingBorder")
-	MinimapCluster.Tracking.ButtonBorder:SetSize(54, 54)
-	MinimapCluster.Tracking.ButtonBorder:SetDrawLayer("BORDER", 0)
-	MinimapCluster.Tracking:CreateTexture("MiniMapTrackingIcon", "ARTWORK")
-	MinimapCluster.Tracking.MiniMapTrackingIcon = MiniMapTrackingIcon
-	MinimapCluster.Tracking.MiniMapTrackingIcon:ClearAllPoints()
-	MinimapCluster.Tracking.MiniMapTrackingIcon:SetPoint("TOPLEFT", MinimapCluster.Tracking, "TOPLEFT", 6, -6)
-	MinimapCluster.Tracking.MiniMapTrackingIcon:SetTexture("Interface\\Minimap\\Tracking\\None")
-	MinimapCluster.Tracking.MiniMapTrackingIcon:SetSize(20, 20)
-	MinimapCluster.Tracking.MiniMapTrackingIcon:Show()
-	MinimapCluster.Tracking:CreateTexture("MiniMapTrackingIconOverlay", "OVERLAY")
-	MinimapCluster.Tracking.MiniMapTrackingIconOverlay = MiniMapTrackingIconOverlay
-	MinimapCluster.Tracking.MiniMapTrackingIconOverlay:ClearAllPoints()
-	MinimapCluster.Tracking.MiniMapTrackingIconOverlay:SetAllPoints(MinimapCluster.Tracking.MiniMapTrackingIcon)
-	MinimapCluster.Tracking.MiniMapTrackingIconOverlay:SetSize(20, 20)
-	MinimapCluster.Tracking.MiniMapTrackingIconOverlay:SetColorTexture(0, 0, 0, 0.5)
-	MinimapCluster.Tracking.MiniMapTrackingIconOverlay:Hide()
-	MinimapCluster.Tracking.Button:HookScript("OnMouseDown", function()
-		MinimapCluster.Tracking.MiniMapTrackingIcon:SetPoint("TOPLEFT", MinimapCluster.Tracking, "TOPLEFT", 8, -8)
-		MinimapCluster.Tracking.MiniMapTrackingIconOverlay:Show()
+	MinimapCluster.TrackingFrame.Button:GetNormalTexture():SetTexture(nil)
+	MinimapCluster.TrackingFrame.Button:GetNormalTexture():SetAlpha(0)
+	MinimapCluster.TrackingFrame.Button:GetNormalTexture():Hide()
+	MinimapCluster.TrackingFrame.Button:GetPushedTexture():SetTexture(nil)
+	MinimapCluster.TrackingFrame.Button:GetNormalTexture():SetAlpha(0)
+	MinimapCluster.TrackingFrame.Button:GetNormalTexture():Hide()
+	MinimapCluster.TrackingFrame.Button:CreateTexture("MiniMapTrackingButtonBorder", "BORDER")
+	MinimapCluster.TrackingFrame.ButtonBorder = MiniMapTrackingButtonBorder
+	MinimapCluster.TrackingFrame.ButtonBorder:ClearAllPoints()
+	MinimapCluster.TrackingFrame.ButtonBorder:SetPoint("TOPLEFT", MinimapCluster.TrackingFrame.Button, "TOPLEFT", 0, 0)
+	MinimapCluster.TrackingFrame.ButtonBorder:SetTexture("Interface\\Addons\\ClassicUI\\Textures\\MiniMap-TrackingBorder")
+	MinimapCluster.TrackingFrame.ButtonBorder:SetSize(54, 54)
+	MinimapCluster.TrackingFrame.ButtonBorder:SetDrawLayer("BORDER", 0)
+	MinimapCluster.TrackingFrame:CreateTexture("MiniMapTrackingIcon", "ARTWORK")
+	MinimapCluster.TrackingFrame.MiniMapTrackingIcon = MiniMapTrackingIcon
+	MinimapCluster.TrackingFrame.MiniMapTrackingIcon:ClearAllPoints()
+	MinimapCluster.TrackingFrame.MiniMapTrackingIcon:SetPoint("TOPLEFT", MinimapCluster.TrackingFrame, "TOPLEFT", 6, -6)
+	MinimapCluster.TrackingFrame.MiniMapTrackingIcon:SetTexture("Interface\\Minimap\\Tracking\\None")
+	MinimapCluster.TrackingFrame.MiniMapTrackingIcon:SetSize(20, 20)
+	MinimapCluster.TrackingFrame.MiniMapTrackingIcon:Show()
+	MinimapCluster.TrackingFrame:CreateTexture("MiniMapTrackingIconOverlay", "OVERLAY")
+	MinimapCluster.TrackingFrame.MiniMapTrackingIconOverlay = MiniMapTrackingIconOverlay
+	MinimapCluster.TrackingFrame.MiniMapTrackingIconOverlay:ClearAllPoints()
+	MinimapCluster.TrackingFrame.MiniMapTrackingIconOverlay:SetAllPoints(MinimapCluster.TrackingFrame.MiniMapTrackingIcon)
+	MinimapCluster.TrackingFrame.MiniMapTrackingIconOverlay:SetSize(20, 20)
+	MinimapCluster.TrackingFrame.MiniMapTrackingIconOverlay:SetColorTexture(0, 0, 0, 0.5)
+	MinimapCluster.TrackingFrame.MiniMapTrackingIconOverlay:Hide()
+	MinimapCluster.TrackingFrame.Button:HookScript("OnMouseDown", function()
+		MinimapCluster.TrackingFrame.MiniMapTrackingIcon:SetPoint("TOPLEFT", MinimapCluster.TrackingFrame, "TOPLEFT", 8, -8)
+		MinimapCluster.TrackingFrame.MiniMapTrackingIconOverlay:Show()
 	end)
-	MinimapCluster.Tracking.Button:HookScript("OnMouseUp", function()
-		MinimapCluster.Tracking.MiniMapTrackingIcon:SetPoint("TOPLEFT", MinimapCluster.Tracking, "TOPLEFT", 6, -6)
-		MinimapCluster.Tracking.MiniMapTrackingIconOverlay:Hide()
+	MinimapCluster.TrackingFrame.Button:HookScript("OnMouseUp", function()
+		MinimapCluster.TrackingFrame.MiniMapTrackingIcon:SetPoint("TOPLEFT", MinimapCluster.TrackingFrame, "TOPLEFT", 6, -6)
+		MinimapCluster.TrackingFrame.MiniMapTrackingIconOverlay:Hide()
 	end)
 	
 	Minimap.ZoomIn:SetParent(MinimapBackdrop)
@@ -2465,7 +2465,7 @@ function ClassicUI:EnableOldMinimap()
 	hooksecurefunc("Minimap_SetTooltip", ClassicUI.Minimap_SetTooltip)
 	MinimapZoneTextButton:SetScript("OnEnter", function(self)
 		GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-		local pvpType, _, factionName = GetZonePVPInfo()
+		local pvpType, _, factionName = C_PvP.GetZonePVPInfo()
 		ClassicUI.Minimap_SetTooltip(pvpType, factionName)
 		GameTooltip:Show()
 	end)
@@ -3894,8 +3894,9 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		[LFDMicroButton] = 7,
 		[CollectionsMicroButton] = 8,
 		[EJMicroButton] = 9,
-		[StoreMicroButton] = 10,
-		[MainMenuMicroButton] = 11
+		[HelpMicroButton] = 10,
+		[StoreMicroButton] = 11,
+		[MainMenuMicroButton] = 12
 	}
 	ClassicUI.UpdateMicroButtonsParent = function(parent)
 		for k, _ in pairs(ClassicUI.MicroButtonsGroup) do
@@ -4462,6 +4463,50 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	hooksecurefunc(EJMicroButton, "SetNormal", ClassicUI.hook_MicroButtonSetStateFunc)
 	EJMicroButton:HookScript("OnEnter", ClassicUI.hookscript_MicroButtonOnEnter)
 	
+	-- [MicroButtons] HelpMicroButton
+	HelpMicroButton:SetParent(CUI_MainMenuBarArtFrame)
+	HelpMicroButton:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
+	HelpMicroButton:ClearAllPoints()
+	HelpMicroButton:SetPoint("BOTTOMLEFT", MainMenuMicroButton, "BOTTOMRIGHT", -2, 0)
+	HelpMicroButton:SetFrameStrata("MEDIUM")
+	HelpMicroButton:SetFrameLevel(3)
+	HelpMicroButton:SetNormalAtlas("hud-microbutton-Help-Up", true)
+	HelpMicroButton:SetPushedAtlas("hud-microbutton-Help-Down", true)
+	HelpMicroButton:SetDisabledAtlas("hud-microbutton-Help-Disabled", true)
+	HelpMicroButton:SetHighlightAtlas("hud-microbutton-highlight")
+	HelpMicroButton:SetNormalTexture("Interface\\Buttons\\UI-MicroButton-Help-Up")
+	HelpMicroButton:SetPushedTexture("Interface\\Buttons\\UI-MicroButton-Help-Down")
+	HelpMicroButton:SetHighlightTexture("Interface\\Buttons\\UI-MicroButton-Hilight", "ADD")
+	HelpMicroButton:SetDisabledTexture("Interface\\Buttons\\UI-MicroButton-Help-Disabled")
+	HelpMicroButton:GetNormalTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
+	HelpMicroButton:GetPushedTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
+	HelpMicroButton:GetHighlightTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
+	HelpMicroButton:GetDisabledTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
+	HelpMicroButton:GetNormalTexture():SetVertexColor(1, 1, 1)
+	HelpMicroButton:GetPushedTexture():SetVertexColor(1, 1, 1)
+	HelpMicroButton:GetDisabledTexture():SetVertexColor(1, 1, 1)
+	HelpMicroButton:GetHighlightTexture():SetVertexColor(1, 1, 1)
+	HelpMicroButton.Background:Hide()
+	HelpMicroButton.Background:SetAlpha(0)
+	HelpMicroButton.PushedBackground:Hide()
+	HelpMicroButton.PushedBackground:SetAlpha(0)
+	HelpMicroButton.FlashBorder:SetAtlas(nil)
+	HelpMicroButton.FlashBorder:SetTexture("Interface\\Addons\\ClassicUI\\Textures\\UI-MicroButton-FlashBorderHilight")
+	HelpMicroButton.FlashBorder:SetTexCoord(0/128, 66/128, 0/128, 80/128)
+	HelpMicroButton.FlashBorder:SetBlendMode("ADD")
+	HelpMicroButton.FlashBorder:ClearAllPoints()
+	HelpMicroButton.FlashBorder:SetSize(34, 44)
+	HelpMicroButton.FlashBorder:SetDrawLayer("OVERLAY", 0)
+	HelpMicroButton.FlashBorder:SetPoint("TOPLEFT", HelpMicroButton, "TOPLEFT", -2, 3)
+	hooksecurefunc(HelpMicroButton, "SetPushed", ClassicUI.hook_MicroButtonSetStateFunc)
+	hooksecurefunc(HelpMicroButton, "SetNormal", ClassicUI.hook_MicroButtonSetStateFunc)
+	HelpMicroButton:HookScript("OnEnter", ClassicUI.hookscript_MicroButtonOnEnter)
+	-- This button is not generally used, since 'MainMenuMicroButton' is used instead, we disable and hide it
+	HelpMicroButton:Disable()
+	HelpMicroButton:EnableMouse(false)
+	HelpMicroButton:Hide()
+	HelpMicroButton:SetAlpha(0)
+	
 	-- [MicroButtons] StoreMicroButton
 	StoreMicroButton:SetParent(CUI_MainMenuBarArtFrame)
 	StoreMicroButton:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
@@ -4565,6 +4610,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	LFDMicroButton.FlashContent:SetParent(CUI_MicroButtonPulseHiddenFrame)
 	CollectionsMicroButton.FlashContent:SetParent(CUI_MicroButtonPulseHiddenFrame)
 	EJMicroButton.FlashContent:SetParent(CUI_MicroButtonPulseHiddenFrame)
+	HelpMicroButton.FlashContent:SetParent(CUI_MicroButtonPulseHiddenFrame)
 	StoreMicroButton.FlashContent:SetParent(CUI_MicroButtonPulseHiddenFrame)
 	MainMenuMicroButton.FlashContent:SetParent(CUI_MicroButtonPulseHiddenFrame)
 	
