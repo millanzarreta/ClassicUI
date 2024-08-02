@@ -84,6 +84,7 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.MainMenuBar.xOffset end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.MainMenuBar.xOffset = value
+								ClassicUI.cached_db_profile.barsConfig_MainMenuBar_xOffset = value
 								if (ClassicUI:IsEnabled()) then
 									ClassicUI:ReloadMainFramesSettings()
 								end
@@ -101,6 +102,7 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.MainMenuBar.yOffset end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.MainMenuBar.yOffset = value
+								ClassicUI.cached_db_profile.barsConfig_MainMenuBar_yOffset = value
 								if (ClassicUI:IsEnabled()) then
 									ClassicUI:ReloadMainFramesSettings()
 								end
@@ -115,7 +117,7 @@ ClassicUI.optionsTable = {
 							step = 0.01,
 							bigStep = 0.03,
 							name = L['Scale'],
-							desc = L['Scale'],
+							desc = string.gsub(L['ScaleDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.MainMenuBar.scale, 1),
 							get = function() return ClassicUI.db.profile.barsConfig.MainMenuBar.scale end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.MainMenuBar.scale = value
@@ -146,7 +148,7 @@ ClassicUI.optionsTable = {
 									width = 1.5,
 									values = {
 										[0] = L['Default - Classic Layout'],
-										[1] = L['Dragonflight Layout']
+										[1] = L['Modern Layout']
 									},
 									get = function() return ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle end,
 									set = function(_,value)
@@ -169,10 +171,22 @@ ClassicUI.optionsTable = {
 									type = "range",
 									softMin = 0,
 									softMax = 1,
+									min = 0,
+									max = 1,
 									step = 0.01,
 									bigStep = 0.02,
 									name = L['NormalTexture Alpha'],
-									desc = L['NormalTexture Alpha'],
+									desc = function()
+										if (ClassicUI.db ~= nil) then
+											if (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle == 1) then
+												return string.gsub(L['NormalTextureAlphaDesc'], "%$%$%*%*%$%$", ClassicUI.db.defaults.profile.barsConfig.MainMenuBar.BLStyle1NormalTextureAlpha, 1)
+											else
+												return string.gsub(L['NormalTextureAlphaDesc'], "%$%$%*%*%$%$", ClassicUI.db.defaults.profile.barsConfig.MainMenuBar.BLStyle0NormalTextureAlpha, 1)
+											end
+										else
+											return L['NormalTexture Alpha']
+										end
+									end,
 									get = function()
 										return (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle == 1) and ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle1NormalTextureAlpha or ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0NormalTextureAlpha
 									end,
@@ -363,8 +377,24 @@ ClassicUI.optionsTable = {
 										end
 									end
 								},
-								BLStyle0UseNewCooldownFlash = {
+								BLStyle0UseNewAutoCastOverlay = {
 									order = 15,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewAutoCastOverlay'],
+									desc = L['BLStyle0UseNewAutoCastOverlayDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0UseNewAutoCastOverlay end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle0UseNewAutoCastOverlay = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[0]=true})
+										end
+									end
+								},
+								BLStyle0UseNewCooldownFlash = {
+									order = 16,
 									disabled = function() return (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle ~= 0) end,
 									hidden = function() return (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle ~= 0) end,
 									type = "toggle",
@@ -380,7 +410,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								BLStyle0HideCooldownBlingAnim = {
-									order = 16,
+									order = 17,
 									disabled = function() return (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle ~= 0) end,
 									hidden = function() return (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle ~= 0) end,
 									type = "toggle",
@@ -396,7 +426,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								BLStyle0UseNewChargeCooldownEdgeTexture = {
-									order = 17,
+									order = 18,
 									disabled = function() return (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle ~= 0) end,
 									hidden = function() return (ClassicUI.db.profile.barsConfig.MainMenuBar.BLStyle ~= 0) end,
 									type = "toggle",
@@ -413,174 +443,27 @@ ClassicUI.optionsTable = {
 								}
 							}
 						},
-						hideLatencyBar = {
-							order = 7,
-							type = "toggle",
-							name = L['Hide Small Latency Bar'],
-							desc = L['Hide Small Latency Bar'],
-							width = "double",
-							get = function() return ClassicUI.db.profile.barsConfig.MainMenuBar.hideLatencyBar end,
-							set = function(_,value)
-								ClassicUI.db.profile.barsConfig.MainMenuBar.hideLatencyBar = value
-								if (ClassicUI:IsEnabled()) then
-									if value then
-										if (MainMenuMicroButton.MainMenuBarPerformanceBar ~= nil) then
-											MainMenuMicroButton.MainMenuBarPerformanceBar:SetAlpha(0)
-											MainMenuMicroButton.MainMenuBarPerformanceBar:Hide()
-										end
-									else
-										if (MainMenuMicroButton.MainMenuBarPerformanceBar ~= nil) then
-											MainMenuMicroButton.MainMenuBarPerformanceBar:SetAlpha(1)
-											MainMenuMicroButton.MainMenuBarPerformanceBar:Show()
-										end
-									end
-								end
-							end
-						},
 						Spacer2 = {
 							type = "description",
-							order = 8,
-							name = ""
-						},
-						Header2 = {
-							type = 'header',
-							order = 9,
-							name = L['MicroButtons']
-						},
-						xOffsetMicroButtons = {
-							order = 10,
-							type = "range",
-							softMin = -500,
-							softMax = 500,
-							step = 1,
-							bigStep = 10,
-							name = L['xOffset'],
-							desc = L['xOffset'],
-							get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.xOffset end,
-							set = function(_,value)
-								ClassicUI.db.profile.barsConfig.MicroButtons.xOffset = value
-								if (ClassicUI:IsEnabled()) then
-									ClassicUI:ReloadMainFramesSettings()
-								end
-							end
-						},
-						yOffsetMicroButtons = {
-							order = 11,
-							type = "range",
-							softMin = -500,
-							softMax = 500,
-							step = 1,
-							bigStep = 10,
-							name = L['yOffset'],
-							desc = L['yOffset'],
-							get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.yOffset end,
-							set = function(_,value)
-								ClassicUI.db.profile.barsConfig.MicroButtons.yOffset = value
-								if (ClassicUI:IsEnabled()) then
-									ClassicUI:ReloadMainFramesSettings()
-								end
-							end
-						},
-						scaleMicroButtons = {
-							order = 12,
-							type = "range",
-							min = 0.01,
-							softMin = 0.01,
-							softMax = 4,
-							step = 0.01,
-							bigStep = 0.03,
-							name = L['Scale'],
-							desc = L['Scale'],
-							get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.scale end,
-							set = function(_,value)
-								ClassicUI.db.profile.barsConfig.MicroButtons.scale = value
-								if (ClassicUI:IsEnabled()) then
-									ClassicUI:ReloadMainFramesSettings()
-								end
-							end
-						},
-						Spacer3 = {
-							type = "description",
-							order = 13,
-							name = ""
-						},
-						useClassicQuestIconMicroButtons = {
-							order = 14,
-							type = "toggle",
-							name = L['Use the classic Quest MicroButton Icon'],
-							desc = L['Replaces the Quest MicroButton icon with its classic texture'],
-							width = 2.5,
-							get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.useClassicQuestIcon end,
-							set = function(_,value)
-								ClassicUI.db.profile.barsConfig.MicroButtons.useClassicQuestIcon = value
-								if (ClassicUI:IsEnabled()) then
-									ClassicUI:ReloadMainFramesSettings()
-								end
-							end
-						},
-						useClassicGuildIconMicroButtons = {
-							order = 15,
-							type = "toggle",
-							name = L['Use the classic Guild MicroButton Icon'],
-							desc = L['Replaces the dynamic Guild MicroButton (with its emblem) with its classic static texture'],
-							width = 2.5,
-							get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.useClassicGuildIcon end,
-							set = function(_,value)
-								ClassicUI.db.profile.barsConfig.MicroButtons.useClassicGuildIcon = value
-								if (ClassicUI:IsEnabled()) then
-									ClassicUI:ReloadMainFramesSettings()
-								end
-							end
-						},
-						useBiggerGuildEmblemMicroButtons = {
-							order = 16,
-							disabled = function() return (ClassicUI.db.profile.barsConfig.MicroButtons.useClassicGuildIcon) end,
-							type = "toggle",
-							name = L['Make Guild Emblem bigger'],
-							desc = L['Enlarges the Guild Emblem on the MicroButton to make it bigger and more visible'],
-							width = 2.5,
-							get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.useBiggerGuildEmblem end,
-							set = function(_,value)
-								ClassicUI.db.profile.barsConfig.MicroButtons.useBiggerGuildEmblem = value
-								if (ClassicUI:IsEnabled()) then
-									ClassicUI:ReloadMainFramesSettings()
-								end
-							end
-						},
-						useClassicMainMenuIconMicroButtons = {
-							order = 17,
-							type = "toggle",
-							name = L['Use the classic MainMenu MicroButton Icon'],
-							desc = L['Replaces the Quest Main Menu icon with its classic texture'],
-							width = 2.5,
-							get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.useClassicMainMenuIcon end,
-							set = function(_,value)
-								ClassicUI.db.profile.barsConfig.MicroButtons.useClassicMainMenuIcon = value
-								ClassicUI.cached_db_profile.barsConfig_MicroButtons_useClassicMainMenuIcon = value
-								if (ClassicUI:IsEnabled()) then
-									ClassicUI:ReloadMainFramesSettings()
-								end
-							end
-						},
-						Spacer4 = {
-							type = "description",
-							order = 18,
+							order = 7,
 							name = ""
 						},
 						Header3 = {
 							type = 'header',
-							order = 19,
+							order = 8,
 							name = L['BagsIcons']
 						},
 						iconBorderAlphaBags = {
-							order = 20,
+							order = 9,
 							type = "range",
 							softMin = 0,
 							softMax = 1,
+							min = 0,
+							max = 1,
 							step = 0.01,
 							bigStep = 0.02,
 							name = L['IconBorder Alpha'],
-							desc = L['IconBorder Alpha'],
+							desc = string.gsub(L['IconBorderAlphaDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.BagsIcons.iconBorderAlpha, 1),
 							get = function() return ClassicUI.db.profile.barsConfig.BagsIcons.iconBorderAlpha end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.BagsIcons.iconBorderAlpha = value
@@ -590,7 +473,7 @@ ClassicUI.optionsTable = {
 							end
 						},
 						xOffsetReagentBag = {
-							order = 21,
+							order = 10,
 							type = "range",
 							softMin = -500,
 							softMax = 500,
@@ -608,7 +491,7 @@ ClassicUI.optionsTable = {
 							end
 						},
 						yOffsetReagentBag = {
-							order = 22,
+							order = 11,
 							type = "range",
 							softMin = -500,
 							softMax = 500,
@@ -627,16 +510,16 @@ ClassicUI.optionsTable = {
 						},
 						Spacer5 = {
 							type = "description",
-							order = 23,
+							order = 12,
 							name = ""
 						},
 						Header4 = {
 							type = 'header',
-							order = 24,
+							order = 13,
 							name = L['SpellFlyoutButtons']
 						},
 						ActionButtonsLayoutGroup2 = {
-							order = 25,
+							order = 14,
 							type = "group",
 							inline = true,
 							name = L['ActionButtons Layout'],
@@ -650,7 +533,7 @@ ClassicUI.optionsTable = {
 									width = 1.5,
 									values = {
 										[0] = L['Default - Classic Layout'],
-										[1] = L['Dragonflight Layout']
+										[1] = L['Modern Layout']
 									},
 									get = function() return ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle end,
 									set = function(_,value)
@@ -673,10 +556,22 @@ ClassicUI.optionsTable = {
 									type = "range",
 									softMin = 0,
 									softMax = 1,
+									min = 0,
+									max = 1,
 									step = 0.01,
 									bigStep = 0.02,
 									name = L['NormalTexture Alpha'],
-									desc = L['NormalTexture Alpha'],
+									desc = function()
+										if (ClassicUI.db ~= nil) then
+											if (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle == 1) then
+												return string.gsub(L['NormalTextureAlphaDesc'], "%$%$%*%*%$%$", ClassicUI.db.defaults.profile.barsConfig.SpellFlyoutButtons.BLStyle1NormalTextureAlpha, 1)
+											else
+												return string.gsub(L['NormalTextureAlphaDesc'], "%$%$%*%*%$%$", ClassicUI.db.defaults.profile.barsConfig.SpellFlyoutButtons.BLStyle0NormalTextureAlpha, 1)
+											end
+										else
+											return L['NormalTexture Alpha']
+										end
+									end,
 									get = function()
 										return (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle == 1) and ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle1NormalTextureAlpha or ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0NormalTextureAlpha
 									end,
@@ -867,8 +762,24 @@ ClassicUI.optionsTable = {
 										end
 									end
 								},
-								BLStyle0UseNewCooldownFlash = {
+								BLStyle0UseNewAutoCastOverlay = {
 									order = 15,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewAutoCastOverlay'],
+									desc = L['BLStyle0UseNewAutoCastOverlayDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0UseNewAutoCastOverlay end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle0UseNewAutoCastOverlay = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[6]=true})
+										end
+									end
+								},
+								BLStyle0UseNewCooldownFlash = {
+									order = 16,
 									disabled = function() return (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle ~= 0) end,
 									hidden = function() return (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle ~= 0) end,
 									type = "toggle",
@@ -884,7 +795,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								BLStyle0HideCooldownBlingAnim = {
-									order = 16,
+									order = 17,
 									disabled = function() return (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle ~= 0) end,
 									hidden = function() return (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle ~= 0) end,
 									type = "toggle",
@@ -900,7 +811,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								BLStyle0UseNewChargeCooldownEdgeTexture = {
-									order = 17,
+									order = 18,
 									disabled = function() return (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle ~= 0) end,
 									hidden = function() return (ClassicUI.db.profile.barsConfig.SpellFlyoutButtons.BLStyle ~= 0) end,
 									type = "toggle",
@@ -973,7 +884,7 @@ ClassicUI.optionsTable = {
 							step = 0.01,
 							bigStep = 0.03,
 							name = L['Scale'],
-							desc = L['Scale'],
+							desc = string.gsub(L['ScaleDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.OverrideActionBar.scale, 1),
 							get = function() return ClassicUI.db.profile.barsConfig.OverrideActionBar.scale end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.OverrideActionBar.scale = value
@@ -1002,7 +913,7 @@ ClassicUI.optionsTable = {
 									width = 1.5,
 									values = {
 										[0] = L['Default - Classic Layout'],
-										[1] = L['Dragonflight Layout']
+										[1] = L['Modern Layout']
 									},
 									get = function() return ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle end,
 									set = function(_,value)
@@ -1025,10 +936,22 @@ ClassicUI.optionsTable = {
 									type = "range",
 									softMin = 0,
 									softMax = 1,
+									min = 0,
+									max = 1,
 									step = 0.01,
 									bigStep = 0.02,
 									name = L['NormalTexture Alpha'],
-									desc = L['NormalTexture Alpha'],
+									desc = function()
+										if (ClassicUI.db ~= nil) then
+											if (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle == 1) then
+												return string.gsub(L['NormalTextureAlphaDesc'], "%$%$%*%*%$%$", ClassicUI.db.defaults.profile.barsConfig.OverrideActionBar.BLStyle1NormalTextureAlpha, 1)
+											else
+												return string.gsub(L['NormalTextureAlphaDesc'], "%$%$%*%*%$%$", ClassicUI.db.defaults.profile.barsConfig.OverrideActionBar.BLStyle0NormalTextureAlpha, 1)
+											end
+										else
+											return L['NormalTexture Alpha']
+										end
+									end,
 									get = function()
 										return (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle == 1) and ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle1NormalTextureAlpha or ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0NormalTextureAlpha
 									end,
@@ -1219,8 +1142,24 @@ ClassicUI.optionsTable = {
 										end
 									end
 								},
-								BLStyle0UseNewCooldownFlash = {
+								BLStyle0UseNewAutoCastOverlay = {
 									order = 15,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewAutoCastOverlay'],
+									desc = L['BLStyle0UseNewAutoCastOverlayDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0UseNewAutoCastOverlay end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle0UseNewAutoCastOverlay = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[7]=true})
+										end
+									end
+								},
+								BLStyle0UseNewCooldownFlash = {
+									order = 16,
 									disabled = function() return (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle ~= 0) end,
 									hidden = function() return (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle ~= 0) end,
 									type = "toggle",
@@ -1236,7 +1175,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								BLStyle0HideCooldownBlingAnim = {
-									order = 16,
+									order = 17,
 									disabled = function() return (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle ~= 0) end,
 									hidden = function() return (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle ~= 0) end,
 									type = "toggle",
@@ -1252,7 +1191,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								BLStyle0UseNewChargeCooldownEdgeTexture = {
-									order = 17,
+									order = 18,
 									disabled = function() return (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle ~= 0) end,
 									hidden = function() return (ClassicUI.db.profile.barsConfig.OverrideActionBar.BLStyle ~= 0) end,
 									type = "toggle",
@@ -1357,10 +1296,12 @@ ClassicUI.optionsTable = {
 							type = "range",
 							softMin = 0,
 							softMax = 1,
+							min = 0,
+							max = 1,
 							step = 0.01,
 							bigStep = 0.02,
 							name = L['Alpha'],
-							desc = L['Alpha'],
+							desc = string.gsub(L['AlphaDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.LeftGargoyleFrame.alpha, 1),
 							get = function() return ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.alpha end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.alpha = value
@@ -1378,7 +1319,7 @@ ClassicUI.optionsTable = {
 							step = 0.01,
 							bigStep = 0.03,
 							name = L['Scale'],
-							desc = L['Scale'],
+							desc = string.gsub(L['ScaleDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.LeftGargoyleFrame.scale, 1),
 							get = function() return ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.scale end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.LeftGargoyleFrame.scale = value
@@ -1472,10 +1413,12 @@ ClassicUI.optionsTable = {
 							type = "range",
 							softMin = 0,
 							softMax = 1,
+							min = 0,
+							max = 1,
 							step = 0.01,
 							bigStep = 0.02,
 							name = L['Alpha'],
-							desc = L['Alpha'],
+							desc = string.gsub(L['AlphaDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.RightGargoyleFrame.alpha, 1),
 							get = function() return ClassicUI.db.profile.barsConfig.RightGargoyleFrame.alpha end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.RightGargoyleFrame.alpha = value
@@ -1493,7 +1436,7 @@ ClassicUI.optionsTable = {
 							step = 0.01,
 							bigStep = 0.03,
 							name = L['Scale'],
-							desc = L['Scale'],
+							desc = string.gsub(L['ScaleDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.RightGargoyleFrame.scale, 1),
 							get = function() return ClassicUI.db.profile.barsConfig.RightGargoyleFrame.scale end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.RightGargoyleFrame.scale = value
@@ -1504,8 +1447,3532 @@ ClassicUI.optionsTable = {
 						}
 					},
 				},
-				PetBattleFrameBarOptions = {
+				MicroButtonsOptions = {
 					order = 9,
+					type = "group",
+					name = L['MicroButtons'],
+					desc = L['MicroButtons'],
+					childGroups = "tree",
+					args = {
+						Header1 = {
+							type = 'header',
+							order = 1,
+							name = L['MicroButtons']
+						},
+						xOffsetMicroButtons = {
+							order = 2,
+							type = "range",
+							softMin = -500,
+							softMax = 500,
+							step = 1,
+							bigStep = 10,
+							name = L['xOffset'],
+							desc = L['xOffset'],
+							get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.xOffset end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.MicroButtons.xOffset = value
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI:ReloadMainFramesSettings()
+								end
+							end
+						},
+						yOffsetMicroButtons = {
+							order = 3,
+							type = "range",
+							softMin = -500,
+							softMax = 500,
+							step = 1,
+							bigStep = 10,
+							name = L['yOffset'],
+							desc = L['yOffset'],
+							get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.yOffset end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.MicroButtons.yOffset = value
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI:ReloadMainFramesSettings()
+								end
+							end
+						},
+						scaleMicroButtons = {
+							order = 4,
+							type = "range",
+							min = 0.01,
+							softMin = 0.01,
+							softMax = 4,
+							step = 0.01,
+							bigStep = 0.03,
+							name = L['Scale'],
+							desc = string.gsub(L['ScaleDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.MicroButtons.scale, 1),
+							get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.scale end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.MicroButtons.scale = value
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI:ReloadMainFramesSettings()
+								end
+							end
+						},
+						helpOpenWebTicketButtonAnchor = {
+							order = 5,
+							type = "select",
+							style = "dropdown",
+							name = L['helpOpenWebTicketButtonAnchor'],
+							desc = L['helpOpenWebTicketButtonAnchorDesc'],
+							width = 1.45,
+							sorting = function()
+								return {
+									[ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.order] = 'CharacterMicroButton',
+									[ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.order] = 'ProfessionMicroButton',
+									[ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.order] = 'PlayerSpellsMicroButton',
+									[ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.order] = 'AchievementMicroButton',
+									[ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.order] = 'QuestLogMicroButton',
+									[ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.order] = 'GuildMicroButton',
+									[ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.order] = 'LFDMicroButton',
+									[ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.order] = 'CollectionsMicroButton',
+									[ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.order] = 'EJMicroButton',
+									[ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.order] = 'HelpMicroButton',
+									[ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.order] = 'StoreMicroButton',
+									[ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.order] = 'MainMenuMicroButton'
+								}
+							end,
+							values = {
+								['CharacterMicroButton'] = L['CharacterMicroButton'],
+								['ProfessionMicroButton'] = L['ProfessionMicroButton'],
+								['PlayerSpellsMicroButton'] = L['PlayerSpellsMicroButton'],
+								['AchievementMicroButton'] = L['AchievementMicroButton'],
+								['QuestLogMicroButton'] = L['QuestLogMicroButton'],
+								['GuildMicroButton'] = L['GuildMicroButton'],
+								['LFDMicroButton'] = L['LFDMicroButton'],
+								['CollectionsMicroButton'] = L['CollectionsMicroButton'],
+								['EJMicroButton'] = L['EJMicroButton'],
+								['HelpMicroButton'] = L['HelpMicroButton'],
+								['StoreMicroButton'] = L['StoreMicroButton'],
+								['MainMenuMicroButton'] = L['Default - MainMenuMicroButton']
+							},
+							get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.helpOpenWebTicketButtonAnchor end,
+							set = function(_,value)
+								if (ClassicUI.db.profile.barsConfig.MicroButtons.helpOpenWebTicketButtonAnchor ~= value) then
+									ClassicUI.db.profile.barsConfig.MicroButtons.helpOpenWebTicketButtonAnchor = value
+									if (ClassicUI:IsEnabled()) then
+										if (HelpOpenWebTicketButton ~= nil) then
+											HelpOpenWebTicketButton:SetParent(_G[ClassicUI.db.profile.barsConfig.MicroButtons.helpOpenWebTicketButtonAnchor] or MainMenuMicroButton)
+											HelpOpenWebTicketButton:ClearAllPoints()
+											HelpOpenWebTicketButton:SetPoint("CENTER", HelpOpenWebTicketButton:GetParent(), "TOPRIGHT", -3, -4)
+										end
+										if (ClassicUI.showingTempWebTicketButton or (not(ClassicUI.showingTempWebTicketButton) and not(HelpOpenWebTicketButton:IsShown()))) then
+											HelpOpenWebTicketButton:Show()
+											ClassicUI.showingTempWebTicketButton = GetTime() + 1.9
+											C_Timer.After(2, function()
+												if (GetTime() > ClassicUI.showingTempWebTicketButton) then
+													HelpOpenWebTicketButton:Hide()
+													ClassicUI.showingTempWebTicketButton = nil
+												end
+											end)
+										end
+									end
+								end
+							
+							end
+						},
+						Spacer1 = {
+							type = "description",
+							order = 6,
+							name = ""
+						},
+						CharacterMicroButton = {
+							order = function() return 6 + ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.order end,
+							type = "group",
+							name = function() return '|cffeda55f[|r|cffff6720'..(ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.order < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.order..'|r|cffeda55f] - |r'..string.gsub(ClassicUI.MICROBUTTONS_OPTION_ICONS[ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.iconMicroButton].name],':32:24:',':20:15:',1)..' '..L['Character'] end,
+							desc = L['CharacterMicroButton'],
+							args = {
+								Header1 = {
+									type = 'header',
+									order = 1,
+									name = L['MicroButtons Order']
+								},
+								buttonOrderUp = {
+									order = 2,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.order <= ClassicUI.MICROBUTTONS_MIN_ORDER) and '-disabled' or '')..':0|t' end,
+									desc = L['UP'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.order <= ClassicUI.MICROBUTTONS_MIN_ORDER end,
+									width = 0.26,
+									func = function()
+										ClassicUI:ReorderMicroButtonsDB("CharacterMicroButton", "UP")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								buttonOrderDown = {
+									order = 3,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.order >= ClassicUI.MICROBUTTONS_MAX_ORDER) and '-disabled' or '')..':0|t' end,
+									desc = L['DOWN'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.order >= ClassicUI.MICROBUTTONS_MAX_ORDER end,
+									width = 0.26,
+									func = function()
+										ClassicUI:ReorderMicroButtonsDB("CharacterMicroButton", "DOWN")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								Spacer1 = {
+									type = "description",
+									order = 4,
+									name = "",
+									width = 0.05
+								},
+								buttonOrderDefault = {
+									order = 5,
+									type = "execute",
+									name = function() return '|T'..(ClassicUI:IsMicroButtonsOrderDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
+									desc = L['DefaultOrderDesc'],
+									disabled = function() return ClassicUI:IsMicroButtonsOrderDefaultDB() end,
+									width = 0.72,
+									func = function()
+										ClassicUI:ReorderMicroButtonsDB(nil, "DEFAULT")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								Header2 = {
+									type = 'header',
+									order = 6,
+									name = L['CharacterMicroButton']
+								},
+								hideMicroButton = {
+									order = 7,
+									type = "toggle",
+									name = L['Hide MicroButton'],
+									desc = L['Hide MicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.hideMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.hideMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.hideMicroButton) then
+												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
+													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
+													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
+												end
+												ClassicUI.HookMicroButtonsClass_UI_Watcher(CharacterMicroButton)
+												CharacterMicroButton:Hide()
+											else
+												CharacterMicroButton:Show()
+											end
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								keepGapMicroButton = {
+									order = 8,
+									type = "toggle",
+									name = L['Keep MicroButton Gap'],
+									desc = L['KeepMicroButtonGapDesc'],
+									disabled = function() return not(ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.hideMicroButton) end,
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.keepGapMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.keepGapMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								disableMicroButton = {
+									order = 9,
+									type = "toggle",
+									name = L['Disable MicroButton'],
+									desc = L['Disable MicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.disableMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.disableMicroButton = value
+										ClassicUI.cached_db_profile.barsConfig_MicroButtons_CharacterMicroButton_disableMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.disableMicroButton) then
+												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
+													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
+													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
+												end
+												if not(ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton) then
+													hooksecurefunc(MainMenuMicroButton, "UpdateMicroButton", ClassicUI.hook_MainMenuMicroButton_UpdateMicroButton)
+													ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton = true
+												end
+												CharacterMicroButton:Disable()
+											else
+												local enable = true
+												if ( StoreFrame and StoreFrame_IsShown() ) or ( ( GameMenuFrame and GameMenuFrame:IsShown() ) or ( SettingsPanel:IsShown() ) ) then
+													enable = false
+												end
+												if (enable) then
+													CharacterMicroButton:Enable()
+												end
+											end
+										end
+									end,
+								},
+								disableMouseMicroButton = {
+									order = 10,
+									type = "toggle",
+									name = L['Disable Mouse'],
+									desc = L['DisableMouseMicroButtonDesc'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.disableMouseMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.disableMouseMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.disableMouseMicroButton) then
+												CharacterMicroButton:EnableMouse(false)
+											else
+												CharacterMicroButton:EnableMouse(true)
+											end
+										end
+									end,
+								},
+								xOffsetMicroButton = {
+									order = 11,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['xOffsetMicroButton'],
+									desc = L['xOffsetMicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.xOffsetMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.xOffsetMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								yOffsetMicroButton = {
+									order = 12,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['yOffsetMicroButton'],
+									desc = L['yOffsetMicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.yOffsetMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.yOffsetMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								alphaMicroButton = {
+									order = 13,
+									type = "range",
+									softMin = 0,
+									softMax = 1,
+									min = 0,
+									max = 1,
+									step = 0.01,
+									bigStep = 0.02,
+									name = L['alphaMicroButton'],
+									desc = string.gsub(L['alphaMicroButtonDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.MicroButtons.CharacterMicroButton.alphaMicroButton, 1),
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.alphaMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.alphaMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if not(ClassicUI.hooked_CharacterMicroButton_OnEnableOnDisable) then
+												if (math.abs(ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.alphaMicroButton-ClassicUI.db.defaults.profile.barsConfig.MicroButtons.CharacterMicroButton.alphaMicroButton) > ClassicUI.STANDARD_EPSILON) then
+													CharacterMicroButton:HookScript("OnEnable", ClassicUI.hookscript_MicroButtonOnEnable)
+													CharacterMicroButton:HookScript("OnDisable", ClassicUI.hookscript_MicroButtonOnDisable)
+													ClassicUI.hooked_CharacterMicroButton_OnEnableOnDisable = true
+												end
+											end
+											if (CharacterMicroButton:IsEnabled()) then
+												ClassicUI.hookscript_MicroButtonOnEnable(CharacterMicroButton)
+											else
+												ClassicUI.hookscript_MicroButtonOnDisable(CharacterMicroButton)
+											end
+										end
+									end
+								},
+								iconMicroButton = {
+									order = 14,
+									type = "select",
+									style = "radio",
+									name = L['iconMicroButton'],
+									width = 1.12,
+									sorting = { 0, 1, 16, 27, 28, 29, 30, 15, 2, 3, 4, 5, 26, 6, 9, 24, 10, 11, 12, 13, 17, 18, 19, 20 },
+									values = {
+										[0] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Character Portrait']..L['Character Portrait [*][D]'],
+										[1] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Class Icon']..L['Class Icon [*]'],
+										[16] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Raid Icon']..L['Raid Icon'],
+										[27] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Variable Icon']..L['PvP Variable Icon [*]'],
+										[28] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Horde Icon']..L['PvP Horde Icon'],
+										[29] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Alliance Icon']..L['PvP Alliance Icon'],
+										[30] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Neutral Icon']..L['PvP Neutral Icon'],
+										[15] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Abilities Icon']..L['Abilities Icon'],
+										[2] = ClassicUI.MICROBUTTONS_OPTION_ICONS['SpellBook Icon']..L['SpellBook Icon'],
+										[3] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Talents Icon']..L['Talents Icon'],
+										[4] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Profession Icon']..L['Profession Icon'],
+										[5] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Achievement Icon']..L['Achievement Icon'],
+										[26] = ClassicUI.MICROBUTTONS_OPTION_ICONS['BFA Achievement Icon']..L['BFA Achievement Icon'],
+										[6] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Quest Icon']..L['Quest Icon'],
+										[9] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Icon']..L['LFD Icon'],
+										[24] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Normalized Icon']..L['LFD Normalized Icon'],
+										[10] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Collections Icon']..L['Collections Icon'],
+										[11] = ClassicUI.MICROBUTTONS_OPTION_ICONS['EJ Icon']..L['EJ Icon'],
+										[12] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Store Icon']..L['Store Icon'],
+										[13] = ClassicUI.MICROBUTTONS_OPTION_ICONS['MainMenu Icon']..L['MainMenu Icon'],
+										[17] = ClassicUI.MICROBUTTONS_OPTION_ICONS['World Icon']..L['World Icon'],
+										[18] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic Quest Icon']..L['Classic Quest Icon'],
+										[19] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic Social Icon']..L['Classic Social Icon'],
+										[20] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic MainMenu Icon']..L['Classic MainMenu Icon']
+									},
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.iconMicroButton end,
+									set = function(_,value)
+										if (ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.iconMicroButton ~= value) then
+											ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.iconMicroButton = value
+											if (ClassicUI:IsEnabled()) then
+												CharacterMicroButton:SetNormalTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].normalTexture)
+												CharacterMicroButton:SetPushedTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].pushedTexture)
+												CharacterMicroButton:SetDisabledTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].disabledTexture)
+												if (value == 0) then	-- Character Portrait
+													CharacterMicroButton.Portrait:Show()
+												else
+													CharacterMicroButton.Portrait:Hide()
+												end
+											end
+										end
+									end
+								}
+							}
+						},
+						ProfessionMicroButton = {
+							order = function() return 6 + ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.order end,
+							type = "group",
+							name = function() return '|cffeda55f[|r|cffff6720'..(ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.order < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.order..'|r|cffeda55f] - |r'..string.gsub(ClassicUI.MICROBUTTONS_OPTION_ICONS[ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.iconMicroButton].name],':32:24:',':20:15:',1)..' '..L['Profession'] end,
+							desc = L['ProfessionMicroButton'],
+							width = 4.0,
+							args = {
+								Header1 = {
+									type = 'header',
+									order = 1,
+									name = L['MicroButtons Order']
+								},
+								buttonOrderUp = {
+									order = 2,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.order <= ClassicUI.MICROBUTTONS_MIN_ORDER) and '-disabled' or '')..':0|t' end,
+									desc = L['UP'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.order <= ClassicUI.MICROBUTTONS_MIN_ORDER end,
+									width = 0.26,
+									func = function()
+										ClassicUI:ReorderMicroButtonsDB("ProfessionMicroButton", "UP")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								buttonOrderDown = {
+									order = 3,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.order >= ClassicUI.MICROBUTTONS_MAX_ORDER) and '-disabled' or '')..':0|t' end,
+									desc = L['DOWN'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.order >= ClassicUI.MICROBUTTONS_MAX_ORDER end,
+									width = 0.26,
+									func = function()
+										ClassicUI:ReorderMicroButtonsDB("ProfessionMicroButton", "DOWN")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								Spacer1 = {
+									type = "description",
+									order = 4,
+									name = "",
+									width = 0.05
+								},
+								buttonOrderDefault = {
+									order = 5,
+									type = "execute",
+									name = function() return '|T'..(ClassicUI:IsMicroButtonsOrderDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
+									desc = L['DefaultOrderDesc'],
+									disabled = function() return ClassicUI:IsMicroButtonsOrderDefaultDB() end,
+									width = 0.72,
+									func = function()
+										ClassicUI:ReorderMicroButtonsDB(nil, "DEFAULT")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								Header2 = {
+									type = 'header',
+									order = 6,
+									name = L['ProfessionMicroButton']
+								},
+								hideMicroButton = {
+									order = 7,
+									type = "toggle",
+									name = L['Hide MicroButton'],
+									desc = L['Hide MicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.hideMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.hideMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.hideMicroButton) then
+												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
+													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
+													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
+												end
+												ClassicUI.HookMicroButtonsClass_UI_Watcher(ProfessionMicroButton)
+												ProfessionMicroButton:Hide()
+											else
+												ProfessionMicroButton:Show()
+											end
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								keepGapMicroButton = {
+									order = 8,
+									type = "toggle",
+									name = L['Keep MicroButton Gap'],
+									desc = L['KeepMicroButtonGapDesc'],
+									disabled = function() return not(ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.hideMicroButton) end,
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.keepGapMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.keepGapMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								disableMicroButton = {
+									order = 9,
+									type = "toggle",
+									name = L['Disable MicroButton'],
+									desc = L['Disable MicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.disableMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.disableMicroButton = value
+										ClassicUI.cached_db_profile.barsConfig_MicroButtons_ProfessionMicroButton_disableMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.disableMicroButton) then
+												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
+													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
+													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
+												end
+												if not(ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton) then
+													hooksecurefunc(MainMenuMicroButton, "UpdateMicroButton", ClassicUI.hook_MainMenuMicroButton_UpdateMicroButton)
+													ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton = true
+												end
+												ProfessionMicroButton:Disable()
+											else
+												local enable = true
+												if ( StoreFrame and StoreFrame_IsShown() ) or ( ( GameMenuFrame and GameMenuFrame:IsShown() ) or ( SettingsPanel:IsShown() ) ) then
+													enable = false
+												end
+												if (enable) then
+													ProfessionMicroButton:Enable()
+												end
+											end
+										end
+									end,
+								},
+								disableMouseMicroButton = {
+									order = 10,
+									type = "toggle",
+									name = L['Disable Mouse'],
+									desc = L['DisableMouseMicroButtonDesc'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.disableMouseMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.disableMouseMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.disableMouseMicroButton) then
+												ProfessionMicroButton:EnableMouse(false)
+											else
+												ProfessionMicroButton:EnableMouse(true)
+											end
+										end
+									end,
+								},
+								xOffsetMicroButton = {
+									order = 11,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['xOffsetMicroButton'],
+									desc = L['xOffsetMicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.xOffsetMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.xOffsetMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								yOffsetMicroButton = {
+									order = 12,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['yOffsetMicroButton'],
+									desc = L['yOffsetMicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.yOffsetMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.yOffsetMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								alphaMicroButton = {
+									order = 13,
+									type = "range",
+									softMin = 0,
+									softMax = 1,
+									min = 0,
+									max = 1,
+									step = 0.01,
+									bigStep = 0.02,
+									name = L['alphaMicroButton'],
+									desc = string.gsub(L['alphaMicroButtonDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.MicroButtons.ProfessionMicroButton.alphaMicroButton, 1),
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.alphaMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.alphaMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if not(ClassicUI.hooked_ProfessionMicroButton_OnEnableOnDisable) then
+												if (math.abs(ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.alphaMicroButton-ClassicUI.db.defaults.profile.barsConfig.MicroButtons.ProfessionMicroButton.alphaMicroButton) > ClassicUI.STANDARD_EPSILON) then
+													ProfessionMicroButton:HookScript("OnEnable", ClassicUI.hookscript_MicroButtonOnEnable)
+													ProfessionMicroButton:HookScript("OnDisable", ClassicUI.hookscript_MicroButtonOnDisable)
+													ClassicUI.hooked_ProfessionMicroButton_OnEnableOnDisable = true
+												end
+											end
+											if (ProfessionMicroButton:IsEnabled()) then
+												ClassicUI.hookscript_MicroButtonOnEnable(ProfessionMicroButton)
+											else
+												ClassicUI.hookscript_MicroButtonOnDisable(ProfessionMicroButton)
+											end
+										end
+									end
+								},
+								iconMicroButton = {
+									order = 14,
+									type = "select",
+									style = "radio",
+									name = L['iconMicroButton'],
+									width = 1.12,
+									sorting = { 4, 2, 15, 16, 17, 18, 19, 11, 3, 12, 1, 5, 26, 6, 9, 24, 10, 13, 20, 27, 28, 29, 30 },
+									values = {
+										[4] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Profession Icon']..L['Profession Icon [D]'],
+										[2] = ClassicUI.MICROBUTTONS_OPTION_ICONS['SpellBook Icon']..L['SpellBook Icon'],
+										[15] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Abilities Icon']..L['Abilities Icon'],
+										[16] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Raid Icon']..L['Raid Icon'],
+										[17] = ClassicUI.MICROBUTTONS_OPTION_ICONS['World Icon']..L['World Icon'],
+										[18] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic Quest Icon']..L['Classic Quest Icon'],
+										[19] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic Social Icon']..L['Classic Social Icon'],
+										[11] = ClassicUI.MICROBUTTONS_OPTION_ICONS['EJ Icon']..L['EJ Icon'],
+										[3] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Talents Icon']..L['Talents Icon'],
+										[12] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Store Icon']..L['Store Icon'],
+										[1] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Class Icon']..L['Class Icon [*]'],
+										[5] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Achievement Icon']..L['Achievement Icon'],
+										[26] = ClassicUI.MICROBUTTONS_OPTION_ICONS['BFA Achievement Icon']..L['BFA Achievement Icon'],
+										[6] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Quest Icon']..L['Quest Icon'],
+										[9] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Icon']..L['LFD Icon'],
+										[24] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Normalized Icon']..L['LFD Normalized Icon'],
+										[10] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Collections Icon']..L['Collections Icon'],
+										[13] = ClassicUI.MICROBUTTONS_OPTION_ICONS['MainMenu Icon']..L['MainMenu Icon'],
+										[20] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic MainMenu Icon']..L['Classic MainMenu Icon'],
+										[27] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Variable Icon']..L['PvP Variable Icon [*]'],
+										[28] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Horde Icon']..L['PvP Horde Icon'],
+										[29] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Alliance Icon']..L['PvP Alliance Icon'],
+										[30] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Neutral Icon']..L['PvP Neutral Icon']
+									},
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.iconMicroButton end,
+									set = function(_,value)
+										if (ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.iconMicroButton ~= value) then
+											ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.iconMicroButton = value
+											if (ClassicUI:IsEnabled()) then
+												ProfessionMicroButton:SetNormalTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].normalTexture)
+												ProfessionMicroButton:SetPushedTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].pushedTexture)
+												ProfessionMicroButton:SetDisabledTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].disabledTexture)
+											end
+										end
+									end
+								}
+							}
+						},
+						PlayerSpellsMicroButton = {
+							order = function() return 6 + ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.order end,
+							type = "group",
+							name = function() return '|cffeda55f[|r|cffff6720'..(ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.order < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.order..'|r|cffeda55f] - |r'..string.gsub(ClassicUI.MICROBUTTONS_OPTION_ICONS[ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.iconMicroButton].name],':32:24:',':20:15:',1)..' '..L['PlayerSpells'] end,
+							desc = L['PlayerSpellsMicroButton'],
+							width = 4.0,
+							args = {
+								Header1 = {
+									type = 'header',
+									order = 1,
+									name = L['MicroButtons Order']
+								},
+								buttonOrderUp = {
+									order = 2,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.order <= ClassicUI.MICROBUTTONS_MIN_ORDER) and '-disabled' or '')..':0|t' end,
+									desc = L['UP'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.order <= ClassicUI.MICROBUTTONS_MIN_ORDER end,
+									width = 0.26,
+									func = function()
+										ClassicUI:ReorderMicroButtonsDB("PlayerSpellsMicroButton", "UP")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								buttonOrderDown = {
+									order = 3,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.order >= ClassicUI.MICROBUTTONS_MAX_ORDER) and '-disabled' or '')..':0|t' end,
+									desc = L['DOWN'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.order >= ClassicUI.MICROBUTTONS_MAX_ORDER end,
+									width = 0.26,
+									func = function()
+										ClassicUI:ReorderMicroButtonsDB("PlayerSpellsMicroButton", "DOWN")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								Spacer1 = {
+									type = "description",
+									order = 4,
+									name = "",
+									width = 0.05
+								},
+								buttonOrderDefault = {
+									order = 5,
+									type = "execute",
+									name = function() return '|T'..(ClassicUI:IsMicroButtonsOrderDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
+									desc = L['DefaultOrderDesc'],
+									disabled = function() return ClassicUI:IsMicroButtonsOrderDefaultDB() end,
+									width = 0.72,
+									func = function()
+										ClassicUI:ReorderMicroButtonsDB(nil, "DEFAULT")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								Header2 = {
+									type = 'header',
+									order = 6,
+									name = L['PlayerSpellsMicroButton']
+								},
+								hideMicroButton = {
+									order = 7,
+									type = "toggle",
+									name = L['Hide MicroButton'],
+									desc = L['Hide MicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.hideMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.hideMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.hideMicroButton) then
+												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
+													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
+													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
+												end
+												ClassicUI.HookMicroButtonsClass_UI_Watcher(PlayerSpellsMicroButton)
+												PlayerSpellsMicroButton:Hide()
+											else
+												PlayerSpellsMicroButton:Show()
+											end
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								keepGapMicroButton = {
+									order = 8,
+									type = "toggle",
+									name = L['Keep MicroButton Gap'],
+									desc = L['KeepMicroButtonGapDesc'],
+									disabled = function() return not(ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.hideMicroButton) end,
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.keepGapMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.keepGapMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								disableMicroButton = {
+									order = 9,
+									type = "toggle",
+									name = L['Disable MicroButton'],
+									desc = L['Disable MicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.disableMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.disableMicroButton = value
+										ClassicUI.cached_db_profile.barsConfig_MicroButtons_PlayerSpellsMicroButton_disableMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.disableMicroButton) then
+												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
+													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
+													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
+												end
+												if not(ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton) then
+													hooksecurefunc(MainMenuMicroButton, "UpdateMicroButton", ClassicUI.hook_MainMenuMicroButton_UpdateMicroButton)
+													ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton = true
+												end
+												PlayerSpellsMicroButton:Disable()
+											else
+												local enable = true
+												if ( StoreFrame and StoreFrame_IsShown() ) or ( ( GameMenuFrame and GameMenuFrame:IsShown() ) or ( SettingsPanel:IsShown() ) ) then
+													enable = false
+												end
+												if (enable) then
+													PlayerSpellsMicroButton:Enable()
+												end
+											end
+										end
+									end,
+								},
+								disableMouseMicroButton = {
+									order = 10,
+									type = "toggle",
+									name = L['Disable Mouse'],
+									desc = L['DisableMouseMicroButtonDesc'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.disableMouseMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.disableMouseMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.disableMouseMicroButton) then
+												PlayerSpellsMicroButton:EnableMouse(false)
+											else
+												PlayerSpellsMicroButton:EnableMouse(true)
+											end
+										end
+									end,
+								},
+								xOffsetMicroButton = {
+									order = 11,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['xOffsetMicroButton'],
+									desc = L['xOffsetMicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.xOffsetMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.xOffsetMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								yOffsetMicroButton = {
+									order = 12,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['yOffsetMicroButton'],
+									desc = L['yOffsetMicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.yOffsetMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.yOffsetMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								alphaMicroButton = {
+									order = 13,
+									type = "range",
+									softMin = 0,
+									softMax = 1,
+									min = 0,
+									max = 1,
+									step = 0.01,
+									bigStep = 0.02,
+									name = L['alphaMicroButton'],
+									desc = string.gsub(L['alphaMicroButtonDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.alphaMicroButton, 1),
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.alphaMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.alphaMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if not(ClassicUI.hooked_PlayerSpellsMicroButton_OnEnableOnDisable) then
+												if (math.abs(ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.alphaMicroButton-ClassicUI.db.defaults.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.alphaMicroButton) > ClassicUI.STANDARD_EPSILON) then
+													PlayerSpellsMicroButton:HookScript("OnEnable", ClassicUI.hookscript_MicroButtonOnEnable)
+													PlayerSpellsMicroButton:HookScript("OnDisable", ClassicUI.hookscript_MicroButtonOnDisable)
+													ClassicUI.hooked_PlayerSpellsMicroButton_OnEnableOnDisable = true
+												end
+											end
+											if (PlayerSpellsMicroButton:IsEnabled()) then
+												ClassicUI.hookscript_MicroButtonOnEnable(PlayerSpellsMicroButton)
+											else
+												ClassicUI.hookscript_MicroButtonOnDisable(PlayerSpellsMicroButton)
+											end
+										end
+									end
+								},
+								iconMicroButton = {
+									order = 14,
+									type = "select",
+									style = "radio",
+									name = L['iconMicroButton'],
+									width = 1.12,
+									sorting = { 23, 21, 22, 3, 2, 15, 16, 11, 1, 27, 28, 29, 30, 4, 17, 18, 19, 12, 5, 26, 6, 9, 24, 10, 13, 20 },
+									values = {
+										[23] = ClassicUI.MICROBUTTONS_OPTION_ICONS['SB/T Variable Icon']..L['SB/T Variable Icon [*][D]'],
+										[21] = ClassicUI.MICROBUTTONS_OPTION_ICONS['SpellBook/Talents Icon']..L['SpellBook/Talents Icon'],
+										[22] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Talents/SpellBook Icon']..L['Talents/SpellBook Icon'],
+										[3] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Talents Icon']..L['Talents Icon'],
+										[2] = ClassicUI.MICROBUTTONS_OPTION_ICONS['SpellBook Icon']..L['SpellBook Icon'],
+										[15] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Abilities Icon']..L['Abilities Icon'],
+										[16] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Raid Icon']..L['Raid Icon'],
+										[11] = ClassicUI.MICROBUTTONS_OPTION_ICONS['EJ Icon']..L['EJ Icon'],
+										[1] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Class Icon']..L['Class Icon [*]'],
+										[28] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Horde Icon']..L['PvP Horde Icon'],
+										[29] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Alliance Icon']..L['PvP Alliance Icon'],
+										[30] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Neutral Icon']..L['PvP Neutral Icon'],
+										[4] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Profession Icon']..L['Profession Icon'],
+										[17] = ClassicUI.MICROBUTTONS_OPTION_ICONS['World Icon']..L['World Icon'],
+										[18] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic Quest Icon']..L['Classic Quest Icon'],
+										[19] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic Social Icon']..L['Classic Social Icon'],
+										[12] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Store Icon']..L['Store Icon'],
+										[5] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Achievement Icon']..L['Achievement Icon'],
+										[26] = ClassicUI.MICROBUTTONS_OPTION_ICONS['BFA Achievement Icon']..L['BFA Achievement Icon'],
+										[6] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Quest Icon']..L['Quest Icon'],
+										[9] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Icon']..L['LFD Icon'],
+										[24] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Normalized Icon']..L['LFD Normalized Icon'],
+										[10] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Collections Icon']..L['Collections Icon'],
+										[13] = ClassicUI.MICROBUTTONS_OPTION_ICONS['MainMenu Icon']..L['MainMenu Icon'],
+										[20] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic MainMenu Icon']..L['Classic MainMenu Icon'],
+										[27] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Variable Icon']..L['PvP Variable Icon [*]']
+									},
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.iconMicroButton end,
+									set = function(_,value)
+										if (ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.iconMicroButton ~= value) then
+											ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.iconMicroButton = value
+											ClassicUI.cached_db_profile.barsConfig_MicroButtons_PlayerSpellsMicroButton_iconMicroButton = value
+											if (value == 23) then	-- SB/T Variable Icon
+												ClassicUI.cached_db_profile.barsConfig_MicroButtons_PlayerSpellsMicroButton_iconMicroButton_normalTextureSB = ClassicUI.MICROBUTTONS_ARRAYINFO[value].normalTextureSB
+												ClassicUI.cached_db_profile.barsConfig_MicroButtons_PlayerSpellsMicroButton_iconMicroButton_pushedTextureSB = ClassicUI.MICROBUTTONS_ARRAYINFO[value].pushedTextureSB
+												ClassicUI.cached_db_profile.barsConfig_MicroButtons_PlayerSpellsMicroButton_iconMicroButton_disabledTextureSB = ClassicUI.MICROBUTTONS_ARRAYINFO[value].disabledTextureSB
+												ClassicUI.cached_db_profile.barsConfig_MicroButtons_PlayerSpellsMicroButton_iconMicroButton_normalTextureTT = ClassicUI.MICROBUTTONS_ARRAYINFO[value].normalTextureTT
+												ClassicUI.cached_db_profile.barsConfig_MicroButtons_PlayerSpellsMicroButton_iconMicroButton_pushedTextureTT = ClassicUI.MICROBUTTONS_ARRAYINFO[value].pushedTextureTT
+												ClassicUI.cached_db_profile.barsConfig_MicroButtons_PlayerSpellsMicroButton_iconMicroButton_disabledTextureTT = ClassicUI.MICROBUTTONS_ARRAYINFO[value].disabledTextureTT
+											end
+											if (ClassicUI:IsEnabled()) then
+												if (value == 23) then	-- SB/T Variable Icon
+													if (PlayerSpellsFrame ~= nil and PlayerSpellsUtil ~= nil) then
+														if (PlayerSpellsFrame.frameTabsToTabID[PlayerSpellsUtil.FrameTabs.SpellBook] == PlayerSpellsFrame.internalTabTracker.tabKey) then
+															PlayerSpellsMicroButton:SetNormalTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].normalTextureSB)
+															PlayerSpellsMicroButton:SetPushedTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].pushedTextureSB)
+															PlayerSpellsMicroButton:SetDisabledTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].disabledTextureSB)
+														else
+															PlayerSpellsMicroButton:SetNormalTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].normalTextureTT)
+															PlayerSpellsMicroButton:SetPushedTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].pushedTextureTT)
+															PlayerSpellsMicroButton:SetDisabledTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].disabledTextureTT)
+														end
+														if (ClassicUI.HookPlayerSpellsFrame_Tabs ~= nil) then
+															ClassicUI.HookPlayerSpellsFrame_Tabs()
+														end
+													else
+														PlayerSpellsMicroButton:SetNormalTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].normalTexture)
+														PlayerSpellsMicroButton:SetPushedTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].pushedTexture)
+														PlayerSpellsMicroButton:SetDisabledTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].disabledTexture)
+													end
+												else
+													PlayerSpellsMicroButton:SetNormalTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].normalTexture)
+													PlayerSpellsMicroButton:SetPushedTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].pushedTexture)
+													PlayerSpellsMicroButton:SetDisabledTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].disabledTexture)
+												end
+											end
+										end
+									end
+								}
+							}
+						},
+						AchievementMicroButton = {
+							order = function() return 6 + ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.order end,
+							type = "group",
+							name = function() return '|cffeda55f[|r|cffff6720'..(ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.order < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.order..'|r|cffeda55f] - |r'..string.gsub(ClassicUI.MICROBUTTONS_OPTION_ICONS[ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.iconMicroButton].name],':32:24:',':20:15:',1)..' '..L['Achievement'] end,
+							desc = L['AchievementMicroButton'],
+							width = 4.0,
+							args = {
+								Header1 = {
+									type = 'header',
+									order = 1,
+									name = L['MicroButtons Order']
+								},
+								buttonOrderUp = {
+									order = 2,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.order <= ClassicUI.MICROBUTTONS_MIN_ORDER) and '-disabled' or '')..':0|t' end,
+									desc = L['UP'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.order <= ClassicUI.MICROBUTTONS_MIN_ORDER end,
+									width = 0.26,
+									func = function()
+										ClassicUI:ReorderMicroButtonsDB("AchievementMicroButton", "UP")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								buttonOrderDown = {
+									order = 3,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.order >= ClassicUI.MICROBUTTONS_MAX_ORDER) and '-disabled' or '')..':0|t' end,
+									desc = L['DOWN'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.order >= ClassicUI.MICROBUTTONS_MAX_ORDER end,
+									width = 0.26,
+									func = function()
+										ClassicUI:ReorderMicroButtonsDB("AchievementMicroButton", "DOWN")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								Spacer1 = {
+									type = "description",
+									order = 4,
+									name = "",
+									width = 0.05
+								},
+								buttonOrderDefault = {
+									order = 5,
+									type = "execute",
+									name = function() return '|T'..(ClassicUI:IsMicroButtonsOrderDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
+									desc = L['DefaultOrderDesc'],
+									disabled = function() return ClassicUI:IsMicroButtonsOrderDefaultDB() end,
+									width = 0.72,
+									func = function()
+										ClassicUI:ReorderMicroButtonsDB(nil, "DEFAULT")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								Header2 = {
+									type = 'header',
+									order = 6,
+									name = L['AchievementMicroButton']
+								},
+								hideMicroButton = {
+									order = 7,
+									type = "toggle",
+									name = L['Hide MicroButton'],
+									desc = L['Hide MicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.hideMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.hideMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.hideMicroButton) then
+												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
+													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
+													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
+												end
+												ClassicUI.HookMicroButtonsClass_UI_Watcher(AchievementMicroButton)
+												AchievementMicroButton:Hide()
+											else
+												AchievementMicroButton:Show()
+											end
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								keepGapMicroButton = {
+									order = 8,
+									type = "toggle",
+									name = L['Keep MicroButton Gap'],
+									desc = L['KeepMicroButtonGapDesc'],
+									disabled = function() return not(ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.hideMicroButton) end,
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.keepGapMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.keepGapMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								disableMicroButton = {
+									order = 9,
+									type = "toggle",
+									name = L['Disable MicroButton'],
+									desc = L['Disable MicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.disableMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.disableMicroButton = value
+										ClassicUI.cached_db_profile.barsConfig_MicroButtons_AchievementMicroButton_disableMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.disableMicroButton) then
+												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
+													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
+													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
+												end
+												if not(ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton) then
+													hooksecurefunc(MainMenuMicroButton, "UpdateMicroButton", ClassicUI.hook_MainMenuMicroButton_UpdateMicroButton)
+													ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton = true
+												end
+												if not(ClassicUI.hooked_AchievementMicroButton_UpdateMicroButton) then
+													hooksecurefunc(AchievementMicroButton, "UpdateMicroButton", ClassicUI.hook_AchievementMicroButton_UpdateMicroButton)
+													ClassicUI.hooked_AchievementMicroButton_UpdateMicroButton = true
+												end
+												AchievementMicroButton:Disable()
+											else
+												local enable = true
+												if ( StoreFrame and StoreFrame_IsShown() ) or ( ( GameMenuFrame and GameMenuFrame:IsShown() ) or ( SettingsPanel:IsShown() ) ) then
+													enable = false
+												else
+													if Kiosk.IsEnabled() or (not( AchievementFrame and AchievementFrame:IsShown() ) and not( ( HasCompletedAnyAchievement() or IsInGuild() ) and CanShowAchievementUI() )) then
+														enable = false
+													end
+												end
+												if (enable) then
+													AchievementMicroButton:Enable()
+												end
+											end
+										end
+									end,
+								},
+								disableMouseMicroButton = {
+									order = 10,
+									type = "toggle",
+									name = L['Disable Mouse'],
+									desc = L['DisableMouseMicroButtonDesc'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.disableMouseMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.disableMouseMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.disableMouseMicroButton) then
+												AchievementMicroButton:EnableMouse(false)
+											else
+												AchievementMicroButton:EnableMouse(true)
+											end
+										end
+									end,
+								},
+								xOffsetMicroButton = {
+									order = 11,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['xOffsetMicroButton'],
+									desc = L['xOffsetMicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.xOffsetMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.xOffsetMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								yOffsetMicroButton = {
+									order = 12,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['yOffsetMicroButton'],
+									desc = L['yOffsetMicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.yOffsetMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.yOffsetMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								alphaMicroButton = {
+									order = 13,
+									type = "range",
+									softMin = 0,
+									softMax = 1,
+									min = 0,
+									max = 1,
+									step = 0.01,
+									bigStep = 0.02,
+									name = L['alphaMicroButton'],
+									desc = string.gsub(L['alphaMicroButtonDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.MicroButtons.AchievementMicroButton.alphaMicroButton, 1),
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.alphaMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.alphaMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if not(ClassicUI.hooked_AchievementMicroButton_OnEnableOnDisable) then
+												if (math.abs(ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.alphaMicroButton-ClassicUI.db.defaults.profile.barsConfig.MicroButtons.AchievementMicroButton.alphaMicroButton) > ClassicUI.STANDARD_EPSILON) then
+													AchievementMicroButton:HookScript("OnEnable", ClassicUI.hookscript_MicroButtonOnEnable)
+													AchievementMicroButton:HookScript("OnDisable", ClassicUI.hookscript_MicroButtonOnDisable)
+													ClassicUI.hooked_AchievementMicroButton_OnEnableOnDisable = true
+												end
+											end
+											if (AchievementMicroButton:IsEnabled()) then
+												ClassicUI.hookscript_MicroButtonOnEnable(AchievementMicroButton)
+											else
+												ClassicUI.hookscript_MicroButtonOnDisable(AchievementMicroButton)
+											end
+										end
+									end
+								},
+								iconMicroButton = {
+									order = 14,
+									type = "select",
+									style = "radio",
+									name = L['iconMicroButton'],
+									width = 1.12,
+									sorting = { 5, 26, 15, 16, 17, 4, 1, 18, 19, 11, 2, 3, 12, 6, 9, 24, 10, 13, 20, 27, 28, 29, 30 },
+									values = {
+										[5] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Achievement Icon']..L['Achievement Icon [D]'],
+										[26] = ClassicUI.MICROBUTTONS_OPTION_ICONS['BFA Achievement Icon']..L['BFA Achievement Icon'],
+										[15] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Abilities Icon']..L['Abilities Icon'],
+										[16] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Raid Icon']..L['Raid Icon'],
+										[17] = ClassicUI.MICROBUTTONS_OPTION_ICONS['World Icon']..L['World Icon'],
+										[4] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Profession Icon']..L['Profession Icon'],
+										[1] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Class Icon']..L['Class Icon [*]'],
+										[18] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic Quest Icon']..L['Classic Quest Icon'],
+										[19] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic Social Icon']..L['Classic Social Icon'],
+										[11] = ClassicUI.MICROBUTTONS_OPTION_ICONS['EJ Icon']..L['EJ Icon'],
+										[2] = ClassicUI.MICROBUTTONS_OPTION_ICONS['SpellBook Icon']..L['SpellBook Icon'],
+										[3] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Talents Icon']..L['Talents Icon'],
+										[12] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Store Icon']..L['Store Icon'],
+										[6] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Quest Icon']..L['Quest Icon'],
+										[9] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Icon']..L['LFD Icon'],
+										[24] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Normalized Icon']..L['LFD Normalized Icon'],
+										[10] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Collections Icon']..L['Collections Icon'],
+										[13] = ClassicUI.MICROBUTTONS_OPTION_ICONS['MainMenu Icon']..L['MainMenu Icon'],
+										[20] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic MainMenu Icon']..L['Classic MainMenu Icon'],
+										[27] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Variable Icon']..L['PvP Variable Icon [*]'],
+										[28] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Horde Icon']..L['PvP Horde Icon'],
+										[29] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Alliance Icon']..L['PvP Alliance Icon'],
+										[30] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Neutral Icon']..L['PvP Neutral Icon']
+									},
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.iconMicroButton end,
+									set = function(_,value)
+										if (ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.iconMicroButton ~= value) then
+											ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.iconMicroButton = value
+											if (ClassicUI:IsEnabled()) then
+												AchievementMicroButton:SetNormalTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].normalTexture)
+												AchievementMicroButton:SetPushedTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].pushedTexture)
+												AchievementMicroButton:SetDisabledTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].disabledTexture)
+											end
+										end
+									end
+								}
+							}
+						},
+						QuestLogMicroButton = {
+							order = function() return 6 + ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.order end,
+							type = "group",
+							name = function() return '|cffeda55f[|r|cffff6720'..(ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.order < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.order..'|r|cffeda55f] - |r'..string.gsub(ClassicUI.MICROBUTTONS_OPTION_ICONS[ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.iconMicroButton].name],':32:24:',':20:15:',1)..' '..L['QuestLog'] end,
+							desc = L['QuestLogMicroButton'],
+							width = 4.0,
+							args = {
+								Header1 = {
+									type = 'header',
+									order = 1,
+									name = L['MicroButtons Order']
+								},
+								buttonOrderUp = {
+									order = 2,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.order <= ClassicUI.MICROBUTTONS_MIN_ORDER) and '-disabled' or '')..':0|t' end,
+									desc = L['UP'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.order <= ClassicUI.MICROBUTTONS_MIN_ORDER end,
+									width = 0.26,
+									func = function()
+										ClassicUI:ReorderMicroButtonsDB("QuestLogMicroButton", "UP")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								buttonOrderDown = {
+									order = 3,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.order >= ClassicUI.MICROBUTTONS_MAX_ORDER) and '-disabled' or '')..':0|t' end,
+									desc = L['DOWN'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.order >= ClassicUI.MICROBUTTONS_MAX_ORDER end,
+									width = 0.26,
+									func = function()
+										ClassicUI:ReorderMicroButtonsDB("QuestLogMicroButton", "DOWN")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								Spacer1 = {
+									type = "description",
+									order = 4,
+									name = "",
+									width = 0.05
+								},
+								buttonOrderDefault = {
+									order = 5,
+									type = "execute",
+									name = function() return '|T'..(ClassicUI:IsMicroButtonsOrderDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
+									desc = L['DefaultOrderDesc'],
+									disabled = function() return ClassicUI:IsMicroButtonsOrderDefaultDB() end,
+									width = 0.72,
+									func = function()
+										ClassicUI:ReorderMicroButtonsDB(nil, "DEFAULT")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								Header2 = {
+									type = 'header',
+									order = 6,
+									name = L['QuestLogMicroButton']
+								},
+								hideMicroButton = {
+									order = 7,
+									type = "toggle",
+									name = L['Hide MicroButton'],
+									desc = L['Hide MicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.hideMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.hideMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.hideMicroButton) then
+												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
+													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
+													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
+												end
+												ClassicUI.HookMicroButtonsClass_UI_Watcher(QuestLogMicroButton)
+												QuestLogMicroButton:Hide()
+											else
+												QuestLogMicroButton:Show()
+											end
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								keepGapMicroButton = {
+									order = 8,
+									type = "toggle",
+									name = L['Keep MicroButton Gap'],
+									desc = L['KeepMicroButtonGapDesc'],
+									disabled = function() return not(ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.hideMicroButton) end,
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.keepGapMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.keepGapMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								disableMicroButton = {
+									order = 9,
+									type = "toggle",
+									name = L['Disable MicroButton'],
+									desc = L['Disable MicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.disableMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.disableMicroButton = value
+										ClassicUI.cached_db_profile.barsConfig_MicroButtons_QuestLogMicroButton_disableMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.disableMicroButton) then
+												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
+													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
+													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
+												end
+												if not(ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton) then
+													hooksecurefunc(MainMenuMicroButton, "UpdateMicroButton", ClassicUI.hook_MainMenuMicroButton_UpdateMicroButton)
+													ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton = true
+												end
+												QuestLogMicroButton:Disable()
+											else
+												local enable = true
+												if ( StoreFrame and StoreFrame_IsShown() ) or ( ( GameMenuFrame and GameMenuFrame:IsShown() ) or ( SettingsPanel:IsShown() ) ) then
+													enable = false
+												end
+												if (enable) then
+													QuestLogMicroButton:Enable()
+												end
+											end
+										end
+									end,
+								},
+								disableMouseMicroButton = {
+									order = 10,
+									type = "toggle",
+									name = L['Disable Mouse'],
+									desc = L['DisableMouseMicroButtonDesc'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.disableMouseMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.disableMouseMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.disableMouseMicroButton) then
+												QuestLogMicroButton:EnableMouse(false)
+											else
+												QuestLogMicroButton:EnableMouse(true)
+											end
+										end
+									end,
+								},
+								xOffsetMicroButton = {
+									order = 11,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['xOffsetMicroButton'],
+									desc = L['xOffsetMicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.xOffsetMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.xOffsetMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								yOffsetMicroButton = {
+									order = 12,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['yOffsetMicroButton'],
+									desc = L['yOffsetMicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.yOffsetMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.yOffsetMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								alphaMicroButton = {
+									order = 13,
+									type = "range",
+									softMin = 0,
+									softMax = 1,
+									min = 0,
+									max = 1,
+									step = 0.01,
+									bigStep = 0.02,
+									name = L['alphaMicroButton'],
+									desc = string.gsub(L['alphaMicroButtonDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.MicroButtons.QuestLogMicroButton.alphaMicroButton, 1),
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.alphaMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.alphaMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if not(ClassicUI.hooked_QuestLogMicroButton_OnEnableOnDisable) then
+												if (math.abs(ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.alphaMicroButton-ClassicUI.db.defaults.profile.barsConfig.MicroButtons.QuestLogMicroButton.alphaMicroButton) > ClassicUI.STANDARD_EPSILON) then
+													QuestLogMicroButton:HookScript("OnEnable", ClassicUI.hookscript_MicroButtonOnEnable)
+													QuestLogMicroButton:HookScript("OnDisable", ClassicUI.hookscript_MicroButtonOnDisable)
+													ClassicUI.hooked_QuestLogMicroButton_OnEnableOnDisable = true
+												end
+											end
+											if (QuestLogMicroButton:IsEnabled()) then
+												ClassicUI.hookscript_MicroButtonOnEnable(QuestLogMicroButton)
+											else
+												ClassicUI.hookscript_MicroButtonOnDisable(QuestLogMicroButton)
+											end
+										end
+									end
+								},
+								iconMicroButton = {
+									order = 14,
+									type = "select",
+									style = "radio",
+									name = L['iconMicroButton'],
+									width = 1.12,
+									sorting = { 6, 18, 15, 16, 17, 19, 1, 4, 11, 2, 3, 12, 5, 26, 9, 24, 10, 13, 20, 27, 28, 29, 30 },
+									values = {
+										[6] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Quest Icon']..L['Quest Icon [D]'],
+										[18] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic Quest Icon']..L['Classic Quest Icon'],
+										[15] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Abilities Icon']..L['Abilities Icon'],
+										[16] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Raid Icon']..L['Raid Icon'],
+										[17] = ClassicUI.MICROBUTTONS_OPTION_ICONS['World Icon']..L['World Icon'],
+										[19] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic Social Icon']..L['Classic Social Icon'],
+										[1] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Class Icon']..L['Class Icon [*]'],
+										[4] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Profession Icon']..L['Profession Icon'],
+										[11] = ClassicUI.MICROBUTTONS_OPTION_ICONS['EJ Icon']..L['EJ Icon'],
+										[2] = ClassicUI.MICROBUTTONS_OPTION_ICONS['SpellBook Icon']..L['SpellBook Icon'],
+										[3] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Talents Icon']..L['Talents Icon'],
+										[12] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Store Icon']..L['Store Icon'],
+										[5] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Achievement Icon']..L['Achievement Icon'],
+										[26] = ClassicUI.MICROBUTTONS_OPTION_ICONS['BFA Achievement Icon']..L['BFA Achievement Icon'],
+										[9] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Icon']..L['LFD Icon'],
+										[24] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Normalized Icon']..L['LFD Normalized Icon'],
+										[10] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Collections Icon']..L['Collections Icon'],
+										[13] = ClassicUI.MICROBUTTONS_OPTION_ICONS['MainMenu Icon']..L['MainMenu Icon'],
+										[20] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic MainMenu Icon']..L['Classic MainMenu Icon'],
+										[27] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Variable Icon']..L['PvP Variable Icon [*]'],
+										[28] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Horde Icon']..L['PvP Horde Icon'],
+										[29] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Alliance Icon']..L['PvP Alliance Icon'],
+										[30] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Neutral Icon']..L['PvP Neutral Icon']
+									},
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.iconMicroButton end,
+									set = function(_,value)
+										if (ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.iconMicroButton ~= value) then
+											ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.iconMicroButton = value
+											if (ClassicUI:IsEnabled()) then
+												QuestLogMicroButton:SetNormalTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].normalTexture)
+												QuestLogMicroButton:SetPushedTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].pushedTexture)
+												QuestLogMicroButton:SetDisabledTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].disabledTexture)
+											end
+										end
+									end
+								}
+							}
+						},
+						GuildMicroButton = {
+							order = function() return 6 + ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.order end,
+							type = "group",
+							name = function() return '|cffeda55f[|r|cffff6720'..(ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.order < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.order..'|r|cffeda55f] - |r'..string.gsub(ClassicUI.MICROBUTTONS_OPTION_ICONS[ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.iconMicroButton].name],':32:24:',':20:15:',1)..' '..L['Guild'] end,
+							desc = L['GuildMicroButton'],
+							width = 4.0,
+							args = {
+								Header1 = {
+									type = 'header',
+									order = 1,
+									name = L['MicroButtons Order']
+								},
+								buttonOrderUp = {
+									order = 2,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.order <= ClassicUI.MICROBUTTONS_MIN_ORDER) and '-disabled' or '')..':0|t' end,
+									desc = L['UP'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.order <= ClassicUI.MICROBUTTONS_MIN_ORDER end,
+									width = 0.26,
+									func = function()
+										ClassicUI:ReorderMicroButtonsDB("GuildMicroButton", "UP")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								buttonOrderDown = {
+									order = 3,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.order >= ClassicUI.MICROBUTTONS_MAX_ORDER) and '-disabled' or '')..':0|t' end,
+									desc = L['DOWN'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.order >= ClassicUI.MICROBUTTONS_MAX_ORDER end,
+									width = 0.26,
+									func = function()
+										ClassicUI:ReorderMicroButtonsDB("GuildMicroButton", "DOWN")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								Spacer1 = {
+									type = "description",
+									order = 4,
+									name = "",
+									width = 0.05
+								},
+								buttonOrderDefault = {
+									order = 5,
+									type = "execute",
+									name = function() return '|T'..(ClassicUI:IsMicroButtonsOrderDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
+									desc = L['DefaultOrderDesc'],
+									disabled = function() return ClassicUI:IsMicroButtonsOrderDefaultDB() end,
+									width = 0.72,
+									func = function()
+										ClassicUI:ReorderMicroButtonsDB(nil, "DEFAULT")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								Header2 = {
+									type = 'header',
+									order = 6,
+									name = L['GuildMicroButton']
+								},
+								hideMicroButton = {
+									order = 7,
+									type = "toggle",
+									name = L['Hide MicroButton'],
+									desc = L['Hide MicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.hideMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.hideMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.hideMicroButton) then
+												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
+													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
+													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
+												end
+												ClassicUI.HookMicroButtonsClass_UI_Watcher(GuildMicroButton)
+												GuildMicroButton:Hide()
+											else
+												GuildMicroButton:Show()
+											end
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								keepGapMicroButton = {
+									order = 8,
+									type = "toggle",
+									name = L['Keep MicroButton Gap'],
+									desc = L['KeepMicroButtonGapDesc'],
+									disabled = function() return not(ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.hideMicroButton) end,
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.keepGapMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.keepGapMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								disableMicroButton = {
+									order = 9,
+									type = "toggle",
+									name = L['Disable MicroButton'],
+									desc = L['Disable MicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.disableMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.disableMicroButton = value
+										ClassicUI.cached_db_profile.barsConfig_MicroButtons_GuildMicroButton_disableMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.disableMicroButton) then
+												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
+													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
+													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
+												end
+												if not(ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton) then
+													hooksecurefunc(MainMenuMicroButton, "UpdateMicroButton", ClassicUI.hook_MainMenuMicroButton_UpdateMicroButton)
+													ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton = true
+												end
+												GuildMicroButton:Disable()
+											else
+												local enable = true
+												if ( StoreFrame and StoreFrame_IsShown() ) or ( ( GameMenuFrame and GameMenuFrame:IsShown() ) or ( SettingsPanel:IsShown() ) ) then
+													enable = false
+												else
+													if Kiosk.IsEnabled() or IsCommunitiesUIDisabledByTrialAccount() or UnitFactionGroup("player") == "Neutral" or (C_Club.IsEnabled() and ((not BNConnected()) or (C_Club.IsRestricted() ~= Enum.ClubRestrictionReason.None))) then
+														enable = false
+													end
+												end
+												if (enable) then
+													GuildMicroButton:Enable()
+												end
+											end
+										end
+									end,
+								},
+								disableMouseMicroButton = {
+									order = 10,
+									type = "toggle",
+									name = L['Disable Mouse'],
+									desc = L['DisableMouseMicroButtonDesc'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.disableMouseMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.disableMouseMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.disableMouseMicroButton) then
+												GuildMicroButton:EnableMouse(false)
+											else
+												GuildMicroButton:EnableMouse(true)
+											end
+										end
+									end,
+								},
+								goToGuildPanelOptionsPanel = {
+									order = 11,
+									type = "execute",
+									name = L['goToGuildPanelOptionsPanel'],
+									desc = L['goToGuildPanelOptionsPanelDesc'],
+									width = 1.75,
+									func = function()
+										local openErr = false
+										local aceTab
+										ClassicUI:ShowConfig(2)
+										for i = 1, 20 do
+											for j = 1, 20 do
+												local aceTabIt = _G['AceGUITabGroup'..i..'Tab'..j]
+												if (aceTabIt ~= nil and type(aceTabIt.GetText) == "function" and aceTabIt:GetText() == L['Guild Panel Mode']) then
+													aceTab = aceTabIt
+													break
+												end
+											end
+											if (aceTab ~= nil) then
+												break
+											end
+										end
+										if (aceTab ~= nil) then
+											aceTab:Click()
+											if not(ClassicUI.optionsFrames.extraOptions:IsShown()) then
+												openErr = true
+											end
+										else
+											openErr = true
+										end
+										if (openErr) then
+											message(L['goToGuildPanelOptionsPanelErr']..' \''..L['ClassicUI']..'\' => \''..L['Extra Options']..'\' => \''..L['Guild Panel Mode']..'\'')
+										end
+									end
+								},
+								xOffsetMicroButton = {
+									order = 12,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['xOffsetMicroButton'],
+									desc = L['xOffsetMicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.xOffsetMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.xOffsetMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								yOffsetMicroButton = {
+									order = 13,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['yOffsetMicroButton'],
+									desc = L['yOffsetMicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.yOffsetMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.yOffsetMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								alphaMicroButton = {
+									order = 14,
+									type = "range",
+									softMin = 0,
+									softMax = 1,
+									min = 0,
+									max = 1,
+									step = 0.01,
+									bigStep = 0.02,
+									name = L['alphaMicroButton'],
+									desc = string.gsub(L['alphaMicroButtonDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.MicroButtons.GuildMicroButton.alphaMicroButton, 1),
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.alphaMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.alphaMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if not(ClassicUI.hooked_GuildMicroButton_OnEnableOnDisable) then
+												if (math.abs(ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.alphaMicroButton-ClassicUI.db.defaults.profile.barsConfig.MicroButtons.GuildMicroButton.alphaMicroButton) > ClassicUI.STANDARD_EPSILON) then
+													GuildMicroButton:HookScript("OnEnable", ClassicUI.hookscript_MicroButtonOnEnable)
+													GuildMicroButton:HookScript("OnDisable", ClassicUI.hookscript_MicroButtonOnDisable)
+													ClassicUI.hooked_GuildMicroButton_OnEnableOnDisable = true
+												end
+											end
+											if (GuildMicroButton:IsEnabled()) then
+												ClassicUI.hookscript_MicroButtonOnEnable(GuildMicroButton)
+											else
+												ClassicUI.hookscript_MicroButtonOnDisable(GuildMicroButton)
+											end
+										end
+									end
+								},
+								iconMicroButton = {
+									order = 15,
+									type = "select",
+									style = "radio",
+									name = L['iconMicroButton'],
+									width = 1.12,
+									sorting = { 7, 8, 19, 15, 16, 17, 18, 1, 4, 11, 2, 3, 12, 5, 26, 6, 9, 24, 10, 13, 20, 27, 28, 29, 30 },
+									values = {
+										[7] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Guild Emblem']..L['Guild Emblem [*][D]'],
+										[8] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Bigger Guild Emblem']..L['Bigger Guild Emblem [*]'],
+										[19] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic Social Icon']..L['Classic Social Icon'],
+										[15] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Abilities Icon']..L['Abilities Icon'],
+										[16] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Raid Icon']..L['Raid Icon'],
+										[17] = ClassicUI.MICROBUTTONS_OPTION_ICONS['World Icon']..L['World Icon'],
+										[18] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic Quest Icon']..L['Classic Quest Icon'],
+										[1] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Class Icon']..L['Class Icon [*]'],
+										[4] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Profession Icon']..L['Profession Icon'],
+										[11] = ClassicUI.MICROBUTTONS_OPTION_ICONS['EJ Icon']..L['EJ Icon'],
+										[2] = ClassicUI.MICROBUTTONS_OPTION_ICONS['SpellBook Icon']..L['SpellBook Icon'],
+										[3] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Talents Icon']..L['Talents Icon'],
+										[12] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Store Icon']..L['Store Icon'],
+										[5] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Achievement Icon']..L['Achievement Icon'],
+										[26] = ClassicUI.MICROBUTTONS_OPTION_ICONS['BFA Achievement Icon']..L['BFA Achievement Icon'],
+										[6] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Quest Icon']..L['Quest Icon'],
+										[9] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Icon']..L['LFD Icon'],
+										[24] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Normalized Icon']..L['LFD Normalized Icon'],
+										[10] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Collections Icon']..L['Collections Icon'],
+										[13] = ClassicUI.MICROBUTTONS_OPTION_ICONS['MainMenu Icon']..L['MainMenu Icon'],
+										[20] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic MainMenu Icon']..L['Classic MainMenu Icon'],
+										[27] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Variable Icon']..L['PvP Variable Icon [*]'],
+										[28] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Horde Icon']..L['PvP Horde Icon'],
+										[29] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Alliance Icon']..L['PvP Alliance Icon'],
+										[30] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Neutral Icon']..L['PvP Neutral Icon']
+									},
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.iconMicroButton end,
+									set = function(_,value)
+										if (ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.iconMicroButton ~= value) then
+											ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.iconMicroButton = value
+											ClassicUI.cached_db_profile.barsConfig_MicroButtons_GuildMicroButton_iconMicroButton = value
+											ClassicUI.cached_db_profile.barsConfig_MicroButtons_GuildMicroButton_iconMicroButton_normalTexture = ClassicUI.MICROBUTTONS_ARRAYINFO[value].normalTexture
+											ClassicUI.cached_db_profile.barsConfig_MicroButtons_GuildMicroButton_iconMicroButton_pushedTexture = ClassicUI.MICROBUTTONS_ARRAYINFO[value].pushedTexture
+											ClassicUI.cached_db_profile.barsConfig_MicroButtons_GuildMicroButton_iconMicroButton_disabledTexture = ClassicUI.MICROBUTTONS_ARRAYINFO[value].disabledTexture
+											if (value == 7 or value == 8) then	-- Guild Emblem / Bigger Guild Emblem
+												ClassicUI.cached_db_profile.barsConfig_MicroButtons_GuildMicroButton_iconMicroButton_normalTextureGuild = ClassicUI.MICROBUTTONS_ARRAYINFO[value].normalTextureGuild
+												ClassicUI.cached_db_profile.barsConfig_MicroButtons_GuildMicroButton_iconMicroButton_pushedTextureGuild = ClassicUI.MICROBUTTONS_ARRAYINFO[value].pushedTextureGuild
+												ClassicUI.cached_db_profile.barsConfig_MicroButtons_GuildMicroButton_iconMicroButton_disabledTextureGuild = ClassicUI.MICROBUTTONS_ARRAYINFO[value].disabledTextureGuild
+											end
+											if (ClassicUI:IsEnabled()) then
+												GuildMicroButton:SetNormalTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].normalTexture)
+												GuildMicroButton:SetPushedTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].pushedTexture)
+												GuildMicroButton:SetDisabledTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].disabledTexture)
+												local tabard = GuildMicroButtonTabard
+												if (value == 7 or value == 8) then	-- Guild Emblem / Bigger Guild Emblem
+													local emblemFilename = select(10, GetGuildLogoInfo())
+													if (emblemFilename) then
+														GuildMicroButton:SetNormalTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].normalTextureGuild)
+														GuildMicroButton:SetPushedTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].pushedTextureGuild)
+														if (not tabard:IsShown()) then
+															tabard:Show()
+														end
+														SetSmallGuildTabardTextures("player", tabard.emblem, tabard.background)
+													else
+														GuildMicroButton:SetNormalTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].normalTexture)
+														GuildMicroButton:SetPushedTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].pushedTexture)
+														if (tabard:IsShown()) then
+															tabard:Hide()
+														end
+													end
+													if IsInGuild() then
+														GuildMicroButton:SetDisabledTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].disabledTextureGuild)
+													else
+														GuildMicroButton:SetDisabledTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].disabledTexture)
+													end
+													GuildMicroButtonTabardEmblem:SetAlpha(1)
+													GuildMicroButtonTabardEmblem:Show()
+													GuildMicroButtonTabardBackground:SetAlpha(1)
+													GuildMicroButtonTabardBackground:Show()
+													GuildMicroButtonTabard:SetAlpha(1)
+												else
+													GuildMicroButton:SetNormalTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].normalTexture)
+													GuildMicroButton:SetPushedTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].pushedTexture)
+													GuildMicroButton:SetDisabledTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].disabledTexture)
+													GuildMicroButtonTabardEmblem:SetAlpha(0)
+													GuildMicroButtonTabardEmblem:Hide()
+													GuildMicroButtonTabardBackground:SetAlpha(0)
+													GuildMicroButtonTabardBackground:Hide()
+													tabard:SetAlpha(0)
+													tabard:Hide()
+												end
+												if (value ~= 8) then	-- Bigger Guild Emblem
+													GuildMicroButtonTabardEmblem:SetSize(14, 14)
+												else
+													GuildMicroButtonTabardEmblem:SetSize(16, 16)
+												end
+												ClassicUI.GuildMicroButton_UpdateTabard(true)
+											end
+										end
+									end
+								}
+							}
+						},
+						LFDMicroButton = {
+							order = function() return 6 + ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.order end,
+							type = "group",
+							name = function() return '|cffeda55f[|r|cffff6720'..(ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.order < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.order..'|r|cffeda55f] - |r'..string.gsub(ClassicUI.MICROBUTTONS_OPTION_ICONS[ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.iconMicroButton].name],':32:24:',':20:15:',1)..' '..L['LFD'] end,
+							desc = L['LFDMicroButton'],
+							width = 4.0,
+							args = {
+								Header1 = {
+									type = 'header',
+									order = 1,
+									name = L['MicroButtons Order']
+								},
+								buttonOrderUp = {
+									order = 2,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.order <= ClassicUI.MICROBUTTONS_MIN_ORDER) and '-disabled' or '')..':0|t' end,
+									desc = L['UP'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.order <= ClassicUI.MICROBUTTONS_MIN_ORDER end,
+									width = 0.26,
+									func = function()
+										ClassicUI:ReorderMicroButtonsDB("LFDMicroButton", "UP")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								buttonOrderDown = {
+									order = 3,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.order >= ClassicUI.MICROBUTTONS_MAX_ORDER) and '-disabled' or '')..':0|t' end,
+									desc = L['DOWN'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.order >= ClassicUI.MICROBUTTONS_MAX_ORDER end,
+									width = 0.26,
+									func = function()
+										ClassicUI:ReorderMicroButtonsDB("LFDMicroButton", "DOWN")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								Spacer1 = {
+									type = "description",
+									order = 4,
+									name = "",
+									width = 0.05
+								},
+								buttonOrderDefault = {
+									order = 5,
+									type = "execute",
+									name = function() return '|T'..(ClassicUI:IsMicroButtonsOrderDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
+									desc = L['DefaultOrderDesc'],
+									disabled = function() return ClassicUI:IsMicroButtonsOrderDefaultDB() end,
+									width = 0.72,
+									func = function()
+										ClassicUI:ReorderMicroButtonsDB(nil, "DEFAULT")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								Header2 = {
+									type = 'header',
+									order = 6,
+									name = L['LFDMicroButton']
+								},
+								hideMicroButton = {
+									order = 7,
+									type = "toggle",
+									name = L['Hide MicroButton'],
+									desc = L['Hide MicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.hideMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.hideMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.hideMicroButton) then
+												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
+													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
+													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
+												end
+												ClassicUI.HookMicroButtonsClass_UI_Watcher(LFDMicroButton)
+												LFDMicroButton:Hide()
+											else
+												LFDMicroButton:Show()
+											end
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								keepGapMicroButton = {
+									order = 8,
+									type = "toggle",
+									name = L['Keep MicroButton Gap'],
+									desc = L['KeepMicroButtonGapDesc'],
+									disabled = function() return not(ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.hideMicroButton) end,
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.keepGapMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.keepGapMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								disableMicroButton = {
+									order = 9,
+									type = "toggle",
+									name = L['Disable MicroButton'],
+									desc = L['Disable MicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.disableMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.disableMicroButton = value
+										ClassicUI.cached_db_profile.barsConfig_MicroButtons_LFDMicroButton_disableMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.disableMicroButton) then
+												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
+													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
+													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
+												end
+												if not(ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton) then
+													hooksecurefunc(MainMenuMicroButton, "UpdateMicroButton", ClassicUI.hook_MainMenuMicroButton_UpdateMicroButton)
+													ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton = true
+												end
+												if not(ClassicUI.hooked_LFDMicroButton_UpdateMicroButton) then
+													hooksecurefunc(LFDMicroButton, "UpdateMicroButton", ClassicUI.hook_LFDMicroButton_UpdateMicroButton)
+													ClassicUI.hooked_LFDMicroButton_UpdateMicroButton = true
+												end
+												LFDMicroButton:Disable()
+											else
+												local enable = true
+												if ( StoreFrame and StoreFrame_IsShown() ) or ( ( GameMenuFrame and GameMenuFrame:IsShown() ) or ( SettingsPanel:IsShown() ) ) then
+													enable = false
+												else
+													if not( PVEFrame and PVEFrame:IsShown() ) and ( not LFDMicroButton:IsActive() ) then
+														enable = false
+													end
+												end
+												if (enable) then
+													LFDMicroButton:Enable()
+												end
+											end
+										end
+									end,
+								},
+								disableMouseMicroButton = {
+									order = 10,
+									type = "toggle",
+									name = L['Disable Mouse'],
+									desc = L['DisableMouseMicroButtonDesc'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.disableMouseMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.disableMouseMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.disableMouseMicroButton) then
+												LFDMicroButton:EnableMouse(false)
+											else
+												LFDMicroButton:EnableMouse(true)
+											end
+										end
+									end,
+								},
+								xOffsetMicroButton = {
+									order = 11,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['xOffsetMicroButton'],
+									desc = L['xOffsetMicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.xOffsetMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.xOffsetMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								yOffsetMicroButton = {
+									order = 12,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['yOffsetMicroButton'],
+									desc = L['yOffsetMicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.yOffsetMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.yOffsetMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								alphaMicroButton = {
+									order = 13,
+									type = "range",
+									softMin = 0,
+									softMax = 1,
+									min = 0,
+									max = 1,
+									step = 0.01,
+									bigStep = 0.02,
+									name = L['alphaMicroButton'],
+									desc = string.gsub(L['alphaMicroButtonDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.MicroButtons.LFDMicroButton.alphaMicroButton, 1),
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.alphaMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.alphaMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if not(ClassicUI.hooked_LFDMicroButton_OnEnableOnDisable) then
+												if (math.abs(ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.alphaMicroButton-ClassicUI.db.defaults.profile.barsConfig.MicroButtons.LFDMicroButton.alphaMicroButton) > ClassicUI.STANDARD_EPSILON) then
+													LFDMicroButton:HookScript("OnEnable", ClassicUI.hookscript_MicroButtonOnEnable)
+													LFDMicroButton:HookScript("OnDisable", ClassicUI.hookscript_MicroButtonOnDisable)
+													ClassicUI.hooked_LFDMicroButton_OnEnableOnDisable = true
+												end
+											end
+											if (LFDMicroButton:IsEnabled()) then
+												ClassicUI.hookscript_MicroButtonOnEnable(LFDMicroButton)
+											else
+												ClassicUI.hookscript_MicroButtonOnDisable(LFDMicroButton)
+											end
+										end
+									end
+								},
+								iconMicroButton = {
+									order = 14,
+									type = "select",
+									style = "radio",
+									name = L['iconMicroButton'],
+									width = 1.12,
+									sorting = { 9, 24, 27, 28, 29, 30, 15, 4, 16, 17, 18, 19, 1, 11, 12, 2, 3, 5, 26, 6, 10, 13, 20 },
+									values = {
+										[9] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Icon']..L['LFD Icon [D]'],
+										[24] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Normalized Icon']..L['LFD Normalized Icon'],
+										[27] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Variable Icon']..L['PvP Variable Icon [*]'],
+										[28] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Horde Icon']..L['PvP Horde Icon'],
+										[29] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Alliance Icon']..L['PvP Alliance Icon'],
+										[30] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Neutral Icon']..L['PvP Neutral Icon'],
+										[15] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Abilities Icon']..L['Abilities Icon'],
+										[4] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Profession Icon']..L['Profession Icon'],
+										[16] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Raid Icon']..L['Raid Icon'],
+										[17] = ClassicUI.MICROBUTTONS_OPTION_ICONS['World Icon']..L['World Icon'],
+										[18] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic Quest Icon']..L['Classic Quest Icon'],
+										[19] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic Social Icon']..L['Classic Social Icon'],
+										[1] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Class Icon']..L['Class Icon [*]'],
+										[11] = ClassicUI.MICROBUTTONS_OPTION_ICONS['EJ Icon']..L['EJ Icon'],
+										[12] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Store Icon']..L['Store Icon'],
+										[2] = ClassicUI.MICROBUTTONS_OPTION_ICONS['SpellBook Icon']..L['SpellBook Icon'],
+										[3] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Talents Icon']..L['Talents Icon'],
+										[5] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Achievement Icon']..L['Achievement Icon'],
+										[26] = ClassicUI.MICROBUTTONS_OPTION_ICONS['BFA Achievement Icon']..L['BFA Achievement Icon'],
+										[6] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Quest Icon']..L['Quest Icon'],
+										[10] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Collections Icon']..L['Collections Icon'],
+										[13] = ClassicUI.MICROBUTTONS_OPTION_ICONS['MainMenu Icon']..L['MainMenu Icon'],
+										[20] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic MainMenu Icon']..L['Classic MainMenu Icon']
+									},
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.iconMicroButton end,
+									set = function(_,value)
+										if (ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.iconMicroButton ~= value) then
+											ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.iconMicroButton = value
+											if (ClassicUI:IsEnabled()) then
+												LFDMicroButton:SetNormalTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].normalTexture)
+												LFDMicroButton:SetPushedTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].pushedTexture)
+												LFDMicroButton:SetDisabledTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].disabledTexture)
+											end
+										end
+									end
+								}
+							}
+						},
+						CollectionsMicroButton = {
+							order = function() return 6 + ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.order end,
+							type = "group",
+							name = function() return '|cffeda55f[|r|cffff6720'..(ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.order < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.order..'|r|cffeda55f] - |r'..string.gsub(ClassicUI.MICROBUTTONS_OPTION_ICONS[ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.iconMicroButton].name],':32:24:',':20:15:',1)..' '..L['Collections'] end,
+							desc = L['CollectionsMicroButton'],
+							width = 4.0,
+							args = {
+								Header1 = {
+									type = 'header',
+									order = 1,
+									name = L['MicroButtons Order']
+								},
+								buttonOrderUp = {
+									order = 2,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.order <= ClassicUI.MICROBUTTONS_MIN_ORDER) and '-disabled' or '')..':0|t' end,
+									desc = L['UP'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.order <= ClassicUI.MICROBUTTONS_MIN_ORDER end,
+									width = 0.26,
+									func = function()
+										ClassicUI:ReorderMicroButtonsDB("CollectionsMicroButton", "UP")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								buttonOrderDown = {
+									order = 3,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.order >= ClassicUI.MICROBUTTONS_MAX_ORDER) and '-disabled' or '')..':0|t' end,
+									desc = L['DOWN'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.order >= ClassicUI.MICROBUTTONS_MAX_ORDER end,
+									width = 0.26,
+									func = function()
+										ClassicUI:ReorderMicroButtonsDB("CollectionsMicroButton", "DOWN")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								Spacer1 = {
+									type = "description",
+									order = 4,
+									name = "",
+									width = 0.05
+								},
+								buttonOrderDefault = {
+									order = 5,
+									type = "execute",
+									name = function() return '|T'..(ClassicUI:IsMicroButtonsOrderDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
+									desc = L['DefaultOrderDesc'],
+									disabled = function() return ClassicUI:IsMicroButtonsOrderDefaultDB() end,
+									width = 0.72,
+									func = function()
+										ClassicUI:ReorderMicroButtonsDB(nil, "DEFAULT")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								Header2 = {
+									type = 'header',
+									order = 6,
+									name = L['CollectionsMicroButton']
+								},
+								hideMicroButton = {
+									order = 7,
+									type = "toggle",
+									name = L['Hide MicroButton'],
+									desc = L['Hide MicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.hideMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.hideMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.hideMicroButton) then
+												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
+													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
+													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
+												end
+												ClassicUI.HookMicroButtonsClass_UI_Watcher(CollectionsMicroButton)
+												CollectionsMicroButton:Hide()
+											else
+												CollectionsMicroButton:Show()
+											end
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								keepGapMicroButton = {
+									order = 8,
+									type = "toggle",
+									name = L['Keep MicroButton Gap'],
+									desc = L['KeepMicroButtonGapDesc'],
+									disabled = function() return not(ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.hideMicroButton) end,
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.keepGapMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.keepGapMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								disableMicroButton = {
+									order = 9,
+									type = "toggle",
+									name = L['Disable MicroButton'],
+									desc = L['Disable MicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.disableMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.disableMicroButton = value
+										ClassicUI.cached_db_profile.barsConfig_MicroButtons_CollectionsMicroButton_disableMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.disableMicroButton) then
+												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
+													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
+													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
+												end
+												if not(ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton) then
+													hooksecurefunc(MainMenuMicroButton, "UpdateMicroButton", ClassicUI.hook_MainMenuMicroButton_UpdateMicroButton)
+													ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton = true
+												end
+												if not(ClassicUI.hooked_CollectionsMicroButton_UpdateMicroButton) then
+													hooksecurefunc(CollectionsMicroButton, "UpdateMicroButton", ClassicUI.hook_CollectionsMicroButton_UpdateMicroButton)
+													ClassicUI.hooked_CollectionsMicroButton_UpdateMicroButton = true
+												end
+												CollectionsMicroButton:Disable()
+											else
+												local enable = true
+												if ( StoreFrame and StoreFrame_IsShown() ) or ( ( GameMenuFrame and GameMenuFrame:IsShown() ) or ( SettingsPanel:IsShown() ) ) then
+													enable = false
+												end
+												if (enable) then
+													CollectionsMicroButton:Enable()
+												end
+											end
+										end
+									end,
+								},
+								disableMouseMicroButton = {
+									order = 10,
+									type = "toggle",
+									name = L['Disable Mouse'],
+									desc = L['DisableMouseMicroButtonDesc'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.disableMouseMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.disableMouseMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.disableMouseMicroButton) then
+												CollectionsMicroButton:EnableMouse(false)
+											else
+												CollectionsMicroButton:EnableMouse(true)
+											end
+										end
+									end,
+								},
+								xOffsetMicroButton = {
+									order = 11,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['xOffsetMicroButton'],
+									desc = L['xOffsetMicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.xOffsetMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.xOffsetMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								yOffsetMicroButton = {
+									order = 12,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['yOffsetMicroButton'],
+									desc = L['yOffsetMicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.yOffsetMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.yOffsetMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								alphaMicroButton = {
+									order = 13,
+									type = "range",
+									softMin = 0,
+									softMax = 1,
+									min = 0,
+									max = 1,
+									step = 0.01,
+									bigStep = 0.02,
+									name = L['alphaMicroButton'],
+									desc = string.gsub(L['alphaMicroButtonDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.MicroButtons.CollectionsMicroButton.alphaMicroButton, 1),
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.alphaMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.alphaMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if not(ClassicUI.hooked_CollectionsMicroButton_OnEnableOnDisable) then
+												if (math.abs(ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.alphaMicroButton-ClassicUI.db.defaults.profile.barsConfig.MicroButtons.CollectionsMicroButton.alphaMicroButton) > ClassicUI.STANDARD_EPSILON) then
+													CollectionsMicroButton:HookScript("OnEnable", ClassicUI.hookscript_MicroButtonOnEnable)
+													CollectionsMicroButton:HookScript("OnDisable", ClassicUI.hookscript_MicroButtonOnDisable)
+													ClassicUI.hooked_CollectionsMicroButton_OnEnableOnDisable = true
+												end
+											end
+											if (CollectionsMicroButton:IsEnabled()) then
+												ClassicUI.hookscript_MicroButtonOnEnable(CollectionsMicroButton)
+											else
+												ClassicUI.hookscript_MicroButtonOnDisable(CollectionsMicroButton)
+											end
+										end
+									end
+								},
+								iconMicroButton = {
+									order = 14,
+									type = "select",
+									style = "radio",
+									name = L['iconMicroButton'],
+									width = 1.12,
+									sorting = { 10, 15, 4, 16, 17, 18, 19, 1, 11, 2, 3, 12, 5, 26, 6, 9, 24, 13, 20, 27, 28, 29, 30 },
+									values = {
+										[10] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Collections Icon']..L['Collections Icon [D]'],
+										[15] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Abilities Icon']..L['Abilities Icon'],
+										[4] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Profession Icon']..L['Profession Icon'],
+										[16] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Raid Icon']..L['Raid Icon'],
+										[17] = ClassicUI.MICROBUTTONS_OPTION_ICONS['World Icon']..L['World Icon'],
+										[18] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic Quest Icon']..L['Classic Quest Icon'],
+										[19] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic Social Icon']..L['Classic Social Icon'],
+										[1] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Class Icon']..L['Class Icon [*]'],
+										[11] = ClassicUI.MICROBUTTONS_OPTION_ICONS['EJ Icon']..L['EJ Icon'],
+										[2] = ClassicUI.MICROBUTTONS_OPTION_ICONS['SpellBook Icon']..L['SpellBook Icon'],
+										[3] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Talents Icon']..L['Talents Icon'],
+										[12] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Store Icon']..L['Store Icon'],
+										[5] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Achievement Icon']..L['Achievement Icon'],
+										[26] = ClassicUI.MICROBUTTONS_OPTION_ICONS['BFA Achievement Icon']..L['BFA Achievement Icon'],
+										[6] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Quest Icon']..L['Quest Icon'],
+										[9] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Icon']..L['LFD Icon'],
+										[24] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Normalized Icon']..L['LFD Normalized Icon'],
+										[13] = ClassicUI.MICROBUTTONS_OPTION_ICONS['MainMenu Icon']..L['MainMenu Icon'],
+										[20] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic MainMenu Icon']..L['Classic MainMenu Icon'],
+										[27] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Variable Icon']..L['PvP Variable Icon [*]'],
+										[28] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Horde Icon']..L['PvP Horde Icon'],
+										[29] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Alliance Icon']..L['PvP Alliance Icon'],
+										[30] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Neutral Icon']..L['PvP Neutral Icon']
+									},
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.iconMicroButton end,
+									set = function(_,value)
+										if (ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.iconMicroButton ~= value) then
+											ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.iconMicroButton = value
+											if (ClassicUI:IsEnabled()) then
+												CollectionsMicroButton:SetNormalTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].normalTexture)
+												CollectionsMicroButton:SetPushedTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].pushedTexture)
+												CollectionsMicroButton:SetDisabledTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].disabledTexture)
+											end
+										end
+									end
+								}
+							}
+						},
+						EJMicroButton = {
+							order = function() return 6 + ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.order end,
+							type = "group",
+							name = function() return '|cffeda55f[|r|cffff6720'..(ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.order < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.order..'|r|cffeda55f] - |r'..string.gsub(ClassicUI.MICROBUTTONS_OPTION_ICONS[ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.iconMicroButton].name],':32:24:',':20:15:',1)..' '..L['EJ'] end,
+							desc = L['EJMicroButton'],
+							width = 4.0,
+							args = {
+								Header1 = {
+									type = 'header',
+									order = 1,
+									name = L['MicroButtons Order']
+								},
+								buttonOrderUp = {
+									order = 2,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.order <= ClassicUI.MICROBUTTONS_MIN_ORDER) and '-disabled' or '')..':0|t' end,
+									desc = L['UP'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.order <= ClassicUI.MICROBUTTONS_MIN_ORDER end,
+									width = 0.26,
+									func = function()
+										ClassicUI:ReorderMicroButtonsDB("EJMicroButton", "UP")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								buttonOrderDown = {
+									order = 3,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.order >= ClassicUI.MICROBUTTONS_MAX_ORDER) and '-disabled' or '')..':0|t' end,
+									desc = L['DOWN'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.order >= ClassicUI.MICROBUTTONS_MAX_ORDER end,
+									width = 0.26,
+									func = function()
+										ClassicUI:ReorderMicroButtonsDB("EJMicroButton", "DOWN")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								Spacer1 = {
+									type = "description",
+									order = 4,
+									name = "",
+									width = 0.05
+								},
+								buttonOrderDefault = {
+									order = 5,
+									type = "execute",
+									name = function() return '|T'..(ClassicUI:IsMicroButtonsOrderDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
+									desc = L['DefaultOrderDesc'],
+									disabled = function() return ClassicUI:IsMicroButtonsOrderDefaultDB() end,
+									width = 0.72,
+									func = function()
+										ClassicUI:ReorderMicroButtonsDB(nil, "DEFAULT")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								Header2 = {
+									type = 'header',
+									order = 6,
+									name = L['EJMicroButton']
+								},
+								hideMicroButton = {
+									order = 7,
+									type = "toggle",
+									name = L['Hide MicroButton'],
+									desc = L['Hide MicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.hideMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.hideMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.hideMicroButton) then
+												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
+													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
+													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
+												end
+												ClassicUI.HookMicroButtonsClass_UI_Watcher(EJMicroButton)
+												EJMicroButton:Hide()
+											else
+												EJMicroButton:Show()
+											end
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								keepGapMicroButton = {
+									order = 8,
+									type = "toggle",
+									name = L['Keep MicroButton Gap'],
+									desc = L['KeepMicroButtonGapDesc'],
+									disabled = function() return not(ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.hideMicroButton) end,
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.keepGapMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.keepGapMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								disableMicroButton = {
+									order = 9,
+									type = "toggle",
+									name = L['Disable MicroButton'],
+									desc = L['Disable MicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.disableMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.disableMicroButton = value
+										ClassicUI.cached_db_profile.barsConfig_MicroButtons_EJMicroButton_disableMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.disableMicroButton) then
+												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
+													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
+													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
+												end
+												if not(ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton) then
+													hooksecurefunc(MainMenuMicroButton, "UpdateMicroButton", ClassicUI.hook_MainMenuMicroButton_UpdateMicroButton)
+													ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton = true
+												end
+												if not(ClassicUI.hooked_EJMicroButton_UpdateMicroButton) then
+													hooksecurefunc(EJMicroButton, "UpdateMicroButton", ClassicUI.hook_EJMicroButton_UpdateMicroButton)
+													ClassicUI.hooked_EJMicroButton_UpdateMicroButton = true
+												end
+												EJMicroButton:Disable()
+											else
+												local enable = true
+												if ( StoreFrame and StoreFrame_IsShown() ) or ( ( GameMenuFrame and GameMenuFrame:IsShown() ) or ( SettingsPanel:IsShown() ) ) then
+													enable = false
+												else
+													if Kiosk.IsEnabled() or (not( EncounterJournal and EncounterJournal:IsShown() ) and ( not AdventureGuideUtil.IsAvailable() )) then
+														enable = false
+													end
+												end
+												if (enable) then
+													EJMicroButton:Enable()
+												end
+											end
+										end
+									end,
+								},
+								disableMouseMicroButton = {
+									order = 10,
+									type = "toggle",
+									name = L['Disable Mouse'],
+									desc = L['DisableMouseMicroButtonDesc'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.disableMouseMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.disableMouseMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.disableMouseMicroButton) then
+												EJMicroButton:EnableMouse(false)
+											else
+												EJMicroButton:EnableMouse(true)
+											end
+										end
+									end,
+								},
+								xOffsetMicroButton = {
+									order = 11,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['xOffsetMicroButton'],
+									desc = L['xOffsetMicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.xOffsetMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.xOffsetMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								yOffsetMicroButton = {
+									order = 12,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['yOffsetMicroButton'],
+									desc = L['yOffsetMicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.yOffsetMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.yOffsetMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								alphaMicroButton = {
+									order = 13,
+									type = "range",
+									softMin = 0,
+									softMax = 1,
+									min = 0,
+									max = 1,
+									step = 0.01,
+									bigStep = 0.02,
+									name = L['alphaMicroButton'],
+									desc = string.gsub(L['alphaMicroButtonDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.MicroButtons.EJMicroButton.alphaMicroButton, 1),
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.alphaMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.alphaMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if not(ClassicUI.hooked_EJMicroButton_OnEnableOnDisable) then
+												if (math.abs(ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.alphaMicroButton-ClassicUI.db.defaults.profile.barsConfig.MicroButtons.EJMicroButton.alphaMicroButton) > ClassicUI.STANDARD_EPSILON) then
+													EJMicroButton:HookScript("OnEnable", ClassicUI.hookscript_MicroButtonOnEnable)
+													EJMicroButton:HookScript("OnDisable", ClassicUI.hookscript_MicroButtonOnDisable)
+													ClassicUI.hooked_EJMicroButton_OnEnableOnDisable = true
+												end
+											end
+											if (EJMicroButton:IsEnabled()) then
+												ClassicUI.hookscript_MicroButtonOnEnable(EJMicroButton)
+											else
+												ClassicUI.hookscript_MicroButtonOnDisable(EJMicroButton)
+											end
+										end
+									end
+								},
+								iconMicroButton = {
+									order = 14,
+									type = "select",
+									style = "radio",
+									name = L['iconMicroButton'],
+									width = 1.12,
+									sorting = { 11, 16, 15, 17, 4, 18, 19, 1, 2, 3, 12, 5, 26, 6, 9, 24, 10, 13, 20, 27, 28, 29, 30 },
+									values = {
+										[11] = ClassicUI.MICROBUTTONS_OPTION_ICONS['EJ Icon']..L['EJ Icon [D]'],
+										[16] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Raid Icon']..L['Raid Icon'],
+										[15] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Abilities Icon']..L['Abilities Icon'],
+										[17] = ClassicUI.MICROBUTTONS_OPTION_ICONS['World Icon']..L['World Icon'],
+										[4] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Profession Icon']..L['Profession Icon'],
+										[18] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic Quest Icon']..L['Classic Quest Icon'],
+										[19] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic Social Icon']..L['Classic Social Icon'],
+										[1] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Class Icon']..L['Class Icon [*]'],
+										[2] = ClassicUI.MICROBUTTONS_OPTION_ICONS['SpellBook Icon']..L['SpellBook Icon'],
+										[3] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Talents Icon']..L['Talents Icon'],
+										[12] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Store Icon']..L['Store Icon'],
+										[5] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Achievement Icon']..L['Achievement Icon'],
+										[26] = ClassicUI.MICROBUTTONS_OPTION_ICONS['BFA Achievement Icon']..L['BFA Achievement Icon'],
+										[6] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Quest Icon']..L['Quest Icon'],
+										[9] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Icon']..L['LFD Icon'],
+										[24] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Normalized Icon']..L['LFD Normalized Icon'],
+										[10] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Collections Icon']..L['Collections Icon'],
+										[13] = ClassicUI.MICROBUTTONS_OPTION_ICONS['MainMenu Icon']..L['MainMenu Icon'],
+										[20] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic MainMenu Icon']..L['Classic MainMenu Icon'],
+										[27] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Variable Icon']..L['PvP Variable Icon [*]'],
+										[28] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Horde Icon']..L['PvP Horde Icon'],
+										[29] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Alliance Icon']..L['PvP Alliance Icon'],
+										[30] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Neutral Icon']..L['PvP Neutral Icon']
+									},
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.iconMicroButton end,
+									set = function(_,value)
+										if (ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.iconMicroButton ~= value) then
+											ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.iconMicroButton = value
+											if (ClassicUI:IsEnabled()) then
+												EJMicroButton:SetNormalTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].normalTexture)
+												EJMicroButton:SetPushedTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].pushedTexture)
+												EJMicroButton:SetDisabledTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].disabledTexture)
+											end
+										end
+									end
+								}
+							}
+						},
+						HelpMicroButton = {
+							order = function() return 6 + ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.order end,
+							type = "group",
+							name = function() return '|cffeda55f[|r|cffff6720'..(ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.order < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.order..'|r|cffeda55f] - |r'..string.gsub(ClassicUI.MICROBUTTONS_OPTION_ICONS[ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.iconMicroButton].name],':32:24:',':20:15:',1)..' '..L['Help'] end,
+							desc = L['HelpMicroButton'],
+							width = 4.0,
+							args = {
+								Header1 = {
+									type = 'header',
+									order = 1,
+									name = L['MicroButtons Order']
+								},
+								buttonOrderUp = {
+									order = 2,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.order <= ClassicUI.MICROBUTTONS_MIN_ORDER) and '-disabled' or '')..':0|t' end,
+									desc = L['UP'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.order <= ClassicUI.MICROBUTTONS_MIN_ORDER end,
+									width = 0.26,
+									func = function()
+										ClassicUI:ReorderMicroButtonsDB("HelpMicroButton", "UP")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								buttonOrderDown = {
+									order = 3,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.order >= ClassicUI.MICROBUTTONS_MAX_ORDER) and '-disabled' or '')..':0|t' end,
+									desc = L['DOWN'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.order >= ClassicUI.MICROBUTTONS_MAX_ORDER end,
+									width = 0.26,
+									func = function()
+										ClassicUI:ReorderMicroButtonsDB("HelpMicroButton", "DOWN")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								Spacer1 = {
+									type = "description",
+									order = 4,
+									name = "",
+									width = 0.05
+								},
+								buttonOrderDefault = {
+									order = 5,
+									type = "execute",
+									name = function() return '|T'..(ClassicUI:IsMicroButtonsOrderDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
+									desc = L['DefaultOrderDesc'],
+									disabled = function() return ClassicUI:IsMicroButtonsOrderDefaultDB() end,
+									width = 0.72,
+									func = function()
+										ClassicUI:ReorderMicroButtonsDB(nil, "DEFAULT")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								Header2 = {
+									type = 'header',
+									order = 6,
+									name = L['HelpMicroButton']
+								},
+								hideMicroButton = {
+									order = 7,
+									type = "toggle",
+									name = L['Hide MicroButton'],
+									desc = L['Hide MicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.hideMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.hideMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.hideMicroButton) then
+												ClassicUI.HookMicroButtonsClass_UI_Watcher(HelpMicroButton)
+												HelpMicroButton:Hide()
+												-- keep the HelpMicroButton hidden
+											end
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								keepGapMicroButton = {
+									order = 8,
+									type = "toggle",
+									name = L['Keep MicroButton Gap'],
+									desc = L['KeepMicroButtonGapDesc'],
+									disabled = function() return not(ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.hideMicroButton) end,
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.keepGapMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.keepGapMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								disableMicroButton = {
+									order = 9,
+									type = "toggle",
+									name = L['Disable MicroButton'],
+									desc = L['Disable MicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.disableMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.disableMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.disableMicroButton) then
+												HelpMicroButton:Disable()
+												-- keep the HelpMicroButton disabled
+											end
+										end
+									end,
+								},
+								disableMouseMicroButton = {
+									order = 10,
+									type = "toggle",
+									name = L['Disable Mouse'],
+									desc = L['DisableMouseMicroButtonDesc'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.disableMouseMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.disableMouseMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.disableMouseMicroButton) then
+												HelpMicroButton:EnableMouse(false)
+											else
+												HelpMicroButton:EnableMouse(true)
+											end
+										end
+									end,
+								},
+								xOffsetMicroButton = {
+									order = 11,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['xOffsetMicroButton'],
+									desc = L['xOffsetMicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.xOffsetMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.xOffsetMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								yOffsetMicroButton = {
+									order = 12,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['yOffsetMicroButton'],
+									desc = L['yOffsetMicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.yOffsetMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.yOffsetMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								alphaMicroButton = {
+									order = 13,
+									type = "range",
+									softMin = 0,
+									softMax = 1,
+									min = 0,
+									max = 1,
+									step = 0.01,
+									bigStep = 0.02,
+									name = L['alphaMicroButton'],
+									desc = string.gsub(L['alphaMicroButtonDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.MicroButtons.HelpMicroButton.alphaMicroButton, 1),
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.alphaMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.alphaMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if not(ClassicUI.hooked_HelpMicroButton_OnEnableOnDisable) then
+												if (math.abs(ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.alphaMicroButton-ClassicUI.db.defaults.profile.barsConfig.MicroButtons.HelpMicroButton.alphaMicroButton) > ClassicUI.STANDARD_EPSILON) then
+													HelpMicroButton:HookScript("OnEnable", ClassicUI.hookscript_MicroButtonOnEnable)
+													HelpMicroButton:HookScript("OnDisable", ClassicUI.hookscript_MicroButtonOnDisable)
+													ClassicUI.hooked_HelpMicroButton_OnEnableOnDisable = true
+												end
+											end
+											if (HelpMicroButton:IsEnabled()) then
+												ClassicUI.hookscript_MicroButtonOnEnable(HelpMicroButton)
+											else
+												ClassicUI.hookscript_MicroButtonOnDisable(HelpMicroButton)
+											end
+										end
+									end
+								},
+								iconMicroButton = {
+									order = 14,
+									type = "select",
+									style = "radio",
+									name = L['iconMicroButton'],
+									width = 1.12,
+									sorting = { 14, 20, 15, 4, 16, 17, 1, 18, 19, 2, 3, 12, 5, 26, 6, 9, 24, 10, 11, 27, 28, 29, 30 },
+									values = {
+										[14] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Help Icon']..L['Help Icon [D]'],
+										[20] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic MainMenu Icon']..L['Classic MainMenu Icon'],
+										[15] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Abilities Icon']..L['Abilities Icon'],
+										[4] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Profession Icon']..L['Profession Icon'],
+										[16] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Raid Icon']..L['Raid Icon'],
+										[17] = ClassicUI.MICROBUTTONS_OPTION_ICONS['World Icon']..L['World Icon'],
+										[1] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Class Icon']..L['Class Icon [*]'],
+										[18] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic Quest Icon']..L['Classic Quest Icon'],
+										[19] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic Social Icon']..L['Classic Social Icon'],
+										[2] = ClassicUI.MICROBUTTONS_OPTION_ICONS['SpellBook Icon']..L['SpellBook Icon'],
+										[3] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Talents Icon']..L['Talents Icon'],
+										[12] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Store Icon']..L['Store Icon'],
+										[5] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Achievement Icon']..L['Achievement Icon'],
+										[26] = ClassicUI.MICROBUTTONS_OPTION_ICONS['BFA Achievement Icon']..L['BFA Achievement Icon'],
+										[6] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Quest Icon']..L['Quest Icon'],
+										[9] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Icon']..L['LFD Icon'],
+										[24] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Normalized Icon']..L['LFD Normalized Icon'],
+										[10] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Collections Icon']..L['Collections Icon'],
+										[11] = ClassicUI.MICROBUTTONS_OPTION_ICONS['EJ Icon']..L['EJ Icon'],
+										[27] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Variable Icon']..L['PvP Variable Icon [*]'],
+										[28] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Horde Icon']..L['PvP Horde Icon'],
+										[29] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Alliance Icon']..L['PvP Alliance Icon'],
+										[30] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Neutral Icon']..L['PvP Neutral Icon']
+									},
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.iconMicroButton end,
+									set = function(_,value)
+										if (ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.iconMicroButton ~= value) then
+											ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.iconMicroButton = value
+											if (ClassicUI:IsEnabled()) then
+												HelpMicroButton:SetNormalTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].normalTexture)
+												HelpMicroButton:SetPushedTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].pushedTexture)
+												HelpMicroButton:SetDisabledTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].disabledTexture)
+											end
+										end
+									end
+								}
+							}
+						},
+						StoreMicroButton = {
+							order = function() return 6 + ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.order end,
+							type = "group",
+							name = function() return '|cffeda55f[|r|cffff6720'..(ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.order < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.order..'|r|cffeda55f] - |r'..string.gsub(ClassicUI.MICROBUTTONS_OPTION_ICONS[ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.iconMicroButton].name],':32:24:',':20:15:',1)..' '..L['Store'] end,
+							desc = L['StoreMicroButton'],
+							width = 4.0,
+							args = {
+								Header1 = {
+									type = 'header',
+									order = 1,
+									name = L['MicroButtons Order']
+								},
+								buttonOrderUp = {
+									order = 2,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.order <= ClassicUI.MICROBUTTONS_MIN_ORDER) and '-disabled' or '')..':0|t' end,
+									desc = L['UP'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.order <= ClassicUI.MICROBUTTONS_MIN_ORDER end,
+									width = 0.26,
+									func = function()
+										ClassicUI:ReorderMicroButtonsDB("StoreMicroButton", "UP")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								buttonOrderDown = {
+									order = 3,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.order >= ClassicUI.MICROBUTTONS_MAX_ORDER) and '-disabled' or '')..':0|t' end,
+									desc = L['DOWN'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.order >= ClassicUI.MICROBUTTONS_MAX_ORDER end,
+									width = 0.26,
+									func = function()
+										ClassicUI:ReorderMicroButtonsDB("StoreMicroButton", "DOWN")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								Spacer1 = {
+									type = "description",
+									order = 4,
+									name = "",
+									width = 0.05
+								},
+								buttonOrderDefault = {
+									order = 5,
+									type = "execute",
+									name = function() return '|T'..(ClassicUI:IsMicroButtonsOrderDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
+									desc = L['DefaultOrderDesc'],
+									disabled = function() return ClassicUI:IsMicroButtonsOrderDefaultDB() end,
+									width = 0.72,
+									func = function()
+										ClassicUI:ReorderMicroButtonsDB(nil, "DEFAULT")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								Header2 = {
+									type = 'header',
+									order = 6,
+									name = L['StoreMicroButton']
+								},
+								hideMicroButton = {
+									order = 7,
+									type = "toggle",
+									name = L['Hide MicroButton'],
+									desc = L['Hide MicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.hideMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.hideMicroButton = value
+										ClassicUI.cached_db_profile.barsConfig_MicroButtons_StoreMicroButton_hideMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.hideMicroButton) then
+												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
+													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
+													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
+												end
+												ClassicUI.HookMicroButtonsClass_UI_Watcher(StoreMicroButton)
+												StoreMicroButton:Hide()
+											else
+												local show = true
+												if not(C_StorePublic.IsDisabledByParentalControls()) and not(Kiosk.IsEnabled()) and
+													((not C_StorePublic.IsEnabled() and GetCurrentRegionName() == "CN") or
+													(C_StorePublic.IsEnabled() and C_PlayerInfo.IsPlayerNPERestricted() and (TutorialLogic and TutorialLogic.Tutorials) and (TutorialLogic and TutorialLogic.Tutorials).UI_Watcher and (TutorialLogic and TutorialLogic.Tutorials).UI_Watcher.IsActive)) then
+													show = false
+												end
+												if (show) then
+													StoreMicroButton:Show()
+												end
+											end
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								keepGapMicroButton = {
+									order = 8,
+									type = "toggle",
+									name = L['Keep MicroButton Gap'],
+									desc = L['KeepMicroButtonGapDesc'],
+									disabled = function() return not(ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.hideMicroButton) end,
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.keepGapMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.keepGapMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								disableMicroButton = {
+									order = 9,
+									type = "toggle",
+									name = L['Disable MicroButton'],
+									desc = L['Disable MicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.disableMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.disableMicroButton = value
+										ClassicUI.cached_db_profile.barsConfig_MicroButtons_StoreMicroButton_disableMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.disableMicroButton) then
+												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
+													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
+													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
+												end
+												if not(ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton) then
+													hooksecurefunc(MainMenuMicroButton, "UpdateMicroButton", ClassicUI.hook_MainMenuMicroButton_UpdateMicroButton)
+													ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton = true
+												end
+												StoreMicroButton:Disable()
+											else
+												local enable = true
+												if Kiosk.IsEnabled() or ( C_StorePublic.IsDisabledByParentalControls() ) or ( not(C_StorePublic.IsEnabled()) and not( GetCurrentRegionName() == "CN" ) ) then
+													enable = false
+												end
+												if (enable) then
+													StoreMicroButton:Enable()
+												end
+											end
+										end
+									end,
+								},
+								disableMouseMicroButton = {
+									order = 10,
+									type = "toggle",
+									name = L['Disable Mouse'],
+									desc = L['DisableMouseMicroButtonDesc'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.disableMouseMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.disableMouseMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.disableMouseMicroButton) then
+												StoreMicroButton:EnableMouse(false)
+											else
+												StoreMicroButton:EnableMouse(true)
+											end
+										end
+									end,
+								},
+								xOffsetMicroButton = {
+									order = 11,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['xOffsetMicroButton'],
+									desc = L['xOffsetMicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.xOffsetMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.xOffsetMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								yOffsetMicroButton = {
+									order = 12,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['yOffsetMicroButton'],
+									desc = L['yOffsetMicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.yOffsetMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.yOffsetMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								alphaMicroButton = {
+									order = 13,
+									type = "range",
+									softMin = 0,
+									softMax = 1,
+									min = 0,
+									max = 1,
+									step = 0.01,
+									bigStep = 0.02,
+									name = L['alphaMicroButton'],
+									desc = string.gsub(L['alphaMicroButtonDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.MicroButtons.StoreMicroButton.alphaMicroButton, 1),
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.alphaMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.alphaMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if not(ClassicUI.hooked_StoreMicroButton_OnEnableOnDisable) then
+												if (math.abs(ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.alphaMicroButton-ClassicUI.db.defaults.profile.barsConfig.MicroButtons.StoreMicroButton.alphaMicroButton) > ClassicUI.STANDARD_EPSILON) then
+													StoreMicroButton:HookScript("OnEnable", ClassicUI.hookscript_MicroButtonOnEnable)
+													StoreMicroButton:HookScript("OnDisable", ClassicUI.hookscript_MicroButtonOnDisable)
+													ClassicUI.hooked_StoreMicroButton_OnEnableOnDisable = true
+												end
+											end
+											if (StoreMicroButton:IsEnabled()) then
+												ClassicUI.hookscript_MicroButtonOnEnable(StoreMicroButton)
+											else
+												ClassicUI.hookscript_MicroButtonOnDisable(StoreMicroButton)
+											end
+										end
+									end
+								},
+								iconMicroButton = {
+									order = 14,
+									type = "select",
+									style = "radio",
+									name = L['iconMicroButton'],
+									width = 1.12,
+									sorting = { 12, 15, 16, 17, 4, 18, 19, 1, 27, 28, 29, 30, 2, 3, 5, 26, 6, 9, 24, 10, 11, 13, 20 },
+									values = {
+										[12] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Store Icon']..L['Store Icon [D]'],
+										[15] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Abilities Icon']..L['Abilities Icon'],
+										[16] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Raid Icon']..L['Raid Icon'],
+										[17] = ClassicUI.MICROBUTTONS_OPTION_ICONS['World Icon']..L['World Icon'],
+										[4] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Profession Icon']..L['Profession Icon'],
+										[18] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic Quest Icon']..L['Classic Quest Icon'],
+										[19] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic Social Icon']..L['Classic Social Icon'],
+										[1] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Class Icon']..L['Class Icon [*]'],
+										[27] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Variable Icon']..L['PvP Variable Icon [*]'],
+										[28] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Horde Icon']..L['PvP Horde Icon'],
+										[29] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Alliance Icon']..L['PvP Alliance Icon'],
+										[30] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Neutral Icon']..L['PvP Neutral Icon'],
+										[2] = ClassicUI.MICROBUTTONS_OPTION_ICONS['SpellBook Icon']..L['SpellBook Icon'],
+										[3] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Talents Icon']..L['Talents Icon'],
+										[5] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Achievement Icon']..L['Achievement Icon'],
+										[26] = ClassicUI.MICROBUTTONS_OPTION_ICONS['BFA Achievement Icon']..L['BFA Achievement Icon'],
+										[6] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Quest Icon']..L['Quest Icon'],
+										[9] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Icon']..L['LFD Icon'],
+										[24] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Normalized Icon']..L['LFD Normalized Icon'],
+										[10] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Collections Icon']..L['Collections Icon'],
+										[11] = ClassicUI.MICROBUTTONS_OPTION_ICONS['EJ Icon']..L['EJ Icon'],
+										[13] = ClassicUI.MICROBUTTONS_OPTION_ICONS['MainMenu Icon']..L['MainMenu Icon'],
+										[20] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic MainMenu Icon']..L['Classic MainMenu Icon']
+									},
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.iconMicroButton end,
+									set = function(_,value)
+										if (ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.iconMicroButton ~= value) then
+											ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.iconMicroButton = value
+											if (ClassicUI:IsEnabled()) then
+												StoreMicroButton:SetNormalTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].normalTexture)
+												StoreMicroButton:SetPushedTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].pushedTexture)
+												StoreMicroButton:SetDisabledTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].disabledTexture)
+											end
+										end
+									end
+								}
+							}
+						},
+						MainMenuMicroButton = {
+							order = function() return 6 + ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.order end,
+							type = "group",
+							name = function() return '|cffeda55f[|r|cffff6720'..(ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.order < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.order..'|r|cffeda55f] - |r'..string.gsub(ClassicUI.MICROBUTTONS_OPTION_ICONS[ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.iconMicroButton].name],':32:24:',':20:15:',1)..' '..L['MainMenu'] end,
+							desc = L['MainMenuMicroButton'],
+							width = 4.0,
+							args = {
+								Header1 = {
+									type = 'header',
+									order = 1,
+									name = L['MicroButtons Order']
+								},
+								buttonOrderUp = {
+									order = 2,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.order <= ClassicUI.MICROBUTTONS_MIN_ORDER) and '-disabled' or '')..':0|t' end,
+									desc = L['UP'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.order <= ClassicUI.MICROBUTTONS_MIN_ORDER end,
+									width = 0.26,
+									func = function()
+										ClassicUI:ReorderMicroButtonsDB("MainMenuMicroButton", "UP")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								buttonOrderDown = {
+									order = 3,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.order >= ClassicUI.MICROBUTTONS_MAX_ORDER) and '-disabled' or '')..':0|t' end,
+									desc = L['DOWN'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.order >= ClassicUI.MICROBUTTONS_MAX_ORDER end,
+									width = 0.26,
+									func = function()
+										ClassicUI:ReorderMicroButtonsDB("MainMenuMicroButton", "DOWN")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								Spacer1 = {
+									type = "description",
+									order = 4,
+									name = "",
+									width = 0.05
+								},
+								buttonOrderDefault = {
+									order = 5,
+									type = "execute",
+									name = function() return '|T'..(ClassicUI:IsMicroButtonsOrderDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
+									desc = L['DefaultOrderDesc'],
+									disabled = function() return ClassicUI:IsMicroButtonsOrderDefaultDB() end,
+									width = 0.72,
+									func = function()
+										ClassicUI:ReorderMicroButtonsDB(nil, "DEFAULT")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								Header2 = {
+									type = 'header',
+									order = 6,
+									name = L['MainMenuMicroButton']
+								},
+								hideMicroButton = {
+									order = 7,
+									type = "toggle",
+									name = L['Hide MicroButton'],
+									desc = L['Hide MicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.hideMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.hideMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.hideMicroButton) then
+												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
+													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
+													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
+												end
+												ClassicUI.HookMicroButtonsClass_UI_Watcher(MainMenuMicroButton)
+												MainMenuMicroButton:Hide()
+											else
+												MainMenuMicroButton:Show()
+											end
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								keepGapMicroButton = {
+									order = 8,
+									type = "toggle",
+									name = L['Keep MicroButton Gap'],
+									desc = L['KeepMicroButtonGapDesc'],
+									disabled = function() return not(ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.hideMicroButton) end,
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.keepGapMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.keepGapMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								disableMicroButton = {
+									order = 9,
+									type = "toggle",
+									name = L['Disable MicroButton'],
+									desc = L['Disable MicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.disableMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.disableMicroButton = value
+										ClassicUI.cached_db_profile.barsConfig_MicroButtons_MainMenuMicroButton_disableMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.disableMicroButton) then
+												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
+													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
+													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
+												end
+												if not(ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton) then
+													hooksecurefunc(MainMenuMicroButton, "UpdateMicroButton", ClassicUI.hook_MainMenuMicroButton_UpdateMicroButton)
+													ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton = true
+												end
+												MainMenuMicroButton:Disable()
+											else
+												local enable = true
+												if ( StoreFrame and StoreFrame_IsShown() ) then
+													enable = false
+												end
+												if (enable) then
+													MainMenuMicroButton:Enable()
+													if ( ( GameMenuFrame and GameMenuFrame:IsShown() )
+														or ( SettingsPanel:IsShown())
+														or ( KeyBindingFrame and KeyBindingFrame:IsShown())
+														or ( MacroFrame and MacroFrame:IsShown()) ) then
+														MainMenuMicroButton:SetPushed()
+													end
+												end
+											end
+										end
+									end,
+								},
+								disableMouseMicroButton = {
+									order = 10,
+									type = "toggle",
+									name = L['Disable Mouse'],
+									desc = L['DisableMouseMicroButtonDesc'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.disableMouseMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.disableMouseMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.disableMouseMicroButton) then
+												MainMenuMicroButton:EnableMouse(false)
+											else
+												MainMenuMicroButton:EnableMouse(true)
+											end
+										end
+									end,
+								},
+								hideLatencyBar = {
+									order = 11,
+									type = "toggle",
+									name = L['Hide Small Latency Bar'],
+									desc = L['Hide Small Latency Bar'],
+									width = "double",
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.hideLatencyBar end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.hideLatencyBar = value
+										if (ClassicUI:IsEnabled()) then
+											if value then
+												if (MainMenuMicroButton.MainMenuBarPerformanceBar ~= nil) then
+													MainMenuMicroButton.MainMenuBarPerformanceBar:SetAlpha(0)
+													MainMenuMicroButton.MainMenuBarPerformanceBar:Hide()
+												end
+											else
+												if (MainMenuMicroButton.MainMenuBarPerformanceBar ~= nil) then
+													MainMenuMicroButton.MainMenuBarPerformanceBar:SetAlpha(1)
+													MainMenuMicroButton.MainMenuBarPerformanceBar:Show()
+												end
+											end
+										end
+									end
+								},
+								xOffsetMicroButton = {
+									order = 12,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['xOffsetMicroButton'],
+									desc = L['xOffsetMicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.xOffsetMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.xOffsetMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								yOffsetMicroButton = {
+									order = 13,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['yOffsetMicroButton'],
+									desc = L['yOffsetMicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.yOffsetMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.yOffsetMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								alphaMicroButton = {
+									order = 14,
+									type = "range",
+									softMin = 0,
+									softMax = 1,
+									min = 0,
+									max = 1,
+									step = 0.01,
+									bigStep = 0.02,
+									name = L['alphaMicroButton'],
+									desc = string.gsub(L['alphaMicroButtonDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.MicroButtons.MainMenuMicroButton.alphaMicroButton, 1),
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.alphaMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.alphaMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if not(ClassicUI.hooked_MainMenuMicroButton_OnEnableOnDisable) then
+												if (math.abs(ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.alphaMicroButton-ClassicUI.db.defaults.profile.barsConfig.MicroButtons.MainMenuMicroButton.alphaMicroButton) > ClassicUI.STANDARD_EPSILON) then
+													MainMenuMicroButton:HookScript("OnEnable", ClassicUI.hookscript_MicroButtonOnEnable)
+													MainMenuMicroButton:HookScript("OnDisable", ClassicUI.hookscript_MicroButtonOnDisable)
+													ClassicUI.hooked_MainMenuMicroButton_OnEnableOnDisable = true
+												end
+											end
+											if (MainMenuMicroButton:IsEnabled()) then
+												ClassicUI.hookscript_MicroButtonOnEnable(MainMenuMicroButton)
+											else
+												ClassicUI.hookscript_MicroButtonOnDisable(MainMenuMicroButton)
+											end
+										end
+									end
+								},
+								iconMicroButton = {
+									order = 15,
+									type = "select",
+									style = "radio",
+									name = L['iconMicroButton'],
+									width = 1.12,
+									sorting = { 13, 25, 20, 4, 15, 16, 17, 1, 27, 28, 29, 30, 18, 19, 2, 3, 12, 5, 26, 6, 9, 24, 10, 11 },
+									values = {
+										[13] = ClassicUI.MICROBUTTONS_OPTION_ICONS['MainMenu Icon']..L['MainMenu Icon [D]'],
+										[25] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic Perf-MM Icon']..L['Classic Perf-MM Icon [*]'],
+										[20] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic MainMenu Icon']..L['Classic MainMenu Icon'],
+										[4] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Profession Icon']..L['Profession Icon'],
+										[15] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Abilities Icon']..L['Abilities Icon'],
+										[16] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Raid Icon']..L['Raid Icon'],
+										[17] = ClassicUI.MICROBUTTONS_OPTION_ICONS['World Icon']..L['World Icon'],
+										[1] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Class Icon']..L['Class Icon [*]'],
+										[27] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Variable Icon']..L['PvP Variable Icon [*]'],
+										[28] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Horde Icon']..L['PvP Horde Icon'],
+										[29] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Alliance Icon']..L['PvP Alliance Icon'],
+										[30] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Neutral Icon']..L['PvP Neutral Icon'],
+										[18] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic Quest Icon']..L['Classic Quest Icon'],
+										[19] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic Social Icon']..L['Classic Social Icon'],
+										[2] = ClassicUI.MICROBUTTONS_OPTION_ICONS['SpellBook Icon']..L['SpellBook Icon'],
+										[3] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Talents Icon']..L['Talents Icon'],
+										[12] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Store Icon']..L['Store Icon'],
+										[5] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Achievement Icon']..L['Achievement Icon'],
+										[26] = ClassicUI.MICROBUTTONS_OPTION_ICONS['BFA Achievement Icon']..L['BFA Achievement Icon'],
+										[6] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Quest Icon']..L['Quest Icon'],
+										[9] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Icon']..L['LFD Icon'],
+										[24] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Normalized Icon']..L['LFD Normalized Icon'],
+										[10] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Collections Icon']..L['Collections Icon'],
+										[11] = ClassicUI.MICROBUTTONS_OPTION_ICONS['EJ Icon']..L['EJ Icon']
+									},
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.iconMicroButton end,
+									set = function(_,value)
+										if (ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.iconMicroButton ~= value) then
+											ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.iconMicroButton = value
+											ClassicUI.cached_db_profile.barsConfig_MicroButtons_MainMenuMicroButton_iconMicroButton = value
+											ClassicUI.cached_db_profile.barsConfig_MicroButtons_MainMenuMicroButton_iconMicroButton_normalTexture = ClassicUI.MICROBUTTONS_ARRAYINFO[value].normalTexture
+											ClassicUI.cached_db_profile.barsConfig_MicroButtons_MainMenuMicroButton_iconMicroButton_pushedTexture = ClassicUI.MICROBUTTONS_ARRAYINFO[value].pushedTexture
+											ClassicUI.cached_db_profile.barsConfig_MicroButtons_MainMenuMicroButton_iconMicroButton_disabledTexture = ClassicUI.MICROBUTTONS_ARRAYINFO[value].disabledTexture
+											if (ClassicUI:IsEnabled()) then
+												local status = GetFileStreamingStatus()
+												if (status == 0) then
+													status = (GetBackgroundLoadingStatus()~=0) and 1 or 0
+												end
+												if (status == 0) then
+													MainMenuMicroButton:SetNormalTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].normalTexture)
+													MainMenuMicroButton:SetPushedTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].pushedTexture)
+													MainMenuMicroButton:SetDisabledTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].disabledTexture)
+													MainMenuMicroButton:GetPushedTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
+													MainMenuMicroButton:GetHighlightTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
+													MainMenuMicroButton:GetDisabledTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
+													if (value == 25) then	-- Classic Perf-MM Icon
+														ClassicUI.CreateMainMenuBarPerformanceBar2Texture(MainMenuMicroButton)
+													else
+														if (MainMenuMicroButton.MainMenuBarPerformanceBar2 ~= nil) then
+															MainMenuMicroButton.MainMenuBarPerformanceBar2:Hide()
+														end
+													end
+												end
+											end
+										end
+									end
+								}
+							}
+						},
+					}
+				},
+				PetBattleFrameBarOptions = {
+					order = 10,
 					type = "group",
 					name = L['PetBattleFrameBar'],
 					desc = L['PetBattleFrameBar'],
@@ -1558,7 +5025,7 @@ ClassicUI.optionsTable = {
 							step = 0.01,
 							bigStep = 0.03,
 							name = L['Scale'],
-							desc = L['Scale'],
+							desc = string.gsub(L['ScaleDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.PetBattleFrameBar.scale, 1),
 							get = function() return ClassicUI.db.profile.barsConfig.PetBattleFrameBar.scale end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.PetBattleFrameBar.scale = value
@@ -1570,7 +5037,7 @@ ClassicUI.optionsTable = {
 					}
 				},
 				MultiActionBarOptions = {
-					order = 10,
+					order = 11,
 					type = "group",
 					name = L['MultiActionBar'],
 					desc = L['MultiActionBar'],
@@ -1592,6 +5059,7 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.BottomMultiActionBars.xOffset end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.BottomMultiActionBars.xOffset = value
+								ClassicUI.cached_db_profile.barsConfig_BottomMultiActionBars_xOffset = value
 								if (ClassicUI:IsEnabled()) then
 									ClassicUI:UpdatedStatusBarsEvent()
 								end
@@ -1609,6 +5077,7 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.BottomMultiActionBars.yOffset end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.BottomMultiActionBars.yOffset = value
+								ClassicUI.cached_db_profile.barsConfig_BottomMultiActionBars_yOffset = value
 								if (ClassicUI:IsEnabled()) then
 									ClassicUI:UpdatedStatusBarsEvent()
 								end
@@ -1634,6 +5103,7 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.BottomMultiActionBars.ignoreyOffsetStatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.BottomMultiActionBars.ignoreyOffsetStatusBar = value
+										ClassicUI.cached_db_profile.barsConfig_BottomMultiActionBars_ignoreyOffsetStatusBar = value
 										if (ClassicUI:IsEnabled()) then
 											ClassicUI:UpdatedStatusBarsEvent()
 										end
@@ -1652,6 +5122,7 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.BottomMultiActionBars.yOffset1StatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.BottomMultiActionBars.yOffset1StatusBar = value
+										ClassicUI.cached_db_profile.barsConfig_BottomMultiActionBars_yOffset1StatusBar = value
 										if (ClassicUI:IsEnabled()) then
 											ClassicUI:UpdatedStatusBarsEvent()
 										end
@@ -1670,6 +5141,7 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.BottomMultiActionBars.yOffset2StatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.BottomMultiActionBars.yOffset2StatusBar = value
+										ClassicUI.cached_db_profile.barsConfig_BottomMultiActionBars_yOffset2StatusBar = value
 										if (ClassicUI:IsEnabled()) then
 											ClassicUI:UpdatedStatusBarsEvent()
 										end
@@ -1686,7 +5158,7 @@ ClassicUI.optionsTable = {
 							step = 0.01,
 							bigStep = 0.03,
 							name = L['Scale'],
-							desc = L['Scale'],
+							desc = string.gsub(L['ScaleDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.BottomMultiActionBars.scale, 1),
 							get = function() return ClassicUI.db.profile.barsConfig.BottomMultiActionBars.scale end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.BottomMultiActionBars.scale = value
@@ -1718,7 +5190,7 @@ ClassicUI.optionsTable = {
 									width = 1.5,
 									values = {
 										[0] = L['Default - Classic Layout'],
-										[1] = L['Dragonflight Layout']
+										[1] = L['Modern Layout']
 									},
 									get = function() return ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle end,
 									set = function(_,value)
@@ -1741,10 +5213,22 @@ ClassicUI.optionsTable = {
 									type = "range",
 									softMin = 0,
 									softMax = 1,
+									min = 0,
+									max = 1,
 									step = 0.01,
 									bigStep = 0.02,
 									name = L['NormalTexture Alpha'],
-									desc = L['NormalTexture Alpha'],
+									desc = function()
+										if (ClassicUI.db ~= nil) then
+											if (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle == 1) then
+												return string.gsub(L['NormalTextureAlphaDesc'], "%$%$%*%*%$%$", ClassicUI.db.defaults.profile.barsConfig.BottomMultiActionBars.BLStyle1NormalTextureAlpha, 1)
+											else
+												return string.gsub(L['NormalTextureAlphaDesc'], "%$%$%*%*%$%$", ClassicUI.db.defaults.profile.barsConfig.BottomMultiActionBars.BLStyle0NormalTextureAlpha, 1)
+											end
+										else
+											return L['NormalTexture Alpha']
+										end
+									end,
 									get = function()
 										return (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle == 1) and ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle1NormalTextureAlpha or ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0NormalTextureAlpha
 									end,
@@ -1935,8 +5419,24 @@ ClassicUI.optionsTable = {
 										end
 									end
 								},
-								BLStyle0UseNewCooldownFlash = {
+								BLStyle0UseNewAutoCastOverlay = {
 									order = 15,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewAutoCastOverlay'],
+									desc = L['BLStyle0UseNewAutoCastOverlayDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0UseNewAutoCastOverlay end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle0UseNewAutoCastOverlay = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[1]=true})
+										end
+									end
+								},
+								BLStyle0UseNewCooldownFlash = {
+									order = 16,
 									disabled = function() return (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle ~= 0) end,
 									hidden = function() return (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle ~= 0) end,
 									type = "toggle",
@@ -1952,7 +5452,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								BLStyle0HideCooldownBlingAnim = {
-									order = 16,
+									order = 17,
 									disabled = function() return (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle ~= 0) end,
 									hidden = function() return (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle ~= 0) end,
 									type = "toggle",
@@ -1968,7 +5468,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								BLStyle0UseNewChargeCooldownEdgeTexture = {
-									order = 17,
+									order = 18,
 									disabled = function() return (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle ~= 0) end,
 									hidden = function() return (ClassicUI.db.profile.barsConfig.BottomMultiActionBars.BLStyle ~= 0) end,
 									type = "toggle",
@@ -2002,6 +5502,7 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.xOffset end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.RightMultiActionBars.xOffset = value
+								ClassicUI.cached_db_profile.barsConfig_RightMultiActionBars_xOffset = value
 								if (ClassicUI:IsEnabled()) then
 									ClassicUI:UpdatedStatusBarsEvent()
 								end
@@ -2019,6 +5520,7 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.yOffset end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.RightMultiActionBars.yOffset = value
+								ClassicUI.cached_db_profile.barsConfig_RightMultiActionBars_yOffset = value
 								if (ClassicUI:IsEnabled()) then
 									ClassicUI:UpdatedStatusBarsEvent()
 								end
@@ -2039,6 +5541,7 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.ignoreyOffsetStatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.RightMultiActionBars.ignoreyOffsetStatusBar = value
+										ClassicUI.cached_db_profile.barsConfig_RightMultiActionBars_ignoreyOffsetStatusBar = value
 										if (ClassicUI:IsEnabled()) then
 											ClassicUI:UpdatedStatusBarsEvent()
 										end
@@ -2057,6 +5560,7 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.yOffset1StatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.RightMultiActionBars.yOffset1StatusBar = value
+										ClassicUI.cached_db_profile.barsConfig_RightMultiActionBars_yOffset1StatusBar = value
 										if (ClassicUI:IsEnabled()) then
 											ClassicUI:UpdatedStatusBarsEvent()
 										end
@@ -2075,6 +5579,7 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.yOffset2StatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.RightMultiActionBars.yOffset2StatusBar = value
+										ClassicUI.cached_db_profile.barsConfig_RightMultiActionBars_yOffset2StatusBar = value
 										if (ClassicUI:IsEnabled()) then
 											ClassicUI:UpdatedStatusBarsEvent()
 										end
@@ -2091,7 +5596,7 @@ ClassicUI.optionsTable = {
 							step = 0.01,
 							bigStep = 0.03,
 							name = L['Scale'],
-							desc = L['Scale'],
+							desc = string.gsub(L['ScaleDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.RightMultiActionBars.scale, 1),
 							get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.scale end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.RightMultiActionBars.scale = value
@@ -2123,7 +5628,7 @@ ClassicUI.optionsTable = {
 									width = 1.5,
 									values = {
 										[0] = L['Default - Classic Layout'],
-										[1] = L['Dragonflight Layout']
+										[1] = L['Modern Layout']
 									},
 									get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle end,
 									set = function(_,value)
@@ -2146,10 +5651,22 @@ ClassicUI.optionsTable = {
 									type = "range",
 									softMin = 0,
 									softMax = 1,
+									min = 0,
+									max = 1,
 									step = 0.01,
 									bigStep = 0.02,
 									name = L['NormalTexture Alpha'],
-									desc = L['NormalTexture Alpha'],
+									desc = function()
+										if (ClassicUI.db ~= nil) then
+											if (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle == 1) then
+												return string.gsub(L['NormalTextureAlphaDesc'], "%$%$%*%*%$%$", ClassicUI.db.defaults.profile.barsConfig.RightMultiActionBars.BLStyle1NormalTextureAlpha, 1)
+											else
+												return string.gsub(L['NormalTextureAlphaDesc'], "%$%$%*%*%$%$", ClassicUI.db.defaults.profile.barsConfig.RightMultiActionBars.BLStyle0NormalTextureAlpha, 1)
+											end
+										else
+											return L['NormalTexture Alpha']
+										end
+									end,
 									get = function()
 										return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle == 1) and ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle1NormalTextureAlpha or ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0NormalTextureAlpha
 									end,
@@ -2340,8 +5857,24 @@ ClassicUI.optionsTable = {
 										end
 									end
 								},
-								BLStyle0UseNewCooldownFlash = {
+								BLStyle0UseNewAutoCastOverlay = {
 									order = 15,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewAutoCastOverlay'],
+									desc = L['BLStyle0UseNewAutoCastOverlayDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0UseNewAutoCastOverlay end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle0UseNewAutoCastOverlay = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[2]=true})
+										end
+									end
+								},
+								BLStyle0UseNewCooldownFlash = {
+									order = 16,
 									disabled = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle ~= 0) end,
 									hidden = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle ~= 0) end,
 									type = "toggle",
@@ -2357,7 +5890,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								BLStyle0HideCooldownBlingAnim = {
-									order = 16,
+									order = 17,
 									disabled = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle ~= 0) end,
 									hidden = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle ~= 0) end,
 									type = "toggle",
@@ -2373,7 +5906,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								BLStyle0UseNewChargeCooldownEdgeTexture = {
-									order = 17,
+									order = 18,
 									disabled = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle ~= 0) end,
 									hidden = function() return (ClassicUI.db.profile.barsConfig.RightMultiActionBars.BLStyle ~= 0) end,
 									type = "toggle",
@@ -2393,7 +5926,7 @@ ClassicUI.optionsTable = {
 					}
 				},
 				PetActionBarOptions = {
-					order = 11,
+					order = 12,
 					type = "group",
 					name = L['PetActionBar'],
 					desc = L['PetActionBar'],
@@ -2415,6 +5948,7 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.xOffset end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.PetActionBarFrame.xOffset = value
+								ClassicUI.cached_db_profile.barsConfig_PetActionBarFrame_xOffset = value
 								if (ClassicUI:IsEnabled()) then
 									ClassicUI:UpdatedStatusBarsEvent()
 								end
@@ -2432,6 +5966,7 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.yOffset end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.PetActionBarFrame.yOffset = value
+								ClassicUI.cached_db_profile.barsConfig_PetActionBarFrame_yOffset = value
 								if (ClassicUI:IsEnabled()) then
 									ClassicUI:UpdatedStatusBarsEvent()
 								end
@@ -2449,6 +5984,7 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.xOffsetIfStanceBar end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.PetActionBarFrame.xOffsetIfStanceBar = value
+								ClassicUI.cached_db_profile.barsConfig_PetActionBarFrame_xOffsetIfStanceBar = value
 								if (ClassicUI:IsEnabled()) then
 									ClassicUI:UpdatedStatusBarsEvent()
 								end
@@ -2474,6 +6010,7 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.ignoreyOffsetStatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.PetActionBarFrame.ignoreyOffsetStatusBar = value
+										ClassicUI.cached_db_profile.barsConfig_PetActionBarFrame_ignoreyOffsetStatusBar = value
 										if (ClassicUI:IsEnabled()) then
 											ClassicUI:UpdatedStatusBarsEvent()
 										end
@@ -2492,6 +6029,7 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.yOffset1StatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.PetActionBarFrame.yOffset1StatusBar = value
+										ClassicUI.cached_db_profile.barsConfig_PetActionBarFrame_yOffset1StatusBar = value
 										if (ClassicUI:IsEnabled()) then
 											ClassicUI:UpdatedStatusBarsEvent()
 										end
@@ -2510,6 +6048,7 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.yOffset2StatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.PetActionBarFrame.yOffset2StatusBar = value
+										ClassicUI.cached_db_profile.barsConfig_PetActionBarFrame_yOffset2StatusBar = value
 										if (ClassicUI:IsEnabled()) then
 											ClassicUI:UpdatedStatusBarsEvent()
 										end
@@ -2526,7 +6065,7 @@ ClassicUI.optionsTable = {
 							step = 0.01,
 							bigStep = 0.03,
 							name = L['Scale'],
-							desc = L['Scale'],
+							desc = string.gsub(L['ScaleDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.PetActionBarFrame.scale, 1),
 							get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.scale end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.PetActionBarFrame.scale = value
@@ -2557,7 +6096,7 @@ ClassicUI.optionsTable = {
 									width = 1.5,
 									values = {
 										[0] = L['Default - Classic Layout'],
-										[1] = L['Dragonflight Layout']
+										[1] = L['Modern Layout']
 									},
 									get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle end,
 									set = function(_,value)
@@ -2580,10 +6119,22 @@ ClassicUI.optionsTable = {
 									type = "range",
 									softMin = 0,
 									softMax = 1,
+									min = 0,
+									max = 1,
 									step = 0.01,
 									bigStep = 0.02,
 									name = L['NormalTexture Alpha'],
-									desc = L['NormalTexture Alpha'],
+									desc = function()
+										if (ClassicUI.db ~= nil) then
+											if (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle == 1) then
+												return string.gsub(L['NormalTextureAlphaDesc'], "%$%$%*%*%$%$", ClassicUI.db.defaults.profile.barsConfig.PetActionBarFrame.BLStyle1NormalTextureAlpha, 1)
+											else
+												return string.gsub(L['NormalTextureAlphaDesc'], "%$%$%*%*%$%$", ClassicUI.db.defaults.profile.barsConfig.PetActionBarFrame.BLStyle0NormalTextureAlpha, 1)
+											end
+										else
+											return L['NormalTexture Alpha']
+										end
+									end,
 									get = function()
 										return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle == 1) and ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle1NormalTextureAlpha or ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0NormalTextureAlpha
 									end,
@@ -2774,8 +6325,24 @@ ClassicUI.optionsTable = {
 										end
 									end
 								},
-								BLStyle0UseNewCooldownFlash = {
+								BLStyle0UseNewAutoCastOverlay = {
 									order = 15,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewAutoCastOverlay'],
+									desc = L['BLStyle0UseNewAutoCastOverlayDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0UseNewAutoCastOverlay end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle0UseNewAutoCastOverlay = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[3]=true})
+										end
+									end
+								},
+								BLStyle0UseNewCooldownFlash = {
+									order = 16,
 									disabled = function() return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle ~= 0) end,
 									hidden = function() return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle ~= 0) end,
 									type = "toggle",
@@ -2791,7 +6358,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								BLStyle0HideCooldownBlingAnim = {
-									order = 16,
+									order = 17,
 									disabled = function() return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle ~= 0) end,
 									hidden = function() return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle ~= 0) end,
 									type = "toggle",
@@ -2807,7 +6374,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								BLStyle0UseNewChargeCooldownEdgeTexture = {
-									order = 17,
+									order = 18,
 									disabled = function() return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle ~= 0) end,
 									hidden = function() return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.BLStyle ~= 0) end,
 									type = "toggle",
@@ -2854,6 +6421,7 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.hideOnOverrideActionBar end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.PetActionBarFrame.hideOnOverrideActionBar = value
+								ClassicUI.cached_db_profile.barsConfig_PetActionBarFrame_hideOnOverrideActionBar = value
 								if (ClassicUI:IsEnabled()) then
 									ClassicUI:UpdatedStatusBarsEvent()
 								end
@@ -2868,6 +6436,7 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.hideOnPetBattleFrameBar end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.PetActionBarFrame.hideOnPetBattleFrameBar = value
+								ClassicUI.cached_db_profile.barsConfig_PetActionBarFrame_hideOnPetBattleFrameBar = value
 								if (ClassicUI:IsEnabled()) then
 									ClassicUI:UpdatedStatusBarsEvent()
 								end
@@ -2876,7 +6445,7 @@ ClassicUI.optionsTable = {
 					}
 				},
 				StanceBarOptions = {
-					order = 12,
+					order = 13,
 					type = "group",
 					name = L['StanceBar'],
 					desc = L['StanceBar'],
@@ -2898,6 +6467,7 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.StanceBarFrame.xOffset end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.StanceBarFrame.xOffset = value
+								ClassicUI.cached_db_profile.barsConfig_StanceBarFrame_xOffset = true
 								if (ClassicUI:IsEnabled()) then
 									ClassicUI:UpdatedStatusBarsEvent()
 								end
@@ -2915,6 +6485,7 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.StanceBarFrame.yOffset end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.StanceBarFrame.yOffset = value
+								ClassicUI.cached_db_profile.barsConfig_StanceBarFrame_yOffset = value
 								if (ClassicUI:IsEnabled()) then
 									ClassicUI:UpdatedStatusBarsEvent()
 								end
@@ -2940,6 +6511,7 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.StanceBarFrame.ignoreyOffsetStatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.StanceBarFrame.ignoreyOffsetStatusBar = value
+										ClassicUI.cached_db_profile.barsConfig_StanceBarFrame_ignoreyOffsetStatusBar = value
 										if (ClassicUI:IsEnabled()) then
 											ClassicUI:UpdatedStatusBarsEvent()
 										end
@@ -2958,6 +6530,7 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.StanceBarFrame.yOffset1StatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.StanceBarFrame.yOffset1StatusBar = value
+										ClassicUI.cached_db_profile.barsConfig_StanceBarFrame_yOffset1StatusBar = value
 										if (ClassicUI:IsEnabled()) then
 											ClassicUI:UpdatedStatusBarsEvent()
 										end
@@ -2976,6 +6549,7 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.StanceBarFrame.yOffset2StatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.StanceBarFrame.yOffset2StatusBar = value
+										ClassicUI.cached_db_profile.barsConfig_StanceBarFrame_yOffset2StatusBar = value
 										if (ClassicUI:IsEnabled()) then
 											ClassicUI:UpdatedStatusBarsEvent()
 										end
@@ -2992,7 +6566,7 @@ ClassicUI.optionsTable = {
 							step = 0.01,
 							bigStep = 0.03,
 							name = L['Scale'],
-							desc = L['Scale'],
+							desc = string.gsub(L['ScaleDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.StanceBarFrame.scale, 1),
 							get = function() return ClassicUI.db.profile.barsConfig.StanceBarFrame.scale end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.StanceBarFrame.scale = value
@@ -3023,12 +6597,13 @@ ClassicUI.optionsTable = {
 									width = 1.5,
 									values = {
 										[0] = L['Default - Classic Layout'],
-										[1] = L['Dragonflight Layout']
+										[1] = L['Modern Layout']
 									},
 									get = function() return ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle end,
 									set = function(_,value)
 										if (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle ~= value) then
 											ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle = value
+											ClassicUI.cached_db_profile.barsConfig_StanceBarFrame_BLStyle = value
 											if (ClassicUI:IsEnabled()) then
 												ClassicUI.LayoutGroupActionButtons({[4]=true})
 											end
@@ -3046,10 +6621,22 @@ ClassicUI.optionsTable = {
 									type = "range",
 									softMin = 0,
 									softMax = 1,
+									min = 0,
+									max = 1,
 									step = 0.01,
 									bigStep = 0.02,
 									name = L['NormalTexture Alpha'],
-									desc = L['NormalTexture Alpha'],
+									desc = function()
+										if (ClassicUI.db ~= nil) then
+											if (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle == 1) then
+												return string.gsub(L['NormalTextureAlphaDesc'], "%$%$%*%*%$%$", ClassicUI.db.defaults.profile.barsConfig.StanceBarFrame.BLStyle1NormalTextureAlpha, 1)
+											else
+												return string.gsub(L['NormalTextureAlphaDesc'], "%$%$%*%*%$%$", ClassicUI.db.defaults.profile.barsConfig.StanceBarFrame.BLStyle0NormalTextureAlpha, 1)
+											end
+										else
+											return L['NormalTexture Alpha']
+										end
+									end,
 									get = function()
 										return (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle == 1) and ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle1NormalTextureAlpha or ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0NormalTextureAlpha
 									end,
@@ -3240,8 +6827,24 @@ ClassicUI.optionsTable = {
 										end
 									end
 								},
-								BLStyle0UseNewCooldownFlash = {
+								BLStyle0UseNewAutoCastOverlay = {
 									order = 15,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewAutoCastOverlay'],
+									desc = L['BLStyle0UseNewAutoCastOverlayDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0UseNewAutoCastOverlay end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle0UseNewAutoCastOverlay = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[4]=true})
+										end
+									end
+								},
+								BLStyle0UseNewCooldownFlash = {
+									order = 16,
 									disabled = function() return (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle ~= 0) end,
 									hidden = function() return (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle ~= 0) end,
 									type = "toggle",
@@ -3257,7 +6860,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								BLStyle0HideCooldownBlingAnim = {
-									order = 16,
+									order = 17,
 									disabled = function() return (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle ~= 0) end,
 									hidden = function() return (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle ~= 0) end,
 									type = "toggle",
@@ -3273,7 +6876,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								BLStyle0UseNewChargeCooldownEdgeTexture = {
-									order = 17,
+									order = 18,
 									disabled = function() return (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle ~= 0) end,
 									hidden = function() return (ClassicUI.db.profile.barsConfig.StanceBarFrame.BLStyle ~= 0) end,
 									type = "toggle",
@@ -3293,7 +6896,7 @@ ClassicUI.optionsTable = {
 					}
 				},
 				PossessBarOptions = {
-					order = 13,
+					order = 14,
 					type = "group",
 					name = L['PossessBar'],
 					desc = L['PossessBar'],
@@ -3315,6 +6918,7 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.PossessBarFrame.xOffset end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.PossessBarFrame.xOffset = value
+								ClassicUI.cached_db_profile.barsConfig_PossessBarFrame_xOffset = value
 								if (ClassicUI:IsEnabled()) then
 									ClassicUI:UpdatedStatusBarsEvent()
 								end
@@ -3332,6 +6936,7 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.PossessBarFrame.yOffset end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.PossessBarFrame.yOffset = value
+								ClassicUI.cached_db_profile.barsConfig_PossessBarFrame_yOffset = value
 								if (ClassicUI:IsEnabled()) then
 									ClassicUI:UpdatedStatusBarsEvent()
 								end
@@ -3357,6 +6962,7 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.PossessBarFrame.ignoreyOffsetStatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.PossessBarFrame.ignoreyOffsetStatusBar = value
+										ClassicUI.cached_db_profile.barsConfig_PossessBarFrame_ignoreyOffsetStatusBar = value
 										if (ClassicUI:IsEnabled()) then
 											ClassicUI:UpdatedStatusBarsEvent()
 										end
@@ -3375,6 +6981,7 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.PossessBarFrame.yOffset1StatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.PossessBarFrame.yOffset1StatusBar = value
+										ClassicUI.cached_db_profile.barsConfig_PossessBarFrame_yOffset1StatusBar = value
 										if (ClassicUI:IsEnabled()) then
 											ClassicUI:UpdatedStatusBarsEvent()
 										end
@@ -3393,6 +7000,7 @@ ClassicUI.optionsTable = {
 									get = function() return ClassicUI.db.profile.barsConfig.PossessBarFrame.yOffset2StatusBar end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.PossessBarFrame.yOffset2StatusBar = value
+										ClassicUI.cached_db_profile.barsConfig_PossessBarFrame_yOffset2StatusBar = value
 										if (ClassicUI:IsEnabled()) then
 											ClassicUI:UpdatedStatusBarsEvent()
 										end
@@ -3409,7 +7017,7 @@ ClassicUI.optionsTable = {
 							step = 0.01,
 							bigStep = 0.03,
 							name = L['Scale'],
-							desc = L['Scale'],
+							desc = string.gsub(L['ScaleDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.PossessBarFrame.scale, 1),
 							get = function() return ClassicUI.db.profile.barsConfig.PossessBarFrame.scale end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.PossessBarFrame.scale = value
@@ -3440,7 +7048,7 @@ ClassicUI.optionsTable = {
 									width = 1.5,
 									values = {
 										[0] = L['Default - Classic Layout'],
-										[1] = L['Dragonflight Layout']
+										[1] = L['Modern Layout']
 									},
 									get = function() return ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle end,
 									set = function(_,value)
@@ -3463,10 +7071,22 @@ ClassicUI.optionsTable = {
 									type = "range",
 									softMin = 0,
 									softMax = 1,
+									min = 0,
+									max = 1,
 									step = 0.01,
 									bigStep = 0.02,
 									name = L['NormalTexture Alpha'],
-									desc = L['NormalTexture Alpha'],
+									desc = function()
+										if (ClassicUI.db ~= nil) then
+											if (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle == 1) then
+												return string.gsub(L['NormalTextureAlphaDesc'], "%$%$%*%*%$%$", ClassicUI.db.defaults.profile.barsConfig.PossessBarFrame.BLStyle1NormalTextureAlpha, 1)
+											else
+												return string.gsub(L['NormalTextureAlphaDesc'], "%$%$%*%*%$%$", ClassicUI.db.defaults.profile.barsConfig.PossessBarFrame.BLStyle0NormalTextureAlpha, 1)
+											end
+										else
+											return L['NormalTexture Alpha']
+										end
+									end,
 									get = function()
 										return (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle == 1) and ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle1NormalTextureAlpha or ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0NormalTextureAlpha
 									end,
@@ -3657,8 +7277,24 @@ ClassicUI.optionsTable = {
 										end
 									end
 								},
-								BLStyle0UseNewCooldownFlash = {
+								BLStyle0UseNewAutoCastOverlay = {
 									order = 15,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle ~= 0) end,
+									hidden = function() return (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle ~= 0) end,
+									type = "toggle",
+									name = L['BLStyle0UseNewAutoCastOverlay'],
+									desc = L['BLStyle0UseNewAutoCastOverlayDesc'],
+									width = 2.95,
+									get = function() return ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0UseNewAutoCastOverlay end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle0UseNewAutoCastOverlay = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.LayoutGroupActionButtons({[5]=true})
+										end
+									end
+								},
+								BLStyle0UseNewCooldownFlash = {
+									order = 16,
 									disabled = function() return (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle ~= 0) end,
 									hidden = function() return (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle ~= 0) end,
 									type = "toggle",
@@ -3674,7 +7310,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								BLStyle0HideCooldownBlingAnim = {
-									order = 16,
+									order = 17,
 									disabled = function() return (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle ~= 0) end,
 									hidden = function() return (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle ~= 0) end,
 									type = "toggle",
@@ -3690,7 +7326,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								BLStyle0UseNewChargeCooldownEdgeTexture = {
-									order = 17,
+									order = 18,
 									disabled = function() return (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle ~= 0) end,
 									hidden = function() return (ClassicUI.db.profile.barsConfig.PossessBarFrame.BLStyle ~= 0) end,
 									type = "toggle",
@@ -3710,7 +7346,7 @@ ClassicUI.optionsTable = {
 					}
 				},
 				StatusBarOptions = {
-					order = 14,
+					order = 15,
 					type = "group",
 					name = L['StatusBar'],
 					desc = L['StatusBar'],
@@ -3735,7 +7371,7 @@ ClassicUI.optionsTable = {
 							type = "toggle",
 							name = L['expBarAlwaysShowRestedBar'],
 							desc = L['expBarAlwaysShowRestedBarDesc'],
-							width = 2.5,
+							width = 2.75,
 							get = function() return ClassicUI.db.profile.barsConfig.SingleStatusBar.expBarAlwaysShowRestedBar end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.SingleStatusBar.expBarAlwaysShowRestedBar = value
@@ -3842,10 +7478,12 @@ ClassicUI.optionsTable = {
 							type = "range",
 							softMin = 0,
 							softMax = 1,
+							min = 0,
+							max = 1,
 							step = 1,
 							bigStep = 0.02,
 							name = L['Alpha'],
-							desc = L['Alpha'],
+							desc = string.gsub(L['AlphaDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.SingleStatusBar.alpha, 1),
 							get = function() return ClassicUI.db.profile.barsConfig.SingleStatusBar.alpha end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.SingleStatusBar.alpha = value
@@ -3867,7 +7505,7 @@ ClassicUI.optionsTable = {
 							step = 1,
 							bigStep = 10,
 							name = L['xSize'],
-							desc = L['xSize'],
+							desc = string.gsub(L['xSizeDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.SingleStatusBar.xSize, 1),
 							get = function() return ClassicUI.db.profile.barsConfig.SingleStatusBar.xSize end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.SingleStatusBar.xSize = value
@@ -3884,7 +7522,7 @@ ClassicUI.optionsTable = {
 							step = 1,
 							bigStep = 10,
 							name = L['ySize'],
-							desc = L['ySize'],
+							desc = string.gsub(L['ySizeDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.SingleStatusBar.ySize, 1),
 							get = function() return ClassicUI.db.profile.barsConfig.SingleStatusBar.ySize end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.SingleStatusBar.ySize = value
@@ -3919,10 +7557,12 @@ ClassicUI.optionsTable = {
 									type = "range",
 									softMin = 0,
 									softMax = 1,
+									min = 0,
+									max = 1,
 									step = 1,
 									bigStep = 0.02,
 									name = L['alphaArt'],
-									desc = L['alphaArt'],
+									desc = string.gsub(L['alphaArtDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.SingleStatusBar.artAlpha, 1),
 									get = function() return ClassicUI.db.profile.barsConfig.SingleStatusBar.artAlpha end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.SingleStatusBar.artAlpha = value
@@ -3979,13 +7619,14 @@ ClassicUI.optionsTable = {
 								},
 								xSizeArt = {
 									order = 7,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.SingleStatusBar.artHide) end,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
 									step = 1,
 									bigStep = 10,
 									name = L['xSizeArt'],
-									desc = L['xSizeArt'],
+									desc = string.gsub(L['xSizeArtDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.SingleStatusBar.xSizeArt, 1),
 									get = function() return ClassicUI.db.profile.barsConfig.SingleStatusBar.xSizeArt end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.SingleStatusBar.xSizeArt = value
@@ -3996,13 +7637,14 @@ ClassicUI.optionsTable = {
 								},
 								ySizeArt = {
 									order = 8,
+									disabled = function() return (ClassicUI.db.profile.barsConfig.SingleStatusBar.artHide) end,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
 									step = 1,
 									bigStep = 10,
 									name = L['ySizeArt'],
-									desc = L['ySizeArt'],
+									desc = string.gsub(L['ySizeArtDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.SingleStatusBar.ySizeArt, 1),
 									get = function() return ClassicUI.db.profile.barsConfig.SingleStatusBar.ySizeArt end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.SingleStatusBar.ySizeArt = value
@@ -4039,10 +7681,12 @@ ClassicUI.optionsTable = {
 									type = "range",
 									softMin = 0,
 									softMax = 1,
+									min = 0,
+									max = 1,
 									step = 0.01,
 									bigStep = 0.02,
 									name = L['alphaOverlay'],
-									desc = L['alphaOverlay'],
+									desc = string.gsub(L['alphaOverlayDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.SingleStatusBar.overlayAlpha, 1),
 									get = function() return ClassicUI.db.profile.barsConfig.SingleStatusBar.overlayAlpha end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.SingleStatusBar.overlayAlpha = value
@@ -4197,10 +7841,12 @@ ClassicUI.optionsTable = {
 									type = "range",
 									softMin = 0,
 									softMax = 1,
+									min = 0,
+									max = 1,
 									step = 1,
 									bigStep = 0.02,
 									name = L['Alpha'],
-									desc = L['Alpha'],
+									desc = string.gsub(L['AlphaDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.DoubleUpperStatusBar.alpha, 1),
 									get = function() return ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.alpha end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.alpha = value
@@ -4222,7 +7868,7 @@ ClassicUI.optionsTable = {
 									step = 1,
 									bigStep = 10,
 									name = L['xSize'],
-									desc = L['xSize'],
+									desc = string.gsub(L['xSizeDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.DoubleUpperStatusBar.xSize, 1),
 									get = function() return ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xSize end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xSize = value
@@ -4239,7 +7885,7 @@ ClassicUI.optionsTable = {
 									step = 1,
 									bigStep = 10,
 									name = L['ySize'],
-									desc = L['ySize'],
+									desc = string.gsub(L['ySizeDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.DoubleUpperStatusBar.ySize, 1),
 									get = function() return ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.ySize end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.ySize = value
@@ -4274,10 +7920,12 @@ ClassicUI.optionsTable = {
 											type = "range",
 											softMin = 0,
 											softMax = 1,
+											min = 0,
+											max = 1,
 											step = 1,
 											bigStep = 0.02,
 											name = L['alphaArt'],
-											desc = L['alphaArt'],
+											desc = string.gsub(L['alphaArtDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.DoubleUpperStatusBar.artAlpha, 1),
 											get = function() return ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.artAlpha end,
 											set = function(_,value)
 												ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.artAlpha = value
@@ -4334,13 +7982,14 @@ ClassicUI.optionsTable = {
 										},
 										xSizeArt = {
 											order = 7,
+											disabled = function() return (ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.artHide) end,
 											type = "range",
 											softMin = -500,
 											softMax = 500,
 											step = 1,
 											bigStep = 10,
 											name = L['xSizeArt'],
-											desc = L['xSizeArt'],
+											desc = string.gsub(L['xSizeArtDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.DoubleUpperStatusBar.xSizeArt, 1),
 											get = function() return ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xSizeArt end,
 											set = function(_,value)
 												ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xSizeArt = value
@@ -4351,13 +8000,14 @@ ClassicUI.optionsTable = {
 										},
 										ySizeArt = {
 											order = 8,
+											disabled = function() return (ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.artHide) end,
 											type = "range",
 											softMin = -500,
 											softMax = 500,
 											step = 1,
 											bigStep = 10,
 											name = L['ySizeArt'],
-											desc = L['ySizeArt'],
+											desc = string.gsub(L['ySizeArtDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.DoubleUpperStatusBar.ySizeArt, 1),
 											get = function() return ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.ySizeArt end,
 											set = function(_,value)
 												ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.ySizeArt = value
@@ -4394,10 +8044,12 @@ ClassicUI.optionsTable = {
 											type = "range",
 											softMin = 0,
 											softMax = 1,
+											min = 0,
+											max = 1,
 											step = 0.01,
 											bigStep = 0.02,
 											name = L['alphaOverlay'],
-											desc = L['alphaOverlay'],
+											desc = string.gsub(L['alphaOverlayDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.DoubleUpperStatusBar.overlayAlpha, 1),
 											get = function() return ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.overlayAlpha end,
 											set = function(_,value)
 												ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.overlayAlpha = value
@@ -4497,10 +8149,12 @@ ClassicUI.optionsTable = {
 									type = "range",
 									softMin = 0,
 									softMax = 1,
+									min = 0,
+									max = 1,
 									step = 1,
 									bigStep = 0.02,
 									name = L['Alpha'],
-									desc = L['Alpha'],
+									desc = string.gsub(L['AlphaDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.DoubleLowerStatusBar.alpha, 1),
 									get = function() return ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.alpha end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.alpha = value
@@ -4522,7 +8176,7 @@ ClassicUI.optionsTable = {
 									step = 1,
 									bigStep = 10,
 									name = L['xSize'],
-									desc = L['xSize'],
+									desc = string.gsub(L['xSizeDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.DoubleLowerStatusBar.xSize, 1),
 									get = function() return ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xSize end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xSize = value
@@ -4539,7 +8193,7 @@ ClassicUI.optionsTable = {
 									step = 1,
 									bigStep = 10,
 									name = L['ySize'],
-									desc = L['ySize'],
+									desc = string.gsub(L['ySizeDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.DoubleLowerStatusBar.ySize, 1),
 									get = function() return ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.ySize end,
 									set = function(_,value)
 										ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.ySize = value
@@ -4574,10 +8228,12 @@ ClassicUI.optionsTable = {
 											type = "range",
 											softMin = 0,
 											softMax = 1,
+											min = 0,
+											max = 1,
 											step = 1,
 											bigStep = 0.02,
 											name = L['alphaArt'],
-											desc = L['alphaArt'],
+											desc = string.gsub(L['alphaArtDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.DoubleLowerStatusBar.artAlpha, 1),
 											get = function() return ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.artAlpha end,
 											set = function(_,value)
 												ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.artAlpha = value
@@ -4634,13 +8290,14 @@ ClassicUI.optionsTable = {
 										},
 										xSizeArt = {
 											order = 7,
+											disabled = function() return (ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.artHide) end,
 											type = "range",
 											softMin = -500,
 											softMax = 500,
 											step = 1,
 											bigStep = 10,
 											name = L['xSizeArt'],
-											desc = L['xSizeArt'],
+											desc = string.gsub(L['xSizeArtDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.DoubleLowerStatusBar.xSizeArt, 1),
 											get = function() return ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xSizeArt end,
 											set = function(_,value)
 												ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.xSizeArt = value
@@ -4651,13 +8308,14 @@ ClassicUI.optionsTable = {
 										},
 										ySizeArt = {
 											order = 8,
+											disabled = function() return (ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.artHide) end,
 											type = "range",
 											softMin = -500,
 											softMax = 500,
 											step = 1,
 											bigStep = 10,
 											name = L['ySizeArt'],
-											desc = L['ySizeArt'],
+											desc = string.gsub(L['ySizeArtDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.DoubleLowerStatusBar.ySizeArt, 1),
 											get = function() return ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.ySizeArt end,
 											set = function(_,value)
 												ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.ySizeArt = value
@@ -4694,10 +8352,12 @@ ClassicUI.optionsTable = {
 											type = "range",
 											softMin = 0,
 											softMax = 1,
+											min = 0,
+											max = 1,
 											step = 0.01,
 											bigStep = 0.02,
 											name = L['alphaOverlay'],
-											desc = L['alphaOverlay'],
+											desc = string.gsub(L['alphaOverlayDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.DoubleLowerStatusBar.overlayAlpha, 1),
 											get = function() return ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.overlayAlpha end,
 											set = function(_,value)
 												ClassicUI.db.profile.barsConfig.DoubleLowerStatusBar.overlayAlpha = value
@@ -4859,6 +8519,7 @@ ClassicUI.optionsTable = {
 							end,
 							set = function(_,value)
 								ClassicUI.db.profile.extraFrames.Minimap.enabled = value
+								ClassicUI.cached_db_profile.extraFrames_Minimap_enabled = value
 								if (value) then
 									ClassicUI:EnableOldMinimap()
 									if (ClassicUI.db.profile.extraFrames.Minimap.anchorQueueButtonToMinimap) then
@@ -4927,7 +8588,7 @@ ClassicUI.optionsTable = {
 							step = 0.01,
 							bigStep = 0.03,
 							name = L['Scale'],
-							desc = L['Scale'],
+							desc = string.gsub(L['ScaleDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.extraFrames.Minimap.scale, 1),
 							get = function() return ClassicUI.db.profile.extraFrames.Minimap.scale end,
 							set = function(_,value)
 								ClassicUI.db.profile.extraFrames.Minimap.scale = value
@@ -4948,7 +8609,7 @@ ClassicUI.optionsTable = {
 							type = "select",
 							name = L['MailIconPriority'],
 							desc = L['MailIconPriorityDesc'],
-							width = 2.25,
+							width = 2.30,
 							values = {
 								[0] = L['Default - Crafting Order Icon > Mail Icon'],
 								[1] = L['Mail Icon > Crafting Order Icon']
@@ -4979,7 +8640,7 @@ ClassicUI.optionsTable = {
 							disabled = function() return not(ClassicUI.db.profile.extraFrames.Minimap.enabled) end,
 							inline = true,
 							type = "group",
-							name = L["ExpansionLandingPage (ELP) Button"],
+							name = L['ExpansionLandingPage (ELP) Button'],
 							desc = "",
 							args = {
 								xOffsetExpansionLandingPage = {
@@ -4999,6 +8660,8 @@ ClassicUI.optionsTable = {
 										if (ClassicUI.db.profile.extraFrames.Minimap.enabled) then
 											ExpansionLandingPageMinimapButton:ClearAllPoints()
 											if (ExpansionLandingPageMinimapButton:GetNormalTexture():GetAtlas() == "dragonflight-landingbutton-up") then
+												ExpansionLandingPageMinimapButton:SetPoint("CENTER", MinimapBackdrop, "TOPLEFT", 32 + 4 + 26.5 + value, -105 - 6 - 26.5 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetExpansionLandingPage)
+											elseif (ExpansionLandingPageMinimapButton:GetNormalTexture():GetAtlas() == "warwithin-landingbutton-up") then
 												ExpansionLandingPageMinimapButton:SetPoint("CENTER", MinimapBackdrop, "TOPLEFT", 32 + 4 + 26.5 + value, -105 - 6 - 26.5 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetExpansionLandingPage)
 											else
 												ExpansionLandingPageMinimapButton:SetPoint("CENTER", MinimapBackdrop, "TOPLEFT", 32 + 6 + 26.5 + value, -105 - 7 - 26.5 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetExpansionLandingPage)
@@ -5024,14 +8687,21 @@ ClassicUI.optionsTable = {
 											ExpansionLandingPageMinimapButton:ClearAllPoints()
 											if (ExpansionLandingPageMinimapButton:GetNormalTexture():GetAtlas() == "dragonflight-landingbutton-up") then
 												ExpansionLandingPageMinimapButton:SetPoint("CENTER", MinimapBackdrop, "TOPLEFT", 32 + 4 + 26.5 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetExpansionLandingPage, -105 - 6 - 26.5 + value)
+											elseif (ExpansionLandingPageMinimapButton:GetNormalTexture():GetAtlas() == "warwithin-landingbutton-up") then
+												ExpansionLandingPageMinimapButton:SetPoint("CENTER", MinimapBackdrop, "TOPLEFT", 32 + 4 + 26.5 + value, -105 - 6 - 26.5 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetExpansionLandingPage)
 											else
 												ExpansionLandingPageMinimapButton:SetPoint("CENTER", MinimapBackdrop, "TOPLEFT", 32 + 6 + 26.5 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetExpansionLandingPage, -105 - 7 - 26.5 + value)
 											end
 										end
 									end
 								},
-								scaleExpansionLandingPageDragonflight = {
+								Spacer1 = {
+									type = "description",
 									order = 3,
+									name = ""
+								},
+								scaleExpansionLandingPageDragonflight = {
+									order = 4,
 									disabled = function() return not(ClassicUI.db.profile.extraFrames.Minimap.enabled) end,
 									type = "range",
 									min = 0.01,
@@ -5040,18 +8710,44 @@ ClassicUI.optionsTable = {
 									step = 0.01,
 									bigStep = 0.03,
 									name = L['ScaleELP-DF-Button'],
-									desc = L['ScaleELP-DF-ButtonDesc'],
+									desc = string.gsub(L['ScaleELP-DF-ButtonDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.extraFrames.Minimap.scaleExpansionLandingPageDragonflight, 1),
 									get = function() return ClassicUI.db.profile.extraFrames.Minimap.scaleExpansionLandingPageDragonflight end,
 									set = function(_,value)
 										ClassicUI.db.profile.extraFrames.Minimap.scaleExpansionLandingPageDragonflight = value
 										ClassicUI.cached_db_profile.extraFrames_Minimap_scaleExpansionLandingPageDragonflight = value
 										if (ClassicUI.db.profile.extraFrames.Minimap.enabled) then
 											if (ExpansionLandingPageMinimapButton:GetNormalTexture():GetAtlas() == "dragonflight-landingbutton-up") then
-												if (ClassicUI.elpmbSizeW == 0 or ClassicUI.elpmbSizeH == 0) then
-													ClassicUI.elpmbSizeW = ExpansionLandingPageMinimapButton:GetWidth()
-													ClassicUI.elpmbSizeH = ExpansionLandingPageMinimapButton:GetHeight()
+												if (ClassicUI.elpmbSizes.dragonflight.w == 0 or ClassicUI.elpmbSizes.dragonflight.h == 0) then
+													ClassicUI.elpmbSizes.dragonflight.w = ExpansionLandingPageMinimapButton:GetWidth()
+													ClassicUI.elpmbSizes.dragonflight.h = ExpansionLandingPageMinimapButton:GetHeight()
 												end
-												ExpansionLandingPageMinimapButton:SetSize(math.floor(ClassicUI.elpmbSizeW * value + 0.5), math.floor(ClassicUI.elpmbSizeH * value + 0.5))
+												ExpansionLandingPageMinimapButton:SetSize(math.floor(ClassicUI.elpmbSizes.dragonflight.w * value + 0.5), math.floor(ClassicUI.elpmbSizes.dragonflight.h * value + 0.5))
+											end
+										end
+									end
+								},
+								scaleExpansionLandingPageTheWarWithin = {
+									order = 5,
+									disabled = function() return not(ClassicUI.db.profile.extraFrames.Minimap.enabled) end,
+									type = "range",
+									min = 0.01,
+									softMin = 0.01,
+									softMax = 4,
+									step = 0.01,
+									bigStep = 0.03,
+									name = L['ScaleELP-TWW-Button'],
+									desc = string.gsub(L['ScaleELP-TWW-ButtonDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.extraFrames.Minimap.scaleExpansionLandingPageTheWarWithin, 1),
+									get = function() return ClassicUI.db.profile.extraFrames.Minimap.scaleExpansionLandingPageTheWarWithin end,
+									set = function(_,value)
+										ClassicUI.db.profile.extraFrames.Minimap.scaleExpansionLandingPageTheWarWithin = value
+										ClassicUI.cached_db_profile.extraFrames_Minimap_scaleExpansionLandingPageTheWarWithin = value
+										if (ClassicUI.db.profile.extraFrames.Minimap.enabled) then
+											if (ExpansionLandingPageMinimapButton:GetNormalTexture():GetAtlas() == "warwithin-landingbutton-up") then
+												if (ClassicUI.elpmbSizes.warwithin.w == 0 or ClassicUI.elpmbSizes.warwithin.h == 0) then
+													ClassicUI.elpmbSizes.warwithin.w = ExpansionLandingPageMinimapButton:GetWidth()
+													ClassicUI.elpmbSizes.warwithin.h = ExpansionLandingPageMinimapButton:GetHeight()
+												end
+												ExpansionLandingPageMinimapButton:SetSize(math.floor(ClassicUI.elpmbSizes.warwithin.w * value + 0.5), math.floor(ClassicUI.elpmbSizes.warwithin.h * value + 0.5))
 											end
 										end
 									end
@@ -5068,7 +8764,7 @@ ClassicUI.optionsTable = {
 							disabled = function() return not(ClassicUI.db.profile.extraFrames.Minimap.enabled) end,
 							inline = true,
 							type = "group",
-							name = L["AddonCompartment Frame Button"],
+							name = L['AddonCompartment Frame Button'],
 							desc = "",
 							args = {
 								hideAddonCompartment = {
@@ -5133,7 +8829,7 @@ ClassicUI.optionsTable = {
 										end
 									end
 								},
-								scaleAddonCompartmentDragonflight = {
+								scaleAddonCompartment = {
 									order = 5,
 									disabled = function() return (not(ClassicUI.db.profile.extraFrames.Minimap.enabled) or ClassicUI.db.profile.extraFrames.Minimap.hideAddonCompartment) end,
 									type = "range",
@@ -5143,10 +8839,10 @@ ClassicUI.optionsTable = {
 									step = 0.01,
 									bigStep = 0.03,
 									name = L['ScaleACFrame'],
-									desc = L['ScaleACFrameDesc'],
-									get = function() return ClassicUI.db.profile.extraFrames.Minimap.scaleAddonCompartmentDragonflight end,
+									desc = string.gsub(L['ScaleACFrameDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.extraFrames.Minimap.scaleAddonCompartment, 1),
+									get = function() return ClassicUI.db.profile.extraFrames.Minimap.scaleAddonCompartment end,
 									set = function(_,value)
-										ClassicUI.db.profile.extraFrames.Minimap.scaleAddonCompartmentDragonflight = value
+										ClassicUI.db.profile.extraFrames.Minimap.scaleAddonCompartment = value
 										if (ClassicUI.db.profile.extraFrames.Minimap.enabled) then
 											AddonCompartmentFrame:SetScale(value)
 										end
@@ -5175,6 +8871,7 @@ ClassicUI.optionsTable = {
 							end,
 							set = function(_,value)
 								ClassicUI.db.profile.extraFrames.Minimap.anchorQueueButtonToMinimap = value
+								ClassicUI.cached_db_profile.extraFrames_Minimap_anchorQueueButtonToMinimap = value
 								if (value) then
 									QueueStatusButton:SetParent(MinimapBackdrop)
 									QueueStatusButton:ClearAllPoints()
@@ -5316,7 +9013,7 @@ ClassicUI.optionsTable = {
 							order = 3,
 							inline = true,
 							type = "group",
-							name = L["FreeSlots Counter"],
+							name = L['FreeSlots Counter'],
 							desc = "",
 							args = {
 								freeSlotCounterMod = {
@@ -5382,7 +9079,7 @@ ClassicUI.optionsTable = {
 									step = 0.05,
 									bigStep = 0.25,
 									name = L['freeSlotsCounterFontSize'],
-									desc = L['freeSlotsCounterFontSizeDesc'],
+									desc = string.gsub(L['freeSlotsCounterFontSizeDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.extraFrames.Bags.freeSlotsCounterFontSize, 1),
 									get = function() return ClassicUI.db.profile.extraFrames.Bags.freeSlotsCounterFontSize end,
 									set = function(_,value)
 										ClassicUI.db.profile.extraFrames.Bags.freeSlotsCounterFontSize = value
@@ -5772,7 +9469,7 @@ ClassicUI.optionsTable = {
 							type = "select",
 							name = L['Keybinds Visibility'],
 							desc = L['KEYBINDS_VISIBILITY_OPTIONS_SELECT_DESC'],
-							width = 2.25,
+							width = 2.30,
 							confirm = function(_, newValue)
 								if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
 									if ((ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode >= 2) and (newValue < 2)) then
@@ -5957,8 +9654,8 @@ ClassicUI.optionsTable = {
 						minDurationToDefault = {
 							order = 11,
 							type = "execute",
-							name = L["Default"],
-							desc = L["DefaultDesc"],
+							name = '|T851904:0|t '..L['Default'],
+							desc = L['DefaultDesc'],
 							func = function()
 								ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.minDuration = ClassicUI.db.defaults.profile.extraConfigs.GreyOnCooldownConfig.minDuration
 								ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_minDuration = ClassicUI.db.defaults.profile.extraConfigs.GreyOnCooldownConfig.minDuration

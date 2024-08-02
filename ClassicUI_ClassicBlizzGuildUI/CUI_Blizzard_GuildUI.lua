@@ -115,11 +115,16 @@ end
 function CUI_GuildFrame_UpdateFaction()
 	local factionBar = CUI_GuildFactionFrame;
 	local gender = UnitSex("player");
-	local name, description, standingID, barMin, barMax, barValue, _, _, _, _, _, _, _ = GetGuildFactionInfo();
-	local factionStandingtext = GetText("FACTION_STANDING_LABEL"..standingID, gender);
+	local guildFactionData = C_Reputation.GetGuildFactionData();
+	local barMin, barMax, barValue = guildFactionData.currentReactionThreshold, guildFactionData.nextReactionThreshold, guildFactionData.currentStanding;
+	local factionStandingtext = GetText("FACTION_STANDING_LABEL"..guildFactionData.reaction, gender);
 	--Normalize Values
 	barMax = barMax - barMin;
 	barValue = barValue - barMin;
+	if (barMax == 0) then
+		barValue = 1;
+		barMax = 1;
+	end
 	CUI_GuildFactionBarLabel:SetText(barValue.." / "..barMax);
 	CUI_GuildFactionFrameStanding:SetText(factionStandingtext);
 	CUI_GuildBar_SetProgress(CUI_GuildFactionBar, barValue, barMax);
@@ -376,21 +381,21 @@ function CUI_GuildFrame_TabClicked(self)
 end
 
 function CUI_GuildFactionBar_OnEnter(self)
-	local name, description, standingID, barMin, barMax, barValue, _, _, _, _, _, _, _ = GetGuildFactionInfo();
-	local factionStandingtext = GetText("FACTION_STANDING_LABEL"..standingID);
+	local guildFactionData = C_Reputation.GetGuildFactionData();
+	local barMin, barMax, barValue = guildFactionData.currentReactionThreshold, guildFactionData.nextReactionThreshold, guildFactionData.currentStanding;
+	local factionStandingtext = GetText("FACTION_STANDING_LABEL"..guildFactionData.reaction);
 	--Normalize Values
 	barMax = barMax - barMin;
 	barValue = barValue - barMin;
-
 	if (barMax == 0) then
+		barValue = 1;
 		barMax = 1;
 	end
 
 	CUI_GuildFactionBarLabel:Show();
-	local name, description = GetGuildFactionInfo();
 	GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
 	GameTooltip:SetText(GUILD_REPUTATION);
-	GameTooltip:AddLine(description, 1, 1, 1, true);
+	GameTooltip:AddLine(guildFactionData.description, 1, 1, 1, true);
 	local percentTotal = tostring(math.ceil((barValue / barMax) * 100));
 	GameTooltip:AddLine(string.format(GUILD_EXPERIENCE_CURRENT, BreakUpLargeNumbers(barValue), BreakUpLargeNumbers(barMax), percentTotal));
 	GameTooltip:Show();

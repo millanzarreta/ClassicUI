@@ -405,11 +405,19 @@ function CUI_GuildRoster_ShowMemberDropDown(name, online, isMobile, guid)
 end
 
 function CUI_GuildMemberDropDown_Initialize()
-	UnitPopup_ShowMenu(UIDROPDOWNMENU_OPEN_MENU, "GUILD", nil, CUI_GuildMemberDropDown.name, { guid = CUI_GuildMemberDropDown.guid });
+	local contextData = {
+		name = CUI_GuildMemberDropDown.name,
+		guid = CUI_GuildMemberDropDown.guid
+	};
+	UnitPopup_OpenMenu("GUILD", contextData);
 end
 
 function CUI_GuildMemberOfflineDropDown_Initialize()
-	UnitPopup_ShowMenu(UIDROPDOWNMENU_OPEN_MENU, "GUILD_OFFLINE", nil, CUI_GuildMemberDropDown.name);
+	local contextData = {
+		name = CUI_GuildMemberDropDown.name,
+		guid = CUI_GuildMemberDropDown.guid
+	};
+	UnitPopup_OpenMenu("GUILD_OFFLINE", contextData);
 end
 
 function CUI_GuildRoster_UpdateTradeSkills()

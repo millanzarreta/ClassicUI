@@ -33,7 +33,7 @@ function CUI_GuildRewards_Update()
 	local playerMoney = GetMoney();
 	local numRewards = GetNumGuildRewards();
 	local gender = UnitSex("player");
-	local _, _, standingID = GetGuildFactionInfo();
+	local guildFactionData = C_Reputation.GetGuildFactionData();
 
 	for i = 1, numButtons do
 		button = buttons[i];
@@ -70,7 +70,7 @@ function CUI_GuildRewards_Update()
 				button.icon:SetDesaturated(false);
 				button.name:SetFontObject(GameFontNormal);
 				button.lock:Hide();
-				if ( repLevel > standingID ) then
+				if ( guildFactionData and repLevel > guildFactionData.reaction ) then
 					local factionStandingtext = GetText("FACTION_STANDING_LABEL"..repLevel, gender);
 					button.subText:SetFormattedText(REQUIRES_GUILD_FACTION, factionStandingtext);
 					button.subText:Show();
@@ -113,8 +113,8 @@ function CUI_GuildRewardsButton_OnEnter(self)
 		GameTooltip:AddLine(ACHIEVEMENT_COLOR_CODE..name..FONT_COLOR_CODE_CLOSE);
 		GameTooltip:AddLine(description, 1, 1, 1, true);
 	end
-	local _, _, standingID = GetGuildFactionInfo();
-	if ( repLevel > standingID ) then
+	local guildFactionData = C_Reputation.GetGuildFactionData();
+	if ( guildFactionData and repLevel > guildFactionData.reaction ) then
 		local gender = UnitSex("player");
 		local factionStandingtext = GetText("FACTION_STANDING_LABEL"..repLevel, gender);
 		GameTooltip:AddLine(" ", 1, 0, 0, true);
