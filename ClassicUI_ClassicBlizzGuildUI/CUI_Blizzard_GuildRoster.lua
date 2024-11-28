@@ -133,7 +133,7 @@ function CUI_GuildRoster_Update()
 	local buttons = scrollFrame.buttons;
 	local numButtons = #buttons;
 	local button, index, class;
-	local totalMembers, onlineMembers, onlineAndMobileMembers = GetNumGuildMembers();
+	local totalMembers, onlineMembers = GetNumGuildMembers();
 	local selectedGuildMember = GetGuildRosterSelection();
 	
 	if ( currentGuildView == "tradeskill" ) then
@@ -239,7 +239,7 @@ function CUI_GuildRoster_Update()
 --	local maxWeeklyXP, maxTotalXP = GetGuildRosterLargestContribution();
 	local maxAchievementsPoints = GetGuildRosterLargestAchievementPoints();
 	-- numVisible
-	local visibleMembers = onlineAndMobileMembers;
+	local visibleMembers = onlineMembers;
 	if ( GetGuildRosterShowOffline() ) then
 		visibleMembers = totalMembers;
 	end

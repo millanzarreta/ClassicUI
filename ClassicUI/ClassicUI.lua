@@ -1,7 +1,7 @@
 -- ------------------------------------------------------------ --
 -- Addon: ClassicUI                                             --
 --                                                              --
--- Version: 2.0.9                                               --
+-- Version: 2.1.0                                               --
 -- Author: Millán - Sanguino                                    --
 --                                                              --
 -- License: GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007 --
@@ -81,7 +81,7 @@ local GetNetStats = GetNetStats
 local InGuildParty = InGuildParty
 
 -- Global constants
-ClassicUI.VERSION = "2.0.9"
+ClassicUI.VERSION = "2.1.0"
 ClassicUI.STANDARD_EPSILON = STANDARD_EPSILON
 ClassicUI.SCALE_EPSILON = SCALE_EPSILON
 ClassicUI.ACTIONBUTTON_NEWLAYOUT_SCALE = 0.826
@@ -127,7 +127,8 @@ ClassicUI.MICROBUTTONS_OPTION_ICONS = {
 	['PvP Variable Icon'] = '|TInterface\\Addons\\ClassicUI\\Textures\\UI-MicroButton-PvpV-Up-custom:32:24:0:0:32:64:0:32:22:64|t',
 	['PvP Horde Icon'] = '|TInterface\\Addons\\ClassicUI\\Textures\\UI-MicroButton-PvpH-Up-custom:32:24:0:0:32:64:0:32:22:64|t',
 	['PvP Alliance Icon'] = '|TInterface\\Addons\\ClassicUI\\Textures\\UI-MicroButton-PvpA-Up-custom:32:24:0:0:32:64:0:32:22:64|t',
-	['PvP Neutral Icon'] = '|TInterface\\Addons\\ClassicUI\\Textures\\UI-MicroButton-PvpN-Up-custom:32:24:0:0:32:64:0:32:22:64|t'
+	['PvP Neutral Icon'] = '|TInterface\\Addons\\ClassicUI\\Textures\\UI-MicroButton-PvpN-Up-custom:32:24:0:0:32:64:0:32:22:64|t',
+	['Bug Icon'] = '|T130788:32:24:0:0:32:64:0:32:22:64|t'
 }
 ClassicUI.MICROBUTTONS_ARRAYINFO = {
 	[0] = {
@@ -327,7 +328,13 @@ ClassicUI.MICROBUTTONS_ARRAYINFO = {
 		normalTexture = 'Interface\\Addons\\ClassicUI\\Textures\\UI-MicroButton-PvpN-Up-custom',
 		pushedTexture = 'Interface\\Addons\\ClassicUI\\Textures\\UI-MicroButton-PvpN-Down-custom',
 		disabledTexture = 'Interface\\Addons\\ClassicUI\\Textures\\UI-MicroButton-PvpN-Disabled-custom'
-	}
+	},
+	[31] = {
+		name = 'Bug Icon',
+		normalTexture = 'Interface\\Buttons\\UI-MicroButton-Bug-Up',
+		pushedTexture = 'Interface\\Buttons\\UI-MicroButton-Bug-Down',
+		disabledTexture = 'Interface\\Addons\\ClassicUI\\Textures\\UI-MicroButton-Bug-Disabled-custom'
+	},
 }
 
 -- Global variables
@@ -840,6 +847,7 @@ ClassicUI.defaults = {
 			},
 			['GreyOnCooldownConfig'] = {
 				enabled = false,
+				desaturateUnusableActions = true,
 				minDuration = 1.51
 			},
 			['LossOfControlUIConfig'] = {
@@ -1245,6 +1253,7 @@ function ClassicUI:UpdateDBValuesCache()
 	self.cached_db_profile.extraFrames_Chat_socialButtonToBottom = self.db.profile.extraFrames.Chat.socialButtonToBottom
 	self.cached_db_profile.extraConfigs_KeybindsConfig_hideKeybindsMode = self.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode
 	self.cached_db_profile.extraConfigs_GreyOnCooldownConfig_minDuration = self.db.profile.extraConfigs.GreyOnCooldownConfig.minDuration
+	self.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturateUnusableActions = self.db.profile.extraConfigs.GreyOnCooldownConfig.desaturateUnusableActions
 	self.cached_db_profile.extraConfigs_GuildPanelMode_defaultOpenOldMenu = self.db.profile.extraConfigs.GuildPanelMode.defaultOpenOldMenu
 	self.cached_db_profile.extraConfigs_GuildPanelMode_rightClickMicroButtonOpenOldMenu = self.db.profile.extraConfigs.GuildPanelMode.rightClickMicroButtonOpenOldMenu
 	self.cached_db_profile.extraConfigs_GuildPanelMode_middleClickMicroButtonOpenOldMenu = self.db.profile.extraConfigs.GuildPanelMode.middleClickMicroButtonOpenOldMenu
@@ -4687,11 +4696,11 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 			microButton.MainMenuBarPerformanceBar2 = MainMenuBarPerformanceBar2
 			MainMenuBarPerformanceBar2:SetTexture("Interface\\Addons\\ClassicUI\\Textures\\UI-MainMenuBar-PerformanceBar-classic")
 			MainMenuBarPerformanceBar2:SetSize(14, 7)
-			if (microButton:GetButtonState() == "PUSHED") then
-				MainMenuBarPerformanceBar2:SetPoint("TOPLEFT", microButton, "TOPLEFT", 8.75, -15.45)
-			else
-				MainMenuBarPerformanceBar2:SetPoint("TOPLEFT", microButton, "TOPLEFT", 9.6, -13.5)
-			end
+		end
+		if (microButton:GetButtonState() == "PUSHED") then
+			microButton.MainMenuBarPerformanceBar2:SetPoint("TOPLEFT", microButton, "TOPLEFT", 8.75, -15.45)
+		else
+			microButton.MainMenuBarPerformanceBar2:SetPoint("TOPLEFT", microButton, "TOPLEFT", 9.6, -13.5)
 		end
 	end
 	
@@ -9122,7 +9131,7 @@ end
 -- Function to show the entire icon in red when the spell is not at range instead of only show in red the keybind text
 function ClassicUI:HookRedRangeIcons()
 	if (not REDRANGEICONS_HOOKED) then
-		local function HookActionBarButtonUpdateUsable(actionBarButton)
+		local function HookRRActionBarButtonUpdateUsable(actionBarButton)
 			if (actionBarButton.UpdateUsable ~= nil) then
 				hooksecurefunc(actionBarButton, "UpdateUsable", function(self, action, isUsable, notEnoughMana)
 					if (action ~= nil and action ~= self.action) then
@@ -9206,43 +9215,43 @@ function ClassicUI:HookRedRangeIcons()
 			local actionButton
 			actionButton = _G["ExtraActionButton"..i]
 			if (actionButton) then
-				HookActionBarButtonUpdateUsable(actionButton)
+				HookRRActionBarButtonUpdateUsable(actionButton)
 			end
 			actionButton = _G["ActionButton"..i]
 			if (actionButton) then
-				HookActionBarButtonUpdateUsable(actionButton)
+				HookRRActionBarButtonUpdateUsable(actionButton)
 			end
 			actionButton = _G["MultiBarBottomLeftButton"..i]
 			if (actionButton) then
-				HookActionBarButtonUpdateUsable(actionButton)
+				HookRRActionBarButtonUpdateUsable(actionButton)
 			end
 			actionButton = _G["MultiBarBottomRightButton"..i]
 			if (actionButton) then
-				HookActionBarButtonUpdateUsable(actionButton)
+				HookRRActionBarButtonUpdateUsable(actionButton)
 			end
 			actionButton = _G["MultiBarLeftButton"..i]
 			if (actionButton) then
-				HookActionBarButtonUpdateUsable(actionButton)
+				HookRRActionBarButtonUpdateUsable(actionButton)
 			end
 			actionButton = _G["MultiBarRightButton"..i]
 			if (actionButton) then
-				HookActionBarButtonUpdateUsable(actionButton)
+				HookRRActionBarButtonUpdateUsable(actionButton)
 			end
 			actionButton = _G["PetActionButton"..i]
 			if (actionButton) then
-				HookActionBarButtonUpdateUsable(actionButton)
+				HookRRActionBarButtonUpdateUsable(actionButton)
 			end
 			actionButton = _G["StanceButton"..i]
 			if (actionButton) then
-				HookActionBarButtonUpdateUsable(actionButton)
+				HookRRActionBarButtonUpdateUsable(actionButton)
 			end
 			actionButton = _G["PossessButton"..i]
 			if (actionButton) then
-				HookActionBarButtonUpdateUsable(actionButton)
+				HookRRActionBarButtonUpdateUsable(actionButton)
 			end
 			actionButton = _G["OverrideActionBarButton"..i]
 			if (actionButton) then
-				HookActionBarButtonUpdateUsable(actionButton)
+				HookRRActionBarButtonUpdateUsable(actionButton)
 			end
 		end
 		ActionBarController:HookScript("OnEvent", function(self, event, ...)	-- Needed because Blizzard doesn't update the range text color on action bar page change
@@ -9321,8 +9330,21 @@ function ClassicUI:HookGreyOnCooldownIcons()
 					end
 				else
 					self.onCooldown = 0
-					if (icon:IsDesaturated()) then
-						icon:SetDesaturated(false)
+					if (ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturateUnusableActions and action) then	-- cached db value
+						local isUsable, notEnoughMana = IsUsableAction(action)
+						if (isUsable or notEnoughMana) then
+							if (icon:IsDesaturated()) then
+								icon:SetDesaturated(false)
+							end
+						else
+							if (not icon:IsDesaturated()) then
+								icon:SetDesaturated(true)
+							end
+						end
+					else
+						if (icon:IsDesaturated()) then
+							icon:SetDesaturated(false)
+						end
 					end
 				end
 			end
@@ -9330,6 +9352,79 @@ function ClassicUI:HookGreyOnCooldownIcons()
 		-- We hook to 'ActionButton_UpdateCooldown' instead of 'ActionButton_OnUpdate' because 'ActionButton_OnUpdate' is much more expensive. So, we need use C_Timer.After to trigger the function when cooldown ends.
 		hooksecurefunc('ActionButton_UpdateCooldown', ActionButtonGreyOnCooldown_UpdateCooldown)
 		GREYONCOOLDOWN_HOOKED = true
+	end
+	if (ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.desaturateUnusableActions) then
+		if (not GREYONCOOLDOWN_UPDATEUSABLE_HOOKED) then
+			local function HookGOCActionBarButtonUpdateUsable(actionBarButton)
+				if (actionBarButton.UpdateUsable ~= nil) then
+					hooksecurefunc(actionBarButton, "UpdateUsable", function(self)
+						if (ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturateUnusableActions) then	-- cached db value
+							if ((not self.onCooldown) or (self.onCooldown == 0)) then
+								local icon = self.icon
+								local spellID = self.spellID
+								local action = self.action
+								if (icon and action and ((type(action)~="table" and type(action)~="string") or (spellID and type(spellID)~="table" and type(spellID)~="string"))) then
+									local isUsable, notEnoughMana = IsUsableAction(action)
+									if (isUsable or notEnoughMana) then
+										if (icon:IsDesaturated()) then
+											icon:SetDesaturated(false)
+										end
+									else
+										if (not icon:IsDesaturated()) then
+											icon:SetDesaturated(true)
+										end
+									end
+								end
+							end
+						end
+					end)
+				end
+			end
+			for i = 1, 12 do
+				local actionButton
+				actionButton = _G["ExtraActionButton"..i]
+				if (actionButton) then
+					HookGOCActionBarButtonUpdateUsable(actionButton)
+				end
+				actionButton = _G["ActionButton"..i]
+				if (actionButton) then
+					HookGOCActionBarButtonUpdateUsable(actionButton)
+				end
+				actionButton = _G["MultiBarBottomLeftButton"..i]
+				if (actionButton) then
+					HookGOCActionBarButtonUpdateUsable(actionButton)
+				end
+				actionButton = _G["MultiBarBottomRightButton"..i]
+				if (actionButton) then
+					HookGOCActionBarButtonUpdateUsable(actionButton)
+				end
+				actionButton = _G["MultiBarLeftButton"..i]
+				if (actionButton) then
+					HookGOCActionBarButtonUpdateUsable(actionButton)
+				end
+				actionButton = _G["MultiBarRightButton"..i]
+				if (actionButton) then
+					HookGOCActionBarButtonUpdateUsable(actionButton)
+				end
+				actionButton = _G["PetActionButton"..i]
+				if (actionButton) then
+					HookGOCActionBarButtonUpdateUsable(actionButton)
+				end
+				actionButton = _G["StanceButton"..i]
+				if (actionButton) then
+					HookGOCActionBarButtonUpdateUsable(actionButton)
+				end
+				actionButton = _G["PossessButton"..i]
+				if (actionButton) then
+					HookGOCActionBarButtonUpdateUsable(actionButton)
+				end
+				actionButton = _G["OverrideActionBarButton"..i]
+				if (actionButton) then
+					HookGOCActionBarButtonUpdateUsable(actionButton)
+				end
+			end
+			GREYONCOOLDOWN_UPDATEUSABLE_HOOKED = true
+		end
 	end
 end
 

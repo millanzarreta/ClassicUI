@@ -28,8 +28,8 @@ function CUI_GuildFrame_OnLoad(self)
 	end
 
 	self:SetTitle(fullName);
-	local totalMembers, onlineMembers, onlineAndMobileMembers = GetNumGuildMembers();
-	CUI_GuildFrameMembersCount:SetText(onlineAndMobileMembers.." / "..totalMembers);
+	local totalMembers, onlineMembers = GetNumGuildMembers();
+	CUI_GuildFrameMembersCount:SetText(onlineMembers.." / "..totalMembers);
 end
 
 function CUI_GuildFrame_OnShow(self)
@@ -79,8 +79,8 @@ end
 
 function CUI_GuildFrame_OnEvent(self, event, ...)
 	if ( event == "GUILD_ROSTER_UPDATE" ) then
-		local totalMembers, onlineMembers, onlineAndMobileMembers = GetNumGuildMembers();
-		CUI_GuildFrameMembersCount:SetText(onlineAndMobileMembers.." / "..totalMembers);
+		local totalMembers, onlineMembers = GetNumGuildMembers();
+		CUI_GuildFrameMembersCount:SetText(onlineMembers.." / "..totalMembers);
 	elseif ( event == "UPDATE_FACTION" ) then
 		CUI_GuildFrame_UpdateFaction();
 	elseif ( event == "PLAYER_GUILD_UPDATE" ) then
