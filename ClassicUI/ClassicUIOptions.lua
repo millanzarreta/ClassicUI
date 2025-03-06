@@ -56,13 +56,25 @@ ClassicUI.optionsTable = {
 						end
 					end
 				},
+				disabledAddonCompartmentIntegration = {
+					order = 5,
+					type = "toggle",
+					name = L['DisableAddonCompartmentIntegration'],
+					desc = L['DisableAddonCompartmentIntegrationDesc'],
+					width = "double",
+					get = function() return ClassicUI.db.profile.disabledAddonCompartmentIntegration end,
+					set = function(_,value)
+						ClassicUI.db.profile.disabledAddonCompartmentIntegration = value
+						ClassicUI:AddonCompartmentIntegration(not(value))
+					end
+				},
 				Header1 = {
 					type = 'header',
-					order = 5,
+					order = 6,
 					name = L['Configure Frames']
 				},
 				MainMenuBarOptions = {
-					order = 6,
+					order = 7,
 					type = "group",
 					name = L['MainMenuBar'],
 					desc = L['MainMenuBar'],
@@ -831,7 +843,7 @@ ClassicUI.optionsTable = {
 					}
 				},
 				OverrideActionBarOptions = {
-					order = 7,
+					order = 8,
 					type = "group",
 					name = L['OverrideActionBar'],
 					desc = L['OverrideActionBar'],
@@ -1211,7 +1223,7 @@ ClassicUI.optionsTable = {
 					}
 				},
 				GargoyleOptions = {
-					order = 8,
+					order = 9,
 					type = "group",
 					name = L['GargoyleFrames'],
 					desc = L['GargoyleFrames'],
@@ -1448,7 +1460,7 @@ ClassicUI.optionsTable = {
 					},
 				},
 				MicroButtonsOptions = {
-					order = 9,
+					order = 10,
 					type = "group",
 					name = L['MicroButtons'],
 					desc = L['MicroButtons'],
@@ -4987,7 +4999,7 @@ ClassicUI.optionsTable = {
 					}
 				},
 				PetBattleFrameBarOptions = {
-					order = 10,
+					order = 11,
 					type = "group",
 					name = L['PetBattleFrameBar'],
 					desc = L['PetBattleFrameBar'],
@@ -5052,7 +5064,7 @@ ClassicUI.optionsTable = {
 					}
 				},
 				MultiActionBarOptions = {
-					order = 11,
+					order = 12,
 					type = "group",
 					name = L['MultiActionBar'],
 					desc = L['MultiActionBar'],
@@ -5941,7 +5953,7 @@ ClassicUI.optionsTable = {
 					}
 				},
 				PetActionBarOptions = {
-					order = 12,
+					order = 13,
 					type = "group",
 					name = L['PetActionBar'],
 					desc = L['PetActionBar'],
@@ -6431,7 +6443,7 @@ ClassicUI.optionsTable = {
 							order = 12,
 							type = "toggle",
 							name = L['Hide on OverrideActionBar'],
-							desc = L['Hide the PetActionBar when the OverrideActionBar is shown instead of moving it to a new spot'],
+							desc = L['Hide the PetActionBar when the OverrideActionBar is shown'],
 							width = "double",
 							get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.hideOnOverrideActionBar end,
 							set = function(_,value)
@@ -6442,11 +6454,27 @@ ClassicUI.optionsTable = {
 								end
 							end,
 						},
-						hideOnPetBattleFrameBar = {
+						dontMoveOnOverrideActionBar = {
 							order = 13,
 							type = "toggle",
+							name = L['Do not move on OverrideActionBar'],
+							desc = L['Do not move PetActionBar when OverrideActionBar is shown'],
+							disabled = function() return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.hideOnOverrideActionBar) end,
+							width = "double",
+							get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.dontMoveOnOverrideActionBar end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.PetActionBarFrame.dontMoveOnOverrideActionBar = value
+								ClassicUI.cached_db_profile.barsConfig_PetActionBarFrame_dontMoveOnOverrideActionBar = value
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI:UpdatedStatusBarsEvent()
+								end
+							end,
+						},
+						hideOnPetBattleFrameBar = {
+							order = 14,
+							type = "toggle",
 							name = L['Hide on PetBattleFrameBar'],
-							desc = L['Hide the PetActionBar when the PetBattleFrameBar is shown instead of moving it to a new spot'],
+							desc = L['Hide the PetActionBar when the PetBattleFrameBar is shown'],
 							width = "double",
 							get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.hideOnPetBattleFrameBar end,
 							set = function(_,value)
@@ -6456,11 +6484,27 @@ ClassicUI.optionsTable = {
 									ClassicUI:UpdatedStatusBarsEvent()
 								end
 							end,
+						},
+						dontMoveOnPetBattleFrameBar = {
+							order = 15,
+							type = "toggle",
+							name = L['Do not move on PetBattleFrameBar'],
+							desc = L['Do not move PetActionBar when PetBattleFrameBar is shown'],
+							disabled = function() return (ClassicUI.db.profile.barsConfig.PetActionBarFrame.hideOnPetBattleFrameBar) end,
+							width = "double",
+							get = function() return ClassicUI.db.profile.barsConfig.PetActionBarFrame.dontMoveOnPetBattleFrameBar end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.PetActionBarFrame.dontMoveOnPetBattleFrameBar = value
+								ClassicUI.cached_db_profile.barsConfig_PetActionBarFrame_dontMoveOnPetBattleFrameBar = value
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI:UpdatedStatusBarsEvent()
+								end
+							end,
 						}
 					}
 				},
 				StanceBarOptions = {
-					order = 13,
+					order = 14,
 					type = "group",
 					name = L['StanceBar'],
 					desc = L['StanceBar'],
@@ -6911,7 +6955,7 @@ ClassicUI.optionsTable = {
 					}
 				},
 				PossessBarOptions = {
-					order = 14,
+					order = 15,
 					type = "group",
 					name = L['PossessBar'],
 					desc = L['PossessBar'],
@@ -7361,7 +7405,7 @@ ClassicUI.optionsTable = {
 					}
 				},
 				StatusBarOptions = {
-					order = 15,
+					order = 16,
 					type = "group",
 					name = L['StatusBar'],
 					desc = L['StatusBar'],
@@ -8901,7 +8945,7 @@ ClassicUI.optionsTable = {
 									if (ClassicUI:IsEnabled()) then
 										QueueStatusButton:SetParent(UIParent)
 										QueueStatusButton:ClearAllPoints()
-										QueueStatusButton:SetPoint("BOTTOMLEFT", MicroButtonAndBagsBar, "BOTTOMLEFT", -45 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetQueueButton, 4 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetQueueButton)
+										QueueStatusButton:SetPoint("BOTTOMLEFT", MicroButtonAndBagsBar, "BOTTOMLEFT", -45 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetQueueButton, 4 - ClassicUI.MICROBUTTONANDBAGSBAR_CUI_OFFSET_Y + ClassicUI.db.profile.extraFrames.Minimap.yOffsetQueueButton)
 										QueueStatusButton:SetFrameStrata("MEDIUM")
 										QueueStatusButton:SetFrameLevel(53)
 									else
@@ -8943,7 +8987,7 @@ ClassicUI.optionsTable = {
 								else
 									if (ClassicUI:IsEnabled()) then
 										QueueStatusButton:ClearAllPoints()
-										QueueStatusButton:SetPoint("BOTTOMLEFT", MicroButtonAndBagsBar, "BOTTOMLEFT", -45 + value, 4 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetQueueButton)
+										QueueStatusButton:SetPoint("BOTTOMLEFT", MicroButtonAndBagsBar, "BOTTOMLEFT", -45 + value, 4 - ClassicUI.MICROBUTTONANDBAGSBAR_CUI_OFFSET_Y + ClassicUI.db.profile.extraFrames.Minimap.yOffsetQueueButton)
 									else
 										if MicroMenu ~= nil and MicroMenuContainer~= nil then
 											QueueStatusButton:UpdatePosition(MicroMenuContainer:GetPosition(), MicroMenu.isHorizontal)
@@ -8975,7 +9019,7 @@ ClassicUI.optionsTable = {
 								else
 									if (ClassicUI:IsEnabled()) then
 										QueueStatusButton:ClearAllPoints()
-										QueueStatusButton:SetPoint("BOTTOMLEFT", MicroButtonAndBagsBar, "BOTTOMLEFT", -45 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetQueueButton, 4 + value)
+										QueueStatusButton:SetPoint("BOTTOMLEFT", MicroButtonAndBagsBar, "BOTTOMLEFT", -45 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetQueueButton, 4 - ClassicUI.MICROBUTTONANDBAGSBAR_CUI_OFFSET_Y + value)
 									else
 										if MicroMenu ~= nil and MicroMenuContainer~= nil then
 											QueueStatusButton:UpdatePosition(MicroMenuContainer:GetPosition(), MicroMenu.isHorizontal)

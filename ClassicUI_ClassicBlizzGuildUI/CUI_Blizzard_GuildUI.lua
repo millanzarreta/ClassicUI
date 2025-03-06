@@ -471,7 +471,7 @@ end
 function CUI_GuildPerksButton_OnEnter(self)
 	CUI_GuildPerksContainer.activeButton = self;
 	GameTooltip:SetOwner(self, "ANCHOR_RIGHT", 36, 0);
-	local spellLink = GetSpellLink(self.spellID);
+	local spellLink = C_Spell.GetSpellLink(self.spellID);
 	if (spellLink ~= nil) then
 		GameTooltip:SetHyperlink(spellLink);
 	end

@@ -195,7 +195,7 @@
 			</OnLeave>
 			<OnClick>
 				if ( IsModifiedClick("CHATLINK") ) then
-					local spellLink = GetSpellLink(self.spellID);
+					local spellLink = C_Spell.GetSpellLink(self.spellID);
 					CUI_GuildFrame_LinkItem(button, nil, spellLink);
 				end
 			</OnClick>

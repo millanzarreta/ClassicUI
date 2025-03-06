@@ -1,7 +1,7 @@
 -- ------------------------------------------------------------ --
 -- Addon: ClassicUI                                             --
 --                                                              --
--- Version: 2.1.0                                               --
+-- Version: 2.1.1                                               --
 -- Author: Millán - Sanguino                                    --
 --                                                              --
 -- License: GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007 --
@@ -81,17 +81,18 @@ local GetNetStats = GetNetStats
 local InGuildParty = InGuildParty
 
 -- Global constants
-ClassicUI.VERSION = "2.1.0"
+ClassicUI.VERSION = "2.1.1"
 ClassicUI.STANDARD_EPSILON = STANDARD_EPSILON
 ClassicUI.SCALE_EPSILON = SCALE_EPSILON
 ClassicUI.ACTIONBUTTON_NEWLAYOUT_SCALE = 0.826
 ClassicUI.ACTION_BAR_OFFSET = 45
 ClassicUI.SPELLFLYOUT_DEFAULT_SPACING = 4
-ClassicUI.SPELLFLYOUT_INITIAL_SPACING = 7
-ClassicUI.SPELLFLYOUT_FINAL_SPACING = 4
+ClassicUI.SPELLFLYOUT_INITIAL_SPACING = 7	-- changed to 9 in Blizzard code since 11.1.0
+ClassicUI.SPELLFLYOUT_FINAL_SPACING = 4	-- changed to 9 in Blizzard code since 10.0.0
 ClassicUI.PERFORMANCEBAR_MEDIUM_LATENCY = 600
 ClassicUI.PERFORMANCEBAR_LOW_LATENCY = 300
 ClassicUI.playerClass = (UnitClass~=nil) and select(2, UnitClass("player"))
+ClassicUI.MICROBUTTONANDBAGSBAR_CUI_OFFSET_Y = -1500
 ClassicUI.MICROBUTTONS_MIN_ORDER = 1
 ClassicUI.MICROBUTTONS_MAX_ORDER = 12
 ClassicUI.MICROBUTTONS_DEFAULT_ALPHA_ENABLED = 1
@@ -343,6 +344,14 @@ ClassicUI.elpmbSizes = {
 	['dragonflight'] = { w = 0, h = 0 },
 	['warwithin'] = { w = 0, h = 0 }
 }
+ClassicUI.ACIaddonData = {
+	text = "ClassicUI",
+	icon = "Interface\\Addons\\ClassicUI\\micon",
+	notCheckable = true,
+	func = function()
+		Settings.OpenToCategory(ClassicUI.optionsFramesCatId.general)
+	end
+}
 -- Recreate the old global variables from the classic AutoCastShine action button animation
 ClassicUI.AUTOCAST_SHINE_R = 0.95
 ClassicUI.AUTOCAST_SHINE_G = 0.95
@@ -379,6 +388,7 @@ ClassicUI.UpdateBagItemButtonQualityFuncCache = { }
 ClassicUI.defaults = {
 	profile = {
 		enabled = true,
+		disabledAddonCompartmentIntegration = false,
 		barsConfig = {
 			['**'] = {
 				xOffset = 0,
@@ -654,7 +664,9 @@ ClassicUI.defaults = {
 			['PetActionBarFrame'] = {
 				normalizeButtonsSpacing = false,
 				hideOnOverrideActionBar = false,
-				hideOnPetBattleFrameBar = true,
+				hideOnPetBattleFrameBar = false,
+				dontMoveOnOverrideActionBar = true,
+				dontMoveOnPetBattleFrameBar = true,
 				ignoreyOffsetStatusBar = false,
 				yOffset1StatusBar = 0,
 				yOffset2StatusBar = 0,
@@ -936,6 +948,10 @@ function ClassicUI:OnInitialize()
 	self.optionsFrames.profiles, self.optionsFramesCatId.profiles = AceConfigDialog:AddToBlizOptions("ClassicUI", L['Profiles'], "ClassicUI", "profiles")
 	
 	self:RegisterChatCommand("ClassicUI", "SlashCommand")
+
+	if (not(self.db.profile.disabledAddonCompartmentIntegration)) then
+		self:AddonCompartmentIntegration(true)
+	end
 	
 	-- Some pre-initialization stuff
 	if (ClassicUI.playerClass == nil) then
@@ -1046,6 +1062,38 @@ function ClassicUI:SlashCommand(str)
 		ClassicUI:ShowHelp()
 	else
 		ClassicUI:ShowConfig()
+	end
+end
+
+-- Function to register/unregister the addon integration in the Blizzard AddonCompartment dropdown menu
+function ClassicUI:AddonCompartmentIntegration(registerState)
+	if (registerState) then
+		if (AddonCompartmentFrame ~= nil and self.ACIaddonData ~= nil and AddonCompartmentFrame.registeredAddons ~= nil) then
+			local aciIndex
+			for k, v in pairs(AddonCompartmentFrame.registeredAddons) do
+				if (v == self.ACIaddonData) then
+					aciIndex = k
+					break
+				end
+			end
+			if not(aciIndex) then
+				AddonCompartmentFrame:RegisterAddon(self.ACIaddonData)
+			end
+		end
+	else
+		if (AddonCompartmentFrame ~= nil and self.ACIaddonData ~= nil and AddonCompartmentFrame.registeredAddons ~= nil) then
+			local aciIndex
+			for k, v in pairs(AddonCompartmentFrame.registeredAddons) do
+				if (v == self.ACIaddonData) then
+					aciIndex = k
+					break
+				end
+			end
+			if (aciIndex ~= nil) then
+				table.remove(AddonCompartmentFrame.registeredAddons, aciIndex)
+				AddonCompartmentFrame:UpdateDisplay()
+			end
+		end
 	end
 end
 
@@ -1182,6 +1230,8 @@ function ClassicUI:UpdateDBValuesCache()
 	self.cached_db_profile.barsConfig_RightMultiActionBars_yOffset2StatusBar = self.db.profile.barsConfig.RightMultiActionBars.yOffset2StatusBar
 	self.cached_db_profile.barsConfig_PetActionBarFrame_hideOnOverrideActionBar = self.db.profile.barsConfig.PetActionBarFrame.hideOnOverrideActionBar
 	self.cached_db_profile.barsConfig_PetActionBarFrame_hideOnPetBattleFrameBar = self.db.profile.barsConfig.PetActionBarFrame.hideOnPetBattleFrameBar
+	self.cached_db_profile.barsConfig_PetActionBarFrame_dontMoveOnOverrideActionBar = self.db.profile.barsConfig.PetActionBarFrame.dontMoveOnOverrideActionBar
+	self.cached_db_profile.barsConfig_PetActionBarFrame_dontMoveOnPetBattleFrameBar = self.db.profile.barsConfig.PetActionBarFrame.dontMoveOnPetBattleFrameBar
 	self.cached_db_profile.barsConfig_PetActionBarFrame_xOffset = self.db.profile.barsConfig.PetActionBarFrame.xOffset
 	self.cached_db_profile.barsConfig_PetActionBarFrame_yOffset = self.db.profile.barsConfig.PetActionBarFrame.yOffset
 	self.cached_db_profile.barsConfig_PetActionBarFrame_xOffsetIfStanceBar = self.db.profile.barsConfig.PetActionBarFrame.xOffsetIfStanceBar
@@ -1558,6 +1608,7 @@ function ClassicUI:RestoreChatScrollButtons()
 	else
 		if CUI_ChatFrame1ButtonFrameBottomButton ~= nil then
 			CUI_ChatFrame1ButtonFrameBottomButton.allowShow = false
+			CUI_ChatFrame1ButtonFrameBottomButton:Hide()
 		end
 	end
 	local CUI_ChatFrame1ButtonFrameDownButton = _G["CUI_ChatFrame1ButtonFrameDownButton"]
@@ -1654,7 +1705,7 @@ function ClassicUI:EFF_PLAYER_ENTERING_WORLD()
 		if (ClassicUI:IsEnabled()) then
 			QueueStatusButton:SetParent(UIParent)
 			QueueStatusButton:ClearAllPoints()
-			QueueStatusButton:SetPoint("BOTTOMLEFT", MicroButtonAndBagsBar, "BOTTOMLEFT", -45 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetQueueButton, 4 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetQueueButton)
+			QueueStatusButton:SetPoint("BOTTOMLEFT", MicroButtonAndBagsBar, "BOTTOMLEFT", -45 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetQueueButton, 4 - ClassicUI.MICROBUTTONANDBAGSBAR_CUI_OFFSET_Y + ClassicUI.db.profile.extraFrames.Minimap.yOffsetQueueButton)
 			QueueStatusButton:SetFrameStrata("MEDIUM")
 			QueueStatusButton:SetFrameLevel(53)
 		else
@@ -1677,7 +1728,7 @@ function ClassicUI:EFF_PLAYER_ENTERING_WORLD()
 		else
 			if (ClassicUI:IsEnabled()) then
 				self:ClearAllPoints()
-				self:SetPoint("BOTTOMLEFT", MicroButtonAndBagsBar, "BOTTOMLEFT", -45 + ClassicUI.cached_db_profile.extraFrames_Minimap_xOffsetQueueButton, 4 + ClassicUI.cached_db_profile.extraFrames_Minimap_yOffsetQueueButton)	-- cached db value
+				self:SetPoint("BOTTOMLEFT", MicroButtonAndBagsBar, "BOTTOMLEFT", -45 + ClassicUI.cached_db_profile.extraFrames_Minimap_xOffsetQueueButton, 4 - ClassicUI.MICROBUTTONANDBAGSBAR_CUI_OFFSET_Y + ClassicUI.cached_db_profile.extraFrames_Minimap_yOffsetQueueButton)	-- cached db value
 			else
 				local point, relativeTo, relativePoint, xOfs, yOfs = self:GetPoint()
 				self:ClearAllPoints()
@@ -3316,11 +3367,11 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	SpellFlyout.Background.Start:Hide()
 	SpellFlyout.Background.Start:SetAlpha(0)
 	
-	hooksecurefunc(SpellFlyout, "Toggle", function(self, flyoutID, parent, direction, distance, isActionBar, specID, showFullTooltip, reason)
-		if (not(self:IsShown()) and self:GetParent() == parent) then
+	hooksecurefunc(SpellFlyout, "Toggle", function(self, flyoutButton, flyoutID, isActionBar, specID, showFullTooltip, reason)
+		if (not(self:IsShown()) and self.glyphActivating) then
 			return
 		end
-		if (self:IsShown() and self.glyphActivating) then
+		if (not(self:IsShown()) and self.flyoutButton == nil) then
 			return
 		end
 		local offSpec = specID and (specID ~= 0)
@@ -3328,12 +3379,12 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		if ((not isKnown and not offSpec) or numSlots == 0) then
 			return
 		end
+
+		local direction = flyoutButton:GetPopupDirection()
 		if (not direction) then
 			direction = "UP"
 		end
-		if (isActionBar) then
-			direction = parent.bar:GetSpellFlyoutDirection()
-		end
+
 		local prevButton = nil
 		local numButtons = 0
 		for i = 1, numSlots do
@@ -3344,35 +3395,51 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 				visible = false
 			end
 			if (((not offSpec or slotSpecID == 0) and visible and isKnownSlot) or (offSpec and slotSpecID == specID)) then
-				local button = _G["SpellFlyoutButton"..numButtons+1]
-				if (button ~= nil and button.icon ~= nil and button.icon:GetTexCoord() == 0) then
-					-- Init ActionButtonInfo cache for the new SpellFlyoutButton
-					if ClassicUI.cached_ActionButtonInfo.hooked_UpdateButtonArt[button] == nil then
-						ClassicUI.cached_ActionButtonInfo.hooked_UpdateButtonArt[button] = false
+				local button = _G["SpellFlyoutPopupButton"..numButtons+1]
+				if (button ~= nil) then
+					if (button.icon ~= nil and button.icon:GetTexCoord() == 0) then
+						-- Init ActionButtonInfo cache for the new SpellFlyoutButton
+						if ClassicUI.cached_ActionButtonInfo.hooked_UpdateButtonArt[button] == nil then
+							ClassicUI.cached_ActionButtonInfo.hooked_UpdateButtonArt[button] = false
+						end
+						if ClassicUI.cached_ActionButtonInfo.hooked_UpdateHotkeys[button] == nil then
+							ClassicUI.cached_ActionButtonInfo.hooked_UpdateHotkeys[button] = false
+						end
+						if ClassicUI.cached_ActionButtonInfo.hooked_UpdateFlyout[button] == nil then
+							ClassicUI.cached_ActionButtonInfo.hooked_UpdateFlyout[button] = false
+						end
+						if ClassicUI.cached_ActionButtonInfo.hooked_PlaySpellCastAnim[button] == nil then
+							ClassicUI.cached_ActionButtonInfo.hooked_PlaySpellCastAnim[button] = false
+						end
+						if ClassicUI.cached_ActionButtonInfo.spellActivationAlertAdjusted[button] == nil then
+							ClassicUI.cached_ActionButtonInfo.spellActivationAlertAdjusted[button] = false
+						end
+						if ClassicUI.cached_ActionButtonInfo.typeActionButton[button] == nil then
+							ClassicUI.cached_ActionButtonInfo.typeActionButton[button] = 6
+						end
+						if ClassicUI.cached_ActionButtonInfo.currentScale[button] == nil then
+							ClassicUI.cached_ActionButtonInfo.currentScale[button] = 1
+						end
+						if ClassicUI.cached_ActionButtonInfo.currLayout[button] == nil then
+							ClassicUI.cached_ActionButtonInfo.currLayout[button] = 1
+						end
+						-- Apply the current layout to the new SpellFlyoutButton (delayed if combat lockdown)
+						ClassicUI:ActionButtonProtectedApplyLayout(button, 6)
 					end
-					if ClassicUI.cached_ActionButtonInfo.hooked_UpdateHotkeys[button] == nil then
-						ClassicUI.cached_ActionButtonInfo.hooked_UpdateHotkeys[button] = false
+					if not(prevButton) then
+						-- Setting 'SpellFlyoutPopupButtonX' position is restricted in combat. It is only a minor adjustment, so it is not necessary to delay it, we just skip it if we're in combat lockdown
+						if not(InCombatLockdown()) then
+							if (direction == "UP") then
+								button:SetPoint("BOTTOM", 0, ClassicUI.SPELLFLYOUT_INITIAL_SPACING)
+							elseif (direction == "DOWN") then
+								button:SetPoint("TOP", 0, -ClassicUI.SPELLFLYOUT_INITIAL_SPACING)
+							elseif (direction == "LEFT") then
+								button:SetPoint("RIGHT", -ClassicUI.SPELLFLYOUT_INITIAL_SPACING, 0)
+							elseif (direction == "RIGHT") then
+								button:SetPoint("LEFT", ClassicUI.SPELLFLYOUT_INITIAL_SPACING, 0)
+							end
+						end
 					end
-					if ClassicUI.cached_ActionButtonInfo.hooked_UpdateFlyout[button] == nil then
-						ClassicUI.cached_ActionButtonInfo.hooked_UpdateFlyout[button] = false
-					end
-					if ClassicUI.cached_ActionButtonInfo.hooked_PlaySpellCastAnim[button] == nil then
-						ClassicUI.cached_ActionButtonInfo.hooked_PlaySpellCastAnim[button] = false
-					end
-					if ClassicUI.cached_ActionButtonInfo.spellActivationAlertAdjusted[button] == nil then
-						ClassicUI.cached_ActionButtonInfo.spellActivationAlertAdjusted[button] = false
-					end
-					if ClassicUI.cached_ActionButtonInfo.typeActionButton[button] == nil then
-						ClassicUI.cached_ActionButtonInfo.typeActionButton[button] = 6
-					end
-					if ClassicUI.cached_ActionButtonInfo.currentScale[button] == nil then
-						ClassicUI.cached_ActionButtonInfo.currentScale[button] = 1
-					end
-					if ClassicUI.cached_ActionButtonInfo.currLayout[button] == nil then
-						ClassicUI.cached_ActionButtonInfo.currLayout[button] = 1
-					end
-					-- Apply the current layout to the new SpellFlyoutButton (delayed if combat lockdown)
-					ClassicUI:ActionButtonProtectedApplyLayout(button, 6)
 				end
 				prevButton = button
 				numButtons = numButtons+1
@@ -3381,30 +3448,33 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		if (numButtons == 0) then
 			return
 		end
+
 		self.Background.Start:Hide()
-		--SetClampedTextureRotation(self.Background.VerticalMiddle, 0)	-- Calls to 'SetClampedTextureRotation' cause taints, so we do the texture rotation manually to avoid these taints
-		if self.Background.VerticalMiddle.origTexCoords ~= nil and self.Background.VerticalMiddle.origWidth ~= nil and self.Background.VerticalMiddle.origHeight ~= nil then
-			self.Background.VerticalMiddle:SetWidth(self.Background.VerticalMiddle.origWidth)
-			self.Background.VerticalMiddle:SetHeight(self.Background.VerticalMiddle.origHeight)
-			self.Background.VerticalMiddle:SetTexCoord(self.Background.VerticalMiddle.origTexCoords[1], self.Background.VerticalMiddle.origTexCoords[2], self.Background.VerticalMiddle.origTexCoords[3], self.Background.VerticalMiddle.origTexCoords[4], self.Background.VerticalMiddle.origTexCoords[5], self.Background.VerticalMiddle.origTexCoords[6], self.Background.VerticalMiddle.origTexCoords[7], self.Background.VerticalMiddle.origTexCoords[8])
-		end
-		--SetClampedTextureRotation(self.Background.HorizontalMiddle, 0)	-- Calls to 'SetClampedTextureRotation' cause taints, so we do the texture rotation manually to avoid these taints
-		if self.Background.HorizontalMiddle.origTexCoords ~= nil and self.Background.HorizontalMiddle.origWidth ~= nil and self.Background.HorizontalMiddle.origHeight ~= nil then
-			self.Background.HorizontalMiddle:SetWidth(self.Background.HorizontalMiddle.origWidth)
-			self.Background.HorizontalMiddle:SetHeight(self.Background.HorizontalMiddle.origHeight)
-			self.Background.HorizontalMiddle:SetTexCoord(self.Background.HorizontalMiddle.origTexCoords[1], self.Background.HorizontalMiddle.origTexCoords[2], self.Background.HorizontalMiddle.origTexCoords[3], self.Background.HorizontalMiddle.origTexCoords[4], self.Background.HorizontalMiddle.origTexCoords[5], self.Background.HorizontalMiddle.origTexCoords[6], self.Background.HorizontalMiddle.origTexCoords[7], self.Background.HorizontalMiddle.origTexCoords[8])
-		end
+		--SetClampedTextureRotation(self.Background.VerticalMiddle, 0)	-- Calls to 'SetClampedTextureRotation' cause taints, so we set the coords manually
+		self.Background.VerticalMiddle:SetTexCoord(0, 0.578125, 0, 1)
+		--SetClampedTextureRotation(self.Background.HorizontalMiddle, 0)	-- Calls to 'SetClampedTextureRotation' cause taints, so we set the coords manually
+		self.Background.HorizontalMiddle:SetTexCoord(0, 1, 0, 0.578125)
+
+		self.Background.End:ClearAllPoints()
 		if (direction == "UP") then
 			self.Background.End:SetPoint("TOP", 0, 0)
-		elseif (direction == "DOWN") then
-			self.Background.End:SetPoint("BOTTOM", 0, 0)
+			--SetClampedTextureRotation(self.Background.End, 0)	-- Calls to 'SetClampedTextureRotation' cause taints, so we set the coords manually
+			self.Background.End:SetTexCoord(0.015625, 0.7421875, 0.015625, 0.9140625, 0.59375, 0.7421875, 0.59375, 0.9140625)
 		elseif (direction == "LEFT") then
 			self.Background.End:SetPoint("LEFT", 0, 0)
+			--SetClampedTextureRotation(self.Background.End, 270)	-- Calls to 'SetClampedTextureRotation' cause taints, so we set the coords manually
+			self.Background.End:SetTexCoord(0.59375, 0.7421875, 0.015625, 0.7421875, 0.59375, 0.9140625, 0.015625, 0.9140625)
+		elseif (direction == "DOWN") then
+			self.Background.End:SetPoint("BOTTOM", 0, 0)
+			--SetClampedTextureRotation(self.Background.End, 180)	-- Calls to 'SetClampedTextureRotation' cause taints, so we set the coords manually
+			self.Background.End:SetTexCoord(0.59375, 0.9140625, 0.59375, 0.7421875, 0.015625, 0.9140625, 0.015625, 0.7421875)
 		elseif (direction == "RIGHT") then
 			self.Background.End:SetPoint("RIGHT", 0, 0)
+			--SetClampedTextureRotation(self.Background.End, 90)	-- Calls to 'SetClampedTextureRotation' cause taints, so we set the coords manually
+			self.Background.End:SetTexCoord(0.015625, 0.9140625, 0.59375, 0.9140625, 0.015625, 0.7421875, 0.59375, 0.7421875)
 		end
 		-- Setting 'SpellFlyout' size is restricted in combat. It is only a minor adjustment, so it is not necessary to delay it, we just skip it if we're in combat lockdown
-		if not(InCombatLockdown()) then
+		if (not(InCombatLockdown()) and (prevButton ~= nil)) then
 			if (direction == "UP" or direction == "DOWN") then
 				self:SetWidth(prevButton:GetWidth())
 				self:SetHeight((prevButton:GetHeight()+ClassicUI.SPELLFLYOUT_DEFAULT_SPACING) * numButtons - ClassicUI.SPELLFLYOUT_DEFAULT_SPACING + ClassicUI.SPELLFLYOUT_INITIAL_SPACING + ClassicUI.SPELLFLYOUT_FINAL_SPACING)
@@ -3413,7 +3483,17 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 				self:SetWidth((prevButton:GetWidth()+ClassicUI.SPELLFLYOUT_DEFAULT_SPACING) * numButtons - ClassicUI.SPELLFLYOUT_DEFAULT_SPACING + ClassicUI.SPELLFLYOUT_INITIAL_SPACING + ClassicUI.SPELLFLYOUT_FINAL_SPACING)
 			end
 		end
-		self:SetBorderSize(37)
+		-- self:SetBorderSize(37)	-- 'SetBorderSize' function was removed, its functionality is recreated below
+		local nsize = 37
+		if (not(direction) or (direction == "UP") or (direction == "DOWN")) then
+			self.Background.HorizontalMiddle:SetWidth(nsize)
+			self.Background.VerticalMiddle:SetWidth(nsize)
+			self.Background.End:SetWidth(nsize)
+		else
+			self.Background.HorizontalMiddle:SetHeight(nsize)
+			self.Background.VerticalMiddle:SetHeight(nsize)
+			self.Background.End:SetHeight(nsize)
+		end
 	end)
 	
 	-- [ActionBars] MultiBarBottomLeft
@@ -3853,18 +3933,46 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 			self.PETACTIONBAR_XPOS = 36 + ClassicUI.cached_db_profile.barsConfig_PetActionBarFrame_xOffset	-- cached db value
 		end
 	end
+	function CUI_PetActionBarFrame:RelocateBarToNormalPosition(show_multi_action_bar_1)
+		self:UpdateXPositionValue()
+		self:ClearAllPoints()
+		local yPos = (show_multi_action_bar_1) and ClassicUI.ACTION_BAR_OFFSET or 0
+		if not(ClassicUI.cached_db_profile.barsConfig_PetActionBarFrame_ignoreyOffsetStatusBar) then	-- cached db value
+			if (ClassicUI.cached_NumberRealVisibleBars <= 0) then
+				yPos = yPos + 92 + ClassicUI.cached_db_profile.barsConfig_PetActionBarFrame_yOffset	-- cached db value
+			elseif (ClassicUI.cached_NumberRealVisibleBars == 1) then
+				yPos = yPos + 97 + ClassicUI.cached_db_profile.barsConfig_PetActionBarFrame_yOffset	-- cached db value
+			else
+				yPos = yPos + 106 + ClassicUI.cached_db_profile.barsConfig_PetActionBarFrame_yOffset	-- cached db value
+			end
+		else
+			if (ClassicUI.cached_NumberRealVisibleBars <= 0) then
+				yPos = yPos + 92 + ClassicUI.cached_db_profile.barsConfig_PetActionBarFrame_yOffset	-- cached db value
+			elseif (ClassicUI.cached_NumberRealVisibleBars == 1) then
+				yPos = yPos + 92 + ClassicUI.cached_db_profile.barsConfig_PetActionBarFrame_yOffset1StatusBar	-- cached db value
+			else
+				yPos = yPos + 92 + ClassicUI.cached_db_profile.barsConfig_PetActionBarFrame_yOffset2StatusBar	-- cached db value
+			end
+		end
+		self:SetPoint("TOPLEFT", CUI_MainMenuBar, "BOTTOMLEFT", self.PETACTIONBAR_XPOS, yPos)
+	end
 	function CUI_PetActionBarFrame:RelocateBar(forceActionBarState)
 		if ((forceActionBarState or ActionBarController_GetCurrentActionBarState()) == LE_ACTIONBAR_STATE_OVERRIDE) then
 			if not(ClassicUI.cached_db_profile.barsConfig_PetActionBarFrame_hideOnOverrideActionBar) then	-- cached db value
-				if ((ClassicUI.cached_db_profile.barsConfig_PetActionBarFrame_hideOnPetBattleFrameBar) and not(self:IsShown())) then	-- cached db value
+				if not(self:IsShown()) then
 					self:Show()
 				end
-				self:ClearAllPoints()
-				self:SetPoint("BOTTOM", OverrideActionBar, "TOP", 31, 23)
+				if not(ClassicUI.cached_db_profile.barsConfig_PetActionBarFrame_dontMoveOnOverrideActionBar) then	-- cached db value
+					self:ClearAllPoints()
+					self:SetPoint("BOTTOM", OverrideActionBar, "TOP", 31, 23)
+				else
+					self:RelocateBarToNormalPosition(MultiBar1_IsVisible())
+				end
 			else
 				if (self:IsShown()) then
 					self:Hide()
 				end
+				self:RelocateBarToNormalPosition(MultiBar1_IsVisible())
 			end
 			if (CUI_SlidingActionBarTexture0:IsShown()) then
 				CUI_SlidingActionBarTexture0:Hide()
@@ -3872,15 +3980,20 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 			end
 		elseif (C_PetBattles.IsInBattle()) then
 			if not(ClassicUI.cached_db_profile.barsConfig_PetActionBarFrame_hideOnPetBattleFrameBar) then	-- cached db value
-				if ((ClassicUI.cached_db_profile.barsConfig_PetActionBarFrame_hideOnOverrideActionBar) and not(self:IsShown())) then	-- cached db value
+				if not(self:IsShown()) then
 					self:Show()
 				end
-				self:ClearAllPoints()
-				self:SetPoint("BOTTOM", PetBattleFrame.BottomFrame, "TOP", 31, 13)
+				if not(ClassicUI.cached_db_profile.barsConfig_PetActionBarFrame_dontMoveOnPetBattleFrameBar) then	-- cached db value
+					self:ClearAllPoints()
+					self:SetPoint("BOTTOM", PetBattleFrame.BottomFrame, "TOP", 31, 13)
+				else
+					self:RelocateBarToNormalPosition(MultiBar1_IsVisible())
+				end
 			else
 				if (self:IsShown()) then
 					self:Hide()
 				end
+				self:RelocateBarToNormalPosition(MultiBar1_IsVisible())
 			end
 			if (CUI_SlidingActionBarTexture0:IsShown()) then
 				CUI_SlidingActionBarTexture0:Hide()
@@ -3890,28 +4003,8 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 			if (((ClassicUI.cached_db_profile.barsConfig_PetActionBarFrame_hideOnOverrideActionBar) or (ClassicUI.cached_db_profile.barsConfig_PetActionBarFrame_hideOnPetBattleFrameBar)) and not(self:IsShown())) then	-- cached db value
 				self:Show()
 			end
-			self:UpdateXPositionValue()
-			self:ClearAllPoints()
 			local show_multi_action_bar_1 = MultiBarBottomLeft:IsShown()
-			local yPos = (show_multi_action_bar_1) and ClassicUI.ACTION_BAR_OFFSET or 0
-			if not(ClassicUI.cached_db_profile.barsConfig_PetActionBarFrame_ignoreyOffsetStatusBar) then	-- cached db value
-				if (ClassicUI.cached_NumberRealVisibleBars <= 0) then
-					yPos = yPos + 92 + ClassicUI.cached_db_profile.barsConfig_PetActionBarFrame_yOffset	-- cached db value
-				elseif (ClassicUI.cached_NumberRealVisibleBars == 1) then
-					yPos = yPos + 97 + ClassicUI.cached_db_profile.barsConfig_PetActionBarFrame_yOffset	-- cached db value
-				else
-					yPos = yPos + 106 + ClassicUI.cached_db_profile.barsConfig_PetActionBarFrame_yOffset	-- cached db value
-				end
-			else
-				if (ClassicUI.cached_NumberRealVisibleBars <= 0) then
-					yPos = yPos + 92 + ClassicUI.cached_db_profile.barsConfig_PetActionBarFrame_yOffset	-- cached db value
-				elseif (ClassicUI.cached_NumberRealVisibleBars == 1) then
-					yPos = yPos + 92 + ClassicUI.cached_db_profile.barsConfig_PetActionBarFrame_yOffset1StatusBar	-- cached db value
-				else
-					yPos = yPos + 92 + ClassicUI.cached_db_profile.barsConfig_PetActionBarFrame_yOffset2StatusBar	-- cached db value
-				end
-			end
-			self:SetPoint("TOPLEFT", CUI_MainMenuBar, "BOTTOMLEFT", self.PETACTIONBAR_XPOS, yPos)
+			self:RelocateBarToNormalPosition(show_multi_action_bar_1)
 			if (show_multi_action_bar_1) then
 				if (CUI_SlidingActionBarTexture0:IsShown()) then
 					CUI_SlidingActionBarTexture0:Hide()
@@ -6158,6 +6251,8 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	CharacterReagentBag0Slot:SetPoint("CENTER", CharacterBag3Slot, "LEFT", -5 + ClassicUI.db.profile.barsConfig.BagsIcons.xOffsetReagentBag, -2 + ClassicUI.db.profile.barsConfig.BagsIcons.yOffsetReagentBag)
 	BagBarExpandToggle:Hide()
 	MicroButtonAndBagsBar:Hide()
+	MicroButtonAndBagsBar:ClearAllPoints()
+	MicroButtonAndBagsBar:SetPoint("BOTTOMRIGHT", UIParent, "BOTTOMRIGHT", -6, 6 + ClassicUI.MICROBUTTONANDBAGSBAR_CUI_OFFSET_Y)	-- this prevents Blizzard from rescaling MultiBarRight and MultiBarLeft in the 'UpdateRightActionBarPositions()' function
 	
 	ClassicUI:SetStrataForMainFrames()
 	ClassicUI:ReLayoutMainFrames()
@@ -8519,7 +8614,7 @@ ClassicUI.LayoutGroupActionButtons = function(groups)
 	end
 	if (groups[6]) then
 		for i = 1, 40 do
-			local button = _G["SpellFlyoutButton"..i]
+			local button = _G["SpellFlyoutPopupButton"..i]
 			if (button ~= nil) then
 				ClassicUI:ActionButtonProtectedApplyLayout(button, 6)
 			else
@@ -8634,7 +8729,7 @@ function ClassicUI:InitActionButtonInfoCache()
 		self.cached_ActionButtonInfo.currLayout[_G["OverrideActionBarButton"..i]] = 1
 	end
 	for i = 1, 40 do
-		local button = _G["SpellFlyoutButton"..i]
+		local button = _G["SpellFlyoutPopupButton"..i]
 		if (button ~= nil) then
 			self.cached_ActionButtonInfo.hooked_UpdateButtonArt[button] = false
 			self.cached_ActionButtonInfo.hooked_UpdateHotkeys[button] = false
@@ -9095,9 +9190,7 @@ function ClassicUI:HookLossOfControlUICCRemover()
 	if (not DISABLELOSSOFCONTROLUI_HOOKED) then
 		hooksecurefunc('ActionButton_UpdateCooldown', function(self)
 			if (self.cooldown.currentCooldownType == COOLDOWN_TYPE_LOSS_OF_CONTROL) then
-				local start, duration, enable, charges, maxCharges, chargeStart, chargeDuration
-				local modRate = 1.0
-				local chargeModRate = 1.0
+				local start, duration, enable, charges, maxCharges, chargeStart, chargeDuration, modRate, chargeModRate
 				if (self.spellID) then
 					local spellCooldownInfo = C_Spell.GetSpellCooldown(self.spellID) or {startTime = 0, duration = 0, isEnabled = false, modRate = 0}
 					start, duration, enable, modRate = spellCooldownInfo.startTime, spellCooldownInfo.duration, spellCooldownInfo.isEnabled, spellCooldownInfo.modRate
