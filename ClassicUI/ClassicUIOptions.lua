@@ -1457,7 +1457,7 @@ ClassicUI.optionsTable = {
 								end
 							end
 						}
-					},
+					}
 				},
 				MicroButtonsOptions = {
 					order = 10,
@@ -3131,8 +3131,37 @@ ClassicUI.optionsTable = {
 										end
 									end,
 								},
-								goToGuildPanelOptionsPanel = {
+								classicNotificationMicroButton = {
 									order = 11,
+									type = "toggle",
+									name = L['classicNotificationMicroButton'],
+									desc = L['classicNotificationMicroButtonDesc'],
+									width = "double",
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.classicNotificationMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.classicNotificationMicroButton = value
+										ClassicUI.cached_db_profile.barsConfig_MicroButtons_GuildMicroButton_classicNotificationMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (value) then
+												if not(ClassicUI.hooked_GuildMicroButton_UpdateNotificationIcon) then
+													hooksecurefunc(GuildMicroButton, "UpdateNotificationIcon", ClassicUI.hook_GuildMicroButton_UpdateNotificationIcon)
+													ClassicUI.hooked_GuildMicroButton_UpdateNotificationIcon = true
+												end
+												GuildMicroButton.CUI_NotificationOverlay:SetAlpha(1)
+												GuildMicroButton.CUI_NotificationOverlay:SetShown(GuildMicroButton.NotificationOverlay:IsShown())
+												GuildMicroButton.NotificationOverlay:SetAlpha(0)
+												GuildMicroButton.NotificationOverlay:Hide()
+											else
+												GuildMicroButton.NotificationOverlay:SetAlpha(1)
+												GuildMicroButton.NotificationOverlay:SetShown(GuildMicroButton.CUI_NotificationOverlay:IsShown())
+												GuildMicroButton.CUI_NotificationOverlay:SetAlpha(0)
+												GuildMicroButton.CUI_NotificationOverlay:Hide()
+											end
+										end
+									end,
+								},
+								goToGuildPanelOptionsPanel = {
+									order = 12,
 									type = "execute",
 									name = L['goToGuildPanelOptionsPanel'],
 									desc = L['goToGuildPanelOptionsPanelDesc'],
@@ -3167,7 +3196,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								xOffsetMicroButton = {
-									order = 12,
+									order = 13,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -3184,7 +3213,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								yOffsetMicroButton = {
-									order = 13,
+									order = 14,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -3201,7 +3230,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								alphaMicroButton = {
-									order = 14,
+									order = 15,
 									type = "range",
 									softMin = 0,
 									softMax = 1,
@@ -3231,7 +3260,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								iconMicroButton = {
-									order = 15,
+									order = 16,
 									type = "select",
 									style = "radio",
 									name = L['iconMicroButton'],
@@ -4840,8 +4869,37 @@ ClassicUI.optionsTable = {
 										end
 									end,
 								},
-								hideLatencyBar = {
+								classicNotificationMicroButton = {
 									order = 11,
+									type = "toggle",
+									name = L['classicNotificationMicroButton'],
+									desc = L['classicNotificationMicroButtonDesc'],
+									width = "double",
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.classicNotificationMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.classicNotificationMicroButton = value
+										ClassicUI.cached_db_profile.barsConfig_MicroButtons_MainMenuMicroButton_classicNotificationMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (value) then
+												if not(ClassicUI.hooked_MainMenuMicroButton_UpdateNotificationIcon) then
+													hooksecurefunc(MainMenuMicroButton, "UpdateNotificationIcon", ClassicUI.hook_MainMenuMicroButton_UpdateNotificationIcon)
+													ClassicUI.hooked_MainMenuMicroButton_UpdateNotificationIcon = true
+												end
+												MainMenuMicroButton.CUI_NotificationOverlay:SetAlpha(1)
+												MainMenuMicroButton.CUI_NotificationOverlay:SetShown(MainMenuMicroButton.NotificationOverlay:IsShown())
+												MainMenuMicroButton.NotificationOverlay:SetAlpha(0)
+												MainMenuMicroButton.NotificationOverlay:Hide()
+											else
+												MainMenuMicroButton.NotificationOverlay:SetAlpha(1)
+												MainMenuMicroButton.NotificationOverlay:SetShown(MainMenuMicroButton.CUI_NotificationOverlay:IsShown())
+												MainMenuMicroButton.CUI_NotificationOverlay:SetAlpha(0)
+												MainMenuMicroButton.CUI_NotificationOverlay:Hide()
+											end
+										end
+									end,
+								},
+								hideLatencyBar = {
+									order = 12,
 									type = "toggle",
 									name = L['Hide Small Latency Bar'],
 									desc = L['Hide Small Latency Bar'],
@@ -4865,7 +4923,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								xOffsetMicroButton = {
-									order = 12,
+									order = 13,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -4882,7 +4940,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								yOffsetMicroButton = {
-									order = 13,
+									order = 14,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -4899,7 +4957,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								alphaMicroButton = {
-									order = 14,
+									order = 15,
 									type = "range",
 									softMin = 0,
 									softMax = 1,
@@ -4929,7 +4987,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								iconMicroButton = {
-									order = 15,
+									order = 16,
 									type = "select",
 									style = "radio",
 									name = L['iconMicroButton'],
@@ -4995,7 +5053,7 @@ ClassicUI.optionsTable = {
 									end
 								}
 							}
-						},
+						}
 					}
 				},
 				PetBattleFrameBarOptions = {
@@ -7539,7 +7597,7 @@ ClassicUI.optionsTable = {
 							softMax = 1,
 							min = 0,
 							max = 1,
-							step = 1,
+							step = 0.01,
 							bigStep = 0.02,
 							name = L['Alpha'],
 							desc = string.gsub(L['AlphaDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.SingleStatusBar.alpha, 1),
@@ -7618,7 +7676,7 @@ ClassicUI.optionsTable = {
 									softMax = 1,
 									min = 0,
 									max = 1,
-									step = 1,
+									step = 0.01,
 									bigStep = 0.02,
 									name = L['alphaArt'],
 									desc = string.gsub(L['alphaArtDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.SingleStatusBar.artAlpha, 1),
@@ -7902,7 +7960,7 @@ ClassicUI.optionsTable = {
 									softMax = 1,
 									min = 0,
 									max = 1,
-									step = 1,
+									step = 0.01,
 									bigStep = 0.02,
 									name = L['Alpha'],
 									desc = string.gsub(L['AlphaDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.DoubleUpperStatusBar.alpha, 1),
@@ -7981,7 +8039,7 @@ ClassicUI.optionsTable = {
 											softMax = 1,
 											min = 0,
 											max = 1,
-											step = 1,
+											step = 0.01,
 											bigStep = 0.02,
 											name = L['alphaArt'],
 											desc = string.gsub(L['alphaArtDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.DoubleUpperStatusBar.artAlpha, 1),
@@ -8074,7 +8132,7 @@ ClassicUI.optionsTable = {
 													ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
 												end
 											end
-										},
+										}
 									}
 								},
 								DoubleUpperStatusBarOverlay = {
@@ -8210,7 +8268,7 @@ ClassicUI.optionsTable = {
 									softMax = 1,
 									min = 0,
 									max = 1,
-									step = 1,
+									step = 0.01,
 									bigStep = 0.02,
 									name = L['Alpha'],
 									desc = string.gsub(L['AlphaDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.DoubleLowerStatusBar.alpha, 1),
@@ -8289,7 +8347,7 @@ ClassicUI.optionsTable = {
 											softMax = 1,
 											min = 0,
 											max = 1,
-											step = 1,
+											step = 0.01,
 											bigStep = 0.02,
 											name = L['alphaArt'],
 											desc = string.gsub(L['alphaArtDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.DoubleLowerStatusBar.artAlpha, 1),
@@ -8382,7 +8440,7 @@ ClassicUI.optionsTable = {
 													ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
 												end
 											end
-										},
+										}
 									}
 								},
 								DoubleLowerStatusBarOverlay = {
@@ -8662,32 +8720,234 @@ ClassicUI.optionsTable = {
 							order = 9,
 							name = ""
 						},
-						MailIconPriority = {
+						CalendarAndMailIcons = {
 							order = 10,
 							disabled = function() return not(ClassicUI.db.profile.extraFrames.Minimap.enabled) end,
-							type = "select",
-							name = L['MailIconPriority'],
-							desc = L['MailIconPriorityDesc'],
-							width = 2.30,
-							values = {
-								[0] = L['Default - Crafting Order Icon > Mail Icon'],
-								[1] = L['Mail Icon > Crafting Order Icon']
-							},
-							get = function() return ClassicUI.db.profile.extraFrames.Minimap.mailIconPriority end,
-							set = function(_,value)
-								if (ClassicUI.db.profile.extraFrames.Minimap.mailIconPriority ~= value) then
-									ClassicUI.db.profile.extraFrames.Minimap.mailIconPriority = value
-									if (ClassicUI.db.profile.extraFrames.Minimap.enabled) then
-										if (value == 1) then
-											MinimapCluster.IndicatorFrame.MailFrame:SetFrameLevel(6)
-											MinimapCluster.IndicatorFrame.CraftingOrderFrame:SetFrameLevel(5)
-										else
-											MinimapCluster.IndicatorFrame.MailFrame:SetFrameLevel(5)
-											MinimapCluster.IndicatorFrame.CraftingOrderFrame:SetFrameLevel(6)
+							inline = true,
+							type = "group",
+							name = L['Calendar, Mail and Clock Configuration'],
+							desc = "",
+							args = {
+								MailIconPriority = {
+									order = 1,
+									disabled = function() return not(ClassicUI.db.profile.extraFrames.Minimap.enabled) end,
+									type = "select",
+									name = L['MailIconPriority'],
+									desc = L['MailIconPriorityDesc'],
+									width = 2.30,
+									values = {
+										[0] = L['Default - Crafting Order Icon > Mail Icon'],
+										[1] = L['Mail Icon > Crafting Order Icon']
+									},
+									get = function() return ClassicUI.db.profile.extraFrames.Minimap.mailIconPriority end,
+									set = function(_,value)
+										if (ClassicUI.db.profile.extraFrames.Minimap.mailIconPriority ~= value) then
+											ClassicUI.db.profile.extraFrames.Minimap.mailIconPriority = value
+											if (ClassicUI.db.profile.extraFrames.Minimap.enabled) then
+												if (value == 1) then
+													MinimapCluster.IndicatorFrame.MailFrame:SetFrameLevel(6)
+													MinimapCluster.IndicatorFrame.CraftingOrderFrame:SetFrameLevel(5)
+												else
+													MinimapCluster.IndicatorFrame.MailFrame:SetFrameLevel(5)
+													MinimapCluster.IndicatorFrame.CraftingOrderFrame:SetFrameLevel(6)
+												end
+											end
+										end
+									end,
+								},
+								minimapArrangementType = {
+									order = 2,
+									disabled = function() return not(ClassicUI.db.profile.extraFrames.Minimap.enabled) end,
+									type = "select",
+									style = "radio",
+									name = L['minimapArrangementType'],
+									desc = L['minimapArrangementTypeDesc'],
+									width = "normal",
+									values = {
+										[0] = '|T1450455:28:28:0:0:56:56:0:56:0:56|t '..'|cffbd7d11'..L['Legion (default)']..'|r',
+										[1] = '|T4279397:28:28:0:0:56:56:0:56:0:56|t '..'|cffbd7d11'..L['Classic']..'|r',
+										[2] = '|T630784:28:28:0:0:56:56:0:56:0:56|t '..'|cffbd7d11'..L['Cataclysm']..'|r'
+									},
+									get = function() return ClassicUI.db.profile.extraFrames.Minimap.minimapArrangementType end,
+									set = function(_,value)
+										if (ClassicUI.db.profile.extraFrames.Minimap.minimapArrangementType ~= value) then
+											ClassicUI.db.profile.extraFrames.Minimap.minimapArrangementType = value
+											ClassicUI.cached_db_profile.extraFrames_Minimap_minimapArrangementType = value
+											if (value == 1) then
+												ClassicUI.db.profile.extraFrames.Minimap.calendarIconType = 1
+												ClassicUI.db.profile.extraFrames.Minimap.calendarIconSize = 50
+												ClassicUI.db.profile.extraFrames.Minimap.useClassicTimeClock = true
+											else
+												ClassicUI.db.profile.extraFrames.Minimap.calendarIconType = 0
+												ClassicUI.db.profile.extraFrames.Minimap.calendarIconSize = 40
+												ClassicUI.db.profile.extraFrames.Minimap.useClassicTimeClock = false
+											end
+											ClassicUI.db.profile.extraFrames.Minimap.zoomButtonsPositions = value
+											if (ClassicUI.db.profile.extraFrames.Minimap.enabled) then
+												GameTimeFrame:ClearAllPoints()
+												MinimapCluster.IndicatorFrame:ClearAllPoints()
+												TimeManagerClockTicker:ClearAllPoints()
+												Minimap.ZoomIn:ClearAllPoints()
+												Minimap.ZoomOut:ClearAllPoints()
+												if (value == 1) then
+													GameTimeFrame:SetPoint("TOPRIGHT", MinimapCluster, "TOPRIGHT", 4, -19)
+													MinimapCluster.IndicatorFrame:SetPoint("TOPRIGHT", MinimapCluster, "TOPRIGHT", 7, -59)
+													GameTimeFrame:SetSize(50, 50)
+													GameTimeFrame:GetFontString():SetScale(1.25)
+													GameTimeTexture:Show()
+													GameTimeFrame:GetNormalTexture():SetAlpha(0)
+													TimeManagerClockTicker:SetPoint("CENTER", TimeManagerClockButton, "CENTER", 1, 0)
+													TimeManagerClockButtonBackground:SetTexture("Interface\\Addons\\ClassicUI\\Textures\\ClockBackground-classic")
+													Minimap.ZoomIn:SetPoint("CENTER", MinimapBackdrop, "CENTER", 77, -13)
+													Minimap.ZoomOut:SetPoint("CENTER", MinimapBackdrop, "CENTER", 51, -41)
+												elseif (value == 2) then
+													GameTimeFrame:SetPoint("TOPRIGHT", MinimapCluster, "TOPRIGHT", 4, -37)
+													MinimapCluster.IndicatorFrame:SetPoint("TOPRIGHT", MinimapCluster, "TOPRIGHT", 7, -74)
+													GameTimeFrame:SetSize(40, 40)
+													GameTimeFrame:GetFontString():SetScale(1)
+													GameTimeTexture:Hide()
+													GameTimeFrame:GetNormalTexture():SetAlpha(1)
+													TimeManagerClockTicker:SetPoint("CENTER", TimeManagerClockButton, "CENTER", 3, 1)
+													TimeManagerClockButtonBackground:SetTexture("Interface\\TimeManager\\ClockBackground")
+													Minimap.ZoomIn:SetPoint("CENTER", MinimapBackdrop, "CENTER", 71, -20)
+													Minimap.ZoomOut:SetPoint("CENTER", MinimapBackdrop, "CENTER", 51, -39)
+												else
+													GameTimeFrame:SetPoint("TOPRIGHT", MinimapCluster, "TOPRIGHT", 3, -24)
+													MinimapCluster.IndicatorFrame:SetPoint("TOPRIGHT", MinimapCluster, "TOPRIGHT", 7, -59)
+													GameTimeFrame:SetSize(40, 40)
+													GameTimeFrame:GetFontString():SetScale(1)
+													GameTimeTexture:Hide()
+													GameTimeFrame:GetNormalTexture():SetAlpha(1)
+													TimeManagerClockTicker:SetPoint("CENTER", TimeManagerClockButton, "CENTER", 3, 1)
+													TimeManagerClockButtonBackground:SetTexture("Interface\\TimeManager\\ClockBackground")
+													Minimap.ZoomIn:SetPoint("CENTER", MinimapBackdrop, "CENTER", 72, -25)
+													Minimap.ZoomOut:SetPoint("CENTER", MinimapBackdrop, "CENTER", 50, -43)
+												end
+												ClassicUI:RepositionAddonCompartmentFrame()
+											end
 										end
 									end
-								end
-							end,
+								},
+								calendarIconType = {
+									order = 3,
+									disabled = function() return not(ClassicUI.db.profile.extraFrames.Minimap.enabled) end,
+									type = "select",
+									style = "radio",
+									name = L['calendarIconType'],
+									desc = L['calendarIconTypeDesc'],
+									width = "normal",
+									values = {
+										[0] = '|T652159:24:24:0:0:56:56:0:56:0:56|t '..L['Calendar Icon'],
+										[1] = '|T1033477:24:24:0:0:56:56:0:56:0:56|t '..L['Day/Night Icon']
+									},
+									get = function() return ClassicUI.db.profile.extraFrames.Minimap.calendarIconType end,
+									set = function(_,value)
+										if (ClassicUI.db.profile.extraFrames.Minimap.calendarIconType ~= value) then
+											ClassicUI.db.profile.extraFrames.Minimap.calendarIconType = value
+											if (ClassicUI.db.profile.extraFrames.Minimap.enabled) then
+												if (value == 1) then
+													GameTimeTexture:Show()
+													GameTimeFrame:GetNormalTexture():SetAlpha(0)
+												else
+													GameTimeTexture:Hide()
+													GameTimeFrame:GetNormalTexture():SetAlpha(1)
+												end
+											end
+										end
+									end
+								},
+								calendarIconSize = {
+									order = 4,
+									disabled = function() return not(ClassicUI.db.profile.extraFrames.Minimap.enabled) end,
+									type = "select",
+									style = "radio",
+									name = L['calendarIconSize'],
+									desc = L['calendarIconSizeDesc'],
+									width = "normal",
+									values = {
+										[40] = '|T236565:24:24:0:0:56:56:17:43:18:44|t '..L['40x40'],
+										[50] = '|T236566:24:24:0:0:56:56:17:43:18:44|t '..L['50x50']
+									},
+									get = function() return ClassicUI.db.profile.extraFrames.Minimap.calendarIconSize end,
+									set = function(_,value)
+										if (ClassicUI.db.profile.extraFrames.Minimap.calendarIconSize ~= value) then
+											ClassicUI.db.profile.extraFrames.Minimap.calendarIconSize = value
+											if (ClassicUI.db.profile.extraFrames.Minimap.enabled) then
+												if (value == 40) then
+													GameTimeFrame:SetSize(40, 40)
+													GameTimeFrame:GetFontString():SetScale(1)
+												elseif (value == 50) then
+													GameTimeFrame:SetSize(50, 50)
+													GameTimeFrame:GetFontString():SetScale(1.25)
+												elseif (type(value)=="number") then
+													GameTimeFrame:SetSize(value, value)
+													GameTimeFrame:GetFontString():SetScale(value / 40)
+												else
+													GameTimeFrame:SetSize(40, 40)
+													GameTimeFrame:GetFontString():SetScale(1)
+												end
+												ClassicUI:RepositionAddonCompartmentFrame()
+											end
+										end
+									end
+								},
+								zoomButtonsPositions = {
+									order = 5,
+									disabled = function() return not(ClassicUI.db.profile.extraFrames.Minimap.enabled) end,
+									type = "select",
+									style = "radio",
+									name = L['zoomButtonsPositions'],
+									desc = L['zoomButtonsPositionsDesc'],
+									width = "normal",
+									values = {
+										[0] = '|T6033346:24:24:0:0:56:56:0:56:0:56|t '..L['Position 1'],
+										[1] = '|T6033347:24:24:0:0:56:56:0:56:0:56|t '..L['Position 2'],
+										[2] = '|T6033348:24:24:0:0:56:56:0:56:0:56|t '..L['Position 3']
+									},
+									get = function() return ClassicUI.db.profile.extraFrames.Minimap.zoomButtonsPositions end,
+									set = function(_,value)
+										if (ClassicUI.db.profile.extraFrames.Minimap.zoomButtonsPositions ~= value) then
+											ClassicUI.db.profile.extraFrames.Minimap.zoomButtonsPositions = value
+											if (ClassicUI.db.profile.extraFrames.Minimap.enabled) then
+												Minimap.ZoomIn:ClearAllPoints()
+												Minimap.ZoomOut:ClearAllPoints()
+												if (value == 1) then
+													Minimap.ZoomIn:SetPoint("CENTER", MinimapBackdrop, "CENTER", 77, -13)
+													Minimap.ZoomOut:SetPoint("CENTER", MinimapBackdrop, "CENTER", 51, -41)
+												elseif (value == 2) then
+													Minimap.ZoomIn:SetPoint("CENTER", MinimapBackdrop, "CENTER", 71, -20)
+													Minimap.ZoomOut:SetPoint("CENTER", MinimapBackdrop, "CENTER", 51, -39)
+												else
+													Minimap.ZoomIn:SetPoint("CENTER", MinimapBackdrop, "CENTER", 72, -25)
+													Minimap.ZoomOut:SetPoint("CENTER", MinimapBackdrop, "CENTER", 50, -43)
+												end
+											end
+										end
+									end
+								},
+								useClassicTimeClock = {
+									order = 6,
+									disabled = function() return not(ClassicUI.db.profile.extraFrames.Minimap.enabled) end,
+									type = "toggle",
+									name = function() return (ClassicUI.db.profile.extraFrames.Minimap.useClassicTimeClock and '|TInterface\\Addons\\ClassicUI\\Textures\\ClockBackground-classic:28:60:0:0:64:64:1:52:1:25|t ' or '|TInterface\\TimeManager\\ClockBackground:28:60:0:0:64:64:1:52:1:25|t ')..L['useClassicTimeClock'] end,
+									desc = L['useClassicTimeClockDesc'],
+									width = "double",
+									get = function() return ClassicUI.db.profile.extraFrames.Minimap.useClassicTimeClock end,
+									set = function(_,value)
+										ClassicUI.db.profile.extraFrames.Minimap.useClassicTimeClock = value
+										if (ClassicUI.db.profile.extraFrames.Minimap.enabled) then
+											TimeManagerClockTicker:ClearAllPoints()
+											if (value) then
+												TimeManagerClockTicker:SetPoint("CENTER", TimeManagerClockButton, "CENTER", 1, 0)
+												TimeManagerClockButtonBackground:SetTexture("Interface\\Addons\\ClassicUI\\Textures\\ClockBackground-classic")
+											else
+												TimeManagerClockTicker:SetPoint("CENTER", TimeManagerClockButton, "CENTER", 3, 1)
+												TimeManagerClockButtonBackground:SetTexture("Interface\\TimeManager\\ClockBackground")
+											end
+										end
+									end,
+								}
+							}
 						},
 						Spacer4 = {
 							type = "description",
@@ -8864,8 +9124,9 @@ ClassicUI.optionsTable = {
 									set = function(_,value)
 										ClassicUI.db.profile.extraFrames.Minimap.xOffsetAddonCompartment = value
 										if (ClassicUI.db.profile.extraFrames.Minimap.enabled) then
+											local xCUIACFExtraOffset, yCUIACFExtraOffset = ClassicUI:GetCUIOffsetsAddonCompartmentFrame()
 											AddonCompartmentFrame:ClearAllPoints()
-											AddonCompartmentFrame:SetPoint("TOPRIGHT", GameTimeFrame, "TOPLEFT", 5 + value, 0 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetAddonCompartment)
+											AddonCompartmentFrame:SetPoint("TOPRIGHT", GameTimeFrame, "TOPLEFT", 5 + xCUIACFExtraOffset + value, 0 + yCUIACFExtraOffset + ClassicUI.db.profile.extraFrames.Minimap.yOffsetAddonCompartment)
 										end
 									end
 								},
@@ -8883,8 +9144,9 @@ ClassicUI.optionsTable = {
 									set = function(_,value)
 										ClassicUI.db.profile.extraFrames.Minimap.yOffsetAddonCompartment = value
 										if (ClassicUI.db.profile.extraFrames.Minimap.enabled) then
+											local xCUIACFExtraOffset, yCUIACFExtraOffset = ClassicUI:GetCUIOffsetsAddonCompartmentFrame()
 											AddonCompartmentFrame:ClearAllPoints()
-											AddonCompartmentFrame:SetPoint("TOPRIGHT", GameTimeFrame, "TOPLEFT", 5 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetAddonCompartment, 0 + value)
+											AddonCompartmentFrame:SetPoint("TOPRIGHT", GameTimeFrame, "TOPLEFT", 5 + xCUIACFExtraOffset + ClassicUI.db.profile.extraFrames.Minimap.xOffsetAddonCompartment, 0 + yCUIACFExtraOffset + value)
 										end
 									end
 								},
@@ -9278,7 +9540,7 @@ ClassicUI.optionsTable = {
 									ClassicUI:RestoreChatScrollButtons()
 								end
 							end
-						},
+						}
 					}
 				}
 			}
@@ -9677,11 +9939,13 @@ ClassicUI.optionsTable = {
 							set = function(_,value)
 								if ((not value) and (ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.enabled)) then
 									ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.enabled = value
+									ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_enabled = value
 									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
 										ReloadUI()
 									end
 								else
 									ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.enabled = value
+									ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_enabled = value
 									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
 										ClassicUI:HookGreyOnCooldownIcons()
 									end

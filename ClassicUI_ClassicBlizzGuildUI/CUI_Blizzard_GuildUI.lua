@@ -229,7 +229,7 @@ function CUI_GuildFrame_OpenAchievement(button, achievementID)
 end
 
 function CUI_GuildFrame_LinkItem(button, itemID, itemLink)
-	itemLink = itemLink or select(2, GetItemInfo(itemID));
+	itemLink = itemLink or select(2, C_Item.GetItemInfo(itemID));
 	if ( itemLink ) then
 		if ( ChatEdit_GetActiveWindow() ) then
 			ChatEdit_InsertLink(itemLink);

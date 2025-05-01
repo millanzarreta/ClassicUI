@@ -36,16 +36,18 @@
 				self.label:SetText(_G["GUILD_CHALLENGE_TYPE"..self:GetID()]);
 			</OnLoad>
 			<OnEnter>
-				local index, current, max, gold, maxGold = GetGuildChallengeInfo(self.dataIndex);
-				if ( index ) then
-					GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
-					GameTooltip:SetText(_G["GUILD_CHALLENGE_LABEL"..index]);
-					GameTooltip:AddLine(" ")
-					GameTooltip:AddLine(_G["GUILD_CHALLENGE_TOOLTIP"..index], 1, 1, 1, true);
-					GameTooltip:AddLine(" ")
-					local goldString = GetMoneyString(maxGold * COPPER_PER_SILVER * SILVER_PER_GOLD);
-					GameTooltip:AddLine(string.format(GUILD_CHALLENGE_REWARD_GOLD, goldString), 1, 1, 1, true);
-					GameTooltip:Show();
+				if (self.dataIndex) then
+					local index, current, max, gold, maxGold = GetGuildChallengeInfo(self.dataIndex);
+					if ( index ) then
+						GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+						GameTooltip:SetText(_G["GUILD_CHALLENGE_LABEL"..index]);
+						GameTooltip:AddLine(" ")
+						GameTooltip:AddLine(_G["GUILD_CHALLENGE_TOOLTIP"..index], 1, 1, 1, true);
+						GameTooltip:AddLine(" ")
+						local goldString = GetMoneyString(maxGold * COPPER_PER_SILVER * SILVER_PER_GOLD);
+						GameTooltip:AddLine(string.format(GUILD_CHALLENGE_REWARD_GOLD, goldString), 1, 1, 1, true);
+						GameTooltip:Show();
+					end
 				end
 			</OnEnter>
 			<OnLeave>

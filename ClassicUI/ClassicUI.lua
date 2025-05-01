@@ -1,7 +1,7 @@
 -- ------------------------------------------------------------ --
 -- Addon: ClassicUI                                             --
 --                                                              --
--- Version: 2.1.1                                               --
+-- Version: 2.1.2                                               --
 -- Author: Millán - Sanguino                                    --
 --                                                              --
 -- License: GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007 --
@@ -53,11 +53,18 @@ local C_GossipInfo_GetFriendshipReputation = C_GossipInfo.GetFriendshipReputatio
 local C_Club_IsEnabled = C_Club.IsEnabled
 local C_Club_IsRestricted = C_Club.IsRestricted
 local C_Container_GetContainerNumFreeSlots = C_Container.GetContainerNumFreeSlots
+local C_SocialRestrictions_CanReceiveChat = C_SocialRestrictions.CanReceiveChat
+local CommunitiesUtil_DoesAnyCommunityHaveUnreadMessages = CommunitiesUtil.DoesAnyCommunityHaveUnreadMessages
+local CommunitiesFrame_IsEnabled = CommunitiesFrame_IsEnabled
 local ContainerFrame_IsReagentBag = ContainerFrame_IsReagentBag
 local GetRestrictedAccountData = GetRestrictedAccountData
 local C_Reputation_GetWatchedFactionData = C_Reputation.GetWatchedFactionData
 local GameLimitedMode_IsActive = GameLimitedMode_IsActive
+local StoreFrame_IsShown = StoreFrame_IsShown
 local Kiosk_IsEnabled = Kiosk.IsEnabled
+local CurrentVersionHasNewUnseenSettings = CurrentVersionHasNewUnseenSettings
+local IsPlayerAtEffectiveMaxLevel = IsPlayerAtEffectiveMaxLevel
+local IsXPUserDisabled = IsXPUserDisabled
 local UnitXP = UnitXP
 local UnitXPMax = UnitXPMax
 local UnitFactionGroup = UnitFactionGroup
@@ -81,7 +88,7 @@ local GetNetStats = GetNetStats
 local InGuildParty = InGuildParty
 
 -- Global constants
-ClassicUI.VERSION = "2.1.1"
+ClassicUI.VERSION = "2.1.2"
 ClassicUI.STANDARD_EPSILON = STANDARD_EPSILON
 ClassicUI.SCALE_EPSILON = SCALE_EPSILON
 ClassicUI.ACTIONBUTTON_NEWLAYOUT_SCALE = 0.826
@@ -514,7 +521,8 @@ ClassicUI.defaults = {
 					xOffsetMicroButton = 0,
 					yOffsetMicroButton = 0,
 					alphaMicroButton = 1,
-					iconMicroButton = 7		-- 7 = Guild Emblem (default)
+					iconMicroButton = 7,	-- 7 = Guild Emblem (default)
+					classicNotificationMicroButton = true
 				},
 				['LFDMicroButton'] = {
 					order = 7,
@@ -581,6 +589,7 @@ ClassicUI.defaults = {
 					yOffsetMicroButton = 0,
 					alphaMicroButton = 1,
 					iconMicroButton = 13,	-- 13 = MainMenu Icon (default)
+					classicNotificationMicroButton = false,
 					hideLatencyBar = false
 				}
 			},
@@ -813,7 +822,12 @@ ClassicUI.defaults = {
 				xOffset = 0,
 				yOffset = 0,
 				scale = 1,
-				mailIconPriority = 0,		-- 0 = Crafting Order Icon > Mail Icon (default), 1 = Mail Icon > Crafting Order Icon
+				mailIconPriority = 0,				-- 0 = Crafting Order Icon > Mail Icon (default), 1 = Mail Icon > Crafting Order Icon
+				minimapArrangementType = 0,			-- 0 = Legion (default), 1 = Classic, 2 = Cataclysm
+				calendarIconType = 0,				-- 0 = Calendar Icon (legion/cataclysm default), 1 = Day/Night Icon (classic default)
+				calendarIconSize = 40,				-- 40 = 40x40 (legion/cataclysm default), 50 = 50x50 (classic default)
+				zoomButtonsPositions = 0,			-- 0 = Position 1 (legion default), 1 = Position 2 (classic/tbc default), 2 = Position 3 (wotlk//cataclysm default)
+				useClassicTimeClock = false,
 				xOffsetExpansionLandingPage = 0,
 				yOffsetExpansionLandingPage = 0,
 				scaleExpansionLandingPageDragonflight = 0.82,
@@ -1261,6 +1275,8 @@ function ClassicUI:UpdateDBValuesCache()
 	self.cached_db_profile.barsConfig_MicroButtons_EJMicroButton_disableMicroButton = self.db.profile.barsConfig.MicroButtons.EJMicroButton.disableMicroButton
 	self.cached_db_profile.barsConfig_MicroButtons_StoreMicroButton_disableMicroButton = self.db.profile.barsConfig.MicroButtons.StoreMicroButton.disableMicroButton
 	self.cached_db_profile.barsConfig_MicroButtons_MainMenuMicroButton_disableMicroButton = self.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.disableMicroButton
+	self.cached_db_profile.barsConfig_MicroButtons_GuildMicroButton_classicNotificationMicroButton = self.db.profile.barsConfig.MicroButtons.GuildMicroButton.classicNotificationMicroButton
+	self.cached_db_profile.barsConfig_MicroButtons_MainMenuMicroButton_classicNotificationMicroButton = self.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.classicNotificationMicroButton
 	self.cached_db_profile.barsConfig_MicroButtons_PlayerSpellsMicroButton_iconMicroButton = self.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.iconMicroButton
 	self.cached_db_profile.barsConfig_MicroButtons_PlayerSpellsMicroButton_iconMicroButton_normalTextureSB = self.MICROBUTTONS_ARRAYINFO[23].normalTextureSB
 	self.cached_db_profile.barsConfig_MicroButtons_PlayerSpellsMicroButton_iconMicroButton_pushedTextureSB = self.MICROBUTTONS_ARRAYINFO[23].pushedTextureSB
@@ -1290,6 +1306,7 @@ function ClassicUI:UpdateDBValuesCache()
 	self.cached_db_profile.extraFrames_Minimap_enabled = self.db.profile.extraFrames.Minimap.enabled
 	self.cached_db_profile.extraFrames_Minimap_xOffset = self.db.profile.extraFrames.Minimap.xOffset
 	self.cached_db_profile.extraFrames_Minimap_yOffset = self.db.profile.extraFrames.Minimap.yOffset
+	self.cached_db_profile.extraFrames_Minimap_minimapArrangementType = self.db.profile.extraFrames.Minimap.minimapArrangementType
 	self.cached_db_profile.extraFrames_Minimap_xOffsetExpansionLandingPage = self.db.profile.extraFrames.Minimap.xOffsetExpansionLandingPage
 	self.cached_db_profile.extraFrames_Minimap_yOffsetExpansionLandingPage = self.db.profile.extraFrames.Minimap.yOffsetExpansionLandingPage
 	self.cached_db_profile.extraFrames_Minimap_scaleExpansionLandingPageDragonflight = self.db.profile.extraFrames.Minimap.scaleExpansionLandingPageDragonflight
@@ -1302,6 +1319,7 @@ function ClassicUI:UpdateDBValuesCache()
 	self.cached_db_profile.extraFrames_Chat_restoreBottomScrollButton = self.db.profile.extraFrames.Chat.restoreBottomScrollButton
 	self.cached_db_profile.extraFrames_Chat_socialButtonToBottom = self.db.profile.extraFrames.Chat.socialButtonToBottom
 	self.cached_db_profile.extraConfigs_KeybindsConfig_hideKeybindsMode = self.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode
+	self.cached_db_profile.extraConfigs_GreyOnCooldownConfig_enabled = self.db.profile.extraConfigs.GreyOnCooldownConfig.enabled
 	self.cached_db_profile.extraConfigs_GreyOnCooldownConfig_minDuration = self.db.profile.extraConfigs.GreyOnCooldownConfig.minDuration
 	self.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturateUnusableActions = self.db.profile.extraConfigs.GreyOnCooldownConfig.desaturateUnusableActions
 	self.cached_db_profile.extraConfigs_GuildPanelMode_defaultOpenOldMenu = self.db.profile.extraConfigs.GuildPanelMode.defaultOpenOldMenu
@@ -1775,27 +1793,27 @@ end
 
 -- Main function that loads the additional features of ClassicUI
 function ClassicUI:ExtraOptionsFunc()
-	--Extra Option: Guild Panel Mode
+	-- Extra Option: Guild Panel Mode
 	if ((ClassicUI.db.profile.extraConfigs.GuildPanelMode.defaultOpenOldMenu) or (ClassicUI.db.profile.extraConfigs.GuildPanelMode.middleClickMicroButtonOpenOldMenu) or (ClassicUI.db.profile.extraConfigs.GuildPanelMode.rightClickMicroButtonOpenOldMenu) or (ClassicUI.db.profile.extraConfigs.GuildPanelMode.leftClickMicroButtonOpenOldMenu)) then
 		ClassicUI:HookOpenGuildPanelMode()
 	end
-	--Extra Option: Keybinds Visibility
+	-- Extra Option: Keybinds Visibility
 	if (ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode > 0) then
 		self:ToggleVisibilityKeybinds(ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode)
 	end
-	--Extra Option: ActionBar Names Visibility
+	-- Extra Option: ActionBar Names Visibility
 	if (ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideActionButtonName) then
 		self:ToggleVisibilityActionButtonNames(ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideActionButtonName)
 	end
-	--Extra Option: RedRange
+	-- Extra Option: RedRange
 	if (ClassicUI.db.profile.extraConfigs.RedRangeConfig.enabled) then
 		self:HookRedRangeIcons()
 	end
-	--Extra Option: GreyOnCooldown
+	-- Extra Option: GreyOnCooldown
 	if (ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.enabled) then
 		self:HookGreyOnCooldownIcons()
 	end
-	--Extra Option: LossOfControlUI
+	-- Extra Option: LossOfControlUI
 	if (ClassicUI.db.profile.extraConfigs.LossOfControlUIConfig.enabled) then
 		self:HookLossOfControlUICCRemover()
 	end
@@ -1836,6 +1854,9 @@ function ClassicUI:ModifyOriginalFrames()
 	MultiBarBottomRight:SetSize(500, 38)
 	MultiBarRight:SetSize(38, 500)
 	MultiBarLeft:SetSize(38, 500)
+	PetActionBar:SetSize(509, 43)
+	PossessActionBar:SetSize(29, 32)
+	StanceBar:SetSize(29, 32)
 	-- Modify the position of some ActionBars
 	ClassicUI:UpdateRightActionBarPositions()
 	ClassicUI:UpdateBottomActionBarPositions()
@@ -2105,7 +2126,7 @@ ClassicUI.StatusTrackingBarManager_LayoutBar = function(self, bar, isTopBar)
 		bar:SetSize(1024 + xSize, 7 + ySize)
 		bar.OverlayFrame.Text:SetPoint("CENTER", bar.OverlayFrame, "CENTER", 0 + xOffsetOverlay, 1 + yOffsetOverlay)
 		bar.OverlayFrame:SetAlpha(overlayHide and 0 or overlayAlpha)
-		bar.OverlayFrame.Text:SetShown(not(overlayHide))
+		bar.OverlayFrame:SetShown(not(overlayHide))
 		self.TopBarFrameTexture0:SetPoint("BOTTOMLEFT", CUI_MainMenuBar, "TOPLEFT", 0 + xOffsetArt, -1 + yOffsetArt)
 		self.TopBarFrameTexture0:SetSize(256 + xSizeArt, 11 + ySizeArt)
 		self.TopBarFrameTexture1:SetSize(256 + xSizeArt, 11 + ySizeArt)
@@ -2153,7 +2174,7 @@ ClassicUI.StatusTrackingBarManager_LayoutBar = function(self, bar, isTopBar)
 		bar:SetSize(1024 + xSize, 10 + ySize)
 		bar.OverlayFrame.Text:SetPoint("CENTER", bar.OverlayFrame, "CENTER", 0 + xOffsetOverlay, 0 + yOffsetOverlay)
 		bar.OverlayFrame:SetAlpha(overlayHide and 0 or overlayAlpha)
-		bar.OverlayFrame.Text:SetShown(not(overlayHide))
+		bar.OverlayFrame:SetShown(not(overlayHide))
 		self.BottomBarFrameTexture0:SetPoint("TOPLEFT", CUI_MainMenuBar, "TOPLEFT", 0 + xOffsetArt, 0 + yOffsetArt)
 		self.BottomBarFrameTexture0:SetSize(256 + xSizeArt, 10 + ySizeArt)
 		self.BottomBarFrameTexture1:SetSize(256 + xSizeArt, 10 + ySizeArt)
@@ -2288,6 +2309,42 @@ function ClassicUI:TrySetBagItemButtonQuality(button, bagQuality, itemIDOrLink, 
 	end
 end
 
+-- Function to get the offset points for the CUI placement of the AddonCompartmentFrame frame
+function ClassicUI:GetCUIOffsetsAddonCompartmentFrame()
+	local xCUIACFExtraOffset = 0
+	local yCUIACFExtraOffset = 0
+	if (ClassicUI.db.profile.extraFrames.Minimap.minimapArrangementType == 1) then
+		if (ClassicUI.db.profile.extraFrames.Minimap.calendarIconSize == 50) then
+			xCUIACFExtraOffset = 2
+			yCUIACFExtraOffset = -3
+		else
+			xCUIACFExtraOffset = -2
+			yCUIACFExtraOffset = -3
+		end
+	elseif (ClassicUI.db.profile.extraFrames.Minimap.minimapArrangementType == 2) then
+		if (ClassicUI.db.profile.extraFrames.Minimap.calendarIconSize == 50) then
+			xCUIACFExtraOffset = 14
+			yCUIACFExtraOffset = 12
+		else
+			xCUIACFExtraOffset = 6
+			yCUIACFExtraOffset = 11
+		end
+	else
+		if (ClassicUI.db.profile.extraFrames.Minimap.calendarIconSize == 50) then
+			xCUIACFExtraOffset = 3
+			yCUIACFExtraOffset = 1
+		end
+	end
+	return xCUIACFExtraOffset, yCUIACFExtraOffset
+end
+
+-- Function to set the position of the AddonCompartmentFrame frame
+function ClassicUI:RepositionAddonCompartmentFrame()
+	local xCUIACFExtraOffset, yCUIACFExtraOffset = ClassicUI:GetCUIOffsetsAddonCompartmentFrame()
+	AddonCompartmentFrame:ClearAllPoints()
+	AddonCompartmentFrame:SetPoint("TOPRIGHT", GameTimeFrame, "TOPLEFT", 5 + xCUIACFExtraOffset + ClassicUI.db.profile.extraFrames.Minimap.xOffsetAddonCompartment, 0 + yCUIACFExtraOffset + ClassicUI.db.profile.extraFrames.Minimap.yOffsetAddonCompartment)
+end
+
 -- Function that performs all the necessary modifications in the interface to bring back the old Minimap
 function ClassicUI:EnableOldMinimap()
 	MinimapCluster:SetSize(192, 192)
@@ -2305,18 +2362,18 @@ function ClassicUI:EnableOldMinimap()
 	MinimapBackdrop:CreateTexture("MinimapBorder", "ARTWORK")
 	MinimapBorder:ClearAllPoints()
 	MinimapBorder:SetAllPoints(MinimapBackdrop)
-	MinimapBorder:SetTexture("Interface\\Minimap\\UI-Minimap-Border", "ARTWORK")
+	MinimapBorder:SetTexture("Interface\\Minimap\\UI-Minimap-Border")
 	MinimapBorder:SetDrawLayer("ARTWORK", 0)
 	MinimapBorder:SetTexCoord(0.25, 0.125, 0.25, 0.875, 1, 0.125, 1, 0.875)
 	MinimapCompassTexture:ClearAllPoints()
 	MinimapCompassTexture:SetPoint("CENTER", Minimap, "CENTER", -2, 0)
-	MinimapCompassTexture:SetTexture("Interface\\Minimap\\CompassRing", "OVERLAY")
+	MinimapCompassTexture:SetTexture("Interface\\Minimap\\CompassRing")
 	MinimapCompassTexture:SetSize(256, 256)	-- 365x365 scaled 0.7 = 255.5x255.5
 	MinimapCompassTexture:SetDrawLayer("OVERLAY", 0)
 	MinimapBackdrop:CreateTexture("MinimapNorthTag")
 	MinimapNorthTag:ClearAllPoints()
 	MinimapNorthTag:SetPoint("CENTER", Minimap, "CENTER", 0, 67)
-	MinimapNorthTag:SetTexture("Interface\\Minimap\\CompassNorthTag", "OVERLAY")
+	MinimapNorthTag:SetTexture("Interface\\Minimap\\CompassNorthTag")
 	MinimapNorthTag:SetSize(16, 16)
 	MinimapNorthTag:SetDrawLayer("OVERLAY", 0)
 	hooksecurefunc(MinimapCluster, "SetRotateMinimap", function(self, rotateMinimap)
@@ -2449,21 +2506,33 @@ function ClassicUI:EnableOldMinimap()
 	TimeManagerClockButton:SetFrameStrata("LOW")
 	TimeManagerClockButton:SetFrameLevel(5)
 	TimeManagerClockButton:SetSize(60, 28)
-	--TimeManagerClockButton:SetHitRectInsets(8, 5, 3, 3)	--is already the default value
+	--TimeManagerClockButton:SetHitRectInsets(8, 5, 3, 3)	-- is already the default value
 	local TimeManagerClockButtonBackground = TimeManagerClockButton:CreateTexture("TimeManagerClockButtonBackground", "BORDER")
 	TimeManagerClockButtonBackground:ClearAllPoints()
 	TimeManagerClockButtonBackground:SetAllPoints(TimeManagerClockButton)
-	TimeManagerClockButtonBackground:SetTexture("Interface\\TimeManager\\ClockBackground")
+	TimeManagerClockTicker:ClearAllPoints()
+	if (ClassicUI.db.profile.extraFrames.Minimap.useClassicTimeClock) then
+		TimeManagerClockTicker:SetPoint("CENTER", TimeManagerClockButton, "CENTER", 1, 0)
+		TimeManagerClockButtonBackground:SetTexture("Interface\\Addons\\ClassicUI\\Textures\\ClockBackground-classic")
+	else
+		TimeManagerClockTicker:SetPoint("CENTER", TimeManagerClockButton, "CENTER", 3, 1)
+		TimeManagerClockButtonBackground:SetTexture("Interface\\TimeManager\\ClockBackground")
+	end
 	TimeManagerClockButtonBackground:SetTexCoord(0.015625, 0.8125, 0.015625, 0.390625)
 	TimeManagerClockButtonBackground:Show()
 	
-	GameTimeFrame:SetParent(Minimap)
+	GameTimeFrame:SetParent(MinimapCluster)
 	GameTimeFrame:ClearAllPoints()
-	GameTimeFrame:SetPoint("TOPRIGHT", Minimap, "TOPRIGHT", 20, -2)
-	GameTimeFrame:SetSize(40, 40)
+	if (ClassicUI.db.profile.extraFrames.Minimap.minimapArrangementType == 1) then
+		GameTimeFrame:SetPoint("TOPRIGHT", MinimapCluster, "TOPRIGHT", 4, -19)
+	elseif (ClassicUI.db.profile.extraFrames.Minimap.minimapArrangementType == 2) then
+		GameTimeFrame:SetPoint("TOPRIGHT", MinimapCluster, "TOPRIGHT", 4, -37)
+	else
+		GameTimeFrame:SetPoint("TOPRIGHT", MinimapCluster, "TOPRIGHT", 3, -24)
+	end
 	GameTimeFrame:SetHitRectInsets(6, 0, 5, 10)
 	GameTimeFrame:SetFrameStrata("LOW")
-	GameTimeFrame:SetFrameLevel(5)
+	GameTimeFrame:SetFrameLevel(8)
 	
 	hooksecurefunc("GameTimeFrame_SetDate", function()
 		GameTimeFrame:SetText(C_DateAndTime_GetCurrentCalendarTime().monthDay)
@@ -2472,7 +2541,7 @@ function ClassicUI:EnableOldMinimap()
 		GameTimeFrame:SetPushedTexture("Interface\\Calendar\\UI-Calendar-Button")
 		GameTimeFrame:GetPushedTexture():SetTexCoord(0.5, 0, 0.5, 0.78125, 0.890625, 0, 0.890625, 0.78125)
 		GameTimeFrame:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight", "ADD")
-		--GameTimeFrame:GetHighlightTexture:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)	--not needed
+		--GameTimeFrame:GetHighlightTexture:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)	-- not needed
 		GameTimeFrame:GetNormalTexture():SetDrawLayer("BACKGROUND")
 		GameTimeFrame:GetPushedTexture():SetDrawLayer("BACKGROUND")
 		GameTimeFrame:GetFontString():SetDrawLayer("BACKGROUND")
@@ -2482,7 +2551,7 @@ function ClassicUI:EnableOldMinimap()
 	GameTimeFrame:SetPushedTexture("Interface\\Calendar\\UI-Calendar-Button")
 	GameTimeFrame:GetPushedTexture():SetTexCoord(0.5, 0, 0.5, 0.78125, 0.890625, 0, 0.890625, 0.78125)
 	GameTimeFrame:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight", "ADD")
-	--GameTimeFrame:GetHighlightTexture:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)	--not needed
+	--GameTimeFrame:GetHighlightTexture:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)	-- not needed
 	GameTimeFrame:SetNormalFontObject("GameFontBlack")
 	GameTimeFrame:SetFontString(GameTimeFrame:CreateFontString(nil, "BACKGROUND", "GameFontBlack"))
 	GameTimeFrame:GetFontString():ClearAllPoints()
@@ -2491,7 +2560,22 @@ function ClassicUI:EnableOldMinimap()
 	GameTimeFrame:GetPushedTexture():SetDrawLayer("BACKGROUND")
 	GameTimeFrame:GetFontString():SetDrawLayer("BACKGROUND")
 	GameTimeFrame:SetText(C_DateAndTime_GetCurrentCalendarTime().monthDay)
-	
+	if (ClassicUI.db.profile.extraFrames.Minimap.calendarIconType == 1) then
+		GameTimeTexture:Show()
+		GameTimeFrame:GetNormalTexture():SetAlpha(0)
+	end
+	if (ClassicUI.db.profile.extraFrames.Minimap.calendarIconSize == 40) then
+		GameTimeFrame:SetSize(40, 40)
+	elseif (ClassicUI.db.profile.extraFrames.Minimap.calendarIconSize == 50) then
+		GameTimeFrame:SetSize(50, 50)
+		GameTimeFrame:GetFontString():SetScale(1.25)
+	elseif (type(ClassicUI.db.profile.extraFrames.Minimap.calendarIconSize)=="number") then
+		GameTimeFrame:SetSize(ClassicUI.db.profile.extraFrames.Minimap.calendarIconSize, ClassicUI.db.profile.extraFrames.Minimap.calendarIconSize)
+		GameTimeFrame:GetFontString():SetScale(ClassicUI.db.profile.extraFrames.Minimap.calendarIconSize / 40)
+	else
+		GameTimeFrame:SetSize(40, 40)
+	end
+
 	MinimapCluster.Tracking:SetParent(MinimapBackdrop)
 	MinimapCluster.Tracking:ClearAllPoints()
 	MinimapCluster.Tracking:SetPoint("TOPLEFT", MinimapBackdrop, "TOPLEFT", 9, -45)
@@ -2550,7 +2634,13 @@ function ClassicUI:EnableOldMinimap()
 	
 	Minimap.ZoomIn:SetParent(MinimapBackdrop)
 	Minimap.ZoomIn:ClearAllPoints()
-	Minimap.ZoomIn:SetPoint("CENTER", MinimapBackdrop, "CENTER", 72, -25)
+	if (ClassicUI.db.profile.extraFrames.Minimap.zoomButtonsPositions == 1) then
+		Minimap.ZoomIn:SetPoint("CENTER", MinimapBackdrop, "CENTER", 77, -13)
+	elseif (ClassicUI.db.profile.extraFrames.Minimap.zoomButtonsPositions == 2) then
+		Minimap.ZoomIn:SetPoint("CENTER", MinimapBackdrop, "CENTER", 71, -20)
+	else
+		Minimap.ZoomIn:SetPoint("CENTER", MinimapBackdrop, "CENTER", 72, -25)
+	end
 	Minimap.ZoomIn:SetFrameStrata("LOW")
 	Minimap.ZoomIn:SetFrameLevel(4)
 	Minimap.ZoomIn:SetSize(32, 32)
@@ -2561,7 +2651,13 @@ function ClassicUI:EnableOldMinimap()
 	Minimap.ZoomIn:SetHitRectInsets(4, 4, 2, 6)
 	Minimap.ZoomOut:SetParent(MinimapBackdrop)
 	Minimap.ZoomOut:ClearAllPoints()
-	Minimap.ZoomOut:SetPoint("CENTER", MinimapBackdrop, "CENTER", 50, -43)
+	if (ClassicUI.db.profile.extraFrames.Minimap.zoomButtonsPositions == 1) then
+		Minimap.ZoomOut:SetPoint("CENTER", MinimapBackdrop, "CENTER", 51, -41)
+	elseif (ClassicUI.db.profile.extraFrames.Minimap.zoomButtonsPositions == 2) then
+		Minimap.ZoomOut:SetPoint("CENTER", MinimapBackdrop, "CENTER", 51, -39)
+	else
+		Minimap.ZoomOut:SetPoint("CENTER", MinimapBackdrop, "CENTER", 50, -43)
+	end
 	Minimap.ZoomOut:SetFrameStrata("LOW")
 	Minimap.ZoomOut:SetFrameLevel(4)
 	Minimap.ZoomOut:SetSize(32, 32)
@@ -2576,6 +2672,17 @@ function ClassicUI:EnableOldMinimap()
 	end)
 	Minimap.ZoomIn:Show()
 	Minimap.ZoomOut:Show()
+	
+	MinimapCluster.IndicatorFrame:SetParent(MinimapCluster)
+	MinimapCluster.IndicatorFrame:ClearAllPoints()
+	if (ClassicUI.db.profile.extraFrames.Minimap.minimapArrangementType == 2) then
+		MinimapCluster.IndicatorFrame:SetPoint("TOPRIGHT", MinimapCluster, "TOPRIGHT", 7, -74)
+	else
+		MinimapCluster.IndicatorFrame:SetPoint("TOPRIGHT", MinimapCluster, "TOPRIGHT", 7, -59)
+	end
+	MinimapCluster.IndicatorFrame:SetSize(33, 33)
+	MinimapCluster.IndicatorFrame:SetFrameStrata("LOW")
+	MinimapCluster.IndicatorFrame:SetFrameLevel(4)
 	
 	MinimapCluster.IndicatorFrame.MailFrame:ClearAllPoints()
 	MinimapCluster.IndicatorFrame.MailFrame:SetPoint("TOPLEFT", MinimapCluster.IndicatorFrame, "TOPLEFT", 0, 0)
@@ -2595,22 +2702,20 @@ function ClassicUI:EnableOldMinimap()
 		MinimapCluster.IndicatorFrame.CraftingOrderFrame:SetFrameLevel(6)
 	end
 	
-	MinimapCluster.IndicatorFrame:SetParent(MinimapCluster)
-	MinimapCluster.IndicatorFrame:ClearAllPoints()
-	MinimapCluster.IndicatorFrame:SetPoint("TOPRIGHT", MinimapCluster.MinimapContainer.Minimap, "TOPRIGHT", 24, -37)
-	MinimapCluster.IndicatorFrame:SetSize(33, 33)
-	MinimapCluster.IndicatorFrame:SetFrameStrata("LOW")
-	MinimapCluster.IndicatorFrame:SetFrameLevel(4)
+	hooksecurefunc("MiniMapIndicatorFrame_UpdatePosition", function()
+		MinimapCluster.IndicatorFrame:ClearAllPoints()
+		if (ClassicUI.cached_db_profile.extraFrames_Minimap_minimapArrangementType == 2) then	-- cached db value
+			MinimapCluster.IndicatorFrame:SetPoint("TOPRIGHT", MinimapCluster, "TOPRIGHT", 7, -74)
+		else
+			MinimapCluster.IndicatorFrame:SetPoint("TOPRIGHT", MinimapCluster, "TOPRIGHT", 7, -59)
+		end
+	end)
 	hooksecurefunc(MinimapCluster.IndicatorFrame, "Layout", function(self)
 		MinimapCluster.IndicatorFrame:SetSize(33, 33)
 		MinimapCluster.IndicatorFrame.MailFrame:ClearAllPoints()
 		MinimapCluster.IndicatorFrame.MailFrame:SetPoint("TOPLEFT", MinimapCluster.IndicatorFrame, "TOPLEFT", 0, 0)
 		MinimapCluster.IndicatorFrame.CraftingOrderFrame:ClearAllPoints()
 		MinimapCluster.IndicatorFrame.CraftingOrderFrame:SetPoint("TOPLEFT", MinimapCluster.IndicatorFrame, "TOPLEFT", 0, 0)
-	end)
-	hooksecurefunc("MiniMapIndicatorFrame_UpdatePosition", function()
-		MinimapCluster.IndicatorFrame:ClearAllPoints()
-		MinimapCluster.IndicatorFrame:SetPoint("TOPRIGHT", MinimapCluster.MinimapContainer.Minimap, "TOPRIGHT", 24, -37)
 	end)
 	
 	MiniMapMailIcon:ClearAllPoints()
@@ -2665,8 +2770,7 @@ function ClassicUI:EnableOldMinimap()
 	if (self.db.profile.extraFrames.Minimap.hideAddonCompartment) then
 		AddonCompartmentFrame:Hide()
 	end
-	AddonCompartmentFrame:ClearAllPoints()
-	AddonCompartmentFrame:SetPoint("TOPRIGHT", GameTimeFrame, "TOPLEFT", 5 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetAddonCompartment, 0 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetAddonCompartment)
+	ClassicUI:RepositionAddonCompartmentFrame()
 	AddonCompartmentFrame:SetFrameStrata("LOW")
 	AddonCompartmentFrame:SetFrameLevel(4)
 	AddonCompartmentFrame:SetScale(self.db.profile.extraFrames.Minimap.scaleAddonCompartment)
@@ -2907,7 +3011,11 @@ function ClassicUI:EnableOldMinimap()
 		self.BorderTop:ClearAllPoints()
 		self.BorderTop:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", 0, 0)
 		self.IndicatorFrame:ClearAllPoints()
-		self.IndicatorFrame:SetPoint("TOPRIGHT", self.MinimapContainer.Minimap, "TOPRIGHT", 24, -37)
+		if (ClassicUI.cached_db_profile.extraFrames_Minimap_minimapArrangementType == 2) then	-- cached db value
+			self.IndicatorFrame:SetPoint("TOPRIGHT", self, "TOPRIGHT", 7, -74)
+		else
+			self.IndicatorFrame:SetPoint("TOPRIGHT", self, "TOPRIGHT", 7, -59)
+		end
 	end)
 	
 	CreateFrame("Button", "MinimapZoneTextButton", MinimapCluster)
@@ -3265,7 +3373,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	CUI_MainMenuBar.ActionBarPageNumber.DownButton:SetHighlightTexture("Interface\\MainMenuBar\\UI-MainMenu-ScrollDownButton-Highlight", "ADD")
 	CUI_MainMenuBar.ActionBarPageNumber.DownButton:SetDisabledTexture("Interface\\Buttons\\UI-ScrollBar-ScrollDownButton-Disabled")
 	CUI_MainMenuBar.ActionBarPageNumber.DownButton:SetAlpha(1)
-	CUI_MainMenuBar.ActionBarPageNumber.DownButton:Show(1)
+	CUI_MainMenuBar.ActionBarPageNumber.DownButton:Show()
 	CUI_MainMenuBar.ActionBarPageNumber.UpButton:ClearAllPoints()
 	CUI_MainMenuBar.ActionBarPageNumber.UpButton:SetPoint("CENTER", CUI_MainMenuBarArtFrame, "TOPLEFT", 522, -22)
 	CUI_MainMenuBar.ActionBarPageNumber.DownButton:ClearAllPoints()
@@ -3388,7 +3496,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		local prevButton = nil
 		local numButtons = 0
 		for i = 1, numSlots do
-			local spellID, overrideSpellID, isKnownSlot, _, slotSpecID = GetFlyoutSlotInfo(flyoutID, i)
+			local spellID, _, isKnownSlot, _, slotSpecID = GetFlyoutSlotInfo(flyoutID, i)
 			local visible = true
 			local petIndex, petName = GetCallPetSpellInfo(spellID)
 			if (isActionBar and petIndex and (not petName or petName == "")) then
@@ -3425,6 +3533,10 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 						end
 						-- Apply the current layout to the new SpellFlyoutButton (delayed if combat lockdown)
 						ClassicUI:ActionButtonProtectedApplyLayout(button, 6)
+						-- GreyOnCooldown (extra option) hook for the new SpellFlyoutButton
+						if (ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_enabled and ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturateUnusableActions) then	-- cached db value
+							ClassicUI.HookGOCActionBarButtonUpdateUsable(button)
+						end
 					end
 					if not(prevButton) then
 						-- Setting 'SpellFlyoutPopupButtonX' position is restricted in combat. It is only a minor adjustment, so it is not necessary to delay it, we just skip it if we're in combat lockdown
@@ -4131,6 +4243,9 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		end
 		CUI_PetActionBarFrame:RelocateBar()
 	end)
+	PetActionBar:HookScript("OnShow", function(self)
+		ClassicUI:ReLayoutMainFrames()
+	end)
 	
 	-- [ActionBars] PossessBarFrame (a.k.a. PossessActionBar)
 	local CUI_PossessBarFrame = CreateFrame("Frame", "CUI_PossessBarFrame", PossessActionBar)
@@ -4252,6 +4367,9 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		else
 			CUI_PossessBackground2:Hide()
 		end
+	end)
+	PossessActionBar:HookScript("OnShow", function(self)
+		ClassicUI:ReLayoutMainFrames()
 	end)
 	
 	-- [ActionBars] StanceBarFrame (a.k.a. StanceBar)
@@ -4394,6 +4512,9 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		end
 	end
 	hooksecurefunc(StanceBar, "SetScale", CUI_StanceBarFrame.hook_SetScale)
+	StanceBar:HookScript("OnShow", function(self)
+		ClassicUI:ReLayoutMainFrames()
+	end)
 	
 	-- [ActionBars] OverrideActionBar
 	for i = 1, 6 do
@@ -4950,9 +5071,9 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	CharacterMicroButton:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
 	CharacterMicroButton:SetFrameStrata("MEDIUM")
 	CharacterMicroButton:SetFrameLevel(3)
-	CharacterMicroButton:SetNormalAtlas("hud-microbutton-Character-Up", true)
-	CharacterMicroButton:SetPushedAtlas("hud-microbutton-Character-Down", true)
-	CharacterMicroButton:SetDisabledAtlas("hud-microbutton-Character-Disabled", true)
+	CharacterMicroButton:SetNormalAtlas("hud-microbutton-Character-Up")
+	CharacterMicroButton:SetPushedAtlas("hud-microbutton-Character-Down")
+	CharacterMicroButton:SetDisabledAtlas("hud-microbutton-Character-Disabled")
 	CharacterMicroButton:SetHighlightAtlas("hud-microbutton-highlight")
 	CharacterMicroButton:SetHighlightTexture("Interface\\Buttons\\UI-MicroButton-Hilight", "ADD")
 	CharacterMicroButton:SetNormalTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.iconMicroButton].normalTexture)
@@ -5045,9 +5166,9 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	ProfessionMicroButton:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
 	ProfessionMicroButton:SetFrameStrata("MEDIUM")
 	ProfessionMicroButton:SetFrameLevel(3)
-	ProfessionMicroButton:SetNormalAtlas("hud-microbutton-Spellbook-Up", true)
-	ProfessionMicroButton:SetPushedAtlas("hud-microbutton-Spellbook-Down", true)
-	ProfessionMicroButton:SetDisabledAtlas("hud-microbutton-Spellbook-Disabled", true)
+	ProfessionMicroButton:SetNormalAtlas("hud-microbutton-Spellbook-Up")
+	ProfessionMicroButton:SetPushedAtlas("hud-microbutton-Spellbook-Down")
+	ProfessionMicroButton:SetDisabledAtlas("hud-microbutton-Spellbook-Disabled")
 	ProfessionMicroButton:SetHighlightAtlas("hud-microbutton-highlight")
 	ProfessionMicroButton:SetHighlightTexture("Interface\\Buttons\\UI-MicroButton-Hilight", "ADD")
 	ProfessionMicroButton:SetNormalTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.iconMicroButton].normalTexture)
@@ -5105,9 +5226,9 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	PlayerSpellsMicroButton:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
 	PlayerSpellsMicroButton:SetFrameStrata("MEDIUM")
 	PlayerSpellsMicroButton:SetFrameLevel(3)
-	PlayerSpellsMicroButton:SetNormalAtlas("hud-microbutton-Talents-Up", true)
-	PlayerSpellsMicroButton:SetPushedAtlas("hud-microbutton-Talents-Down", true)
-	PlayerSpellsMicroButton:SetDisabledAtlas("hud-microbutton-Talents-Disabled", true)
+	PlayerSpellsMicroButton:SetNormalAtlas("hud-microbutton-Talents-Up")
+	PlayerSpellsMicroButton:SetPushedAtlas("hud-microbutton-Talents-Down")
+	PlayerSpellsMicroButton:SetDisabledAtlas("hud-microbutton-Talents-Disabled")
 	PlayerSpellsMicroButton:SetHighlightAtlas("hud-microbutton-highlight")
 	PlayerSpellsMicroButton:SetHighlightTexture("Interface\\Buttons\\UI-MicroButton-Hilight", "ADD")
 	if (ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.iconMicroButton == 23) then
@@ -5185,9 +5306,9 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	AchievementMicroButton:ClearAllPoints()
 	AchievementMicroButton:SetFrameStrata("MEDIUM")
 	AchievementMicroButton:SetFrameLevel(3)
-	AchievementMicroButton:SetNormalAtlas("hud-microbutton-Achievement-Up", true)
-	AchievementMicroButton:SetPushedAtlas("hud-microbutton-Achievement-Down", true)
-	AchievementMicroButton:SetDisabledAtlas("hud-microbutton-Achievement-Disabled", true)
+	AchievementMicroButton:SetNormalAtlas("hud-microbutton-Achievement-Up")
+	AchievementMicroButton:SetPushedAtlas("hud-microbutton-Achievement-Down")
+	AchievementMicroButton:SetDisabledAtlas("hud-microbutton-Achievement-Disabled")
 	AchievementMicroButton:SetHighlightAtlas("hud-microbutton-highlight")
 	AchievementMicroButton:SetHighlightTexture("Interface\\Buttons\\UI-MicroButton-Hilight", "ADD")
 	AchievementMicroButton:SetNormalTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.iconMicroButton].normalTexture)
@@ -5254,9 +5375,9 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	QuestLogMicroButton:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
 	QuestLogMicroButton:SetFrameStrata("MEDIUM")
 	QuestLogMicroButton:SetFrameLevel(3)
-	QuestLogMicroButton:SetNormalAtlas("hud-microbutton-Quest-Up", true)
-	QuestLogMicroButton:SetPushedAtlas("hud-microbutton-Quest-Down", true)
-	QuestLogMicroButton:SetDisabledAtlas("hud-microbutton-Quest-Disabled", true)
+	QuestLogMicroButton:SetNormalAtlas("hud-microbutton-Quest-Up")
+	QuestLogMicroButton:SetPushedAtlas("hud-microbutton-Quest-Down")
+	QuestLogMicroButton:SetDisabledAtlas("hud-microbutton-Quest-Disabled")
 	QuestLogMicroButton:SetHighlightAtlas("hud-microbutton-highlight")
 	QuestLogMicroButton:SetNormalTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.iconMicroButton].normalTexture)
 	QuestLogMicroButton:SetPushedTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.iconMicroButton].pushedTexture)
@@ -5314,9 +5435,9 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	GuildMicroButton:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
 	GuildMicroButton:SetFrameStrata("MEDIUM")
 	GuildMicroButton:SetFrameLevel(3)
-	GuildMicroButton:SetNormalAtlas("hud-microbutton-Socials-Up", true)
-	GuildMicroButton:SetPushedAtlas("hud-microbutton-Socials-Down", true)
-	GuildMicroButton:SetDisabledAtlas("hud-microbutton-Socials-Disabled", true)
+	GuildMicroButton:SetNormalAtlas("hud-microbutton-Socials-Up")
+	GuildMicroButton:SetPushedAtlas("hud-microbutton-Socials-Down")
+	GuildMicroButton:SetDisabledAtlas("hud-microbutton-Socials-Disabled")
 	GuildMicroButton:SetHighlightAtlas("hud-microbutton-highlight")
 	GuildMicroButton:SetNormalTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.iconMicroButton].normalTexture)
 	GuildMicroButton:SetPushedTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.iconMicroButton].pushedTexture)
@@ -5353,10 +5474,39 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	GuildMicroButton.FlashBorder:SetPoint("TOPLEFT", GuildMicroButton, "TOPLEFT", -2, 3)
 	GuildMicroButton.NotificationOverlay:SetFrameStrata("MEDIUM")
 	GuildMicroButton.NotificationOverlay:SetFrameLevel(500)
-	GuildMicroButton.NotificationOverlay.UnreadNotificationIcon:SetAtlas("hud-microbutton-communities-icon-notification")
-	GuildMicroButton.NotificationOverlay.UnreadNotificationIcon:SetSize(18, 18)
-	GuildMicroButton.NotificationOverlay.UnreadNotificationIcon:ClearAllPoints()
-	GuildMicroButton.NotificationOverlay.UnreadNotificationIcon:SetPoint("CENTER", GuildMicroButton.NotificationOverlay, "TOP", 0, -5)
+	GuildMicroButton.CUI_NotificationOverlay = CreateFrame("Frame", "GuildMicroButton_CUI_NotificationOverlay", GuildMicroButton)
+	GuildMicroButton.CUI_NotificationOverlay:SetFrameStrata("MEDIUM")
+	GuildMicroButton.CUI_NotificationOverlay:SetFrameLevel(500)
+	GuildMicroButton.CUI_NotificationOverlay:ClearAllPoints()
+	GuildMicroButton.CUI_NotificationOverlay:SetAllPoints(GuildMicroButton)
+	GuildMicroButton.CUI_NotificationOverlay:CreateTexture("GuildMicroButton_CUI_NotificationOverlay_UnreadNotificationIcon", "OVERLAY")
+	GuildMicroButton.CUI_NotificationOverlay.UnreadNotificationIcon = GuildMicroButton_CUI_NotificationOverlay_UnreadNotificationIcon
+	GuildMicroButton.CUI_NotificationOverlay.UnreadNotificationIcon:SetAtlas("hud-microbutton-communities-icon-notification")
+	GuildMicroButton.CUI_NotificationOverlay.UnreadNotificationIcon:SetSize(18, 18)
+	GuildMicroButton.CUI_NotificationOverlay.UnreadNotificationIcon:ClearAllPoints()
+	GuildMicroButton.CUI_NotificationOverlay.UnreadNotificationIcon:SetPoint("CENTER", GuildMicroButton.CUI_NotificationOverlay, "TOP", 0, -5)
+	ClassicUI.hook_GuildMicroButton_UpdateNotificationIcon = function(self)
+		if (ClassicUI.cached_db_profile.barsConfig_MicroButtons_GuildMicroButton_classicNotificationMicroButton) then	-- cached db value
+			if CommunitiesFrame_IsEnabled() and self:IsEnabled() then
+				self.NotificationOverlay:SetShown(false)
+				self.CUI_NotificationOverlay:SetShown(C_SocialRestrictions_CanReceiveChat() and (self:HasUnseenInvitations() or CommunitiesUtil_DoesAnyCommunityHaveUnreadMessages()))
+			else
+				self.CUI_NotificationOverlay:SetShown(false)
+			end
+		end
+	end
+	if (ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.classicNotificationMicroButton) then
+		if not(ClassicUI.hooked_GuildMicroButton_UpdateNotificationIcon) then
+			hooksecurefunc(GuildMicroButton, "UpdateNotificationIcon", ClassicUI.hook_GuildMicroButton_UpdateNotificationIcon)
+			ClassicUI.hooked_GuildMicroButton_UpdateNotificationIcon = true
+		end
+		GuildMicroButton.CUI_NotificationOverlay:SetShown(GuildMicroButton.NotificationOverlay:IsShown())
+		GuildMicroButton.NotificationOverlay:SetAlpha(0)
+		GuildMicroButton.NotificationOverlay:Hide()
+	else
+		GuildMicroButton.CUI_NotificationOverlay:SetAlpha(0)
+		GuildMicroButton.CUI_NotificationOverlay:Hide()
+	end
 	GuildMicroButton.Emblem:Hide()
 	GuildMicroButton.Emblem:SetAlpha(0)
 	GuildMicroButton.HighlightEmblem:Hide()
@@ -5425,9 +5575,9 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		button.Emblem:SetAlpha(0)
 		button.HighlightEmblem:Hide()
 		button.HighlightEmblem:SetAlpha(0)
-		button:SetNormalAtlas("hud-microbutton-Socials-Up", true)
-		button:SetPushedAtlas("hud-microbutton-Socials-Down", true)
-		button:SetDisabledAtlas("hud-microbutton-Socials-Disabled", true)
+		button:SetNormalAtlas("hud-microbutton-Socials-Up")
+		button:SetPushedAtlas("hud-microbutton-Socials-Down")
+		button:SetDisabledAtlas("hud-microbutton-Socials-Disabled")
 		button:SetHighlightAtlas("hud-microbutton-highlight")
 		button:SetHighlightTexture("Interface\\Buttons\\UI-MicroButton-Hilight", "ADD")
 		button:GetNormalTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
@@ -5492,9 +5642,9 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	LFDMicroButton:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
 	LFDMicroButton:SetFrameStrata("MEDIUM")
 	LFDMicroButton:SetFrameLevel(3)
-	LFDMicroButton:SetNormalAtlas("hud-microbutton-LFG-Up", true)
-	LFDMicroButton:SetPushedAtlas("hud-microbutton-LFG-Down", true)
-	LFDMicroButton:SetDisabledAtlas("hud-microbutton-LFG-Disabled", true)
+	LFDMicroButton:SetNormalAtlas("hud-microbutton-LFG-Up")
+	LFDMicroButton:SetPushedAtlas("hud-microbutton-LFG-Down")
+	LFDMicroButton:SetDisabledAtlas("hud-microbutton-LFG-Disabled")
 	LFDMicroButton:SetHighlightAtlas("hud-microbutton-highlight")
 	LFDMicroButton:SetHighlightTexture("Interface\\Buttons\\UI-MicroButton-Hilight", "ADD")
 	LFDMicroButton:SetNormalTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.iconMicroButton].normalTexture)
@@ -5561,9 +5711,9 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	CollectionsMicroButton:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
 	CollectionsMicroButton:SetFrameStrata("MEDIUM")
 	CollectionsMicroButton:SetFrameLevel(3)
-	CollectionsMicroButton:SetNormalAtlas("hud-microbutton-Mounts-Up", true)
-	CollectionsMicroButton:SetPushedAtlas("hud-microbutton-Mounts-Down", true)
-	CollectionsMicroButton:SetDisabledAtlas("hud-microbutton-Mounts-Disabled", true)
+	CollectionsMicroButton:SetNormalAtlas("hud-microbutton-Mounts-Up")
+	CollectionsMicroButton:SetPushedAtlas("hud-microbutton-Mounts-Down")
+	CollectionsMicroButton:SetDisabledAtlas("hud-microbutton-Mounts-Disabled")
 	CollectionsMicroButton:SetHighlightAtlas("hud-microbutton-highlight")
 	CollectionsMicroButton:SetHighlightTexture("Interface\\Buttons\\UI-MicroButton-Hilight", "ADD")
 	CollectionsMicroButton:SetNormalTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.iconMicroButton].normalTexture)
@@ -5630,9 +5780,9 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	EJMicroButton:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
 	EJMicroButton:SetFrameStrata("MEDIUM")
 	EJMicroButton:SetFrameLevel(3)
-	EJMicroButton:SetNormalAtlas("hud-microbutton-EJ-Up", true)
-	EJMicroButton:SetPushedAtlas("hud-microbutton-EJ-Down", true)
-	EJMicroButton:SetDisabledAtlas("hud-microbutton-EJ-Disabled", true)
+	EJMicroButton:SetNormalAtlas("hud-microbutton-EJ-Up")
+	EJMicroButton:SetPushedAtlas("hud-microbutton-EJ-Down")
+	EJMicroButton:SetDisabledAtlas("hud-microbutton-EJ-Disabled")
 	EJMicroButton:SetHighlightAtlas("hud-microbutton-highlight")
 	EJMicroButton:SetHighlightTexture("Interface\\Buttons\\UI-MicroButton-Hilight", "ADD")
 	EJMicroButton:SetNormalTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.iconMicroButton].normalTexture)
@@ -5699,9 +5849,9 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	HelpMicroButton:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
 	HelpMicroButton:SetFrameStrata("MEDIUM")
 	HelpMicroButton:SetFrameLevel(3)
-	HelpMicroButton:SetNormalAtlas("hud-microbutton-Help-Up", true)
-	HelpMicroButton:SetPushedAtlas("hud-microbutton-Help-Down", true)
-	HelpMicroButton:SetDisabledAtlas("hud-microbutton-Help-Disabled", true)
+	HelpMicroButton:SetNormalAtlas("hud-microbutton-Help-Up")
+	HelpMicroButton:SetPushedAtlas("hud-microbutton-Help-Down")
+	HelpMicroButton:SetDisabledAtlas("hud-microbutton-Help-Disabled")
 	HelpMicroButton:SetHighlightAtlas("hud-microbutton-highlight")
 	HelpMicroButton:SetHighlightTexture("Interface\\Buttons\\UI-MicroButton-Hilight", "ADD")
 	HelpMicroButton:SetNormalTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.iconMicroButton].normalTexture)
@@ -5760,9 +5910,9 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	StoreMicroButton:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
 	StoreMicroButton:SetFrameStrata("MEDIUM")
 	StoreMicroButton:SetFrameLevel(3)
-	StoreMicroButton:SetNormalAtlas("hud-microbutton-BStore-Up", true)
-	StoreMicroButton:SetPushedAtlas("hud-microbutton-BStore-Down", true)
-	StoreMicroButton:SetDisabledAtlas("hud-microbutton-BStore-Disabled", true)
+	StoreMicroButton:SetNormalAtlas("hud-microbutton-BStore-Up")
+	StoreMicroButton:SetPushedAtlas("hud-microbutton-BStore-Down")
+	StoreMicroButton:SetDisabledAtlas("hud-microbutton-BStore-Disabled")
 	StoreMicroButton:SetHighlightAtlas("hud-microbutton-highlight")
 	StoreMicroButton:SetHighlightTexture("Interface\\Buttons\\UI-MicroButton-Hilight", "ADD")
 	StoreMicroButton:SetNormalTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.iconMicroButton].normalTexture)
@@ -5871,9 +6021,9 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	MainMenuMicroButton:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
 	MainMenuMicroButton:SetFrameStrata("MEDIUM")
 	MainMenuMicroButton:SetFrameLevel(3)
-	MainMenuMicroButton:SetNormalAtlas("hud-microbutton-MainMenu-Up", true)
-	MainMenuMicroButton:SetPushedAtlas("hud-microbutton-MainMenu-Down", true)
-	MainMenuMicroButton:SetDisabledAtlas("hud-microbutton-MainMenu-Disabled", true)
+	MainMenuMicroButton:SetNormalAtlas("hud-microbutton-MainMenu-Up")
+	MainMenuMicroButton:SetPushedAtlas("hud-microbutton-MainMenu-Down")
+	MainMenuMicroButton:SetDisabledAtlas("hud-microbutton-MainMenu-Disabled")
 	MainMenuMicroButton:SetHighlightAtlas("hud-microbutton-highlight")
 	MainMenuMicroButton:SetNormalTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.iconMicroButton].normalTexture)
 	MainMenuMicroButton:SetPushedTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.iconMicroButton].pushedTexture)
@@ -5903,6 +6053,37 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	MainMenuMicroButton.FlashBorder:SetSize(34, 44)
 	MainMenuMicroButton.FlashBorder:SetDrawLayer("OVERLAY", 0)
 	MainMenuMicroButton.FlashBorder:SetPoint("TOPLEFT", MainMenuMicroButton, "TOPLEFT", -2, 3)
+	MainMenuMicroButton.NotificationOverlay:SetFrameStrata("MEDIUM")
+	MainMenuMicroButton.NotificationOverlay:SetFrameLevel(500)
+	MainMenuMicroButton.CUI_NotificationOverlay = CreateFrame("Frame", "MainMenuMicroButton_CUI_NotificationOverlay", MainMenuMicroButton)
+	MainMenuMicroButton.CUI_NotificationOverlay:SetFrameStrata("MEDIUM")
+	MainMenuMicroButton.CUI_NotificationOverlay:SetFrameLevel(500)
+	MainMenuMicroButton.CUI_NotificationOverlay:ClearAllPoints()
+	MainMenuMicroButton.CUI_NotificationOverlay:SetAllPoints(MainMenuMicroButton)
+	MainMenuMicroButton.CUI_NotificationOverlay:CreateTexture("MainMenuMicroButton_CUI_NotificationOverlay_UnreadNotificationIcon", "OVERLAY")
+	MainMenuMicroButton.CUI_NotificationOverlay.UnreadNotificationIcon = MainMenuMicroButton_CUI_NotificationOverlay_UnreadNotificationIcon
+	MainMenuMicroButton.CUI_NotificationOverlay.UnreadNotificationIcon:SetAtlas("hud-microbutton-communities-icon-notification")
+	MainMenuMicroButton.CUI_NotificationOverlay.UnreadNotificationIcon:SetSize(18, 18)
+	MainMenuMicroButton.CUI_NotificationOverlay.UnreadNotificationIcon:ClearAllPoints()
+	MainMenuMicroButton.CUI_NotificationOverlay.UnreadNotificationIcon:SetPoint("CENTER", MainMenuMicroButton.CUI_NotificationOverlay, "TOP", 0, -5)
+	ClassicUI.hook_MainMenuMicroButton_UpdateNotificationIcon = function(self)
+		if (ClassicUI.cached_db_profile.barsConfig_MicroButtons_MainMenuMicroButton_classicNotificationMicroButton) then	-- cached db value
+			self.NotificationOverlay:SetShown(false)
+			self.CUI_NotificationOverlay:SetShown(CurrentVersionHasNewUnseenSettings())
+		end
+	end
+	if (ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.classicNotificationMicroButton) then
+		if not(ClassicUI.hooked_MainMenuMicroButton_UpdateNotificationIcon) then
+			hooksecurefunc(MainMenuMicroButton, "UpdateNotificationIcon", ClassicUI.hook_MainMenuMicroButton_UpdateNotificationIcon)
+			ClassicUI.hooked_MainMenuMicroButton_UpdateNotificationIcon = true
+		end
+		MainMenuMicroButton.CUI_NotificationOverlay:SetShown(MainMenuMicroButton.NotificationOverlay:IsShown())
+		MainMenuMicroButton.NotificationOverlay:SetAlpha(0)
+		MainMenuMicroButton.NotificationOverlay:Hide()
+	else
+		MainMenuMicroButton.CUI_NotificationOverlay:SetAlpha(0)
+		MainMenuMicroButton.CUI_NotificationOverlay:Hide()
+	end
 	hooksecurefunc(MainMenuMicroButton, "SetPushed", function(self)
 		ClassicUI.hook_MicroButtonSetStateFunc(self)
 		if (self.MainMenuBarPerformanceBar2 ~= nil) then
@@ -6036,9 +6217,9 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 				status = (GetBackgroundLoadingStatus()~=0) and 1 or 0
 			end
 			self:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
-			self:SetNormalAtlas("hud-microbutton-MainMenu-Up", true)
-			self:SetPushedAtlas("hud-microbutton-MainMenu-Down", true)
-			self:SetDisabledAtlas("hud-microbutton-MainMenu-Disabled", true)
+			self:SetNormalAtlas("hud-microbutton-MainMenu-Up")
+			self:SetPushedAtlas("hud-microbutton-MainMenu-Down")
+			self:SetDisabledAtlas("hud-microbutton-MainMenu-Disabled")
 			self:SetHighlightAtlas("hud-microbutton-highlight")
 			self:SetHighlightTexture("Interface\\Buttons\\UI-MicroButton-Hilight", "ADD")
 			self:GetNormalTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
@@ -6214,7 +6395,6 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	CharacterBag2Slot:SetFrameLevel(3)
 	CharacterBag3Slot.CircleMask:Hide()
 	ClassicUI.BaseBagSlotButton_UpdateTextures(CharacterBag3Slot)
-	CharacterBag3SlotNormalTexture:Hide()
 	CharacterBag3Slot:SetParent(CUI_MainMenuBarArtFrame)
 	CharacterBag3Slot:SetSize(30, 30)
 	CharacterBag3Slot.IconBorder:SetSize(30, 30)
@@ -6389,8 +6569,10 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		end)
 		bar.StatusBar.Background:SetColorTexture(0, 0, 0, 1.0)
 		bar.StatusBar.Background:SetAlpha(0.5)
-		bar:SetFrameStrata("LOW")
+		bar:SetFixedFrameStrata(false)
+		bar:SetFrameStrata("MEDIUM")
 		bar:SetFrameLevel(2)
+		bar:SetFixedFrameStrata(true)
 		bar.StatusBar:SetFrameStrata("LOW")
 		bar.StatusBar:SetFrameLevel(1)
 		if (bar.GetPriority == nil) then
@@ -6399,8 +6581,8 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 			end
 		end
 		if (bar.SetBarColor == nil) then
-			bar.SetBarColor = function(self, r, g, b)
-				self.StatusBar:SetStatusBarColor(r, g, b)
+			bar.SetBarColor = function(self, r, g, b, a)
+				self.StatusBar:SetStatusBarColor(r, g, b, a)
 				--self.StatusBar:SetAnimatedTextureColors(r, g, b)	-- not available, 'StatusBar' no longer inherits from 'AnimatedStatusBarTemplate'
 			end
 		end
@@ -6810,8 +6992,8 @@ end
 function ClassicUI:HideMainMenuBarDividers(actionBar, forceHide)
 	if (actionBar == nil) then actionBar = MainMenuBar end
 	local actionBarDividersPool = actionBar.isHorizontal and actionBar.HorizontalDividersPool or actionBar.VerticalDividersPool
-	if (actionBarDividersPool ~= nil and actionBarDividersPool.activeObjects ~= nil) then
-		for divider, _ in pairs(actionBarDividersPool.activeObjects) do
+	if (actionBarDividersPool ~= nil and actionBarDividersPool.EnumerateActive ~= nil) then
+		for divider, _ in actionBarDividersPool:EnumerateActive() do
 			if (divider:IsShown() or forceHide) then
 				divider:SetAlpha(0)
 				divider:Hide()
@@ -7416,7 +7598,7 @@ ClassicUI.CreateClassicSpellActivationAlertFrame = function(iActionButton)
 			if button:IsVisible() then
 				button.ClassicSpellActivationAlert.animOut:Play()
 			else
-				button.ClassicSpellActivationAlert.animOut:OnFinished()	--We aren't shown anyway, so we'll instantly hide it.
+				button.ClassicSpellActivationAlert.animOut:OnFinished()	-- We aren't shown anyway, so we'll instantly hide it.
 			end
 		end)
 		ClassicUI.hooked_ActionButton_ShowHideOverlayGlow = true
@@ -7837,6 +8019,11 @@ ClassicUI.LayoutActionButton = function(iActionButton, typeActionButton)
 			end
 		end)
 		ClassicUI.cached_ActionButtonInfo.hooked_UpdateButtonArt[iActionButton] = true
+	end
+	if (typeActionButton <= 1) then
+		iActionButton:SetAttribute("flyoutDirection", "UP")
+	elseif (typeActionButton == 2) then
+		iActionButton:SetAttribute("flyoutDirection", "LEFT")
 	end
 	if (typeABprofile.BLStyle == 1) then
 		-- Modern Layout
@@ -8775,6 +8962,14 @@ function ClassicUI:MainFunction(isLogin)
 	-- Create the basic default-value cache for ActionButtons
 	ClassicUI:InitActionButtonInfoCache()
 	
+	-- Seems that this frame does not need protection (InCombatLockdown) to be moved
+	hooksecurefunc("UIParent_ManageFramePositions", function()
+		UIParentBottomManagedFrameContainer:ClearAllPoints()
+		UIParentBottomManagedFrameContainer:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, MAIN_ACTION_BAR_DEFAULT_OFFSET_Y + 100)
+	end)
+	UIParentBottomManagedFrameContainer:ClearAllPoints()
+	UIParentBottomManagedFrameContainer:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, MAIN_ACTION_BAR_DEFAULT_OFFSET_Y + 100)
+	
 	if InCombatLockdown() then
 		delayFunc_MainFunction = true
 		if (not fclFrame:IsEventRegistered("PLAYER_REGEN_ENABLED")) then
@@ -8806,14 +9001,13 @@ function ClassicUI:MainFunction(isLogin)
 	if (not ClassicUI.frame:IsEventRegistered("PLAYER_SPECIALIZATION_CHANGED")) then
 		ClassicUI.frame:RegisterUnitEvent("PLAYER_SPECIALIZATION_CHANGED", "player")
 	end
-
+	if (not ClassicUI.frame:IsEventRegistered("ADDON_LOADED")) then
+		ClassicUI.frame:RegisterEvent("ADDON_LOADED")
+	end
 	if (isLogin) then
 		ClassicUI.OnEvent_PEW_mf = true
 		if (not ClassicUI.frame:IsEventRegistered("PLAYER_ENTERING_WORLD")) then
 			ClassicUI.frame:RegisterEvent("PLAYER_ENTERING_WORLD")
-		end
-		if (not ClassicUI.frame:IsEventRegistered("ADDON_LOADED")) then
-			ClassicUI.frame:RegisterEvent("ADDON_LOADED")
 		end
 	else
 		ClassicUI:MF_PLAYER_ENTERING_WORLD()
@@ -8821,7 +9015,7 @@ function ClassicUI:MainFunction(isLogin)
 
 end
 
--- Function to Show/Hide/OnlyShowDotRange keybinds text from ActionBars
+-- Extra Option: Keybinds Visibility. Main function to Show/Hide/OnlyShowDotRange keybinds text from ActionBars
 -- Togle the visibilitity mode from 2 or 3 to another mode requires a ReloadUI
 function ClassicUI:ToggleVisibilityKeybinds(mode)
 	if (mode == 1) then
@@ -9092,7 +9286,7 @@ function ClassicUI:HookPetBattleKeybindsVisibilityMode()
 	end
 end
 
--- Function to Show/Hide name text from ActionBars
+-- Extra Option: ActionBar Names Visibility. Main function to Show/Hide name text from ActionBars
 function ClassicUI:ToggleVisibilityActionButtonNames(mode)
 	if (mode) then
 		for i = 1, 12 do
@@ -9185,7 +9379,7 @@ function ClassicUI:ToggleVisibilityActionButtonNames(mode)
 	end
 end
 
--- Function to disable Cooldown effect on action bars caused by CC
+-- Extra Option: LossOfControlUI. Main function to disable Cooldown effect on action bars caused by CC
 function ClassicUI:HookLossOfControlUICCRemover()
 	if (not DISABLELOSSOFCONTROLUI_HOOKED) then
 		hooksecurefunc('ActionButton_UpdateCooldown', function(self)
@@ -9221,7 +9415,7 @@ function ClassicUI:HookLossOfControlUICCRemover()
 	end
 end
 
--- Function to show the entire icon in red when the spell is not at range instead of only show in red the keybind text
+-- Extra Option: RedRange. Main function to show the entire icon in red when the spell is not at range instead of only show in red the keybind text
 function ClassicUI:HookRedRangeIcons()
 	if (not REDRANGEICONS_HOOKED) then
 		local function HookRRActionBarButtonUpdateUsable(actionBarButton)
@@ -9364,11 +9558,123 @@ function ClassicUI:HookRedRangeIcons()
 	end
 end
 
--- Function to desaturate the entire action icon when the spell is on cooldown
+-- Function to hook the "UpdateUsable" function of actionButtons for the GreyOnCooldown functionality
+ClassicUI.HookGOCActionBarButtonUpdateUsable = function(actionBarButton)
+	if ((ActionButtonGreyOnCooldownCUI_UpdateUsable == nil) or (type(ActionButtonGreyOnCooldownCUI_UpdateUsable) ~= "function")) then
+		function ActionButtonGreyOnCooldownCUI_UpdateUsable(self)
+			if (ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturateUnusableActions) then	-- cached db value
+				if ((not self.onCooldown) or (self.onCooldown == 0)) then
+					local icon = self.icon
+					local spellID = self.spellID
+					local action = self.action
+					if (icon) then
+						if (action and type(action)~="table" and type(action)~="string") then
+							local isUsable, notEnoughMana = IsUsableAction(action)
+							if (isUsable or notEnoughMana) then
+								if (icon:IsDesaturated()) then
+									icon:SetDesaturated(false)
+								end
+							else
+								if (not icon:IsDesaturated()) then
+									icon:SetDesaturated(true)
+								end
+							end
+						elseif (spellID and type(spellID)~="table" and type(spellID)~="string") then
+							local isUsable, notEnoughMana = C_Spell.IsSpellUsable(spellID)
+							if (isUsable or notEnoughMana) then
+								if (icon:IsDesaturated()) then
+									icon:SetDesaturated(false)
+								end
+							else
+								if (not icon:IsDesaturated()) then
+									icon:SetDesaturated(true)
+								end
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+	if (actionBarButton ~= nil and actionBarButton.UpdateUsable ~= nil) then
+		if (GREYONCOOLDOWN_UPDATEUSABLE_HOOKED_AB == nil) then
+			GREYONCOOLDOWN_UPDATEUSABLE_HOOKED_AB = {}
+		end
+		if not(GREYONCOOLDOWN_UPDATEUSABLE_HOOKED_AB[actionBarButton]) then
+			hooksecurefunc(actionBarButton, "UpdateUsable", ActionButtonGreyOnCooldownCUI_UpdateUsable)
+			GREYONCOOLDOWN_UPDATEUSABLE_HOOKED_AB[actionBarButton] = true
+		end
+	end
+end
+
+-- Function to hook some functions from the CooldownViewer Blizzard for the GreyOnCooldown functionality
+ClassicUI.HookGOCCooldownViewer = function(cooldownViewer)
+	if ((CooldownViewerGreyOnCooldownCUI_RefreshIcon == nil) or (type(CooldownViewerGreyOnCooldownCUI_RefreshIcon) ~= "function")) then
+		function CooldownViewerGreyOnCooldownCUI_RefreshIcon(self)
+			if (self.layoutIndex == nil or not(ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturateUnusableActions)) then return end	-- cached db value
+			local spellID = self:GetSpellID()
+			if not spellID then return end
+			local iconTexture = self:GetIconTexture()
+			if not iconTexture then return end
+			local desaturated = self.cooldownDesaturated and not(self:IsExpired())
+			if (desaturated) then
+				if not(iconTexture:IsDesaturated()) then
+					iconTexture:SetDesaturated(true)
+				end
+			else
+				local isUsable, notEnoughMana = C_Spell.IsSpellUsable(spellID)
+				local forceDesaturated = not(isUsable) and not(notEnoughMana)
+				if (forceDesaturated) then
+					if not(iconTexture:IsDesaturated()) then
+						iconTexture:SetDesaturated(true)
+					end
+				else
+					if (iconTexture:IsDesaturated()) then
+						iconTexture:SetDesaturated(false)
+					end
+				end
+			end
+		end
+	end
+	if ((CooldownViewerGreyOnCooldownCUI_RefreshLayout == nil) or (type(CooldownViewerGreyOnCooldownCUI_RefreshLayout) ~= "function")) then
+		function CooldownViewerGreyOnCooldownCUI_RefreshLayout(self)
+			if (ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturateUnusableActions) then	-- cached db value
+				for k, _ in self.itemFramePool:EnumerateActive() do
+					if not(GREYONCOOLDOWN_UPDATEUSABLE_HOOKED_CV_RIC[k]) then
+						hooksecurefunc(k, "RefreshIconDesaturation", CooldownViewerGreyOnCooldownCUI_RefreshIcon)
+						GREYONCOOLDOWN_UPDATEUSABLE_HOOKED_CV_RIC[k] = true
+					end
+					if not(GREYONCOOLDOWN_UPDATEUSABLE_HOOKED_CV_RID[k]) then
+						hooksecurefunc(k, "RefreshIconColor", CooldownViewerGreyOnCooldownCUI_RefreshIcon)
+						GREYONCOOLDOWN_UPDATEUSABLE_HOOKED_CV_RID[k] = true
+					end
+				end
+			end
+		end
+	end
+	if (cooldownViewer ~= nil and cooldownViewer.itemFramePool ~= nil) then
+		if (GREYONCOOLDOWN_UPDATEUSABLE_HOOKED_CV_RL == nil) then
+			GREYONCOOLDOWN_UPDATEUSABLE_HOOKED_CV_RL = {}
+		end
+		if (GREYONCOOLDOWN_UPDATEUSABLE_HOOKED_CV_RIC == nil) then
+			GREYONCOOLDOWN_UPDATEUSABLE_HOOKED_CV_RIC = {}
+		end
+		if (GREYONCOOLDOWN_UPDATEUSABLE_HOOKED_CV_RID == nil) then
+			GREYONCOOLDOWN_UPDATEUSABLE_HOOKED_CV_RID = {}
+		end
+		if not(GREYONCOOLDOWN_UPDATEUSABLE_HOOKED_CV_RL[cooldownViewer]) then
+			hooksecurefunc(cooldownViewer, "RefreshLayout", CooldownViewerGreyOnCooldownCUI_RefreshLayout)
+			GREYONCOOLDOWN_UPDATEUSABLE_HOOKED_CV_RL[cooldownViewer] = true
+		end
+		CooldownViewerGreyOnCooldownCUI_RefreshLayout(cooldownViewer)
+	end
+end
+
+-- Extra Option: GreyOnCooldown. Main function to desaturate the entire action icon when the spell is on cooldown or unusable
 function ClassicUI:HookGreyOnCooldownIcons()
 	if (not GREYONCOOLDOWN_HOOKED) then
 		local UpdateFuncCache = {}
-		function ActionButtonGreyOnCooldown_UpdateCooldown(self, expectedUpdate)
+		function ActionButtonGreyOnCooldownCUI_UpdateCooldown(self, expectedUpdate)
 			local icon = self.icon
 			local spellID = self.spellID
 			local action = self.action
@@ -9395,7 +9701,7 @@ function ClassicUI:HookGreyOnCooldownIcons()
 						if nextTime <= 4294967.295 then
 							local func = UpdateFuncCache[self]
 							if not func then
-								func = function() ActionButtonGreyOnCooldown_UpdateCooldown(self, true) end
+								func = function() ActionButtonGreyOnCooldownCUI_UpdateCooldown(self, true) end
 								UpdateFuncCache[self] = func
 							end
 							C_Timer.After(nextTime, func)
@@ -9412,7 +9718,7 @@ function ClassicUI:HookGreyOnCooldownIcons()
 						if nextTime <= 4294967.295 then
 							local func = UpdateFuncCache[self]
 							if not func then
-								func = function() ActionButtonGreyOnCooldown_UpdateCooldown(self, true) end
+								func = function() ActionButtonGreyOnCooldownCUI_UpdateCooldown(self, true) end
 								UpdateFuncCache[self] = func
 							end
 							C_Timer.After(nextTime, func)
@@ -9443,85 +9749,68 @@ function ClassicUI:HookGreyOnCooldownIcons()
 			end
 		end
 		-- We hook to 'ActionButton_UpdateCooldown' instead of 'ActionButton_OnUpdate' because 'ActionButton_OnUpdate' is much more expensive. So, we need use C_Timer.After to trigger the function when cooldown ends.
-		hooksecurefunc('ActionButton_UpdateCooldown', ActionButtonGreyOnCooldown_UpdateCooldown)
+		hooksecurefunc('ActionButton_UpdateCooldown', ActionButtonGreyOnCooldownCUI_UpdateCooldown)
 		GREYONCOOLDOWN_HOOKED = true
 	end
 	if (ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.desaturateUnusableActions) then
 		if (not GREYONCOOLDOWN_UPDATEUSABLE_HOOKED) then
-			local function HookGOCActionBarButtonUpdateUsable(actionBarButton)
-				if (actionBarButton.UpdateUsable ~= nil) then
-					hooksecurefunc(actionBarButton, "UpdateUsable", function(self)
-						if (ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturateUnusableActions) then	-- cached db value
-							if ((not self.onCooldown) or (self.onCooldown == 0)) then
-								local icon = self.icon
-								local spellID = self.spellID
-								local action = self.action
-								if (icon and action and ((type(action)~="table" and type(action)~="string") or (spellID and type(spellID)~="table" and type(spellID)~="string"))) then
-									local isUsable, notEnoughMana = IsUsableAction(action)
-									if (isUsable or notEnoughMana) then
-										if (icon:IsDesaturated()) then
-											icon:SetDesaturated(false)
-										end
-									else
-										if (not icon:IsDesaturated()) then
-											icon:SetDesaturated(true)
-										end
-									end
-								end
-							end
-						end
-					end)
-				end
-			end
 			for i = 1, 12 do
 				local actionButton
 				actionButton = _G["ExtraActionButton"..i]
 				if (actionButton) then
-					HookGOCActionBarButtonUpdateUsable(actionButton)
+					ClassicUI.HookGOCActionBarButtonUpdateUsable(actionButton)
 				end
 				actionButton = _G["ActionButton"..i]
 				if (actionButton) then
-					HookGOCActionBarButtonUpdateUsable(actionButton)
+					ClassicUI.HookGOCActionBarButtonUpdateUsable(actionButton)
 				end
 				actionButton = _G["MultiBarBottomLeftButton"..i]
 				if (actionButton) then
-					HookGOCActionBarButtonUpdateUsable(actionButton)
+					ClassicUI.HookGOCActionBarButtonUpdateUsable(actionButton)
 				end
 				actionButton = _G["MultiBarBottomRightButton"..i]
 				if (actionButton) then
-					HookGOCActionBarButtonUpdateUsable(actionButton)
+					ClassicUI.HookGOCActionBarButtonUpdateUsable(actionButton)
 				end
 				actionButton = _G["MultiBarLeftButton"..i]
 				if (actionButton) then
-					HookGOCActionBarButtonUpdateUsable(actionButton)
+					ClassicUI.HookGOCActionBarButtonUpdateUsable(actionButton)
 				end
 				actionButton = _G["MultiBarRightButton"..i]
 				if (actionButton) then
-					HookGOCActionBarButtonUpdateUsable(actionButton)
+					ClassicUI.HookGOCActionBarButtonUpdateUsable(actionButton)
 				end
 				actionButton = _G["PetActionButton"..i]
 				if (actionButton) then
-					HookGOCActionBarButtonUpdateUsable(actionButton)
+					ClassicUI.HookGOCActionBarButtonUpdateUsable(actionButton)
 				end
 				actionButton = _G["StanceButton"..i]
 				if (actionButton) then
-					HookGOCActionBarButtonUpdateUsable(actionButton)
+					ClassicUI.HookGOCActionBarButtonUpdateUsable(actionButton)
 				end
 				actionButton = _G["PossessButton"..i]
 				if (actionButton) then
-					HookGOCActionBarButtonUpdateUsable(actionButton)
+					ClassicUI.HookGOCActionBarButtonUpdateUsable(actionButton)
 				end
 				actionButton = _G["OverrideActionBarButton"..i]
 				if (actionButton) then
-					HookGOCActionBarButtonUpdateUsable(actionButton)
+					ClassicUI.HookGOCActionBarButtonUpdateUsable(actionButton)
 				end
 			end
+			for i = 1, 40 do
+				local actionButton = _G["SpellFlyoutPopupButton"..i]
+				if (actionButton) then
+					ClassicUI.HookGOCActionBarButtonUpdateUsable(actionButton)
+				end
+			end
+			ClassicUI.HookGOCCooldownViewer(EssentialCooldownViewer)
+			ClassicUI.HookGOCCooldownViewer(UtilityCooldownViewer)
 			GREYONCOOLDOWN_UPDATEUSABLE_HOOKED = true
 		end
 	end
 end
 
--- Function to hook the functionalities of the Guild Panel Mode extra option
+-- Extra Option: Guild Panel Mode. Main function to hook the functionalities of the Guild Panel Mode extra option
 function ClassicUI:HookOpenGuildPanelMode()
 	if (not OPENGUILDPANEL_HOOKED) then
 		-- New global functions ToggleOldGuildFrame and ToggleNewGuildFrame to toggle the old and the new menu frame respectively
@@ -9543,7 +9832,7 @@ function ClassicUI:HookOpenGuildPanelMode()
 				if (not loaded) then
 					if (not ClassicUI.addonloadfailed_ClassicBlizzGuildUI) then
 						ClassicUI.addonloadfailed_ClassicBlizzGuildUI = true
-						message(format(ADDON_LOAD_FAILED, "ClassicUI_ClassicBlizzGuildUI", _G["ADDON_"..reason]))
+						SetBasicMessageDialogText(format(ADDON_LOAD_FAILED, "ClassicUI_ClassicBlizzGuildUI", _G["ADDON_"..reason]), true)
 					end
 					ToggleNewGuildFrame()
 				else
@@ -9564,7 +9853,7 @@ function ClassicUI:HookOpenGuildPanelMode()
 			end
 		end)
 
-		--Set GuildMicroButton click specific hook
+		-- Set GuildMicroButton click specific hook
 		GuildMicroButton:HookScript('OnClick', function(self, button)
 			if (not InCombatLockdown()) then
 				if (button == 'RightButton') then

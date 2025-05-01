@@ -1,7 +1,7 @@
-## Interface: 110100
+## Interface: 110105
 ## Title: ClassicUI [|cffeda55fClassicBlizzGuildUI|r]
 ## Author: millanzarreta
-## Version: 2.1.1
+## Version: 2.1.2
 ## IconTexture: Interface\Addons\ClassicUI_ClassicBlizzGuildUI\micon
 ## Notes: ClassicUI: [|cffeda55fClassicBlizzGuildUI|r] Module
 ## Notes-esES: ClassicUI: Modulo [|cffeda55fClassicBlizzGuildUI|r]

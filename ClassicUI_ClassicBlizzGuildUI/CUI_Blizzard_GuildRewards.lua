@@ -101,24 +101,26 @@ end
 
 function CUI_GuildRewardsButton_OnEnter(self)
 	CUI_GuildRewardsFrame.activeButton = self;
-	local achievementID, itemID, itemName, iconTexture, repLevel, moneyCost = GetGuildRewardInfo(self.index);
-	GameTooltip:SetOwner(self, "ANCHOR_RIGHT", 28, 0);
-	if (itemID ~= nil) then
-		GameTooltip:SetHyperlink("item:"..itemID);
-	end
-	if ( achievementID and achievementID > 0 ) then
-		local id, name, _, _, _, _, _, description = GetAchievementInfo(achievementID)
-		GameTooltip:AddLine(" ", 1, 0, 0, true);
-		GameTooltip:AddLine(REQUIRES_GUILD_ACHIEVEMENT, 1, 0, 0, true);
-		GameTooltip:AddLine(ACHIEVEMENT_COLOR_CODE..name..FONT_COLOR_CODE_CLOSE);
-		GameTooltip:AddLine(description, 1, 1, 1, true);
-	end
-	local guildFactionData = C_Reputation.GetGuildFactionData();
-	if ( guildFactionData and repLevel > guildFactionData.reaction ) then
-		local gender = UnitSex("player");
-		local factionStandingtext = GetText("FACTION_STANDING_LABEL"..repLevel, gender);
-		GameTooltip:AddLine(" ", 1, 0, 0, true);
-		GameTooltip:AddLine(string.format(REQUIRES_GUILD_FACTION_TOOLTIP, factionStandingtext), 1, 0, 0, true);
+	if (self.index) then
+		local achievementID, itemID, itemName, iconTexture, repLevel, moneyCost = GetGuildRewardInfo(self.index);
+		GameTooltip:SetOwner(self, "ANCHOR_RIGHT", 28, 0);
+		if (itemID ~= nil) then
+			GameTooltip:SetHyperlink("item:"..itemID);
+		end
+		if ( achievementID and achievementID > 0 ) then
+			local id, name, _, _, _, _, _, description = GetAchievementInfo(achievementID)
+			GameTooltip:AddLine(" ", 1, 0, 0, true);
+			GameTooltip:AddLine(REQUIRES_GUILD_ACHIEVEMENT, 1, 0, 0, true);
+			GameTooltip:AddLine(ACHIEVEMENT_COLOR_CODE..name..FONT_COLOR_CODE_CLOSE);
+			GameTooltip:AddLine(description, 1, 1, 1, true);
+		end
+		local guildFactionData = C_Reputation.GetGuildFactionData();
+		if ( guildFactionData and repLevel and repLevel > guildFactionData.reaction ) then
+			local gender = UnitSex("player");
+			local factionStandingtext = GetText("FACTION_STANDING_LABEL"..repLevel, gender);
+			GameTooltip:AddLine(" ", 1, 0, 0, true);
+			GameTooltip:AddLine(string.format(REQUIRES_GUILD_FACTION_TOOLTIP, factionStandingtext), 1, 0, 0, true);
+		end
 	end
 	self.UpdateTooltip = CUI_GuildRewardsButton_OnEnter;
 	GameTooltip:Show();
