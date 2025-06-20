@@ -1,7 +1,7 @@
 -- ------------------------------------------------------------ --
 -- Addon: ClassicUI                                             --
 --                                                              --
--- Version: 2.1.2                                               --
+-- Version: 2.1.3                                               --
 -- Author: Millán - Sanguino                                    --
 --                                                              --
 -- License: GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007 --
@@ -88,7 +88,7 @@ local GetNetStats = GetNetStats
 local InGuildParty = InGuildParty
 
 -- Global constants
-ClassicUI.VERSION = "2.1.2"
+ClassicUI.VERSION = "2.1.3"
 ClassicUI.STANDARD_EPSILON = STANDARD_EPSILON
 ClassicUI.SCALE_EPSILON = SCALE_EPSILON
 ClassicUI.ACTIONBUTTON_NEWLAYOUT_SCALE = 0.826
@@ -378,6 +378,7 @@ ClassicUI.cached_ActionButtonInfo = {
 	hooked_UpdateHotkeys = { },
 	hooked_UpdateFlyout = { },
 	hooked_PlaySpellCastAnim = { },
+	hooked_UpdateAssistedCombatRotationFrame = { },
 	spellActivationAlertAdjusted = { },
 	typeActionButton = { },
 	currentScale = { },
@@ -390,6 +391,7 @@ ClassicUI.STBMbars = { }
 ClassicUI.STBMMainBars = { }
 ClassicUI.STBMSecBars = { }
 ClassicUI.UpdateBagItemButtonQualityFuncCache = { }
+ClassicUI.OldMinimapLoaded = false
 
 -- Default settings
 ClassicUI.defaults = {
@@ -874,7 +876,7 @@ ClassicUI.defaults = {
 			['GreyOnCooldownConfig'] = {
 				enabled = false,
 				desaturateUnusableActions = true,
-				minDuration = 1.51
+				minDuration = 1.88
 			},
 			['LossOfControlUIConfig'] = {
 				enabled = false
@@ -2347,6 +2349,7 @@ end
 
 -- Function that performs all the necessary modifications in the interface to bring back the old Minimap
 function ClassicUI:EnableOldMinimap()
+	if (self.OldMinimapLoaded) then return end
 	MinimapCluster:SetSize(192, 192)
 	MinimapCluster:SetHitRectInsets(30, 10, 0, 30)
 	MinimapCluster:SetScale(self.db.profile.extraFrames.Minimap.scale)
@@ -3125,6 +3128,8 @@ function ClassicUI:EnableOldMinimap()
 		self.tooltipText = MicroButtonTooltipText(WORLDMAP_BUTTON, "TOGGLEWORLDMAP")
 		self.newbieText = NEWBIE_TOOLTIP_WORLDMAP
 	end)
+	
+	self.OldMinimapLoaded = true
 end
 
 -- Function that executes functionalities of the 'MainFunction' function that need to be executed after the first "PLAYER_ENTERING_WORLD" event
@@ -3518,6 +3523,9 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 						end
 						if ClassicUI.cached_ActionButtonInfo.hooked_PlaySpellCastAnim[button] == nil then
 							ClassicUI.cached_ActionButtonInfo.hooked_PlaySpellCastAnim[button] = false
+						end
+						if ClassicUI.cached_ActionButtonInfo.hooked_UpdateAssistedCombatRotationFrame[button] == nil then
+							ClassicUI.cached_ActionButtonInfo.hooked_UpdateAssistedCombatRotationFrame[button] = false
 						end
 						if ClassicUI.cached_ActionButtonInfo.spellActivationAlertAdjusted[button] == nil then
 							ClassicUI.cached_ActionButtonInfo.spellActivationAlertAdjusted[button] = false
@@ -7577,7 +7585,7 @@ ClassicUI.CreateClassicSpellActivationAlertFrame = function(iActionButton)
 	
 	-- Global hooks to the main functions that show/hide these animations
 	if not ClassicUI.hooked_ActionButton_ShowHideOverlayGlow then
-		hooksecurefunc("ActionButton_ShowOverlayGlow", function(button)
+		hooksecurefunc(ActionButtonSpellAlertManager, "ShowAlert", function(self, button)
 			if not(button.ClassicSpellActivationAlert) then
 				return
 			end
@@ -7588,7 +7596,7 @@ ClassicUI.CreateClassicSpellActivationAlertFrame = function(iActionButton)
 				button.ClassicSpellActivationAlert.animIn:Play()
 			end
 		end)
-		hooksecurefunc("ActionButton_HideOverlayGlow", function(button)
+		hooksecurefunc(ActionButtonSpellAlertManager, "HideAlert", function(self, button)
 			if not(button.ClassicSpellActivationAlert) then
 				return
 			end
@@ -7827,6 +7835,7 @@ ClassicUI.RestoreModernLayoutActionButton = function(iActionButton, typeActionBu
 		local frameWidth, frameHeight = iActionButton:GetSize()
 		iabsaa:SetSize(frameWidth * 1.4, frameHeight * 1.4)
 		iabsaa.ProcStartFlipbook:SetSize(150, 150)
+		iabsaa.ProcAltGlow:SetSize(49, 49)
 		iabsaa:SetAlpha(1)
 		local iabcsaa = iActionButton.ClassicSpellActivationAlert
 		if (iabcsaa ~= nil) then
@@ -7863,6 +7872,27 @@ ClassicUI.RestoreModernLayoutActionButton = function(iActionButton, typeActionBu
 	local iabcc = iActionButton.chargeCooldown
 	if (iabcc ~= nil) then
 		iabcc:SetEdgeTexture("Interface\\Cooldown\\UI-HUD-ActionBar-SecondaryCooldown")
+	end
+	local iabachf = iActionButton.AssistedCombatHighlightFrame
+	if (iabachf ~= nil) then
+		if (iabachf.Flipbook ~= nil) then
+			iabachf.Flipbook:SetSize(66,66)
+		end
+	end
+	local iabacrf = iActionButton.AssistedCombatRotationFrame
+	if (iabacrf ~= nil) then
+		if (iabacrf.InactiveTexture ~= nil) then
+			iabacrf.InactiveTexture:SetSize(64, 64)
+			iabacrf.InactiveTexture:ClearAllPoints()
+			iabacrf.InactiveTexture:SetPoint("CENTER", iabacrf, "CENTER", 0, 0)
+		end
+		if (iabacrf.ActiveFrame ~= nil) then
+			iabacrf.ActiveFrame.Border:SetSize(64, 64)
+			iabacrf.ActiveFrame.Glow:SetSize(100, 100)
+			iabacrf.ActiveFrame.Mask:SetSize(64, 64)
+			iabacrf.ActiveFrame:ClearAllPoints()
+			iabacrf.ActiveFrame:SetPoint("CENTER", iabacrf, "CENTER", 0, 0)
+		end
 	end
 end
 
@@ -8567,6 +8597,7 @@ ClassicUI.LayoutActionButton = function(iActionButton, typeActionButton)
 				local frameWidth, frameHeight = iActionButton:GetSize()
 				iabsaa:SetSize(frameWidth * 1.4, frameHeight * 1.4)
 				iabsaa.ProcStartFlipbook:SetSize(128, 128)
+				iabsaa.ProcAltGlow:SetSize(41, 41)
 				iabsaa:SetAlpha(1)
 				if (iabcsaa ~= nil) then
 					iabcsaa.spark:Hide()
@@ -8581,7 +8612,7 @@ ClassicUI.LayoutActionButton = function(iActionButton, typeActionButton)
 			end
 		else
 			if not ClassicUI.hooked_ActionButton_SetupOverlayGlow then
-				hooksecurefunc("ActionButton_SetupOverlayGlow", function(button)
+				hooksecurefunc(ActionButtonSpellAlertManager, "ShowAlert", function(self, button)
 					if ClassicUI.databaseCleaned then return end	-- [DB Integrity Check]
 					local iabsaa = button.SpellActivationAlert
 					local iabcsaa = button.ClassicSpellActivationAlert
@@ -8638,8 +8669,10 @@ ClassicUI.LayoutActionButton = function(iActionButton, typeActionButton)
 								iabsaa:SetSize(frameWidth * 1.4, frameHeight * 1.4)
 								if (typeABprofile.BLStyle == 0) then
 									iabsaa.ProcStartFlipbook:SetSize(128, 128)
+									iabsaa.ProcAltGlow:SetSize(41, 41)
 								else
 									iabsaa.ProcStartFlipbook:SetSize(150, 150)
+									iabsaa.ProcAltGlow:SetSize(49, 49)
 								end
 								ClassicUI.cached_ActionButtonInfo.spellActivationAlertAdjusted[button] = true
 							end
@@ -8756,6 +8789,86 @@ ClassicUI.LayoutActionButton = function(iActionButton, typeActionButton)
 				end
 			end
 		end
+		local iabachf = iActionButton.AssistedCombatHighlightFrame
+		if (iabachf ~= nil) then
+			if (iabachf.Flipbook ~= nil) then
+				iabachf.Flipbook:SetSize(57,57)
+			end
+		else
+			if not ClassicUI.hooked_AssistedCombatManager_SetAssistedHighlightFrameShown then
+				hooksecurefunc(AssistedCombatManager, "SetAssistedHighlightFrameShown", function(self, actionButton, shown)
+					if (shown) then
+						if (actionButton.AssistedCombatHighlightFrame and actionButton.AssistedCombatHighlightFrame.Flipbook) then
+							local typeActionButton = ClassicUI.cached_ActionButtonInfo.typeActionButton[actionButton]
+							local typeABprofile
+							if (typeActionButton == 0) then
+								typeABprofile = ClassicUI.db.profile.barsConfig.MainMenuBar
+							elseif (typeActionButton == 1) then
+								typeABprofile = ClassicUI.db.profile.barsConfig.BottomMultiActionBars
+							elseif (typeActionButton == 2) then
+								typeABprofile = ClassicUI.db.profile.barsConfig.RightMultiActionBars
+							elseif (typeActionButton == 3) then
+								typeABprofile = ClassicUI.db.profile.barsConfig.PetActionBarFrame
+							elseif (typeActionButton == 4) then
+								typeABprofile = ClassicUI.db.profile.barsConfig.StanceBarFrame
+							elseif (typeActionButton == 5) then
+								typeABprofile = ClassicUI.db.profile.barsConfig.PossessBarFrame
+							elseif (typeActionButton == 6) then
+								typeABprofile = ClassicUI.db.profile.barsConfig.SpellFlyoutButtons
+							elseif (typeActionButton == 7) then
+								typeABprofile = ClassicUI.db.profile.barsConfig.OverrideActionBar
+							else
+								return
+							end
+							if (typeABprofile.BLStyle == 0) then
+								actionButton.AssistedCombatHighlightFrame.Flipbook:SetSize(57, 57)
+							end
+						end
+					end
+				end)
+				ClassicUI.hooked_AssistedCombatManager_SetAssistedHighlightFrameShown = true
+			end
+		end
+		local iabacrf = iActionButton.AssistedCombatRotationFrame
+		if (iabacrf ~= nil) then
+			if (iabacrf.InactiveTexture ~= nil) then
+				iabacrf.InactiveTexture:SetSize(55, 55)
+				iabacrf.InactiveTexture:ClearAllPoints()
+				iabacrf.InactiveTexture:SetPoint("CENTER", iabacrf, "CENTER", 1, -0.25)
+			end
+			if (iabacrf.ActiveFrame ~= nil) then
+				iabacrf.ActiveFrame.Border:SetSize(55, 55)
+				iabacrf.ActiveFrame.Glow:SetSize(86, 86)
+				iabacrf.ActiveFrame.Mask:SetSize(55, 55)
+				iabacrf.ActiveFrame:ClearAllPoints()
+				iabacrf.ActiveFrame:SetPoint("CENTER", iabacrf, "CENTER", 1, -0.25)
+			end
+		else
+			if not ClassicUI.cached_ActionButtonInfo.hooked_UpdateAssistedCombatRotationFrame[iActionButton] then
+				if iActionButton.UpdateAssistedCombatRotationFrame and type(iActionButton.UpdateAssistedCombatRotationFrame)=="function" then
+					hooksecurefunc(iActionButton, "UpdateAssistedCombatRotationFrame", function(self)
+						--if ClassicUI.databaseCleaned then return end	-- not needed because typeABprofile is an upvalue local table variable (the upvalue table can become empty but never nil, not an issue)
+						if (self.AssistedCombatRotationFrame ~= nil) then
+							if (typeABprofile.BLStyle == 0) then
+								if (self.AssistedCombatRotationFrame.InactiveTexture ~= nil) then
+									self.AssistedCombatRotationFrame.InactiveTexture:SetSize(55, 55)
+									self.AssistedCombatRotationFrame.InactiveTexture:ClearAllPoints()
+									self.AssistedCombatRotationFrame.InactiveTexture:SetPoint("CENTER", self.AssistedCombatRotationFrame, "CENTER", 1, -0.25)
+								end
+								if (self.AssistedCombatRotationFrame.ActiveFrame ~= nil) then
+									self.AssistedCombatRotationFrame.ActiveFrame.Border:SetSize(55, 55)
+									self.AssistedCombatRotationFrame.ActiveFrame.Glow:SetSize(86, 86)
+									self.AssistedCombatRotationFrame.ActiveFrame.Mask:SetSize(55, 55)
+									self.AssistedCombatRotationFrame.ActiveFrame:ClearAllPoints()
+									self.AssistedCombatRotationFrame.ActiveFrame:SetPoint("CENTER", self.AssistedCombatRotationFrame, "CENTER", 1, -0.25)
+								end
+							end
+						end
+					end)
+					ClassicUI.cached_ActionButtonInfo.hooked_UpdateAssistedCombatRotationFrame[iActionButton] = true
+				end
+			end
+		end
 	end
 	ClassicUI.cached_ActionButtonInfo.currLayout[iActionButton] = typeABprofile.BLStyle
 end
@@ -8866,6 +8979,11 @@ function ClassicUI:InitActionButtonInfoCache()
 		self.cached_ActionButtonInfo.hooked_PlaySpellCastAnim[_G["MultiBarBottomRightButton"..i]] = false
 		self.cached_ActionButtonInfo.hooked_PlaySpellCastAnim[_G["MultiBarRightButton"..i]] = false
 		self.cached_ActionButtonInfo.hooked_PlaySpellCastAnim[_G["MultiBarLeftButton"..i]] = false
+		self.cached_ActionButtonInfo.hooked_UpdateAssistedCombatRotationFrame[_G["ActionButton"..i]] = false
+		self.cached_ActionButtonInfo.hooked_UpdateAssistedCombatRotationFrame[_G["MultiBarBottomLeftButton"..i]] = false
+		self.cached_ActionButtonInfo.hooked_UpdateAssistedCombatRotationFrame[_G["MultiBarBottomRightButton"..i]] = false
+		self.cached_ActionButtonInfo.hooked_UpdateAssistedCombatRotationFrame[_G["MultiBarRightButton"..i]] = false
+		self.cached_ActionButtonInfo.hooked_UpdateAssistedCombatRotationFrame[_G["MultiBarLeftButton"..i]] = false
 		self.cached_ActionButtonInfo.spellActivationAlertAdjusted[_G["ActionButton"..i]] = false
 		self.cached_ActionButtonInfo.spellActivationAlertAdjusted[_G["MultiBarBottomLeftButton"..i]] = false
 		self.cached_ActionButtonInfo.spellActivationAlertAdjusted[_G["MultiBarBottomRightButton"..i]] = false
@@ -8896,6 +9014,8 @@ function ClassicUI:InitActionButtonInfoCache()
 		self.cached_ActionButtonInfo.hooked_UpdateFlyout[_G["StanceButton"..i]] = false
 		self.cached_ActionButtonInfo.hooked_PlaySpellCastAnim[_G["PetActionButton"..i]] = false
 		self.cached_ActionButtonInfo.hooked_PlaySpellCastAnim[_G["StanceButton"..i]] = false
+		self.cached_ActionButtonInfo.hooked_UpdateAssistedCombatRotationFrame[_G["PetActionButton"..i]] = false
+		self.cached_ActionButtonInfo.hooked_UpdateAssistedCombatRotationFrame[_G["StanceButton"..i]] = false
 		self.cached_ActionButtonInfo.spellActivationAlertAdjusted[_G["PetActionButton"..i]] = false
 		self.cached_ActionButtonInfo.spellActivationAlertAdjusted[_G["StanceButton"..i]] = false
 		self.cached_ActionButtonInfo.typeActionButton[_G["PetActionButton"..i]] = 3
@@ -8910,6 +9030,7 @@ function ClassicUI:InitActionButtonInfoCache()
 		self.cached_ActionButtonInfo.hooked_UpdateHotkeys[_G["OverrideActionBarButton"..i]] = false
 		self.cached_ActionButtonInfo.hooked_UpdateFlyout[_G["OverrideActionBarButton"..i]] = false
 		self.cached_ActionButtonInfo.hooked_PlaySpellCastAnim[_G["OverrideActionBarButton"..i]] = false
+		self.cached_ActionButtonInfo.hooked_UpdateAssistedCombatRotationFrame[_G["OverrideActionBarButton"..i]] = false
 		self.cached_ActionButtonInfo.spellActivationAlertAdjusted[_G["OverrideActionBarButton"..i]] = false
 		self.cached_ActionButtonInfo.typeActionButton[_G["OverrideActionBarButton"..i]] = 7
 		self.cached_ActionButtonInfo.currentScale[_G["OverrideActionBarButton"..i]] = 1
@@ -8922,6 +9043,7 @@ function ClassicUI:InitActionButtonInfoCache()
 			self.cached_ActionButtonInfo.hooked_UpdateHotkeys[button] = false
 			self.cached_ActionButtonInfo.hooked_UpdateFlyout[button] = false
 			self.cached_ActionButtonInfo.hooked_PlaySpellCastAnim[button] = false
+			self.cached_ActionButtonInfo.hooked_UpdateAssistedCombatRotationFrame[button] = false
 			self.cached_ActionButtonInfo.spellActivationAlertAdjusted[button] = false
 			self.cached_ActionButtonInfo.typeActionButton[button] = 6
 			self.cached_ActionButtonInfo.currentScale[button] = 1
@@ -8938,6 +9060,8 @@ function ClassicUI:InitActionButtonInfoCache()
 	self.cached_ActionButtonInfo.hooked_UpdateFlyout[PossessButton2] = false
 	self.cached_ActionButtonInfo.hooked_PlaySpellCastAnim[PossessButton1] = false
 	self.cached_ActionButtonInfo.hooked_PlaySpellCastAnim[PossessButton2] = false
+	self.cached_ActionButtonInfo.hooked_UpdateAssistedCombatRotationFrame[PossessButton1] = false
+	self.cached_ActionButtonInfo.hooked_UpdateAssistedCombatRotationFrame[PossessButton2] = false
 	self.cached_ActionButtonInfo.spellActivationAlertAdjusted[PossessButton1] = false
 	self.cached_ActionButtonInfo.spellActivationAlertAdjusted[PossessButton2] = false
 	self.cached_ActionButtonInfo.typeActionButton[PossessButton1] = 5
