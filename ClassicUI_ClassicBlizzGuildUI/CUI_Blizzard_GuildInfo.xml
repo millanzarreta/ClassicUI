@@ -6,7 +6,7 @@
 *******************************************************************************
 	Templates
 *******************************************************************************
--->	
+-->
 
 	<Frame name="CUI_GuildChallengeTemplate" enableMouse="true" virtual="true">
 		<Size x="319" y="21"/>
@@ -26,7 +26,7 @@
 					<Size x="28" y="24"/>
 					<Anchors>
 						<Anchor point="RIGHT" relativeTo="$parent" x="-8" y="0"/>
-					</Anchors>	
+					</Anchors>
 					<TexCoords left="0.00195313" right="0.05664063" top="0.00390625" bottom="0.09765625"/>
 				</Texture>
 			</Layer>
@@ -59,7 +59,7 @@
 *******************************************************************************
 	Info panel
 *******************************************************************************
--->	
+-->
 	<Frame name="CUI_GuildInfoFrame" hidden="true" parent="CUI_GuildFrame">
 		<Anchors>
 			<Anchor point="TOPLEFT" relativeTo="$parent" x="4" y="-65"/>
@@ -181,7 +181,7 @@
 					<Anchors>
 						<Anchor point="LEFT" relativeTo="$parentHeader1" x="10" y="0"/>
 					</Anchors>
-				</FontString>	
+				</FontString>
 				<FontString	inherits="GameFontNormal" text="GUILD_MOTD_LABEL">
 					<Size>
 						<AbsDimension x="0" y="0"/>
@@ -356,7 +356,7 @@
 						if ( not GuildControlUI ) then
 							UIParentLoadAddOn("Blizzard_GuildControlUI");
 						end
-						
+
 						local wasShown = GuildControlUI:IsShown();
 						if not(InCombatLockdown()) then	-- show/hide UI panels in combat is forbidden for insecure code
 							CloseWindows(nil, CUI_GuildFrame);
@@ -390,7 +390,7 @@
 *******************************************************************************
 	Popups
 *******************************************************************************
--->	
+-->
 	<Frame name="CUI_GuildTextEditFrame" toplevel="true" frameStrata="DIALOG" hidden="true" parent="CUI_GuildFrame" inherits="TranslucentFrameTemplate">
 		<Size>
 			<AbsDimension x="295" y="312"/>
@@ -451,7 +451,7 @@
 								<Scripts>
 									<OnTextChanged>
 										ScrollingEdit_OnTextChanged(self, self:GetParent());
-									</OnTextChanged> 
+									</OnTextChanged>
 									<OnCursorChanged function="ScrollingEdit_OnCursorChanged"/>
 									<OnUpdate>
 										ScrollingEdit_OnUpdate(self, elapsed, self:GetParent());

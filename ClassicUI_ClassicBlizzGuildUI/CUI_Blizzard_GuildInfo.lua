@@ -11,7 +11,7 @@ function CUI_GuildInfoFrame_OnLoad(self)
 	self:RegisterEvent("GUILD_RANKS_UPDATE");
 	self:RegisterEvent("PLAYER_GUILD_UPDATE");
 	self:RegisterEvent("GUILD_CHALLENGE_UPDATED");
-	
+
 	RequestGuildChallengeInfo();
 end
 
@@ -51,11 +51,11 @@ function CUI_GuildInfoFrameInfo_OnLoad(self)
 	CUI_GuildInfoEditMOTDButton:SetWidth(fontString:GetWidth() + 4);
 	fontString = CUI_GuildInfoEditDetailsButton:GetFontString();
 	CUI_GuildInfoEditDetailsButton:SetHeight(fontString:GetHeight() + 4);
-	CUI_GuildInfoEditDetailsButton:SetWidth(fontString:GetWidth() + 4);	
+	CUI_GuildInfoEditDetailsButton:SetWidth(fontString:GetWidth() + 4);
 end
 
 function CUI_GuildInfoFrameInfo_OnShow(self)
-	CUI_GuildInfoFrame_UpdatePermissions();	
+	CUI_GuildInfoFrame_UpdatePermissions();
 	CUI_GuildInfoFrame_UpdateText();
 end
 
@@ -96,7 +96,7 @@ function CUI_GuildInfoFrame_UpdatePermissions()
 				CUI_GuildInfoFrame_Update();
 			end
 		end
-	end	
+	end
 end
 
 function CUI_GuildInfoFrame_UpdateText(infoText)
@@ -139,7 +139,7 @@ end
 
 function CUI_GuildTextEditFrame_Show(editType)
 	if ( editType == "motd" ) then
-		CUI_GuildTextEditFrame:SetHeight(200);	-- ¿or maybe 162?
+		CUI_GuildTextEditFrame:SetHeight(200);	-- ï¿½or maybe 162?
 		CUI_GuildTextEditBox:SetMaxLetters(128);
 		CUI_GuildTextEditBox:SetText(GetGuildRosterMOTD());
 		CUI_GuildTextEditFrameTitle:SetText(GUILD_MOTD_EDITLABEL);

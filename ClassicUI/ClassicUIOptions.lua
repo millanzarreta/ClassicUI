@@ -1523,8 +1523,38 @@ ClassicUI.optionsTable = {
 								end
 							end
 						},
-						helpOpenWebTicketButtonAnchor = {
+						Spacer1 = {
+							type = "description",
 							order = 5,
+							name = ""
+						},
+						maxMicroButtonsShown = {
+							order = 6,
+							type = "range",
+							min = 0,
+							softMin = 0,
+							softMax = 13,
+							step = 1,
+							bigStep = 1,
+							name = L['maxMicroButtonsShown'],
+							desc = string.gsub(L['maxMicroButtonsShownDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.MicroButtons.maxMicroButtonsShown, 1),
+							get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.maxMicroButtonsShown end,
+							set = function(_,value)
+								ClassicUI.db.profile.barsConfig.MicroButtons.maxMicroButtonsShown = value
+								if (ClassicUI:IsEnabled()) then
+									ClassicUI.SetOrderInfoMicroButtons()
+									ClassicUI.SetPointsMicroButtons()
+								end
+							end
+						},
+						Spacer2 = {
+							type = "description",
+							order = 7,
+							name = "",
+							width = 0.55
+						},
+						helpOpenWebTicketButtonAnchor = {
+							order = 8,
 							type = "select",
 							style = "dropdown",
 							name = L['helpOpenWebTicketButtonAnchor'],
@@ -1537,6 +1567,7 @@ ClassicUI.optionsTable = {
 									[ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.order] = 'PlayerSpellsMicroButton',
 									[ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.order] = 'AchievementMicroButton',
 									[ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.order] = 'QuestLogMicroButton',
+									[ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.order] = 'HousingMicroButton',
 									[ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.order] = 'GuildMicroButton',
 									[ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.order] = 'LFDMicroButton',
 									[ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.order] = 'CollectionsMicroButton',
@@ -1552,6 +1583,7 @@ ClassicUI.optionsTable = {
 								['PlayerSpellsMicroButton'] = L['PlayerSpellsMicroButton'],
 								['AchievementMicroButton'] = L['AchievementMicroButton'],
 								['QuestLogMicroButton'] = L['QuestLogMicroButton'],
+								['HousingMicroButton'] = L['HousingMicroButton'],
 								['GuildMicroButton'] = L['GuildMicroButton'],
 								['LFDMicroButton'] = L['LFDMicroButton'],
 								['CollectionsMicroButton'] = L['CollectionsMicroButton'],
@@ -1582,16 +1614,15 @@ ClassicUI.optionsTable = {
 										end
 									end
 								end
-							
 							end
 						},
-						Spacer1 = {
+						Spacer3 = {
 							type = "description",
-							order = 6,
+							order = 9,
 							name = ""
 						},
 						CharacterMicroButton = {
-							order = function() return 6 + ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.order end,
+							order = function() return 9 + ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.order end,
 							type = "group",
 							name = function() return '|cffeda55f[|r|cffff6720'..(ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.order < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.order..'|r|cffeda55f] - |r'..string.gsub(ClassicUI.MICROBUTTONS_OPTION_ICONS[ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.iconMicroButton].name],':32:24:',':20:15:',1)..' '..L['Character'] end,
 							desc = L['CharacterMicroButton'],
@@ -1655,10 +1686,103 @@ ClassicUI.optionsTable = {
 								Header2 = {
 									type = 'header',
 									order = 6,
+									name = L['MicroButtons Priority']
+								},
+								prioritySectionDesc = {
+									order = 7,
+									type = "description",
+									name = L['MICROBUTTONS_PRIORITY_DESC']
+								},
+								priorityValueText = {
+									order = 8,
+									type = "description",
+									width = 0.20,
+									name = function() return ' |cffbad152[|r|cff62e632'..(ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.priority < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.priority..'|r|cffbad152]|r' end
+								},
+								buttonPriorityUp = {
+									order = 9,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.priority <= ClassicUI.MICROBUTTONS_MIN_PRIORITY) and '-disabled' or '')..':0|t' end,
+									desc = L['UP'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.priority <= ClassicUI.MICROBUTTONS_MIN_PRIORITY end,
+									width = 0.26,
+									func = function()
+										ClassicUI:RepriorizeMicroButtonsDB("CharacterMicroButton", "UP")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								buttonPriorityDown = {
+									order = 10,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.priority >= ClassicUI.MICROBUTTONS_MAX_PRIORITY) and '-disabled' or '')..':0|t' end,
+									desc = L['DOWN'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.priority >= ClassicUI.MICROBUTTONS_MAX_PRIORITY end,
+									width = 0.26,
+									func = function()
+										ClassicUI:RepriorizeMicroButtonsDB("CharacterMicroButton", "DOWN")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								Spacer2 = {
+									type = "description",
+									order = 11,
+									name = "",
+									width = 0.05
+								},
+								buttonPriorityDefault = {
+									order = 12,
+									type = "execute",
+									name = function() return '|T'..(ClassicUI:IsMicroButtonsPriorityDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
+									desc = L['DefaultPriorityDesc'],
+									disabled = function() return ClassicUI:IsMicroButtonsPriorityDefaultDB() end,
+									width = 0.72,
+									func = function()
+										ClassicUI:RepriorizeMicroButtonsDB(nil, "DEFAULT")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								priorityIconList = {
+									order = 13,
+									type = "description",
+									name = function()
+										local prioOrderedArray = {}
+										for k, v in pairs(ClassicUI.db.profile.barsConfig.MicroButtons) do
+											if ((type(v) == 'table') and (type(v.priority) == 'number')) then
+												table.insert(prioOrderedArray, { k, v.priority } )
+											end
+										end
+										table.sort(prioOrderedArray, function(a, b) return a[2] < b[2] end)
+										local str = ""
+										local count = 0
+										for _, v in ipairs(prioOrderedArray) do
+											if (count == ClassicUI.db.profile.barsConfig.MicroButtons.maxMicroButtonsShown) then
+												str = str.."I"
+											end
+											str = str..string.gsub(ClassicUI.MICROBUTTONS_OPTION_ICONS[ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons[v[1]].iconMicroButton].name],':32:24:',':28:21:',1)
+											count = count + 1
+										end
+										if (count == ClassicUI.db.profile.barsConfig.MicroButtons.maxMicroButtonsShown) then
+											str = str.."I"
+										end
+										return str
+									end
+								},
+								Header3 = {
+									type = 'header',
+									order = 14,
 									name = L['CharacterMicroButton']
 								},
 								hideMicroButton = {
-									order = 7,
+									order = 15,
 									type = "toggle",
 									name = L['Hide MicroButton'],
 									desc = L['Hide MicroButton'],
@@ -1667,14 +1791,11 @@ ClassicUI.optionsTable = {
 										ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.hideMicroButton = value
 										if (ClassicUI:IsEnabled()) then
 											if (ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.hideMicroButton) then
-												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
-													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
-													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
-												end
-												ClassicUI.HookMicroButtonsClass_UI_Watcher(CharacterMicroButton)
 												CharacterMicroButton:Hide()
 											else
-												CharacterMicroButton:Show()
+												if not(ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[CharacterMicroButton]) then
+													CharacterMicroButton:Show()
+												end
 											end
 											ClassicUI.SetOrderInfoMicroButtons()
 											ClassicUI.SetPointsMicroButtons()
@@ -1682,7 +1803,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								keepGapMicroButton = {
-									order = 8,
+									order = 16,
 									type = "toggle",
 									name = L['Keep MicroButton Gap'],
 									desc = L['KeepMicroButtonGapDesc'],
@@ -1697,7 +1818,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								disableMicroButton = {
-									order = 9,
+									order = 17,
 									type = "toggle",
 									name = L['Disable MicroButton'],
 									desc = L['Disable MicroButton'],
@@ -1707,10 +1828,6 @@ ClassicUI.optionsTable = {
 										ClassicUI.cached_db_profile.barsConfig_MicroButtons_CharacterMicroButton_disableMicroButton = value
 										if (ClassicUI:IsEnabled()) then
 											if (ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.disableMicroButton) then
-												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
-													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
-													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
-												end
 												if not(ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton) then
 													hooksecurefunc(MainMenuMicroButton, "UpdateMicroButton", ClassicUI.hook_MainMenuMicroButton_UpdateMicroButton)
 													ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton = true
@@ -1718,7 +1835,7 @@ ClassicUI.optionsTable = {
 												CharacterMicroButton:Disable()
 											else
 												local enable = true
-												if ( StoreFrame and StoreFrame_IsShown() ) or ( ( GameMenuFrame and GameMenuFrame:IsShown() ) or ( SettingsPanel:IsShown() ) ) then
+												if ( StoreFrame and StoreFrame_IsShown() ) or ( ( GameMenuFrame and GameMenuFrame:IsShown() ) or ( SettingsPanel:IsShown() ) or Kiosk.IsEnabled() ) then
 													enable = false
 												end
 												if (enable) then
@@ -1729,7 +1846,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								disableMouseMicroButton = {
-									order = 10,
+									order = 18,
 									type = "toggle",
 									name = L['Disable Mouse'],
 									desc = L['DisableMouseMicroButtonDesc'],
@@ -1746,7 +1863,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								xOffsetMicroButton = {
-									order = 11,
+									order = 19,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -1763,7 +1880,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								yOffsetMicroButton = {
-									order = 12,
+									order = 20,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -1780,7 +1897,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								alphaMicroButton = {
-									order = 13,
+									order = 21,
 									type = "range",
 									softMin = 0,
 									softMax = 1,
@@ -1810,12 +1927,12 @@ ClassicUI.optionsTable = {
 									end
 								},
 								iconMicroButton = {
-									order = 14,
+									order = 22,
 									type = "select",
 									style = "radio",
 									name = L['iconMicroButton'],
 									width = 1.12,
-									sorting = { 0, 1, 16, 27, 28, 29, 30, 15, 2, 3, 4, 5, 26, 6, 9, 24, 10, 11, 12, 13, 17, 18, 19, 20, 31 },
+									sorting = { 0, 1, 16, 27, 28, 29, 30, 15, 2, 3, 4, 5, 26, 6, 32, 9, 24, 10, 11, 12, 13, 17, 18, 19, 20, 31 },
 									values = {
 										[0] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Character Portrait']..L['Character Portrait [*][D]'],
 										[1] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Class Icon']..L['Class Icon [*]'],
@@ -1831,6 +1948,7 @@ ClassicUI.optionsTable = {
 										[5] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Achievement Icon']..L['Achievement Icon'],
 										[26] = ClassicUI.MICROBUTTONS_OPTION_ICONS['BFA Achievement Icon']..L['BFA Achievement Icon'],
 										[6] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Quest Icon']..L['Quest Icon'],
+										[32] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Housing Icon']..L['Housing Icon'],
 										[9] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Icon']..L['LFD Icon'],
 										[24] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Normalized Icon']..L['LFD Normalized Icon'],
 										[10] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Collections Icon']..L['Collections Icon'],
@@ -1863,7 +1981,7 @@ ClassicUI.optionsTable = {
 							}
 						},
 						ProfessionMicroButton = {
-							order = function() return 6 + ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.order end,
+							order = function() return 9 + ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.order end,
 							type = "group",
 							name = function() return '|cffeda55f[|r|cffff6720'..(ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.order < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.order..'|r|cffeda55f] - |r'..string.gsub(ClassicUI.MICROBUTTONS_OPTION_ICONS[ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.iconMicroButton].name],':32:24:',':20:15:',1)..' '..L['Profession'] end,
 							desc = L['ProfessionMicroButton'],
@@ -1928,10 +2046,103 @@ ClassicUI.optionsTable = {
 								Header2 = {
 									type = 'header',
 									order = 6,
+									name = L['MicroButtons Priority']
+								},
+								prioritySectionDesc = {
+									order = 7,
+									type = "description",
+									name = L['MICROBUTTONS_PRIORITY_DESC']
+								},
+								priorityValueText = {
+									order = 8,
+									type = "description",
+									width = 0.20,
+									name = function() return ' |cffbad152[|r|cff62e632'..(ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.priority < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.priority..'|r|cffbad152]|r' end
+								},
+								buttonPriorityUp = {
+									order = 9,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.priority <= ClassicUI.MICROBUTTONS_MIN_PRIORITY) and '-disabled' or '')..':0|t' end,
+									desc = L['UP'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.priority <= ClassicUI.MICROBUTTONS_MIN_PRIORITY end,
+									width = 0.26,
+									func = function()
+										ClassicUI:RepriorizeMicroButtonsDB("ProfessionMicroButton", "UP")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								buttonPriorityDown = {
+									order = 10,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.priority >= ClassicUI.MICROBUTTONS_MAX_PRIORITY) and '-disabled' or '')..':0|t' end,
+									desc = L['DOWN'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.priority >= ClassicUI.MICROBUTTONS_MAX_PRIORITY end,
+									width = 0.26,
+									func = function()
+										ClassicUI:RepriorizeMicroButtonsDB("ProfessionMicroButton", "DOWN")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								Spacer2 = {
+									type = "description",
+									order = 11,
+									name = "",
+									width = 0.05
+								},
+								buttonPriorityDefault = {
+									order = 12,
+									type = "execute",
+									name = function() return '|T'..(ClassicUI:IsMicroButtonsPriorityDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
+									desc = L['DefaultPriorityDesc'],
+									disabled = function() return ClassicUI:IsMicroButtonsPriorityDefaultDB() end,
+									width = 0.72,
+									func = function()
+										ClassicUI:RepriorizeMicroButtonsDB(nil, "DEFAULT")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								priorityIconList = {
+									order = 13,
+									type = "description",
+									name = function()
+										local prioOrderedArray = {}
+										for k, v in pairs(ClassicUI.db.profile.barsConfig.MicroButtons) do
+											if ((type(v) == 'table') and (type(v.priority) == 'number')) then
+												table.insert(prioOrderedArray, { k, v.priority } )
+											end
+										end
+										table.sort(prioOrderedArray, function(a, b) return a[2] < b[2] end)
+										local str = ""
+										local count = 0
+										for _, v in ipairs(prioOrderedArray) do
+											if (count == ClassicUI.db.profile.barsConfig.MicroButtons.maxMicroButtonsShown) then
+												str = str.."I"
+											end
+											str = str..string.gsub(ClassicUI.MICROBUTTONS_OPTION_ICONS[ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons[v[1]].iconMicroButton].name],':32:24:',':28:21:',1)
+											count = count + 1
+										end
+										if (count == ClassicUI.db.profile.barsConfig.MicroButtons.maxMicroButtonsShown) then
+											str = str.."I"
+										end
+										return str
+									end
+								},
+								Header3 = {
+									type = 'header',
+									order = 14,
 									name = L['ProfessionMicroButton']
 								},
 								hideMicroButton = {
-									order = 7,
+									order = 15,
 									type = "toggle",
 									name = L['Hide MicroButton'],
 									desc = L['Hide MicroButton'],
@@ -1940,14 +2151,11 @@ ClassicUI.optionsTable = {
 										ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.hideMicroButton = value
 										if (ClassicUI:IsEnabled()) then
 											if (ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.hideMicroButton) then
-												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
-													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
-													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
-												end
-												ClassicUI.HookMicroButtonsClass_UI_Watcher(ProfessionMicroButton)
 												ProfessionMicroButton:Hide()
 											else
-												ProfessionMicroButton:Show()
+												if not(ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[ProfessionMicroButton]) then
+													ProfessionMicroButton:Show()
+												end
 											end
 											ClassicUI.SetOrderInfoMicroButtons()
 											ClassicUI.SetPointsMicroButtons()
@@ -1955,7 +2163,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								keepGapMicroButton = {
-									order = 8,
+									order = 16,
 									type = "toggle",
 									name = L['Keep MicroButton Gap'],
 									desc = L['KeepMicroButtonGapDesc'],
@@ -1970,7 +2178,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								disableMicroButton = {
-									order = 9,
+									order = 17,
 									type = "toggle",
 									name = L['Disable MicroButton'],
 									desc = L['Disable MicroButton'],
@@ -1980,10 +2188,6 @@ ClassicUI.optionsTable = {
 										ClassicUI.cached_db_profile.barsConfig_MicroButtons_ProfessionMicroButton_disableMicroButton = value
 										if (ClassicUI:IsEnabled()) then
 											if (ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.disableMicroButton) then
-												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
-													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
-													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
-												end
 												if not(ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton) then
 													hooksecurefunc(MainMenuMicroButton, "UpdateMicroButton", ClassicUI.hook_MainMenuMicroButton_UpdateMicroButton)
 													ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton = true
@@ -1991,7 +2195,7 @@ ClassicUI.optionsTable = {
 												ProfessionMicroButton:Disable()
 											else
 												local enable = true
-												if ( StoreFrame and StoreFrame_IsShown() ) or ( ( GameMenuFrame and GameMenuFrame:IsShown() ) or ( SettingsPanel:IsShown() ) ) then
+												if ( StoreFrame and StoreFrame_IsShown() ) or ( ( GameMenuFrame and GameMenuFrame:IsShown() ) or ( SettingsPanel:IsShown() ) or Kiosk.IsEnabled() ) then
 													enable = false
 												end
 												if (enable) then
@@ -2002,7 +2206,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								disableMouseMicroButton = {
-									order = 10,
+									order = 18,
 									type = "toggle",
 									name = L['Disable Mouse'],
 									desc = L['DisableMouseMicroButtonDesc'],
@@ -2019,7 +2223,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								xOffsetMicroButton = {
-									order = 11,
+									order = 19,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -2036,7 +2240,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								yOffsetMicroButton = {
-									order = 12,
+									order = 20,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -2053,7 +2257,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								alphaMicroButton = {
-									order = 13,
+									order = 21,
 									type = "range",
 									softMin = 0,
 									softMax = 1,
@@ -2083,12 +2287,12 @@ ClassicUI.optionsTable = {
 									end
 								},
 								iconMicroButton = {
-									order = 14,
+									order = 22,
 									type = "select",
 									style = "radio",
 									name = L['iconMicroButton'],
 									width = 1.12,
-									sorting = { 4, 2, 15, 16, 17, 18, 19, 11, 3, 12, 1, 5, 26, 6, 9, 24, 10, 13, 20, 27, 28, 29, 30, 31 },
+									sorting = { 4, 2, 15, 16, 17, 18, 19, 11, 3, 12, 1, 5, 26, 6, 32, 9, 24, 10, 13, 20, 27, 28, 29, 30, 31 },
 									values = {
 										[4] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Profession Icon']..L['Profession Icon [D]'],
 										[2] = ClassicUI.MICROBUTTONS_OPTION_ICONS['SpellBook Icon']..L['SpellBook Icon'],
@@ -2104,6 +2308,7 @@ ClassicUI.optionsTable = {
 										[5] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Achievement Icon']..L['Achievement Icon'],
 										[26] = ClassicUI.MICROBUTTONS_OPTION_ICONS['BFA Achievement Icon']..L['BFA Achievement Icon'],
 										[6] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Quest Icon']..L['Quest Icon'],
+										[32] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Housing Icon']..L['Housing Icon'],
 										[9] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Icon']..L['LFD Icon'],
 										[24] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Normalized Icon']..L['LFD Normalized Icon'],
 										[10] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Collections Icon']..L['Collections Icon'],
@@ -2130,7 +2335,7 @@ ClassicUI.optionsTable = {
 							}
 						},
 						PlayerSpellsMicroButton = {
-							order = function() return 6 + ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.order end,
+							order = function() return 9 + ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.order end,
 							type = "group",
 							name = function() return '|cffeda55f[|r|cffff6720'..(ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.order < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.order..'|r|cffeda55f] - |r'..string.gsub(ClassicUI.MICROBUTTONS_OPTION_ICONS[ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.iconMicroButton].name],':32:24:',':20:15:',1)..' '..L['PlayerSpells'] end,
 							desc = L['PlayerSpellsMicroButton'],
@@ -2195,10 +2400,103 @@ ClassicUI.optionsTable = {
 								Header2 = {
 									type = 'header',
 									order = 6,
+									name = L['MicroButtons Priority']
+								},
+								prioritySectionDesc = {
+									order = 7,
+									type = "description",
+									name = L['MICROBUTTONS_PRIORITY_DESC']
+								},
+								priorityValueText = {
+									order = 8,
+									type = "description",
+									width = 0.20,
+									name = function() return ' |cffbad152[|r|cff62e632'..(ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.priority < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.priority..'|r|cffbad152]|r' end
+								},
+								buttonPriorityUp = {
+									order = 9,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.priority <= ClassicUI.MICROBUTTONS_MIN_PRIORITY) and '-disabled' or '')..':0|t' end,
+									desc = L['UP'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.priority <= ClassicUI.MICROBUTTONS_MIN_PRIORITY end,
+									width = 0.26,
+									func = function()
+										ClassicUI:RepriorizeMicroButtonsDB("PlayerSpellsMicroButton", "UP")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								buttonPriorityDown = {
+									order = 10,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.priority >= ClassicUI.MICROBUTTONS_MAX_PRIORITY) and '-disabled' or '')..':0|t' end,
+									desc = L['DOWN'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.priority >= ClassicUI.MICROBUTTONS_MAX_PRIORITY end,
+									width = 0.26,
+									func = function()
+										ClassicUI:RepriorizeMicroButtonsDB("PlayerSpellsMicroButton", "DOWN")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								Spacer2 = {
+									type = "description",
+									order = 11,
+									name = "",
+									width = 0.05
+								},
+								buttonPriorityDefault = {
+									order = 12,
+									type = "execute",
+									name = function() return '|T'..(ClassicUI:IsMicroButtonsPriorityDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
+									desc = L['DefaultPriorityDesc'],
+									disabled = function() return ClassicUI:IsMicroButtonsPriorityDefaultDB() end,
+									width = 0.72,
+									func = function()
+										ClassicUI:RepriorizeMicroButtonsDB(nil, "DEFAULT")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								priorityIconList = {
+									order = 13,
+									type = "description",
+									name = function()
+										local prioOrderedArray = {}
+										for k, v in pairs(ClassicUI.db.profile.barsConfig.MicroButtons) do
+											if ((type(v) == 'table') and (type(v.priority) == 'number')) then
+												table.insert(prioOrderedArray, { k, v.priority } )
+											end
+										end
+										table.sort(prioOrderedArray, function(a, b) return a[2] < b[2] end)
+										local str = ""
+										local count = 0
+										for _, v in ipairs(prioOrderedArray) do
+											if (count == ClassicUI.db.profile.barsConfig.MicroButtons.maxMicroButtonsShown) then
+												str = str.."I"
+											end
+											str = str..string.gsub(ClassicUI.MICROBUTTONS_OPTION_ICONS[ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons[v[1]].iconMicroButton].name],':32:24:',':28:21:',1)
+											count = count + 1
+										end
+										if (count == ClassicUI.db.profile.barsConfig.MicroButtons.maxMicroButtonsShown) then
+											str = str.."I"
+										end
+										return str
+									end
+								},
+								Header3 = {
+									type = 'header',
+									order = 14,
 									name = L['PlayerSpellsMicroButton']
 								},
 								hideMicroButton = {
-									order = 7,
+									order = 15,
 									type = "toggle",
 									name = L['Hide MicroButton'],
 									desc = L['Hide MicroButton'],
@@ -2207,14 +2505,11 @@ ClassicUI.optionsTable = {
 										ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.hideMicroButton = value
 										if (ClassicUI:IsEnabled()) then
 											if (ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.hideMicroButton) then
-												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
-													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
-													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
-												end
-												ClassicUI.HookMicroButtonsClass_UI_Watcher(PlayerSpellsMicroButton)
 												PlayerSpellsMicroButton:Hide()
 											else
-												PlayerSpellsMicroButton:Show()
+												if not(ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[PlayerSpellsMicroButton]) then
+													PlayerSpellsMicroButton:Show()
+												end
 											end
 											ClassicUI.SetOrderInfoMicroButtons()
 											ClassicUI.SetPointsMicroButtons()
@@ -2222,7 +2517,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								keepGapMicroButton = {
-									order = 8,
+									order = 16,
 									type = "toggle",
 									name = L['Keep MicroButton Gap'],
 									desc = L['KeepMicroButtonGapDesc'],
@@ -2237,7 +2532,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								disableMicroButton = {
-									order = 9,
+									order = 17,
 									type = "toggle",
 									name = L['Disable MicroButton'],
 									desc = L['Disable MicroButton'],
@@ -2247,10 +2542,6 @@ ClassicUI.optionsTable = {
 										ClassicUI.cached_db_profile.barsConfig_MicroButtons_PlayerSpellsMicroButton_disableMicroButton = value
 										if (ClassicUI:IsEnabled()) then
 											if (ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.disableMicroButton) then
-												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
-													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
-													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
-												end
 												if not(ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton) then
 													hooksecurefunc(MainMenuMicroButton, "UpdateMicroButton", ClassicUI.hook_MainMenuMicroButton_UpdateMicroButton)
 													ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton = true
@@ -2258,7 +2549,7 @@ ClassicUI.optionsTable = {
 												PlayerSpellsMicroButton:Disable()
 											else
 												local enable = true
-												if ( StoreFrame and StoreFrame_IsShown() ) or ( ( GameMenuFrame and GameMenuFrame:IsShown() ) or ( SettingsPanel:IsShown() ) ) then
+												if ( StoreFrame and StoreFrame_IsShown() ) or ( ( GameMenuFrame and GameMenuFrame:IsShown() ) or ( SettingsPanel:IsShown() ) or Kiosk.IsEnabled() ) then
 													enable = false
 												end
 												if (enable) then
@@ -2269,7 +2560,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								disableMouseMicroButton = {
-									order = 10,
+									order = 18,
 									type = "toggle",
 									name = L['Disable Mouse'],
 									desc = L['DisableMouseMicroButtonDesc'],
@@ -2286,7 +2577,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								xOffsetMicroButton = {
-									order = 11,
+									order = 19,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -2303,7 +2594,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								yOffsetMicroButton = {
-									order = 12,
+									order = 20,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -2320,7 +2611,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								alphaMicroButton = {
-									order = 13,
+									order = 21,
 									type = "range",
 									softMin = 0,
 									softMax = 1,
@@ -2350,12 +2641,12 @@ ClassicUI.optionsTable = {
 									end
 								},
 								iconMicroButton = {
-									order = 14,
+									order = 22,
 									type = "select",
 									style = "radio",
 									name = L['iconMicroButton'],
 									width = 1.12,
-									sorting = { 23, 21, 22, 3, 2, 15, 16, 11, 1, 27, 28, 29, 30, 4, 17, 18, 19, 12, 5, 26, 6, 9, 24, 10, 13, 20, 31 },
+									sorting = { 23, 21, 22, 3, 2, 15, 16, 11, 1, 27, 28, 29, 30, 4, 17, 18, 19, 12, 5, 26, 6, 32, 9, 24, 10, 13, 20, 31 },
 									values = {
 										[23] = ClassicUI.MICROBUTTONS_OPTION_ICONS['SB/T Variable Icon']..L['SB/T Variable Icon [*][D]'],
 										[21] = ClassicUI.MICROBUTTONS_OPTION_ICONS['SpellBook/Talents Icon']..L['SpellBook/Talents Icon'],
@@ -2377,6 +2668,7 @@ ClassicUI.optionsTable = {
 										[5] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Achievement Icon']..L['Achievement Icon'],
 										[26] = ClassicUI.MICROBUTTONS_OPTION_ICONS['BFA Achievement Icon']..L['BFA Achievement Icon'],
 										[6] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Quest Icon']..L['Quest Icon'],
+										[32] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Housing Icon']..L['Housing Icon'],
 										[9] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Icon']..L['LFD Icon'],
 										[24] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Normalized Icon']..L['LFD Normalized Icon'],
 										[10] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Collections Icon']..L['Collections Icon'],
@@ -2401,7 +2693,7 @@ ClassicUI.optionsTable = {
 											if (ClassicUI:IsEnabled()) then
 												if (value == 23) then	-- SB/T Variable Icon
 													if (PlayerSpellsFrame ~= nil and PlayerSpellsUtil ~= nil) then
-														if (PlayerSpellsFrame.frameTabsToTabID[PlayerSpellsUtil.FrameTabs.SpellBook] == PlayerSpellsFrame.internalTabTracker.tabKey) then
+														if (PlayerSpellsFrame.frameTabsToTabID[PlayerSpellsUtil.FrameTabs.SpellBook] == PlayerSpellsFrame.internalTabTracker.tabID) then
 															PlayerSpellsMicroButton:SetNormalTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].normalTextureSB)
 															PlayerSpellsMicroButton:SetPushedTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].pushedTextureSB)
 															PlayerSpellsMicroButton:SetDisabledTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].disabledTextureSB)
@@ -2430,7 +2722,7 @@ ClassicUI.optionsTable = {
 							}
 						},
 						AchievementMicroButton = {
-							order = function() return 6 + ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.order end,
+							order = function() return 9 + ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.order end,
 							type = "group",
 							name = function() return '|cffeda55f[|r|cffff6720'..(ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.order < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.order..'|r|cffeda55f] - |r'..string.gsub(ClassicUI.MICROBUTTONS_OPTION_ICONS[ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.iconMicroButton].name],':32:24:',':20:15:',1)..' '..L['Achievement'] end,
 							desc = L['AchievementMicroButton'],
@@ -2495,10 +2787,103 @@ ClassicUI.optionsTable = {
 								Header2 = {
 									type = 'header',
 									order = 6,
+									name = L['MicroButtons Priority']
+								},
+								prioritySectionDesc = {
+									order = 7,
+									type = "description",
+									name = L['MICROBUTTONS_PRIORITY_DESC']
+								},
+								priorityValueText = {
+									order = 8,
+									type = "description",
+									width = 0.20,
+									name = function() return ' |cffbad152[|r|cff62e632'..(ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.priority < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.priority..'|r|cffbad152]|r' end
+								},
+								buttonPriorityUp = {
+									order = 9,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.priority <= ClassicUI.MICROBUTTONS_MIN_PRIORITY) and '-disabled' or '')..':0|t' end,
+									desc = L['UP'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.priority <= ClassicUI.MICROBUTTONS_MIN_PRIORITY end,
+									width = 0.26,
+									func = function()
+										ClassicUI:RepriorizeMicroButtonsDB("AchievementMicroButton", "UP")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								buttonPriorityDown = {
+									order = 10,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.priority >= ClassicUI.MICROBUTTONS_MAX_PRIORITY) and '-disabled' or '')..':0|t' end,
+									desc = L['DOWN'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.priority >= ClassicUI.MICROBUTTONS_MAX_PRIORITY end,
+									width = 0.26,
+									func = function()
+										ClassicUI:RepriorizeMicroButtonsDB("AchievementMicroButton", "DOWN")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								Spacer2 = {
+									type = "description",
+									order = 11,
+									name = "",
+									width = 0.05
+								},
+								buttonPriorityDefault = {
+									order = 12,
+									type = "execute",
+									name = function() return '|T'..(ClassicUI:IsMicroButtonsPriorityDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
+									desc = L['DefaultPriorityDesc'],
+									disabled = function() return ClassicUI:IsMicroButtonsPriorityDefaultDB() end,
+									width = 0.72,
+									func = function()
+										ClassicUI:RepriorizeMicroButtonsDB(nil, "DEFAULT")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								priorityIconList = {
+									order = 13,
+									type = "description",
+									name = function()
+										local prioOrderedArray = {}
+										for k, v in pairs(ClassicUI.db.profile.barsConfig.MicroButtons) do
+											if ((type(v) == 'table') and (type(v.priority) == 'number')) then
+												table.insert(prioOrderedArray, { k, v.priority } )
+											end
+										end
+										table.sort(prioOrderedArray, function(a, b) return a[2] < b[2] end)
+										local str = ""
+										local count = 0
+										for _, v in ipairs(prioOrderedArray) do
+											if (count == ClassicUI.db.profile.barsConfig.MicroButtons.maxMicroButtonsShown) then
+												str = str.."I"
+											end
+											str = str..string.gsub(ClassicUI.MICROBUTTONS_OPTION_ICONS[ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons[v[1]].iconMicroButton].name],':32:24:',':28:21:',1)
+											count = count + 1
+										end
+										if (count == ClassicUI.db.profile.barsConfig.MicroButtons.maxMicroButtonsShown) then
+											str = str.."I"
+										end
+										return str
+									end
+								},
+								Header3 = {
+									type = 'header',
+									order = 14,
 									name = L['AchievementMicroButton']
 								},
 								hideMicroButton = {
-									order = 7,
+									order = 15,
 									type = "toggle",
 									name = L['Hide MicroButton'],
 									desc = L['Hide MicroButton'],
@@ -2507,14 +2892,11 @@ ClassicUI.optionsTable = {
 										ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.hideMicroButton = value
 										if (ClassicUI:IsEnabled()) then
 											if (ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.hideMicroButton) then
-												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
-													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
-													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
-												end
-												ClassicUI.HookMicroButtonsClass_UI_Watcher(AchievementMicroButton)
 												AchievementMicroButton:Hide()
 											else
-												AchievementMicroButton:Show()
+												if not(ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[AchievementMicroButton]) then
+													AchievementMicroButton:Show()
+												end
 											end
 											ClassicUI.SetOrderInfoMicroButtons()
 											ClassicUI.SetPointsMicroButtons()
@@ -2522,7 +2904,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								keepGapMicroButton = {
-									order = 8,
+									order = 16,
 									type = "toggle",
 									name = L['Keep MicroButton Gap'],
 									desc = L['KeepMicroButtonGapDesc'],
@@ -2537,7 +2919,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								disableMicroButton = {
-									order = 9,
+									order = 17,
 									type = "toggle",
 									name = L['Disable MicroButton'],
 									desc = L['Disable MicroButton'],
@@ -2547,10 +2929,6 @@ ClassicUI.optionsTable = {
 										ClassicUI.cached_db_profile.barsConfig_MicroButtons_AchievementMicroButton_disableMicroButton = value
 										if (ClassicUI:IsEnabled()) then
 											if (ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.disableMicroButton) then
-												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
-													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
-													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
-												end
 												if not(ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton) then
 													hooksecurefunc(MainMenuMicroButton, "UpdateMicroButton", ClassicUI.hook_MainMenuMicroButton_UpdateMicroButton)
 													ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton = true
@@ -2562,10 +2940,10 @@ ClassicUI.optionsTable = {
 												AchievementMicroButton:Disable()
 											else
 												local enable = true
-												if ( StoreFrame and StoreFrame_IsShown() ) or ( ( GameMenuFrame and GameMenuFrame:IsShown() ) or ( SettingsPanel:IsShown() ) ) then
+												if ( StoreFrame and StoreFrame_IsShown() ) or ( ( GameMenuFrame and GameMenuFrame:IsShown() ) or ( SettingsPanel:IsShown() ) or Kiosk.IsEnabled() ) then
 													enable = false
 												else
-													if Kiosk.IsEnabled() or (not( AchievementFrame and AchievementFrame:IsShown() ) and not( ( HasCompletedAnyAchievement() or IsInGuild() ) and CanShowAchievementUI() )) then
+													if (not( AchievementFrame and AchievementFrame:IsShown() ) and not( ( HasCompletedAnyAchievement() or IsInGuild() ) and CanShowAchievementUI() )) then
 														enable = false
 													end
 												end
@@ -2577,7 +2955,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								disableMouseMicroButton = {
-									order = 10,
+									order = 18,
 									type = "toggle",
 									name = L['Disable Mouse'],
 									desc = L['DisableMouseMicroButtonDesc'],
@@ -2594,7 +2972,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								xOffsetMicroButton = {
-									order = 11,
+									order = 19,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -2611,7 +2989,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								yOffsetMicroButton = {
-									order = 12,
+									order = 20,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -2628,7 +3006,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								alphaMicroButton = {
-									order = 13,
+									order = 21,
 									type = "range",
 									softMin = 0,
 									softMax = 1,
@@ -2658,12 +3036,12 @@ ClassicUI.optionsTable = {
 									end
 								},
 								iconMicroButton = {
-									order = 14,
+									order = 22,
 									type = "select",
 									style = "radio",
 									name = L['iconMicroButton'],
 									width = 1.12,
-									sorting = { 5, 26, 15, 16, 17, 4, 1, 18, 19, 11, 2, 3, 12, 6, 9, 24, 10, 13, 20, 27, 28, 29, 30, 31 },
+									sorting = { 5, 26, 15, 16, 17, 4, 1, 18, 19, 11, 2, 3, 12, 6, 32, 9, 24, 10, 13, 20, 27, 28, 29, 30, 31 },
 									values = {
 										[5] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Achievement Icon']..L['Achievement Icon [D]'],
 										[26] = ClassicUI.MICROBUTTONS_OPTION_ICONS['BFA Achievement Icon']..L['BFA Achievement Icon'],
@@ -2679,6 +3057,7 @@ ClassicUI.optionsTable = {
 										[3] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Talents Icon']..L['Talents Icon'],
 										[12] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Store Icon']..L['Store Icon'],
 										[6] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Quest Icon']..L['Quest Icon'],
+										[32] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Housing Icon']..L['Housing Icon'],
 										[9] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Icon']..L['LFD Icon'],
 										[24] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Normalized Icon']..L['LFD Normalized Icon'],
 										[10] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Collections Icon']..L['Collections Icon'],
@@ -2705,7 +3084,7 @@ ClassicUI.optionsTable = {
 							}
 						},
 						QuestLogMicroButton = {
-							order = function() return 6 + ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.order end,
+							order = function() return 9 + ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.order end,
 							type = "group",
 							name = function() return '|cffeda55f[|r|cffff6720'..(ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.order < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.order..'|r|cffeda55f] - |r'..string.gsub(ClassicUI.MICROBUTTONS_OPTION_ICONS[ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.iconMicroButton].name],':32:24:',':20:15:',1)..' '..L['QuestLog'] end,
 							desc = L['QuestLogMicroButton'],
@@ -2770,10 +3149,103 @@ ClassicUI.optionsTable = {
 								Header2 = {
 									type = 'header',
 									order = 6,
+									name = L['MicroButtons Priority']
+								},
+								prioritySectionDesc = {
+									order = 7,
+									type = "description",
+									name = L['MICROBUTTONS_PRIORITY_DESC']
+								},
+								priorityValueText = {
+									order = 8,
+									type = "description",
+									width = 0.20,
+									name = function() return ' |cffbad152[|r|cff62e632'..(ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.priority < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.priority..'|r|cffbad152]|r' end
+								},
+								buttonPriorityUp = {
+									order = 9,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.priority <= ClassicUI.MICROBUTTONS_MIN_PRIORITY) and '-disabled' or '')..':0|t' end,
+									desc = L['UP'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.priority <= ClassicUI.MICROBUTTONS_MIN_PRIORITY end,
+									width = 0.26,
+									func = function()
+										ClassicUI:RepriorizeMicroButtonsDB("QuestLogMicroButton", "UP")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								buttonPriorityDown = {
+									order = 10,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.priority >= ClassicUI.MICROBUTTONS_MAX_PRIORITY) and '-disabled' or '')..':0|t' end,
+									desc = L['DOWN'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.priority >= ClassicUI.MICROBUTTONS_MAX_PRIORITY end,
+									width = 0.26,
+									func = function()
+										ClassicUI:RepriorizeMicroButtonsDB("QuestLogMicroButton", "DOWN")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								Spacer2 = {
+									type = "description",
+									order = 11,
+									name = "",
+									width = 0.05
+								},
+								buttonPriorityDefault = {
+									order = 12,
+									type = "execute",
+									name = function() return '|T'..(ClassicUI:IsMicroButtonsPriorityDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
+									desc = L['DefaultPriorityDesc'],
+									disabled = function() return ClassicUI:IsMicroButtonsPriorityDefaultDB() end,
+									width = 0.72,
+									func = function()
+										ClassicUI:RepriorizeMicroButtonsDB(nil, "DEFAULT")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								priorityIconList = {
+									order = 13,
+									type = "description",
+									name = function()
+										local prioOrderedArray = {}
+										for k, v in pairs(ClassicUI.db.profile.barsConfig.MicroButtons) do
+											if ((type(v) == 'table') and (type(v.priority) == 'number')) then
+												table.insert(prioOrderedArray, { k, v.priority } )
+											end
+										end
+										table.sort(prioOrderedArray, function(a, b) return a[2] < b[2] end)
+										local str = ""
+										local count = 0
+										for _, v in ipairs(prioOrderedArray) do
+											if (count == ClassicUI.db.profile.barsConfig.MicroButtons.maxMicroButtonsShown) then
+												str = str.."I"
+											end
+											str = str..string.gsub(ClassicUI.MICROBUTTONS_OPTION_ICONS[ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons[v[1]].iconMicroButton].name],':32:24:',':28:21:',1)
+											count = count + 1
+										end
+										if (count == ClassicUI.db.profile.barsConfig.MicroButtons.maxMicroButtonsShown) then
+											str = str.."I"
+										end
+										return str
+									end
+								},
+								Header3 = {
+									type = 'header',
+									order = 14,
 									name = L['QuestLogMicroButton']
 								},
 								hideMicroButton = {
-									order = 7,
+									order = 15,
 									type = "toggle",
 									name = L['Hide MicroButton'],
 									desc = L['Hide MicroButton'],
@@ -2782,14 +3254,11 @@ ClassicUI.optionsTable = {
 										ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.hideMicroButton = value
 										if (ClassicUI:IsEnabled()) then
 											if (ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.hideMicroButton) then
-												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
-													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
-													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
-												end
-												ClassicUI.HookMicroButtonsClass_UI_Watcher(QuestLogMicroButton)
 												QuestLogMicroButton:Hide()
 											else
-												QuestLogMicroButton:Show()
+												if not(ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[QuestLogMicroButton]) then
+													QuestLogMicroButton:Show()
+												end
 											end
 											ClassicUI.SetOrderInfoMicroButtons()
 											ClassicUI.SetPointsMicroButtons()
@@ -2797,7 +3266,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								keepGapMicroButton = {
-									order = 8,
+									order = 16,
 									type = "toggle",
 									name = L['Keep MicroButton Gap'],
 									desc = L['KeepMicroButtonGapDesc'],
@@ -2812,7 +3281,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								disableMicroButton = {
-									order = 9,
+									order = 17,
 									type = "toggle",
 									name = L['Disable MicroButton'],
 									desc = L['Disable MicroButton'],
@@ -2822,10 +3291,6 @@ ClassicUI.optionsTable = {
 										ClassicUI.cached_db_profile.barsConfig_MicroButtons_QuestLogMicroButton_disableMicroButton = value
 										if (ClassicUI:IsEnabled()) then
 											if (ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.disableMicroButton) then
-												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
-													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
-													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
-												end
 												if not(ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton) then
 													hooksecurefunc(MainMenuMicroButton, "UpdateMicroButton", ClassicUI.hook_MainMenuMicroButton_UpdateMicroButton)
 													ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton = true
@@ -2833,7 +3298,7 @@ ClassicUI.optionsTable = {
 												QuestLogMicroButton:Disable()
 											else
 												local enable = true
-												if ( StoreFrame and StoreFrame_IsShown() ) or ( ( GameMenuFrame and GameMenuFrame:IsShown() ) or ( SettingsPanel:IsShown() ) ) then
+												if ( StoreFrame and StoreFrame_IsShown() ) or ( ( GameMenuFrame and GameMenuFrame:IsShown() ) or ( SettingsPanel:IsShown() ) or Kiosk.IsEnabled() ) then
 													enable = false
 												end
 												if (enable) then
@@ -2844,7 +3309,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								disableMouseMicroButton = {
-									order = 10,
+									order = 18,
 									type = "toggle",
 									name = L['Disable Mouse'],
 									desc = L['DisableMouseMicroButtonDesc'],
@@ -2861,7 +3326,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								xOffsetMicroButton = {
-									order = 11,
+									order = 19,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -2878,7 +3343,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								yOffsetMicroButton = {
-									order = 12,
+									order = 20,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -2895,7 +3360,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								alphaMicroButton = {
-									order = 13,
+									order = 21,
 									type = "range",
 									softMin = 0,
 									softMax = 1,
@@ -2925,12 +3390,12 @@ ClassicUI.optionsTable = {
 									end
 								},
 								iconMicroButton = {
-									order = 14,
+									order = 22,
 									type = "select",
 									style = "radio",
 									name = L['iconMicroButton'],
 									width = 1.12,
-									sorting = { 6, 18, 15, 16, 17, 19, 1, 4, 11, 2, 3, 12, 5, 26, 9, 24, 10, 13, 20, 27, 28, 29, 30, 31 },
+									sorting = { 6, 18, 15, 16, 17, 19, 1, 4, 11, 2, 3, 12, 5, 26, 32, 9, 24, 10, 13, 20, 27, 28, 29, 30, 31 },
 									values = {
 										[6] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Quest Icon']..L['Quest Icon [D]'],
 										[18] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic Quest Icon']..L['Classic Quest Icon'],
@@ -2946,6 +3411,7 @@ ClassicUI.optionsTable = {
 										[12] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Store Icon']..L['Store Icon'],
 										[5] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Achievement Icon']..L['Achievement Icon'],
 										[26] = ClassicUI.MICROBUTTONS_OPTION_ICONS['BFA Achievement Icon']..L['BFA Achievement Icon'],
+										[32] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Housing Icon']..L['Housing Icon'],
 										[9] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Icon']..L['LFD Icon'],
 										[24] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Normalized Icon']..L['LFD Normalized Icon'],
 										[10] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Collections Icon']..L['Collections Icon'],
@@ -2971,8 +3437,417 @@ ClassicUI.optionsTable = {
 								}
 							}
 						},
+						HousingMicroButton = {
+							order = function() return 9 + ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.order end,
+							type = "group",
+							name = function() return '|cffeda55f[|r|cffff6720'..(ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.order < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.order..'|r|cffeda55f] - |r'..string.gsub(ClassicUI.MICROBUTTONS_OPTION_ICONS[ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.iconMicroButton].name],':32:24:',':20:15:',1)..' '..L['Housing'] end,
+							desc = L['HousingMicroButton'],
+							width = 4.0,
+							args = {
+								Header1 = {
+									type = 'header',
+									order = 1,
+									name = L['MicroButtons Order']
+								},
+								buttonOrderUp = {
+									order = 2,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.order <= ClassicUI.MICROBUTTONS_MIN_ORDER) and '-disabled' or '')..':0|t' end,
+									desc = L['UP'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.order <= ClassicUI.MICROBUTTONS_MIN_ORDER end,
+									width = 0.26,
+									func = function()
+										ClassicUI:ReorderMicroButtonsDB("HousingMicroButton", "UP")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								buttonOrderDown = {
+									order = 3,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.order >= ClassicUI.MICROBUTTONS_MAX_ORDER) and '-disabled' or '')..':0|t' end,
+									desc = L['DOWN'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.order >= ClassicUI.MICROBUTTONS_MAX_ORDER end,
+									width = 0.26,
+									func = function()
+										ClassicUI:ReorderMicroButtonsDB("HousingMicroButton", "DOWN")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								Spacer1 = {
+									type = "description",
+									order = 4,
+									name = "",
+									width = 0.05
+								},
+								buttonOrderDefault = {
+									order = 5,
+									type = "execute",
+									name = function() return '|T'..(ClassicUI:IsMicroButtonsOrderDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
+									desc = L['DefaultOrderDesc'],
+									disabled = function() return ClassicUI:IsMicroButtonsOrderDefaultDB() end,
+									width = 0.72,
+									func = function()
+										ClassicUI:ReorderMicroButtonsDB(nil, "DEFAULT")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								Header2 = {
+									type = 'header',
+									order = 6,
+									name = L['MicroButtons Priority']
+								},
+								prioritySectionDesc = {
+									order = 7,
+									type = "description",
+									name = L['MICROBUTTONS_PRIORITY_DESC']
+								},
+								priorityValueText = {
+									order = 8,
+									type = "description",
+									width = 0.20,
+									name = function() return ' |cffbad152[|r|cff62e632'..(ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.priority < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.priority..'|r|cffbad152]|r' end
+								},
+								buttonPriorityUp = {
+									order = 9,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.priority <= ClassicUI.MICROBUTTONS_MIN_PRIORITY) and '-disabled' or '')..':0|t' end,
+									desc = L['UP'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.priority <= ClassicUI.MICROBUTTONS_MIN_PRIORITY end,
+									width = 0.26,
+									func = function()
+										ClassicUI:RepriorizeMicroButtonsDB("HousingMicroButton", "UP")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								buttonPriorityDown = {
+									order = 10,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.priority >= ClassicUI.MICROBUTTONS_MAX_PRIORITY) and '-disabled' or '')..':0|t' end,
+									desc = L['DOWN'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.priority >= ClassicUI.MICROBUTTONS_MAX_PRIORITY end,
+									width = 0.26,
+									func = function()
+										ClassicUI:RepriorizeMicroButtonsDB("HousingMicroButton", "DOWN")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								Spacer2 = {
+									type = "description",
+									order = 11,
+									name = "",
+									width = 0.05
+								},
+								buttonPriorityDefault = {
+									order = 12,
+									type = "execute",
+									name = function() return '|T'..(ClassicUI:IsMicroButtonsPriorityDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
+									desc = L['DefaultPriorityDesc'],
+									disabled = function() return ClassicUI:IsMicroButtonsPriorityDefaultDB() end,
+									width = 0.72,
+									func = function()
+										ClassicUI:RepriorizeMicroButtonsDB(nil, "DEFAULT")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								priorityIconList = {
+									order = 13,
+									type = "description",
+									name = function()
+										local prioOrderedArray = {}
+										for k, v in pairs(ClassicUI.db.profile.barsConfig.MicroButtons) do
+											if ((type(v) == 'table') and (type(v.priority) == 'number')) then
+												table.insert(prioOrderedArray, { k, v.priority } )
+											end
+										end
+										table.sort(prioOrderedArray, function(a, b) return a[2] < b[2] end)
+										local str = ""
+										local count = 0
+										for _, v in ipairs(prioOrderedArray) do
+											if (count == ClassicUI.db.profile.barsConfig.MicroButtons.maxMicroButtonsShown) then
+												str = str.."I"
+											end
+											str = str..string.gsub(ClassicUI.MICROBUTTONS_OPTION_ICONS[ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons[v[1]].iconMicroButton].name],':32:24:',':28:21:',1)
+											count = count + 1
+										end
+										if (count == ClassicUI.db.profile.barsConfig.MicroButtons.maxMicroButtonsShown) then
+											str = str.."I"
+										end
+										return str
+									end
+								},
+								Header3 = {
+									type = 'header',
+									order = 14,
+									name = L['HousingMicroButton']
+								},
+								hideMicroButton = {
+									order = 15,
+									type = "toggle",
+									name = L['Hide MicroButton'],
+									desc = L['Hide MicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.hideMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.hideMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.hideMicroButton) then
+												HousingMicroButton:Hide()
+											else
+												if not(ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[HousingMicroButton]) then
+													HousingMicroButton:Show()
+												end
+											end
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								keepGapMicroButton = {
+									order = 16,
+									type = "toggle",
+									name = L['Keep MicroButton Gap'],
+									desc = L['KeepMicroButtonGapDesc'],
+									disabled = function() return not(ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.hideMicroButton) end,
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.keepGapMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.keepGapMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								disableMicroButton = {
+									order = 17,
+									type = "toggle",
+									name = L['Disable MicroButton'],
+									desc = L['Disable MicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.disableMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.disableMicroButton = value
+										ClassicUI.cached_db_profile.barsConfig_MicroButtons_HousingMicroButton_disableMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.disableMicroButton) then
+												if not(ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton) then
+													hooksecurefunc(MainMenuMicroButton, "UpdateMicroButton", ClassicUI.hook_MainMenuMicroButton_UpdateMicroButton)
+													ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton = true
+												end
+												HousingMicroButton:Disable()
+											else
+												local enable = true
+												if ( StoreFrame and StoreFrame_IsShown() ) or ( ( GameMenuFrame and GameMenuFrame:IsShown() ) or ( SettingsPanel:IsShown() ) or Kiosk.IsEnabled() ) then
+													enable = false
+												else
+													if ( PlayerIsTimerunning() ) then
+														enable = false
+													end
+												end
+												if (enable) then
+													HousingMicroButton:Enable()
+												end
+											end
+										end
+									end,
+								},
+								disableMouseMicroButton = {
+									order = 18,
+									type = "toggle",
+									name = L['Disable Mouse'],
+									desc = L['DisableMouseMicroButtonDesc'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.disableMouseMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.disableMouseMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.disableMouseMicroButton) then
+												HousingMicroButton:EnableMouse(false)
+											else
+												HousingMicroButton:EnableMouse(true)
+											end
+										end
+									end,
+								},
+								classicNotificationMicroButton = {
+									order = 19,
+									type = "toggle",
+									name = L['classicNotificationMicroButton'],
+									desc = L['classicNotificationMicroButtonDesc'],
+									width = "double",
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.classicNotificationMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.classicNotificationMicroButton = value
+										ClassicUI.cached_db_profile.barsConfig_MicroButtons_HousingMicroButton_classicNotificationMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (value) then
+												if not(ClassicUI.hooked_HousingMicroButton_HousingTutorialsNewPipMixin_Init) then
+													hooksecurefunc(HousingTutorialsNewPipMixin, "Init", ClassicUI.hook_HousingMicroButton_HousingTutorialsNewPipMixin_Init)
+													ClassicUI.hooked_HousingMicroButton_HousingTutorialsNewPipMixin_Init = true
+												end
+												if not(ClassicUI.hooked_HousingMicroButton_HousingTutorialsNewPipMixin_OnHousingDashboardToggled) then
+													hooksecurefunc(HousingTutorialsNewPipMixin, "OnHousingDashboardToggled", ClassicUI.hook_HousingMicroButton_HousingTutorialsNewPipMixin_OnHousingDashboardToggled)
+													ClassicUI.hooked_HousingMicroButton_HousingTutorialsNewPipMixin_OnHousingDashboardToggled = true
+												end
+												HousingMicroButton.CUI_NotificationOverlay:SetAlpha(1)
+												HousingMicroButton.CUI_NotificationOverlay:SetShown(HousingMicroButton.NotificationOverlay:IsShown())
+												HousingMicroButton.NotificationOverlay:SetAlpha(0)
+												HousingMicroButton.NotificationOverlay:Hide()
+												if (ClassicUI.showingTempHousingNotification or (not(ClassicUI.showingTempHousingNotification) and not(HousingMicroButton.CUI_NotificationOverlay:IsShown()))) then
+													HousingMicroButton.CUI_NotificationOverlay:Show()
+													ClassicUI.showingTempHousingNotification = GetTime() + 1.9
+													C_Timer.After(2, function()
+														if (GetTime() > ClassicUI.showingTempHousingNotification) then
+															HousingMicroButton.CUI_NotificationOverlay:Hide()
+															ClassicUI.showingTempHousingNotification = nil
+														end
+													end)
+												end
+											else
+												HousingMicroButton.NotificationOverlay:SetAlpha(1)
+												HousingMicroButton.NotificationOverlay:SetShown(HousingMicroButton.CUI_NotificationOverlay:IsShown())
+												HousingMicroButton.CUI_NotificationOverlay:SetAlpha(0)
+												HousingMicroButton.CUI_NotificationOverlay:Hide()
+												if (ClassicUI.showingTempHousingNotification or (not(ClassicUI.showingTempHousingNotification) and not(HousingMicroButton.NotificationOverlay:IsShown()))) then
+													HousingMicroButton.NotificationOverlay:Show()
+													ClassicUI.showingTempHousingNotification = GetTime() + 1.9
+													C_Timer.After(2, function()
+														if (GetTime() > ClassicUI.showingTempHousingNotification) then
+															HousingMicroButton.NotificationOverlay:Hide()
+															ClassicUI.showingTempHousingNotification = nil
+														end
+													end)
+												end
+											end
+										end
+									end,
+								},
+								xOffsetMicroButton = {
+									order = 20,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['xOffsetMicroButton'],
+									desc = L['xOffsetMicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.xOffsetMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.xOffsetMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								yOffsetMicroButton = {
+									order = 21,
+									type = "range",
+									softMin = -500,
+									softMax = 500,
+									step = 1,
+									bigStep = 10,
+									name = L['yOffsetMicroButton'],
+									desc = L['yOffsetMicroButton'],
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.yOffsetMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.yOffsetMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								alphaMicroButton = {
+									order = 22,
+									type = "range",
+									softMin = 0,
+									softMax = 1,
+									min = 0,
+									max = 1,
+									step = 0.01,
+									bigStep = 0.02,
+									name = L['alphaMicroButton'],
+									desc = string.gsub(L['alphaMicroButtonDesc'], "%$%$%*%*%$%$", ClassicUI.defaults.profile.barsConfig.MicroButtons.HousingMicroButton.alphaMicroButton, 1),
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.alphaMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.alphaMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if not(ClassicUI.hooked_HousingMicroButton_OnEnableOnDisable) then
+												if (math.abs(ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.alphaMicroButton-ClassicUI.db.defaults.profile.barsConfig.MicroButtons.HousingMicroButton.alphaMicroButton) > ClassicUI.STANDARD_EPSILON) then
+													HousingMicroButton:HookScript("OnEnable", ClassicUI.hookscript_MicroButtonOnEnable)
+													HousingMicroButton:HookScript("OnDisable", ClassicUI.hookscript_MicroButtonOnDisable)
+													ClassicUI.hooked_HousingMicroButton_OnEnableOnDisable = true
+												end
+											end
+											if (HousingMicroButton:IsEnabled()) then
+												ClassicUI.hookscript_MicroButtonOnEnable(HousingMicroButton)
+											else
+												ClassicUI.hookscript_MicroButtonOnDisable(HousingMicroButton)
+											end
+										end
+									end
+								},
+								iconMicroButton = {
+									order = 23,
+									type = "select",
+									style = "radio",
+									name = L['iconMicroButton'],
+									width = 1.12,
+									sorting = { 32, 17, 15, 16, 18, 19, 1, 4, 11, 2, 3, 12, 5, 26, 6, 9, 24, 10, 13, 20, 27, 28, 29, 30, 31 },
+									values = {
+										[32] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Housing Icon']..L['Housing Icon [D]'],
+										[17] = ClassicUI.MICROBUTTONS_OPTION_ICONS['World Icon']..L['World Icon'],
+										[15] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Abilities Icon']..L['Abilities Icon'],
+										[16] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Raid Icon']..L['Raid Icon'],
+										[18] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic Quest Icon']..L['Classic Quest Icon'],
+										[19] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic Social Icon']..L['Classic Social Icon'],
+										[1] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Class Icon']..L['Class Icon [*]'],
+										[4] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Profession Icon']..L['Profession Icon'],
+										[11] = ClassicUI.MICROBUTTONS_OPTION_ICONS['EJ Icon']..L['EJ Icon'],
+										[2] = ClassicUI.MICROBUTTONS_OPTION_ICONS['SpellBook Icon']..L['SpellBook Icon'],
+										[3] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Talents Icon']..L['Talents Icon'],
+										[12] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Store Icon']..L['Store Icon'],
+										[5] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Achievement Icon']..L['Achievement Icon'],
+										[26] = ClassicUI.MICROBUTTONS_OPTION_ICONS['BFA Achievement Icon']..L['BFA Achievement Icon'],
+										[6] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Quest Icon']..L['Quest Icon'],
+										[9] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Icon']..L['LFD Icon'],
+										[24] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Normalized Icon']..L['LFD Normalized Icon'],
+										[10] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Collections Icon']..L['Collections Icon'],
+										[13] = ClassicUI.MICROBUTTONS_OPTION_ICONS['MainMenu Icon']..L['MainMenu Icon'],
+										[20] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic MainMenu Icon']..L['Classic MainMenu Icon'],
+										[27] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Variable Icon']..L['PvP Variable Icon [*]'],
+										[28] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Horde Icon']..L['PvP Horde Icon'],
+										[29] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Alliance Icon']..L['PvP Alliance Icon'],
+										[30] = ClassicUI.MICROBUTTONS_OPTION_ICONS['PvP Neutral Icon']..L['PvP Neutral Icon'],
+										[31] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Bug Icon']..L['Bug Icon']
+									},
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.iconMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.iconMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											HousingMicroButton:SetNormalTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].normalTexture)
+											HousingMicroButton:SetPushedTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].pushedTexture)
+											HousingMicroButton:SetDisabledTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[value].disabledTexture)
+										end
+									end
+								}
+							}
+						},
 						GuildMicroButton = {
-							order = function() return 6 + ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.order end,
+							order = function() return 9 + ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.order end,
 							type = "group",
 							name = function() return '|cffeda55f[|r|cffff6720'..(ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.order < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.order..'|r|cffeda55f] - |r'..string.gsub(ClassicUI.MICROBUTTONS_OPTION_ICONS[ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.iconMicroButton].name],':32:24:',':20:15:',1)..' '..L['Guild'] end,
 							desc = L['GuildMicroButton'],
@@ -3037,10 +3912,103 @@ ClassicUI.optionsTable = {
 								Header2 = {
 									type = 'header',
 									order = 6,
+									name = L['MicroButtons Priority']
+								},
+								prioritySectionDesc = {
+									order = 7,
+									type = "description",
+									name = L['MICROBUTTONS_PRIORITY_DESC']
+								},
+								priorityValueText = {
+									order = 8,
+									type = "description",
+									width = 0.20,
+									name = function() return ' |cffbad152[|r|cff62e632'..(ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.priority < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.priority..'|r|cffbad152]|r' end
+								},
+								buttonPriorityUp = {
+									order = 9,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.priority <= ClassicUI.MICROBUTTONS_MIN_PRIORITY) and '-disabled' or '')..':0|t' end,
+									desc = L['UP'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.priority <= ClassicUI.MICROBUTTONS_MIN_PRIORITY end,
+									width = 0.26,
+									func = function()
+										ClassicUI:RepriorizeMicroButtonsDB("GuildMicroButton", "UP")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								buttonPriorityDown = {
+									order = 10,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.priority >= ClassicUI.MICROBUTTONS_MAX_PRIORITY) and '-disabled' or '')..':0|t' end,
+									desc = L['DOWN'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.priority >= ClassicUI.MICROBUTTONS_MAX_PRIORITY end,
+									width = 0.26,
+									func = function()
+										ClassicUI:RepriorizeMicroButtonsDB("GuildMicroButton", "DOWN")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								Spacer2 = {
+									type = "description",
+									order = 11,
+									name = "",
+									width = 0.05
+								},
+								buttonPriorityDefault = {
+									order = 12,
+									type = "execute",
+									name = function() return '|T'..(ClassicUI:IsMicroButtonsPriorityDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
+									desc = L['DefaultPriorityDesc'],
+									disabled = function() return ClassicUI:IsMicroButtonsPriorityDefaultDB() end,
+									width = 0.72,
+									func = function()
+										ClassicUI:RepriorizeMicroButtonsDB(nil, "DEFAULT")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								priorityIconList = {
+									order = 13,
+									type = "description",
+									name = function()
+										local prioOrderedArray = {}
+										for k, v in pairs(ClassicUI.db.profile.barsConfig.MicroButtons) do
+											if ((type(v) == 'table') and (type(v.priority) == 'number')) then
+												table.insert(prioOrderedArray, { k, v.priority } )
+											end
+										end
+										table.sort(prioOrderedArray, function(a, b) return a[2] < b[2] end)
+										local str = ""
+										local count = 0
+										for _, v in ipairs(prioOrderedArray) do
+											if (count == ClassicUI.db.profile.barsConfig.MicroButtons.maxMicroButtonsShown) then
+												str = str.."I"
+											end
+											str = str..string.gsub(ClassicUI.MICROBUTTONS_OPTION_ICONS[ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons[v[1]].iconMicroButton].name],':32:24:',':28:21:',1)
+											count = count + 1
+										end
+										if (count == ClassicUI.db.profile.barsConfig.MicroButtons.maxMicroButtonsShown) then
+											str = str.."I"
+										end
+										return str
+									end
+								},
+								Header3 = {
+									type = 'header',
+									order = 14,
 									name = L['GuildMicroButton']
 								},
 								hideMicroButton = {
-									order = 7,
+									order = 15,
 									type = "toggle",
 									name = L['Hide MicroButton'],
 									desc = L['Hide MicroButton'],
@@ -3049,14 +4017,11 @@ ClassicUI.optionsTable = {
 										ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.hideMicroButton = value
 										if (ClassicUI:IsEnabled()) then
 											if (ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.hideMicroButton) then
-												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
-													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
-													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
-												end
-												ClassicUI.HookMicroButtonsClass_UI_Watcher(GuildMicroButton)
 												GuildMicroButton:Hide()
 											else
-												GuildMicroButton:Show()
+												if not(ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[GuildMicroButton]) then
+													GuildMicroButton:Show()
+												end
 											end
 											ClassicUI.SetOrderInfoMicroButtons()
 											ClassicUI.SetPointsMicroButtons()
@@ -3064,7 +4029,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								keepGapMicroButton = {
-									order = 8,
+									order = 16,
 									type = "toggle",
 									name = L['Keep MicroButton Gap'],
 									desc = L['KeepMicroButtonGapDesc'],
@@ -3079,7 +4044,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								disableMicroButton = {
-									order = 9,
+									order = 17,
 									type = "toggle",
 									name = L['Disable MicroButton'],
 									desc = L['Disable MicroButton'],
@@ -3089,10 +4054,6 @@ ClassicUI.optionsTable = {
 										ClassicUI.cached_db_profile.barsConfig_MicroButtons_GuildMicroButton_disableMicroButton = value
 										if (ClassicUI:IsEnabled()) then
 											if (ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.disableMicroButton) then
-												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
-													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
-													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
-												end
 												if not(ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton) then
 													hooksecurefunc(MainMenuMicroButton, "UpdateMicroButton", ClassicUI.hook_MainMenuMicroButton_UpdateMicroButton)
 													ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton = true
@@ -3100,10 +4061,10 @@ ClassicUI.optionsTable = {
 												GuildMicroButton:Disable()
 											else
 												local enable = true
-												if ( StoreFrame and StoreFrame_IsShown() ) or ( ( GameMenuFrame and GameMenuFrame:IsShown() ) or ( SettingsPanel:IsShown() ) ) then
+												if ( StoreFrame and StoreFrame_IsShown() ) or ( ( GameMenuFrame and GameMenuFrame:IsShown() ) or ( SettingsPanel:IsShown() ) or Kiosk.IsEnabled() ) then
 													enable = false
 												else
-													if Kiosk.IsEnabled() or IsCommunitiesUIDisabledByTrialAccount() or UnitFactionGroup("player") == "Neutral" or (C_Club.IsEnabled() and ((not BNConnected()) or (C_Club.IsRestricted() ~= Enum.ClubRestrictionReason.None))) then
+													if IsCommunitiesUIDisabledByTrialAccount() or UnitFactionGroup("player") == "Neutral" or (C_Club.IsEnabled() and ((not BNConnected()) or (C_Club.IsRestricted() ~= Enum.ClubRestrictionReason.None))) then
 														enable = false
 													end
 												end
@@ -3115,7 +4076,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								disableMouseMicroButton = {
-									order = 10,
+									order = 18,
 									type = "toggle",
 									name = L['Disable Mouse'],
 									desc = L['DisableMouseMicroButtonDesc'],
@@ -3132,7 +4093,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								classicNotificationMicroButton = {
-									order = 11,
+									order = 19,
 									type = "toggle",
 									name = L['classicNotificationMicroButton'],
 									desc = L['classicNotificationMicroButtonDesc'],
@@ -3151,17 +4112,37 @@ ClassicUI.optionsTable = {
 												GuildMicroButton.CUI_NotificationOverlay:SetShown(GuildMicroButton.NotificationOverlay:IsShown())
 												GuildMicroButton.NotificationOverlay:SetAlpha(0)
 												GuildMicroButton.NotificationOverlay:Hide()
+												if (ClassicUI.showingTempGuildNotification or (not(ClassicUI.showingTempGuildNotification) and not(GuildMicroButton.CUI_NotificationOverlay:IsShown()))) then
+													GuildMicroButton.CUI_NotificationOverlay:Show()
+													ClassicUI.showingTempGuildNotification = GetTime() + 1.9
+													C_Timer.After(2, function()
+														if (GetTime() > ClassicUI.showingTempGuildNotification) then
+															GuildMicroButton.CUI_NotificationOverlay:Hide()
+															ClassicUI.showingTempGuildNotification = nil
+														end
+													end)
+												end
 											else
 												GuildMicroButton.NotificationOverlay:SetAlpha(1)
 												GuildMicroButton.NotificationOverlay:SetShown(GuildMicroButton.CUI_NotificationOverlay:IsShown())
 												GuildMicroButton.CUI_NotificationOverlay:SetAlpha(0)
 												GuildMicroButton.CUI_NotificationOverlay:Hide()
+												if (ClassicUI.showingTempGuildNotification or (not(ClassicUI.showingTempGuildNotification) and not(GuildMicroButton.NotificationOverlay:IsShown()))) then
+													GuildMicroButton.NotificationOverlay:Show()
+													ClassicUI.showingTempGuildNotification = GetTime() + 1.9
+													C_Timer.After(2, function()
+														if (GetTime() > ClassicUI.showingTempGuildNotification) then
+															GuildMicroButton.NotificationOverlay:Hide()
+															ClassicUI.showingTempGuildNotification = nil
+														end
+													end)
+												end
 											end
 										end
 									end,
 								},
 								goToGuildPanelOptionsPanel = {
-									order = 12,
+									order = 20,
 									type = "execute",
 									name = L['goToGuildPanelOptionsPanel'],
 									desc = L['goToGuildPanelOptionsPanelDesc'],
@@ -3196,7 +4177,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								xOffsetMicroButton = {
-									order = 13,
+									order = 21,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -3213,7 +4194,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								yOffsetMicroButton = {
-									order = 14,
+									order = 22,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -3230,7 +4211,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								alphaMicroButton = {
-									order = 15,
+									order = 23,
 									type = "range",
 									softMin = 0,
 									softMax = 1,
@@ -3260,12 +4241,12 @@ ClassicUI.optionsTable = {
 									end
 								},
 								iconMicroButton = {
-									order = 16,
+									order = 24,
 									type = "select",
 									style = "radio",
 									name = L['iconMicroButton'],
 									width = 1.12,
-									sorting = { 7, 8, 19, 15, 16, 17, 18, 1, 4, 11, 2, 3, 12, 5, 26, 6, 9, 24, 10, 13, 20, 27, 28, 29, 30, 31 },
+									sorting = { 7, 8, 19, 15, 16, 17, 18, 1, 4, 11, 2, 3, 12, 5, 26, 6, 32, 9, 24, 10, 13, 20, 27, 28, 29, 30, 31, 32 },
 									values = {
 										[7] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Guild Emblem']..L['Guild Emblem [*][D]'],
 										[8] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Bigger Guild Emblem']..L['Bigger Guild Emblem [*]'],
@@ -3283,6 +4264,7 @@ ClassicUI.optionsTable = {
 										[5] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Achievement Icon']..L['Achievement Icon'],
 										[26] = ClassicUI.MICROBUTTONS_OPTION_ICONS['BFA Achievement Icon']..L['BFA Achievement Icon'],
 										[6] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Quest Icon']..L['Quest Icon'],
+										[32] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Housing Icon']..L['Housing Icon'],
 										[9] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Icon']..L['LFD Icon'],
 										[24] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Normalized Icon']..L['LFD Normalized Icon'],
 										[10] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Collections Icon']..L['Collections Icon'],
@@ -3362,7 +4344,7 @@ ClassicUI.optionsTable = {
 							}
 						},
 						LFDMicroButton = {
-							order = function() return 6 + ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.order end,
+							order = function() return 9 + ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.order end,
 							type = "group",
 							name = function() return '|cffeda55f[|r|cffff6720'..(ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.order < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.order..'|r|cffeda55f] - |r'..string.gsub(ClassicUI.MICROBUTTONS_OPTION_ICONS[ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.iconMicroButton].name],':32:24:',':20:15:',1)..' '..L['LFD'] end,
 							desc = L['LFDMicroButton'],
@@ -3427,10 +4409,103 @@ ClassicUI.optionsTable = {
 								Header2 = {
 									type = 'header',
 									order = 6,
+									name = L['MicroButtons Priority']
+								},
+								prioritySectionDesc = {
+									order = 7,
+									type = "description",
+									name = L['MICROBUTTONS_PRIORITY_DESC']
+								},
+								priorityValueText = {
+									order = 8,
+									type = "description",
+									width = 0.20,
+									name = function() return ' |cffbad152[|r|cff62e632'..(ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.priority < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.priority..'|r|cffbad152]|r' end
+								},
+								buttonPriorityUp = {
+									order = 9,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.priority <= ClassicUI.MICROBUTTONS_MIN_PRIORITY) and '-disabled' or '')..':0|t' end,
+									desc = L['UP'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.priority <= ClassicUI.MICROBUTTONS_MIN_PRIORITY end,
+									width = 0.26,
+									func = function()
+										ClassicUI:RepriorizeMicroButtonsDB("LFDMicroButton", "UP")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								buttonPriorityDown = {
+									order = 10,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.priority >= ClassicUI.MICROBUTTONS_MAX_PRIORITY) and '-disabled' or '')..':0|t' end,
+									desc = L['DOWN'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.priority >= ClassicUI.MICROBUTTONS_MAX_PRIORITY end,
+									width = 0.26,
+									func = function()
+										ClassicUI:RepriorizeMicroButtonsDB("LFDMicroButton", "DOWN")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								Spacer2 = {
+									type = "description",
+									order = 11,
+									name = "",
+									width = 0.05
+								},
+								buttonPriorityDefault = {
+									order = 12,
+									type = "execute",
+									name = function() return '|T'..(ClassicUI:IsMicroButtonsPriorityDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
+									desc = L['DefaultPriorityDesc'],
+									disabled = function() return ClassicUI:IsMicroButtonsPriorityDefaultDB() end,
+									width = 0.72,
+									func = function()
+										ClassicUI:RepriorizeMicroButtonsDB(nil, "DEFAULT")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								priorityIconList = {
+									order = 13,
+									type = "description",
+									name = function()
+										local prioOrderedArray = {}
+										for k, v in pairs(ClassicUI.db.profile.barsConfig.MicroButtons) do
+											if ((type(v) == 'table') and (type(v.priority) == 'number')) then
+												table.insert(prioOrderedArray, { k, v.priority } )
+											end
+										end
+										table.sort(prioOrderedArray, function(a, b) return a[2] < b[2] end)
+										local str = ""
+										local count = 0
+										for _, v in ipairs(prioOrderedArray) do
+											if (count == ClassicUI.db.profile.barsConfig.MicroButtons.maxMicroButtonsShown) then
+												str = str.."I"
+											end
+											str = str..string.gsub(ClassicUI.MICROBUTTONS_OPTION_ICONS[ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons[v[1]].iconMicroButton].name],':32:24:',':28:21:',1)
+											count = count + 1
+										end
+										if (count == ClassicUI.db.profile.barsConfig.MicroButtons.maxMicroButtonsShown) then
+											str = str.."I"
+										end
+										return str
+									end
+								},
+								Header3 = {
+									type = 'header',
+									order = 14,
 									name = L['LFDMicroButton']
 								},
 								hideMicroButton = {
-									order = 7,
+									order = 15,
 									type = "toggle",
 									name = L['Hide MicroButton'],
 									desc = L['Hide MicroButton'],
@@ -3439,14 +4514,11 @@ ClassicUI.optionsTable = {
 										ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.hideMicroButton = value
 										if (ClassicUI:IsEnabled()) then
 											if (ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.hideMicroButton) then
-												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
-													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
-													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
-												end
-												ClassicUI.HookMicroButtonsClass_UI_Watcher(LFDMicroButton)
 												LFDMicroButton:Hide()
 											else
-												LFDMicroButton:Show()
+												if not(ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[LFDMicroButton]) then
+													LFDMicroButton:Show()
+												end
 											end
 											ClassicUI.SetOrderInfoMicroButtons()
 											ClassicUI.SetPointsMicroButtons()
@@ -3454,7 +4526,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								keepGapMicroButton = {
-									order = 8,
+									order = 16,
 									type = "toggle",
 									name = L['Keep MicroButton Gap'],
 									desc = L['KeepMicroButtonGapDesc'],
@@ -3469,7 +4541,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								disableMicroButton = {
-									order = 9,
+									order = 17,
 									type = "toggle",
 									name = L['Disable MicroButton'],
 									desc = L['Disable MicroButton'],
@@ -3479,10 +4551,6 @@ ClassicUI.optionsTable = {
 										ClassicUI.cached_db_profile.barsConfig_MicroButtons_LFDMicroButton_disableMicroButton = value
 										if (ClassicUI:IsEnabled()) then
 											if (ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.disableMicroButton) then
-												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
-													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
-													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
-												end
 												if not(ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton) then
 													hooksecurefunc(MainMenuMicroButton, "UpdateMicroButton", ClassicUI.hook_MainMenuMicroButton_UpdateMicroButton)
 													ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton = true
@@ -3494,7 +4562,7 @@ ClassicUI.optionsTable = {
 												LFDMicroButton:Disable()
 											else
 												local enable = true
-												if ( StoreFrame and StoreFrame_IsShown() ) or ( ( GameMenuFrame and GameMenuFrame:IsShown() ) or ( SettingsPanel:IsShown() ) ) then
+												if ( StoreFrame and StoreFrame_IsShown() ) or ( ( GameMenuFrame and GameMenuFrame:IsShown() ) or ( SettingsPanel:IsShown() ) or Kiosk.IsEnabled() ) then
 													enable = false
 												else
 													if not( PVEFrame and PVEFrame:IsShown() ) and ( not LFDMicroButton:IsActive() ) then
@@ -3509,7 +4577,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								disableMouseMicroButton = {
-									order = 10,
+									order = 18,
 									type = "toggle",
 									name = L['Disable Mouse'],
 									desc = L['DisableMouseMicroButtonDesc'],
@@ -3526,7 +4594,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								xOffsetMicroButton = {
-									order = 11,
+									order = 19,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -3543,7 +4611,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								yOffsetMicroButton = {
-									order = 12,
+									order = 20,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -3560,7 +4628,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								alphaMicroButton = {
-									order = 13,
+									order = 21,
 									type = "range",
 									softMin = 0,
 									softMax = 1,
@@ -3590,12 +4658,12 @@ ClassicUI.optionsTable = {
 									end
 								},
 								iconMicroButton = {
-									order = 14,
+									order = 22,
 									type = "select",
 									style = "radio",
 									name = L['iconMicroButton'],
 									width = 1.12,
-									sorting = { 9, 24, 27, 28, 29, 30, 15, 4, 16, 17, 18, 19, 1, 11, 12, 2, 3, 5, 26, 6, 10, 13, 20, 31 },
+									sorting = { 9, 24, 27, 28, 29, 30, 15, 4, 16, 17, 18, 19, 1, 11, 12, 2, 3, 5, 26, 6, 32, 10, 13, 20, 31 },
 									values = {
 										[9] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Icon']..L['LFD Icon [D]'],
 										[24] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Normalized Icon']..L['LFD Normalized Icon'],
@@ -3617,6 +4685,7 @@ ClassicUI.optionsTable = {
 										[5] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Achievement Icon']..L['Achievement Icon'],
 										[26] = ClassicUI.MICROBUTTONS_OPTION_ICONS['BFA Achievement Icon']..L['BFA Achievement Icon'],
 										[6] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Quest Icon']..L['Quest Icon'],
+										[32] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Housing Icon']..L['Housing Icon'],
 										[10] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Collections Icon']..L['Collections Icon'],
 										[13] = ClassicUI.MICROBUTTONS_OPTION_ICONS['MainMenu Icon']..L['MainMenu Icon'],
 										[20] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic MainMenu Icon']..L['Classic MainMenu Icon'],
@@ -3637,7 +4706,7 @@ ClassicUI.optionsTable = {
 							}
 						},
 						CollectionsMicroButton = {
-							order = function() return 6 + ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.order end,
+							order = function() return 9 + ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.order end,
 							type = "group",
 							name = function() return '|cffeda55f[|r|cffff6720'..(ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.order < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.order..'|r|cffeda55f] - |r'..string.gsub(ClassicUI.MICROBUTTONS_OPTION_ICONS[ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.iconMicroButton].name],':32:24:',':20:15:',1)..' '..L['Collections'] end,
 							desc = L['CollectionsMicroButton'],
@@ -3702,10 +4771,103 @@ ClassicUI.optionsTable = {
 								Header2 = {
 									type = 'header',
 									order = 6,
+									name = L['MicroButtons Priority']
+								},
+								prioritySectionDesc = {
+									order = 7,
+									type = "description",
+									name = L['MICROBUTTONS_PRIORITY_DESC']
+								},
+								priorityValueText = {
+									order = 8,
+									type = "description",
+									width = 0.20,
+									name = function() return ' |cffbad152[|r|cff62e632'..(ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.priority < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.priority..'|r|cffbad152]|r' end
+								},
+								buttonPriorityUp = {
+									order = 9,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.priority <= ClassicUI.MICROBUTTONS_MIN_PRIORITY) and '-disabled' or '')..':0|t' end,
+									desc = L['UP'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.priority <= ClassicUI.MICROBUTTONS_MIN_PRIORITY end,
+									width = 0.26,
+									func = function()
+										ClassicUI:RepriorizeMicroButtonsDB("CollectionsMicroButton", "UP")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								buttonPriorityDown = {
+									order = 10,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.priority >= ClassicUI.MICROBUTTONS_MAX_PRIORITY) and '-disabled' or '')..':0|t' end,
+									desc = L['DOWN'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.priority >= ClassicUI.MICROBUTTONS_MAX_PRIORITY end,
+									width = 0.26,
+									func = function()
+										ClassicUI:RepriorizeMicroButtonsDB("CollectionsMicroButton", "DOWN")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								Spacer2 = {
+									type = "description",
+									order = 11,
+									name = "",
+									width = 0.05
+								},
+								buttonPriorityDefault = {
+									order = 12,
+									type = "execute",
+									name = function() return '|T'..(ClassicUI:IsMicroButtonsPriorityDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
+									desc = L['DefaultPriorityDesc'],
+									disabled = function() return ClassicUI:IsMicroButtonsPriorityDefaultDB() end,
+									width = 0.72,
+									func = function()
+										ClassicUI:RepriorizeMicroButtonsDB(nil, "DEFAULT")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								priorityIconList = {
+									order = 13,
+									type = "description",
+									name = function()
+										local prioOrderedArray = {}
+										for k, v in pairs(ClassicUI.db.profile.barsConfig.MicroButtons) do
+											if ((type(v) == 'table') and (type(v.priority) == 'number')) then
+												table.insert(prioOrderedArray, { k, v.priority } )
+											end
+										end
+										table.sort(prioOrderedArray, function(a, b) return a[2] < b[2] end)
+										local str = ""
+										local count = 0
+										for _, v in ipairs(prioOrderedArray) do
+											if (count == ClassicUI.db.profile.barsConfig.MicroButtons.maxMicroButtonsShown) then
+												str = str.."I"
+											end
+											str = str..string.gsub(ClassicUI.MICROBUTTONS_OPTION_ICONS[ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons[v[1]].iconMicroButton].name],':32:24:',':28:21:',1)
+											count = count + 1
+										end
+										if (count == ClassicUI.db.profile.barsConfig.MicroButtons.maxMicroButtonsShown) then
+											str = str.."I"
+										end
+										return str
+									end
+								},
+								Header3 = {
+									type = 'header',
+									order = 14,
 									name = L['CollectionsMicroButton']
 								},
 								hideMicroButton = {
-									order = 7,
+									order = 15,
 									type = "toggle",
 									name = L['Hide MicroButton'],
 									desc = L['Hide MicroButton'],
@@ -3714,14 +4876,11 @@ ClassicUI.optionsTable = {
 										ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.hideMicroButton = value
 										if (ClassicUI:IsEnabled()) then
 											if (ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.hideMicroButton) then
-												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
-													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
-													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
-												end
-												ClassicUI.HookMicroButtonsClass_UI_Watcher(CollectionsMicroButton)
 												CollectionsMicroButton:Hide()
 											else
-												CollectionsMicroButton:Show()
+												if not(ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[CollectionsMicroButton]) then
+													CollectionsMicroButton:Show()
+												end
 											end
 											ClassicUI.SetOrderInfoMicroButtons()
 											ClassicUI.SetPointsMicroButtons()
@@ -3729,7 +4888,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								keepGapMicroButton = {
-									order = 8,
+									order = 16,
 									type = "toggle",
 									name = L['Keep MicroButton Gap'],
 									desc = L['KeepMicroButtonGapDesc'],
@@ -3744,7 +4903,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								disableMicroButton = {
-									order = 9,
+									order = 17,
 									type = "toggle",
 									name = L['Disable MicroButton'],
 									desc = L['Disable MicroButton'],
@@ -3754,10 +4913,6 @@ ClassicUI.optionsTable = {
 										ClassicUI.cached_db_profile.barsConfig_MicroButtons_CollectionsMicroButton_disableMicroButton = value
 										if (ClassicUI:IsEnabled()) then
 											if (ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.disableMicroButton) then
-												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
-													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
-													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
-												end
 												if not(ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton) then
 													hooksecurefunc(MainMenuMicroButton, "UpdateMicroButton", ClassicUI.hook_MainMenuMicroButton_UpdateMicroButton)
 													ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton = true
@@ -3769,7 +4924,7 @@ ClassicUI.optionsTable = {
 												CollectionsMicroButton:Disable()
 											else
 												local enable = true
-												if ( StoreFrame and StoreFrame_IsShown() ) or ( ( GameMenuFrame and GameMenuFrame:IsShown() ) or ( SettingsPanel:IsShown() ) ) then
+												if ( StoreFrame and StoreFrame_IsShown() ) or ( ( GameMenuFrame and GameMenuFrame:IsShown() ) or ( SettingsPanel:IsShown() ) or Kiosk.IsEnabled() ) then
 													enable = false
 												end
 												if (enable) then
@@ -3780,7 +4935,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								disableMouseMicroButton = {
-									order = 10,
+									order = 18,
 									type = "toggle",
 									name = L['Disable Mouse'],
 									desc = L['DisableMouseMicroButtonDesc'],
@@ -3797,7 +4952,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								xOffsetMicroButton = {
-									order = 11,
+									order = 19,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -3814,7 +4969,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								yOffsetMicroButton = {
-									order = 12,
+									order = 20,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -3831,7 +4986,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								alphaMicroButton = {
-									order = 13,
+									order = 21,
 									type = "range",
 									softMin = 0,
 									softMax = 1,
@@ -3861,12 +5016,12 @@ ClassicUI.optionsTable = {
 									end
 								},
 								iconMicroButton = {
-									order = 14,
+									order = 22,
 									type = "select",
 									style = "radio",
 									name = L['iconMicroButton'],
 									width = 1.12,
-									sorting = { 10, 15, 4, 16, 17, 18, 19, 1, 11, 2, 3, 12, 5, 26, 6, 9, 24, 13, 20, 27, 28, 29, 30, 31 },
+									sorting = { 10, 15, 4, 16, 17, 18, 19, 1, 11, 2, 3, 12, 5, 26, 6, 32, 9, 24, 13, 20, 27, 28, 29, 30, 31 },
 									values = {
 										[10] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Collections Icon']..L['Collections Icon [D]'],
 										[15] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Abilities Icon']..L['Abilities Icon'],
@@ -3883,6 +5038,7 @@ ClassicUI.optionsTable = {
 										[5] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Achievement Icon']..L['Achievement Icon'],
 										[26] = ClassicUI.MICROBUTTONS_OPTION_ICONS['BFA Achievement Icon']..L['BFA Achievement Icon'],
 										[6] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Quest Icon']..L['Quest Icon'],
+										[32] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Housing Icon']..L['Housing Icon'],
 										[9] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Icon']..L['LFD Icon'],
 										[24] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Normalized Icon']..L['LFD Normalized Icon'],
 										[13] = ClassicUI.MICROBUTTONS_OPTION_ICONS['MainMenu Icon']..L['MainMenu Icon'],
@@ -3908,7 +5064,7 @@ ClassicUI.optionsTable = {
 							}
 						},
 						EJMicroButton = {
-							order = function() return 6 + ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.order end,
+							order = function() return 9 + ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.order end,
 							type = "group",
 							name = function() return '|cffeda55f[|r|cffff6720'..(ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.order < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.order..'|r|cffeda55f] - |r'..string.gsub(ClassicUI.MICROBUTTONS_OPTION_ICONS[ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.iconMicroButton].name],':32:24:',':20:15:',1)..' '..L['EJ'] end,
 							desc = L['EJMicroButton'],
@@ -3973,10 +5129,103 @@ ClassicUI.optionsTable = {
 								Header2 = {
 									type = 'header',
 									order = 6,
+									name = L['MicroButtons Priority']
+								},
+								prioritySectionDesc = {
+									order = 7,
+									type = "description",
+									name = L['MICROBUTTONS_PRIORITY_DESC']
+								},
+								priorityValueText = {
+									order = 8,
+									type = "description",
+									width = 0.20,
+									name = function() return ' |cffbad152[|r|cff62e632'..(ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.priority < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.priority..'|r|cffbad152]|r' end
+								},
+								buttonPriorityUp = {
+									order = 9,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.priority <= ClassicUI.MICROBUTTONS_MIN_PRIORITY) and '-disabled' or '')..':0|t' end,
+									desc = L['UP'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.priority <= ClassicUI.MICROBUTTONS_MIN_PRIORITY end,
+									width = 0.26,
+									func = function()
+										ClassicUI:RepriorizeMicroButtonsDB("EJMicroButton", "UP")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								buttonPriorityDown = {
+									order = 10,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.priority >= ClassicUI.MICROBUTTONS_MAX_PRIORITY) and '-disabled' or '')..':0|t' end,
+									desc = L['DOWN'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.priority >= ClassicUI.MICROBUTTONS_MAX_PRIORITY end,
+									width = 0.26,
+									func = function()
+										ClassicUI:RepriorizeMicroButtonsDB("EJMicroButton", "DOWN")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								Spacer2 = {
+									type = "description",
+									order = 11,
+									name = "",
+									width = 0.05
+								},
+								buttonPriorityDefault = {
+									order = 12,
+									type = "execute",
+									name = function() return '|T'..(ClassicUI:IsMicroButtonsPriorityDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
+									desc = L['DefaultPriorityDesc'],
+									disabled = function() return ClassicUI:IsMicroButtonsPriorityDefaultDB() end,
+									width = 0.72,
+									func = function()
+										ClassicUI:RepriorizeMicroButtonsDB(nil, "DEFAULT")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								priorityIconList = {
+									order = 13,
+									type = "description",
+									name = function()
+										local prioOrderedArray = {}
+										for k, v in pairs(ClassicUI.db.profile.barsConfig.MicroButtons) do
+											if ((type(v) == 'table') and (type(v.priority) == 'number')) then
+												table.insert(prioOrderedArray, { k, v.priority } )
+											end
+										end
+										table.sort(prioOrderedArray, function(a, b) return a[2] < b[2] end)
+										local str = ""
+										local count = 0
+										for _, v in ipairs(prioOrderedArray) do
+											if (count == ClassicUI.db.profile.barsConfig.MicroButtons.maxMicroButtonsShown) then
+												str = str.."I"
+											end
+											str = str..string.gsub(ClassicUI.MICROBUTTONS_OPTION_ICONS[ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons[v[1]].iconMicroButton].name],':32:24:',':28:21:',1)
+											count = count + 1
+										end
+										if (count == ClassicUI.db.profile.barsConfig.MicroButtons.maxMicroButtonsShown) then
+											str = str.."I"
+										end
+										return str
+									end
+								},
+								Header3 = {
+									type = 'header',
+									order = 14,
 									name = L['EJMicroButton']
 								},
 								hideMicroButton = {
-									order = 7,
+									order = 15,
 									type = "toggle",
 									name = L['Hide MicroButton'],
 									desc = L['Hide MicroButton'],
@@ -3985,14 +5234,11 @@ ClassicUI.optionsTable = {
 										ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.hideMicroButton = value
 										if (ClassicUI:IsEnabled()) then
 											if (ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.hideMicroButton) then
-												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
-													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
-													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
-												end
-												ClassicUI.HookMicroButtonsClass_UI_Watcher(EJMicroButton)
 												EJMicroButton:Hide()
 											else
-												EJMicroButton:Show()
+												if not(ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[EJMicroButton]) then
+													EJMicroButton:Show()
+												end
 											end
 											ClassicUI.SetOrderInfoMicroButtons()
 											ClassicUI.SetPointsMicroButtons()
@@ -4000,7 +5246,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								keepGapMicroButton = {
-									order = 8,
+									order = 16,
 									type = "toggle",
 									name = L['Keep MicroButton Gap'],
 									desc = L['KeepMicroButtonGapDesc'],
@@ -4015,7 +5261,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								disableMicroButton = {
-									order = 9,
+									order = 17,
 									type = "toggle",
 									name = L['Disable MicroButton'],
 									desc = L['Disable MicroButton'],
@@ -4025,10 +5271,6 @@ ClassicUI.optionsTable = {
 										ClassicUI.cached_db_profile.barsConfig_MicroButtons_EJMicroButton_disableMicroButton = value
 										if (ClassicUI:IsEnabled()) then
 											if (ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.disableMicroButton) then
-												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
-													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
-													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
-												end
 												if not(ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton) then
 													hooksecurefunc(MainMenuMicroButton, "UpdateMicroButton", ClassicUI.hook_MainMenuMicroButton_UpdateMicroButton)
 													ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton = true
@@ -4040,7 +5282,7 @@ ClassicUI.optionsTable = {
 												EJMicroButton:Disable()
 											else
 												local enable = true
-												if ( StoreFrame and StoreFrame_IsShown() ) or ( ( GameMenuFrame and GameMenuFrame:IsShown() ) or ( SettingsPanel:IsShown() ) ) then
+												if ( StoreFrame and StoreFrame_IsShown() ) or ( ( GameMenuFrame and GameMenuFrame:IsShown() ) or ( SettingsPanel:IsShown() ) or Kiosk.IsEnabled() ) then
 													enable = false
 												else
 													if Kiosk.IsEnabled() or (not( EncounterJournal and EncounterJournal:IsShown() ) and ( not AdventureGuideUtil.IsAvailable() )) then
@@ -4055,7 +5297,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								disableMouseMicroButton = {
-									order = 10,
+									order = 18,
 									type = "toggle",
 									name = L['Disable Mouse'],
 									desc = L['DisableMouseMicroButtonDesc'],
@@ -4071,8 +5313,57 @@ ClassicUI.optionsTable = {
 										end
 									end,
 								},
+								classicNotificationMicroButton = {
+									order = 19,
+									type = "toggle",
+									name = L['classicNotificationMicroButton'],
+									desc = L['classicNotificationMicroButtonDesc'],
+									width = "double",
+									get = function() return ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.classicNotificationMicroButton end,
+									set = function(_,value)
+										ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.classicNotificationMicroButton = value
+										ClassicUI.cached_db_profile.barsConfig_MicroButtons_EJMicroButton_classicNotificationMicroButton = value
+										if (ClassicUI:IsEnabled()) then
+											if (value) then
+												if not(ClassicUI.hooked_EJMicroButton_UpdateNotificationIcon) then
+													hooksecurefunc(EJMicroButton, "UpdateNotificationIcon", ClassicUI.hook_EJMicroButton_UpdateNotificationIcon)
+													ClassicUI.hooked_EJMicroButton_UpdateNotificationIcon = true
+												end
+												EJMicroButton.CUI_NotificationOverlay:SetAlpha(1)
+												EJMicroButton.CUI_NotificationOverlay:SetShown(EJMicroButton.NotificationOverlay:IsShown())
+												EJMicroButton.NotificationOverlay:SetAlpha(0)
+												EJMicroButton.NotificationOverlay:Hide()
+												if (ClassicUI.showingTempEJNotification or (not(ClassicUI.showingTempEJNotification) and not(EJMicroButton.CUI_NotificationOverlay:IsShown()))) then
+													EJMicroButton.CUI_NotificationOverlay:Show()
+													ClassicUI.showingTempEJNotification = GetTime() + 1.9
+													C_Timer.After(2, function()
+														if (GetTime() > ClassicUI.showingTempEJNotification) then
+															EJMicroButton.CUI_NotificationOverlay:Hide()
+															ClassicUI.showingTempEJNotification = nil
+														end
+													end)
+												end
+											else
+												EJMicroButton.NotificationOverlay:SetAlpha(1)
+												EJMicroButton.NotificationOverlay:SetShown(EJMicroButton.CUI_NotificationOverlay:IsShown())
+												EJMicroButton.CUI_NotificationOverlay:SetAlpha(0)
+												EJMicroButton.CUI_NotificationOverlay:Hide()
+												if (ClassicUI.showingTempEJNotification or (not(ClassicUI.showingTempEJNotification) and not(EJMicroButton.NotificationOverlay:IsShown()))) then
+													EJMicroButton.NotificationOverlay:Show()
+													ClassicUI.showingTempEJNotification = GetTime() + 1.9
+													C_Timer.After(2, function()
+														if (GetTime() > ClassicUI.showingTempEJNotification) then
+															EJMicroButton.NotificationOverlay:Hide()
+															ClassicUI.showingTempEJNotification = nil
+														end
+													end)
+												end
+											end
+										end
+									end,
+								},
 								xOffsetMicroButton = {
-									order = 11,
+									order = 20,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -4089,7 +5380,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								yOffsetMicroButton = {
-									order = 12,
+									order = 21,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -4106,7 +5397,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								alphaMicroButton = {
-									order = 13,
+									order = 22,
 									type = "range",
 									softMin = 0,
 									softMax = 1,
@@ -4136,12 +5427,12 @@ ClassicUI.optionsTable = {
 									end
 								},
 								iconMicroButton = {
-									order = 14,
+									order = 23,
 									type = "select",
 									style = "radio",
 									name = L['iconMicroButton'],
 									width = 1.12,
-									sorting = { 11, 16, 15, 17, 4, 18, 19, 1, 2, 3, 12, 5, 26, 6, 9, 24, 10, 13, 20, 27, 28, 29, 30, 31 },
+									sorting = { 11, 16, 15, 17, 4, 18, 19, 1, 2, 3, 12, 5, 26, 6, 32, 9, 24, 10, 13, 20, 27, 28, 29, 30, 31 },
 									values = {
 										[11] = ClassicUI.MICROBUTTONS_OPTION_ICONS['EJ Icon']..L['EJ Icon [D]'],
 										[16] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Raid Icon']..L['Raid Icon'],
@@ -4157,6 +5448,7 @@ ClassicUI.optionsTable = {
 										[5] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Achievement Icon']..L['Achievement Icon'],
 										[26] = ClassicUI.MICROBUTTONS_OPTION_ICONS['BFA Achievement Icon']..L['BFA Achievement Icon'],
 										[6] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Quest Icon']..L['Quest Icon'],
+										[32] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Housing Icon']..L['Housing Icon'],
 										[9] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Icon']..L['LFD Icon'],
 										[24] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Normalized Icon']..L['LFD Normalized Icon'],
 										[10] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Collections Icon']..L['Collections Icon'],
@@ -4183,7 +5475,7 @@ ClassicUI.optionsTable = {
 							}
 						},
 						HelpMicroButton = {
-							order = function() return 6 + ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.order end,
+							order = function() return 9 + ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.order end,
 							type = "group",
 							name = function() return '|cffeda55f[|r|cffff6720'..(ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.order < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.order..'|r|cffeda55f] - |r'..string.gsub(ClassicUI.MICROBUTTONS_OPTION_ICONS[ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.iconMicroButton].name],':32:24:',':20:15:',1)..' '..L['Help'] end,
 							desc = L['HelpMicroButton'],
@@ -4248,10 +5540,103 @@ ClassicUI.optionsTable = {
 								Header2 = {
 									type = 'header',
 									order = 6,
+									name = L['MicroButtons Priority']
+								},
+								prioritySectionDesc = {
+									order = 7,
+									type = "description",
+									name = L['MICROBUTTONS_PRIORITY_DESC']
+								},
+								priorityValueText = {
+									order = 8,
+									type = "description",
+									width = 0.20,
+									name = function() return ' |cffbad152[|r|cff62e632'..(ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.priority < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.priority..'|r|cffbad152]|r' end
+								},
+								buttonPriorityUp = {
+									order = 9,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.priority <= ClassicUI.MICROBUTTONS_MIN_PRIORITY) and '-disabled' or '')..':0|t' end,
+									desc = L['UP'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.priority <= ClassicUI.MICROBUTTONS_MIN_PRIORITY end,
+									width = 0.26,
+									func = function()
+										ClassicUI:RepriorizeMicroButtonsDB("HelpMicroButton", "UP")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								buttonPriorityDown = {
+									order = 10,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.priority >= ClassicUI.MICROBUTTONS_MAX_PRIORITY) and '-disabled' or '')..':0|t' end,
+									desc = L['DOWN'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.priority >= ClassicUI.MICROBUTTONS_MAX_PRIORITY end,
+									width = 0.26,
+									func = function()
+										ClassicUI:RepriorizeMicroButtonsDB("HelpMicroButton", "DOWN")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								Spacer2 = {
+									type = "description",
+									order = 11,
+									name = "",
+									width = 0.05
+								},
+								buttonPriorityDefault = {
+									order = 12,
+									type = "execute",
+									name = function() return '|T'..(ClassicUI:IsMicroButtonsPriorityDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
+									desc = L['DefaultPriorityDesc'],
+									disabled = function() return ClassicUI:IsMicroButtonsPriorityDefaultDB() end,
+									width = 0.72,
+									func = function()
+										ClassicUI:RepriorizeMicroButtonsDB(nil, "DEFAULT")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								priorityIconList = {
+									order = 13,
+									type = "description",
+									name = function()
+										local prioOrderedArray = {}
+										for k, v in pairs(ClassicUI.db.profile.barsConfig.MicroButtons) do
+											if ((type(v) == 'table') and (type(v.priority) == 'number')) then
+												table.insert(prioOrderedArray, { k, v.priority } )
+											end
+										end
+										table.sort(prioOrderedArray, function(a, b) return a[2] < b[2] end)
+										local str = ""
+										local count = 0
+										for _, v in ipairs(prioOrderedArray) do
+											if (count == ClassicUI.db.profile.barsConfig.MicroButtons.maxMicroButtonsShown) then
+												str = str.."I"
+											end
+											str = str..string.gsub(ClassicUI.MICROBUTTONS_OPTION_ICONS[ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons[v[1]].iconMicroButton].name],':32:24:',':28:21:',1)
+											count = count + 1
+										end
+										if (count == ClassicUI.db.profile.barsConfig.MicroButtons.maxMicroButtonsShown) then
+											str = str.."I"
+										end
+										return str
+									end
+								},
+								Header3 = {
+									type = 'header',
+									order = 14,
 									name = L['HelpMicroButton']
 								},
 								hideMicroButton = {
-									order = 7,
+									order = 15,
 									type = "toggle",
 									name = L['Hide MicroButton'],
 									desc = L['Hide MicroButton'],
@@ -4260,7 +5645,6 @@ ClassicUI.optionsTable = {
 										ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.hideMicroButton = value
 										if (ClassicUI:IsEnabled()) then
 											if (ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.hideMicroButton) then
-												ClassicUI.HookMicroButtonsClass_UI_Watcher(HelpMicroButton)
 												HelpMicroButton:Hide()
 												-- keep the HelpMicroButton hidden
 											end
@@ -4270,7 +5654,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								keepGapMicroButton = {
-									order = 8,
+									order = 16,
 									type = "toggle",
 									name = L['Keep MicroButton Gap'],
 									desc = L['KeepMicroButtonGapDesc'],
@@ -4285,7 +5669,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								disableMicroButton = {
-									order = 9,
+									order = 17,
 									type = "toggle",
 									name = L['Disable MicroButton'],
 									desc = L['Disable MicroButton'],
@@ -4301,7 +5685,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								disableMouseMicroButton = {
-									order = 10,
+									order = 18,
 									type = "toggle",
 									name = L['Disable Mouse'],
 									desc = L['DisableMouseMicroButtonDesc'],
@@ -4318,7 +5702,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								xOffsetMicroButton = {
-									order = 11,
+									order = 19,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -4335,7 +5719,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								yOffsetMicroButton = {
-									order = 12,
+									order = 20,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -4352,7 +5736,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								alphaMicroButton = {
-									order = 13,
+									order = 21,
 									type = "range",
 									softMin = 0,
 									softMax = 1,
@@ -4382,12 +5766,12 @@ ClassicUI.optionsTable = {
 									end
 								},
 								iconMicroButton = {
-									order = 14,
+									order = 22,
 									type = "select",
 									style = "radio",
 									name = L['iconMicroButton'],
 									width = 1.12,
-									sorting = { 14, 20, 15, 4, 16, 17, 1, 18, 19, 2, 3, 12, 5, 26, 6, 9, 24, 10, 11, 27, 28, 29, 30, 31 },
+									sorting = { 14, 20, 15, 4, 16, 17, 1, 18, 19, 2, 3, 12, 5, 26, 6, 32, 9, 24, 10, 11, 27, 28, 29, 30, 31 },
 									values = {
 										[14] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Help Icon']..L['Help Icon [D]'],
 										[20] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic MainMenu Icon']..L['Classic MainMenu Icon'],
@@ -4404,6 +5788,7 @@ ClassicUI.optionsTable = {
 										[5] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Achievement Icon']..L['Achievement Icon'],
 										[26] = ClassicUI.MICROBUTTONS_OPTION_ICONS['BFA Achievement Icon']..L['BFA Achievement Icon'],
 										[6] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Quest Icon']..L['Quest Icon'],
+										[32] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Housing Icon']..L['Housing Icon'],
 										[9] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Icon']..L['LFD Icon'],
 										[24] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Normalized Icon']..L['LFD Normalized Icon'],
 										[10] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Collections Icon']..L['Collections Icon'],
@@ -4429,7 +5814,7 @@ ClassicUI.optionsTable = {
 							}
 						},
 						StoreMicroButton = {
-							order = function() return 6 + ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.order end,
+							order = function() return 9 + ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.order end,
 							type = "group",
 							name = function() return '|cffeda55f[|r|cffff6720'..(ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.order < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.order..'|r|cffeda55f] - |r'..string.gsub(ClassicUI.MICROBUTTONS_OPTION_ICONS[ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.iconMicroButton].name],':32:24:',':20:15:',1)..' '..L['Store'] end,
 							desc = L['StoreMicroButton'],
@@ -4494,10 +5879,103 @@ ClassicUI.optionsTable = {
 								Header2 = {
 									type = 'header',
 									order = 6,
+									name = L['MicroButtons Priority']
+								},
+								prioritySectionDesc = {
+									order = 7,
+									type = "description",
+									name = L['MICROBUTTONS_PRIORITY_DESC']
+								},
+								priorityValueText = {
+									order = 8,
+									type = "description",
+									width = 0.20,
+									name = function() return ' |cffbad152[|r|cff62e632'..(ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.priority < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.priority..'|r|cffbad152]|r' end
+								},
+								buttonPriorityUp = {
+									order = 9,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.priority <= ClassicUI.MICROBUTTONS_MIN_PRIORITY) and '-disabled' or '')..':0|t' end,
+									desc = L['UP'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.priority <= ClassicUI.MICROBUTTONS_MIN_PRIORITY end,
+									width = 0.26,
+									func = function()
+										ClassicUI:RepriorizeMicroButtonsDB("StoreMicroButton", "UP")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								buttonPriorityDown = {
+									order = 10,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.priority >= ClassicUI.MICROBUTTONS_MAX_PRIORITY) and '-disabled' or '')..':0|t' end,
+									desc = L['DOWN'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.priority >= ClassicUI.MICROBUTTONS_MAX_PRIORITY end,
+									width = 0.26,
+									func = function()
+										ClassicUI:RepriorizeMicroButtonsDB("StoreMicroButton", "DOWN")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								Spacer2 = {
+									type = "description",
+									order = 11,
+									name = "",
+									width = 0.05
+								},
+								buttonPriorityDefault = {
+									order = 12,
+									type = "execute",
+									name = function() return '|T'..(ClassicUI:IsMicroButtonsPriorityDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
+									desc = L['DefaultPriorityDesc'],
+									disabled = function() return ClassicUI:IsMicroButtonsPriorityDefaultDB() end,
+									width = 0.72,
+									func = function()
+										ClassicUI:RepriorizeMicroButtonsDB(nil, "DEFAULT")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								priorityIconList = {
+									order = 13,
+									type = "description",
+									name = function()
+										local prioOrderedArray = {}
+										for k, v in pairs(ClassicUI.db.profile.barsConfig.MicroButtons) do
+											if ((type(v) == 'table') and (type(v.priority) == 'number')) then
+												table.insert(prioOrderedArray, { k, v.priority } )
+											end
+										end
+										table.sort(prioOrderedArray, function(a, b) return a[2] < b[2] end)
+										local str = ""
+										local count = 0
+										for _, v in ipairs(prioOrderedArray) do
+											if (count == ClassicUI.db.profile.barsConfig.MicroButtons.maxMicroButtonsShown) then
+												str = str.."I"
+											end
+											str = str..string.gsub(ClassicUI.MICROBUTTONS_OPTION_ICONS[ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons[v[1]].iconMicroButton].name],':32:24:',':28:21:',1)
+											count = count + 1
+										end
+										if (count == ClassicUI.db.profile.barsConfig.MicroButtons.maxMicroButtonsShown) then
+											str = str.."I"
+										end
+										return str
+									end
+								},
+								Header3 = {
+									type = 'header',
+									order = 14,
 									name = L['StoreMicroButton']
 								},
 								hideMicroButton = {
-									order = 7,
+									order = 15,
 									type = "toggle",
 									name = L['Hide MicroButton'],
 									desc = L['Hide MicroButton'],
@@ -4507,11 +5985,6 @@ ClassicUI.optionsTable = {
 										ClassicUI.cached_db_profile.barsConfig_MicroButtons_StoreMicroButton_hideMicroButton = value
 										if (ClassicUI:IsEnabled()) then
 											if (ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.hideMicroButton) then
-												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
-													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
-													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
-												end
-												ClassicUI.HookMicroButtonsClass_UI_Watcher(StoreMicroButton)
 												StoreMicroButton:Hide()
 											else
 												local show = true
@@ -4521,7 +5994,9 @@ ClassicUI.optionsTable = {
 													show = false
 												end
 												if (show) then
-													StoreMicroButton:Show()
+													if not(ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[StoreMicroButton]) then
+														StoreMicroButton:Show()
+													end
 												end
 											end
 											ClassicUI.SetOrderInfoMicroButtons()
@@ -4530,7 +6005,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								keepGapMicroButton = {
-									order = 8,
+									order = 16,
 									type = "toggle",
 									name = L['Keep MicroButton Gap'],
 									desc = L['KeepMicroButtonGapDesc'],
@@ -4545,7 +6020,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								disableMicroButton = {
-									order = 9,
+									order = 17,
 									type = "toggle",
 									name = L['Disable MicroButton'],
 									desc = L['Disable MicroButton'],
@@ -4555,10 +6030,6 @@ ClassicUI.optionsTable = {
 										ClassicUI.cached_db_profile.barsConfig_MicroButtons_StoreMicroButton_disableMicroButton = value
 										if (ClassicUI:IsEnabled()) then
 											if (ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.disableMicroButton) then
-												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
-													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
-													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
-												end
 												if not(ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton) then
 													hooksecurefunc(MainMenuMicroButton, "UpdateMicroButton", ClassicUI.hook_MainMenuMicroButton_UpdateMicroButton)
 													ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton = true
@@ -4577,7 +6048,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								disableMouseMicroButton = {
-									order = 10,
+									order = 18,
 									type = "toggle",
 									name = L['Disable Mouse'],
 									desc = L['DisableMouseMicroButtonDesc'],
@@ -4594,7 +6065,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								xOffsetMicroButton = {
-									order = 11,
+									order = 19,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -4611,7 +6082,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								yOffsetMicroButton = {
-									order = 12,
+									order = 20,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -4628,7 +6099,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								alphaMicroButton = {
-									order = 13,
+									order = 21,
 									type = "range",
 									softMin = 0,
 									softMax = 1,
@@ -4658,12 +6129,12 @@ ClassicUI.optionsTable = {
 									end
 								},
 								iconMicroButton = {
-									order = 14,
+									order = 22,
 									type = "select",
 									style = "radio",
 									name = L['iconMicroButton'],
 									width = 1.12,
-									sorting = { 12, 15, 16, 17, 4, 18, 19, 1, 27, 28, 29, 30, 2, 3, 5, 26, 6, 9, 24, 10, 11, 13, 20, 31 },
+									sorting = { 12, 15, 16, 17, 4, 18, 19, 1, 27, 28, 29, 30, 2, 3, 5, 26, 6, 32, 9, 24, 10, 11, 13, 20, 31 },
 									values = {
 										[12] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Store Icon']..L['Store Icon [D]'],
 										[15] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Abilities Icon']..L['Abilities Icon'],
@@ -4682,6 +6153,7 @@ ClassicUI.optionsTable = {
 										[5] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Achievement Icon']..L['Achievement Icon'],
 										[26] = ClassicUI.MICROBUTTONS_OPTION_ICONS['BFA Achievement Icon']..L['BFA Achievement Icon'],
 										[6] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Quest Icon']..L['Quest Icon'],
+										[32] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Housing Icon']..L['Housing Icon'],
 										[9] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Icon']..L['LFD Icon'],
 										[24] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Normalized Icon']..L['LFD Normalized Icon'],
 										[10] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Collections Icon']..L['Collections Icon'],
@@ -4705,7 +6177,7 @@ ClassicUI.optionsTable = {
 							}
 						},
 						MainMenuMicroButton = {
-							order = function() return 6 + ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.order end,
+							order = function() return 9 + ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.order end,
 							type = "group",
 							name = function() return '|cffeda55f[|r|cffff6720'..(ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.order < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.order..'|r|cffeda55f] - |r'..string.gsub(ClassicUI.MICROBUTTONS_OPTION_ICONS[ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.iconMicroButton].name],':32:24:',':20:15:',1)..' '..L['MainMenu'] end,
 							desc = L['MainMenuMicroButton'],
@@ -4770,10 +6242,103 @@ ClassicUI.optionsTable = {
 								Header2 = {
 									type = 'header',
 									order = 6,
+									name = L['MicroButtons Priority']
+								},
+								prioritySectionDesc = {
+									order = 7,
+									type = "description",
+									name = L['MICROBUTTONS_PRIORITY_DESC']
+								},
+								priorityValueText = {
+									order = 8,
+									type = "description",
+									width = 0.20,
+									name = function() return ' |cffbad152[|r|cff62e632'..(ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.priority < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.priority..'|r|cffbad152]|r' end
+								},
+								buttonPriorityUp = {
+									order = 9,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.priority <= ClassicUI.MICROBUTTONS_MIN_PRIORITY) and '-disabled' or '')..':0|t' end,
+									desc = L['UP'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.priority <= ClassicUI.MICROBUTTONS_MIN_PRIORITY end,
+									width = 0.26,
+									func = function()
+										ClassicUI:RepriorizeMicroButtonsDB("MainMenuMicroButton", "UP")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								buttonPriorityDown = {
+									order = 10,
+									type = "execute",
+									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.priority >= ClassicUI.MICROBUTTONS_MAX_PRIORITY) and '-disabled' or '')..':0|t' end,
+									desc = L['DOWN'],
+									disabled = function() return ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.priority >= ClassicUI.MICROBUTTONS_MAX_PRIORITY end,
+									width = 0.26,
+									func = function()
+										ClassicUI:RepriorizeMicroButtonsDB("MainMenuMicroButton", "DOWN")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								Spacer2 = {
+									type = "description",
+									order = 11,
+									name = "",
+									width = 0.05
+								},
+								buttonPriorityDefault = {
+									order = 12,
+									type = "execute",
+									name = function() return '|T'..(ClassicUI:IsMicroButtonsPriorityDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
+									desc = L['DefaultPriorityDesc'],
+									disabled = function() return ClassicUI:IsMicroButtonsPriorityDefaultDB() end,
+									width = 0.72,
+									func = function()
+										ClassicUI:RepriorizeMicroButtonsDB(nil, "DEFAULT")
+										if (ClassicUI:IsEnabled()) then
+											ClassicUI.SetOrderInfoMicroButtons()
+											ClassicUI.SetPointsMicroButtons()
+										end
+									end
+								},
+								priorityIconList = {
+									order = 13,
+									type = "description",
+									name = function()
+										local prioOrderedArray = {}
+										for k, v in pairs(ClassicUI.db.profile.barsConfig.MicroButtons) do
+											if ((type(v) == 'table') and (type(v.priority) == 'number')) then
+												table.insert(prioOrderedArray, { k, v.priority } )
+											end
+										end
+										table.sort(prioOrderedArray, function(a, b) return a[2] < b[2] end)
+										local str = ""
+										local count = 0
+										for _, v in ipairs(prioOrderedArray) do
+											if (count == ClassicUI.db.profile.barsConfig.MicroButtons.maxMicroButtonsShown) then
+												str = str.."I"
+											end
+											str = str..string.gsub(ClassicUI.MICROBUTTONS_OPTION_ICONS[ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons[v[1]].iconMicroButton].name],':32:24:',':28:21:',1)
+											count = count + 1
+										end
+										if (count == ClassicUI.db.profile.barsConfig.MicroButtons.maxMicroButtonsShown) then
+											str = str.."I"
+										end
+										return str
+									end
+								},
+								Header3 = {
+									type = 'header',
+									order = 14,
 									name = L['MainMenuMicroButton']
 								},
 								hideMicroButton = {
-									order = 7,
+									order = 15,
 									type = "toggle",
 									name = L['Hide MicroButton'],
 									desc = L['Hide MicroButton'],
@@ -4782,14 +6347,11 @@ ClassicUI.optionsTable = {
 										ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.hideMicroButton = value
 										if (ClassicUI:IsEnabled()) then
 											if (ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.hideMicroButton) then
-												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
-													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
-													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
-												end
-												ClassicUI.HookMicroButtonsClass_UI_Watcher(MainMenuMicroButton)
 												MainMenuMicroButton:Hide()
 											else
-												MainMenuMicroButton:Show()
+												if not(ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[MainMenuMicroButton]) then
+													MainMenuMicroButton:Show()
+												end
 											end
 											ClassicUI.SetOrderInfoMicroButtons()
 											ClassicUI.SetPointsMicroButtons()
@@ -4797,7 +6359,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								keepGapMicroButton = {
-									order = 8,
+									order = 16,
 									type = "toggle",
 									name = L['Keep MicroButton Gap'],
 									desc = L['KeepMicroButtonGapDesc'],
@@ -4812,7 +6374,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								disableMicroButton = {
-									order = 9,
+									order = 17,
 									type = "toggle",
 									name = L['Disable MicroButton'],
 									desc = L['Disable MicroButton'],
@@ -4822,10 +6384,6 @@ ClassicUI.optionsTable = {
 										ClassicUI.cached_db_profile.barsConfig_MicroButtons_MainMenuMicroButton_disableMicroButton = value
 										if (ClassicUI:IsEnabled()) then
 											if (ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.disableMicroButton) then
-												if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
-													hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
-													ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
-												end
 												if not(ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton) then
 													hooksecurefunc(MainMenuMicroButton, "UpdateMicroButton", ClassicUI.hook_MainMenuMicroButton_UpdateMicroButton)
 													ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton = true
@@ -4853,7 +6411,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								disableMouseMicroButton = {
-									order = 10,
+									order = 18,
 									type = "toggle",
 									name = L['Disable Mouse'],
 									desc = L['DisableMouseMicroButtonDesc'],
@@ -4870,7 +6428,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								classicNotificationMicroButton = {
-									order = 11,
+									order = 19,
 									type = "toggle",
 									name = L['classicNotificationMicroButton'],
 									desc = L['classicNotificationMicroButtonDesc'],
@@ -4889,17 +6447,37 @@ ClassicUI.optionsTable = {
 												MainMenuMicroButton.CUI_NotificationOverlay:SetShown(MainMenuMicroButton.NotificationOverlay:IsShown())
 												MainMenuMicroButton.NotificationOverlay:SetAlpha(0)
 												MainMenuMicroButton.NotificationOverlay:Hide()
+												if (ClassicUI.showingTempMainMenuNotification or (not(ClassicUI.showingTempMainMenuNotification) and not(MainMenuMicroButton.CUI_NotificationOverlay:IsShown()))) then
+													MainMenuMicroButton.CUI_NotificationOverlay:Show()
+													ClassicUI.showingTempMainMenuNotification = GetTime() + 1.9
+													C_Timer.After(2, function()
+														if (GetTime() > ClassicUI.showingTempMainMenuNotification) then
+															MainMenuMicroButton.CUI_NotificationOverlay:Hide()
+															ClassicUI.showingTempMainMenuNotification = nil
+														end
+													end)
+												end
 											else
 												MainMenuMicroButton.NotificationOverlay:SetAlpha(1)
 												MainMenuMicroButton.NotificationOverlay:SetShown(MainMenuMicroButton.CUI_NotificationOverlay:IsShown())
 												MainMenuMicroButton.CUI_NotificationOverlay:SetAlpha(0)
 												MainMenuMicroButton.CUI_NotificationOverlay:Hide()
+												if (ClassicUI.showingTempMainMenuNotification or (not(ClassicUI.showingTempMainMenuNotification) and not(MainMenuMicroButton.NotificationOverlay:IsShown()))) then
+													MainMenuMicroButton.NotificationOverlay:Show()
+													ClassicUI.showingTempMainMenuNotification = GetTime() + 1.9
+													C_Timer.After(2, function()
+														if (GetTime() > ClassicUI.showingTempMainMenuNotification) then
+															MainMenuMicroButton.NotificationOverlay:Hide()
+															ClassicUI.showingTempMainMenuNotification = nil
+														end
+													end)
+												end
 											end
 										end
 									end,
 								},
 								hideLatencyBar = {
-									order = 12,
+									order = 20,
 									type = "toggle",
 									name = L['Hide Small Latency Bar'],
 									desc = L['Hide Small Latency Bar'],
@@ -4923,7 +6501,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								xOffsetMicroButton = {
-									order = 13,
+									order = 21,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -4940,7 +6518,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								yOffsetMicroButton = {
-									order = 14,
+									order = 22,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -4957,7 +6535,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								alphaMicroButton = {
-									order = 15,
+									order = 23,
 									type = "range",
 									softMin = 0,
 									softMax = 1,
@@ -4987,12 +6565,12 @@ ClassicUI.optionsTable = {
 									end
 								},
 								iconMicroButton = {
-									order = 16,
+									order = 24,
 									type = "select",
 									style = "radio",
 									name = L['iconMicroButton'],
 									width = 1.12,
-									sorting = { 13, 25, 20, 4, 15, 16, 17, 1, 27, 28, 29, 30, 18, 19, 2, 3, 12, 5, 26, 6, 9, 24, 10, 11, 31 },
+									sorting = { 13, 25, 20, 4, 15, 16, 17, 1, 27, 28, 29, 30, 18, 19, 2, 3, 12, 5, 26, 6, 32, 9, 24, 10, 11, 31 },
 									values = {
 										[13] = ClassicUI.MICROBUTTONS_OPTION_ICONS['MainMenu Icon']..L['MainMenu Icon [D]'],
 										[25] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Classic Perf-MM Icon']..L['Classic Perf-MM Icon [*]'],
@@ -5014,6 +6592,7 @@ ClassicUI.optionsTable = {
 										[5] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Achievement Icon']..L['Achievement Icon'],
 										[26] = ClassicUI.MICROBUTTONS_OPTION_ICONS['BFA Achievement Icon']..L['BFA Achievement Icon'],
 										[6] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Quest Icon']..L['Quest Icon'],
+										[32] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Housing Icon']..L['Housing Icon'],
 										[9] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Icon']..L['LFD Icon'],
 										[24] = ClassicUI.MICROBUTTONS_OPTION_ICONS['LFD Normalized Icon']..L['LFD Normalized Icon'],
 										[10] = ClassicUI.MICROBUTTONS_OPTION_ICONS['Collections Icon']..L['Collections Icon'],
@@ -6584,7 +8163,7 @@ ClassicUI.optionsTable = {
 							get = function() return ClassicUI.db.profile.barsConfig.StanceBarFrame.xOffset end,
 							set = function(_,value)
 								ClassicUI.db.profile.barsConfig.StanceBarFrame.xOffset = value
-								ClassicUI.cached_db_profile.barsConfig_StanceBarFrame_xOffset = true
+								ClassicUI.cached_db_profile.barsConfig_StanceBarFrame_xOffset = value
 								if (ClassicUI:IsEnabled()) then
 									ClassicUI:UpdatedStatusBarsEvent()
 								end
@@ -7534,7 +9113,8 @@ ClassicUI.optionsTable = {
 								[1] = L['HonorBar'],
 								[2] = L['AzeriteBar'],
 								[3] = L['ArtifactBar'],
-								[4] = L['ReputationBar']
+								[4] = L['ReputationBar'],
+								[5] = L['HouseFavorBar']
 							},
 							get = function(_, keyname) return ClassicUI.db.profile.barsConfig.SingleStatusBar.hide[keyname] end,
 							set = function(_, keyname, value)
@@ -7890,7 +9470,12 @@ ClassicUI.optionsTable = {
 								[6] = L['HonorBar+ReputationBar'],
 								[7] = L['AzeriteBar+ArtifactBar'],
 								[8] = L['AzeriteBar+ReputationBar'],
-								[9] = L['ArtifactBar+ReputationBar']
+								[9] = L['ArtifactBar+ReputationBar'],
+								[10] = L['ExpBar+HouseFavorBar'],
+								[11] = L['HonorBar+HouseFavorBar'],
+								[12] = L['AzeriteBar+HouseFavorBar'],
+								[13] = L['ArtifactBar+HouseFavorBar'],
+								[14] = L['ReputationBar+HouseFavorBar']
 							},
 							get = function(_, keyname) return ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.hide[keyname] end,
 							set = function(_, keyname, value)
@@ -9485,6 +11070,7 @@ ClassicUI.optionsTable = {
 							end,
 							set = function(_,value)
 								ClassicUI.db.profile.extraFrames.Chat.restoreScrollButtons = value
+								ClassicUI.cached_db_profile.extraFrames_Chat_restoreScrollButtons = value
 								if (value) then
 									ClassicUI:RestoreChatScrollButtons()
 								else
@@ -9812,16 +11398,14 @@ ClassicUI.optionsTable = {
 								return ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode
 							end,
 							set = function(_, value)
+								ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode = value
+								ClassicUI.cached_db_profile.extraConfigs_KeybindsConfig_hideKeybindsMode = value
 								if ((ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode >= 2) and (value < 2)) then
-									ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode = value
-									ClassicUI.cached_db_profile.extraConfigs_KeybindsConfig_hideKeybindsMode = value
 									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
 										ClassicUI:ToggleVisibilityKeybinds(value)
 										ReloadUI()
 									end
 								else
-									ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode = value
-									ClassicUI.cached_db_profile.extraConfigs_KeybindsConfig_hideKeybindsMode = value
 									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
 										ClassicUI:ToggleVisibilityKeybinds(value)
 									end
@@ -9937,15 +11521,13 @@ ClassicUI.optionsTable = {
 								return ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.enabled
 							end,
 							set = function(_,value)
+								ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.enabled = value
+								ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_enabled = value
 								if ((not value) and (ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.enabled)) then
-									ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.enabled = value
-									ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_enabled = value
 									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
 										ReloadUI()
 									end
 								else
-									ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.enabled = value
-									ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_enabled = value
 									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
 										ClassicUI:HookGreyOnCooldownIcons()
 									end

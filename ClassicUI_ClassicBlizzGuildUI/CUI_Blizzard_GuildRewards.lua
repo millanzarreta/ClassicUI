@@ -88,7 +88,7 @@ function CUI_GuildRewards_Update()
 	local totalHeight = numRewards * (GUILD_REWARDS_BUTTON_HEIGHT + GUILD_REWARDS_BUTTON_OFFSET);
 	local displayedHeight = numButtons * (GUILD_REWARDS_BUTTON_HEIGHT + GUILD_REWARDS_BUTTON_OFFSET);
 	HybridScrollFrame_Update(scrollFrame, totalHeight, displayedHeight);
-	
+
 	-- hide dropdown menu
 	if ( CUI_GuildRewardsDropDown.rewardIndex ) then
 		CloseDropDownMenus();
@@ -96,7 +96,7 @@ function CUI_GuildRewards_Update()
 	-- update tooltip
 	if ( CUI_GuildRewardsFrame.activeButton ) then
 		CUI_GuildRewardsButton_OnEnter(CUI_GuildRewardsFrame.activeButton);
-	end	
+	end
 end
 
 function CUI_GuildRewardsButton_OnEnter(self)
@@ -157,7 +157,7 @@ function CUI_GuildRewardsDropDown_Initialize(self)
 	if ( not self.rewardIndex ) then
 		return;
 	end
-	
+
 	local achievementID, itemID, itemName, iconTexture, repLevel, moneyCost = GetGuildRewardInfo(self.rewardIndex);
 
 	local info = UIDropDownMenu_CreateInfo();
@@ -172,7 +172,7 @@ function CUI_GuildRewardsDropDown_Initialize(self)
 	info.text = GUILD_NEWS_LINK_ITEM;
 	info.arg1 = itemID;
 	UIDropDownMenu_AddButton(info, UIDROPDOWN_MENU_LEVEL);
-		
+
 	if ( achievementID and achievementID > 0 ) then
 		info.func = CUI_GuildFrame_OpenAchievement;
 		info.text = GUILD_NEWS_VIEW_ACHIEVEMENT;

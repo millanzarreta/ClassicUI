@@ -1,7 +1,7 @@
 -- ------------------------------------------------------------ --
 -- Addon: ClassicUI                                             --
 --                                                              --
--- Version: 2.1.3                                               --
+-- Version: 2.1.4                                               --
 -- Author: Millán - Sanguino                                    --
 --                                                              --
 -- License: GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007 --
@@ -59,7 +59,10 @@ local CommunitiesFrame_IsEnabled = CommunitiesFrame_IsEnabled
 local ContainerFrame_IsReagentBag = ContainerFrame_IsReagentBag
 local GetRestrictedAccountData = GetRestrictedAccountData
 local C_Reputation_GetWatchedFactionData = C_Reputation.GetWatchedFactionData
+local C_Housing_GetTrackedHouseGuid = C_Housing.GetTrackedHouseGuid
+local C_PvP_IsActiveBattlefield = C_PvP.IsActiveBattlefield
 local GameLimitedMode_IsActive = GameLimitedMode_IsActive
+local C_CatalogShop_IsShop2Enabled = C_CatalogShop.IsShop2Enabled
 local StoreFrame_IsShown = StoreFrame_IsShown
 local Kiosk_IsEnabled = Kiosk.IsEnabled
 local CurrentVersionHasNewUnseenSettings = CurrentVersionHasNewUnseenSettings
@@ -88,7 +91,7 @@ local GetNetStats = GetNetStats
 local InGuildParty = InGuildParty
 
 -- Global constants
-ClassicUI.VERSION = "2.1.3"
+ClassicUI.VERSION = "2.1.4"
 ClassicUI.STANDARD_EPSILON = STANDARD_EPSILON
 ClassicUI.SCALE_EPSILON = SCALE_EPSILON
 ClassicUI.ACTIONBUTTON_NEWLAYOUT_SCALE = 0.826
@@ -98,10 +101,14 @@ ClassicUI.SPELLFLYOUT_INITIAL_SPACING = 7	-- changed to 9 in Blizzard code since
 ClassicUI.SPELLFLYOUT_FINAL_SPACING = 4	-- changed to 9 in Blizzard code since 10.0.0
 ClassicUI.PERFORMANCEBAR_MEDIUM_LATENCY = 600
 ClassicUI.PERFORMANCEBAR_LOW_LATENCY = 300
+ClassicUI.MESSAGE_SCROLLBUTTON_INITIAL_DELAY = 0
+ClassicUI.MESSAGE_SCROLLBUTTON_SCROLL_DELAY = 0.05
 ClassicUI.playerClass = (UnitClass~=nil) and select(2, UnitClass("player"))
 ClassicUI.MICROBUTTONANDBAGSBAR_CUI_OFFSET_Y = -1500
 ClassicUI.MICROBUTTONS_MIN_ORDER = 1
-ClassicUI.MICROBUTTONS_MAX_ORDER = 12
+ClassicUI.MICROBUTTONS_MAX_ORDER = 13
+ClassicUI.MICROBUTTONS_MIN_PRIORITY = 1
+ClassicUI.MICROBUTTONS_MAX_PRIORITY = 13
 ClassicUI.MICROBUTTONS_DEFAULT_ALPHA_ENABLED = 1
 ClassicUI.MICROBUTTONS_DEFAULT_ALPHA_DISABLED = 0.5
 ClassicUI.MICROBUTTONS_OPTION_ICONS = {
@@ -136,7 +143,8 @@ ClassicUI.MICROBUTTONS_OPTION_ICONS = {
 	['PvP Horde Icon'] = '|TInterface\\Addons\\ClassicUI\\Textures\\UI-MicroButton-PvpH-Up-custom:32:24:0:0:32:64:0:32:22:64|t',
 	['PvP Alliance Icon'] = '|TInterface\\Addons\\ClassicUI\\Textures\\UI-MicroButton-PvpA-Up-custom:32:24:0:0:32:64:0:32:22:64|t',
 	['PvP Neutral Icon'] = '|TInterface\\Addons\\ClassicUI\\Textures\\UI-MicroButton-PvpN-Up-custom:32:24:0:0:32:64:0:32:22:64|t',
-	['Bug Icon'] = '|T130788:32:24:0:0:32:64:0:32:22:64|t'
+	['Bug Icon'] = '|T130788:32:24:0:0:32:64:0:32:22:64|t',
+	['Housing Icon'] = '|TInterface\\Addons\\ClassicUI\\Textures\\UI-MicroButton-Housing-Up-custom:32:24:0:0:32:64:0:32:22:64|t',
 }
 ClassicUI.MICROBUTTONS_ARRAYINFO = {
 	[0] = {
@@ -343,6 +351,12 @@ ClassicUI.MICROBUTTONS_ARRAYINFO = {
 		pushedTexture = 'Interface\\Buttons\\UI-MicroButton-Bug-Down',
 		disabledTexture = 'Interface\\Addons\\ClassicUI\\Textures\\UI-MicroButton-Bug-Disabled-custom'
 	},
+	[32] = {
+		name = 'Housing Icon',
+		normalTexture = 'Interface\\Addons\\ClassicUI\\Textures\\UI-MicroButton-Housing-Up-custom',
+		pushedTexture = 'Interface\\Addons\\ClassicUI\\Textures\\UI-MicroButton-Housing-Down-custom',
+		disabledTexture = 'Interface\\Addons\\ClassicUI\\Textures\\UI-MicroButton-Housing-Disabled-custom'
+	}
 }
 
 -- Global variables
@@ -458,9 +472,11 @@ ClassicUI.defaults = {
 			},
 			['MicroButtons'] = {
 				scale = 1,
+				maxMicroButtonsShown = 11,
 				helpOpenWebTicketButtonAnchor = 'MainMenuMicroButton',
 				['CharacterMicroButton'] = {
 					order = 1,
+					priority = 1,
 					hideMicroButton = false,
 					keepGapMicroButton = false,
 					disableMicroButton = false,
@@ -472,6 +488,7 @@ ClassicUI.defaults = {
 				},
 				['ProfessionMicroButton'] = {
 					order = 3,
+					priority = 5,
 					hideMicroButton = false,
 					keepGapMicroButton = false,
 					disableMicroButton = false,
@@ -483,6 +500,7 @@ ClassicUI.defaults = {
 				},
 				['PlayerSpellsMicroButton'] = {
 					order = 2,
+					priority = 2,
 					hideMicroButton = false,
 					keepGapMicroButton = false,
 					disableMicroButton = false,
@@ -494,6 +512,7 @@ ClassicUI.defaults = {
 				},
 				['AchievementMicroButton'] = {
 					order = 4,
+					priority = 7,
 					hideMicroButton = false,
 					keepGapMicroButton = false,
 					disableMicroButton = false,
@@ -505,6 +524,7 @@ ClassicUI.defaults = {
 				},
 				['QuestLogMicroButton'] = {
 					order = 5,
+					priority = 11,
 					hideMicroButton = false,
 					keepGapMicroButton = false,
 					disableMicroButton = false,
@@ -514,8 +534,22 @@ ClassicUI.defaults = {
 					alphaMicroButton = 1,
 					iconMicroButton = 6		-- 6 = Quest Icon (default)
 				},
-				['GuildMicroButton'] = {
+				['HousingMicroButton'] = {
 					order = 6,
+					priority = 10,
+					hideMicroButton = false,
+					keepGapMicroButton = false,
+					disableMicroButton = false,
+					disableMouseMicroButton = false,
+					xOffsetMicroButton = 0,
+					yOffsetMicroButton = 0,
+					alphaMicroButton = 1,
+					iconMicroButton = 32,	-- 32 = Housing Icon (default)
+					classicNotificationMicroButton = false
+				},
+				['GuildMicroButton'] = {
+					order = 7,
+					priority = 4,
 					hideMicroButton = false,
 					keepGapMicroButton = false,
 					disableMicroButton = false,
@@ -527,7 +561,8 @@ ClassicUI.defaults = {
 					classicNotificationMicroButton = true
 				},
 				['LFDMicroButton'] = {
-					order = 7,
+					order = 8,
+					priority = 3,
 					hideMicroButton = false,
 					keepGapMicroButton = false,
 					disableMicroButton = false,
@@ -538,7 +573,8 @@ ClassicUI.defaults = {
 					iconMicroButton = 9		-- 9 = LFD Icon (default)
 				},
 				['CollectionsMicroButton'] = {
-					order = 8,
+					order = 9,
+					priority = 8,
 					hideMicroButton = false,
 					keepGapMicroButton = false,
 					disableMicroButton = false,
@@ -549,7 +585,8 @@ ClassicUI.defaults = {
 					iconMicroButton = 10	-- 10 = Collections Icon (default)
 				},
 				['EJMicroButton'] = {
-					order = 9,
+					order = 10,
+					priority = 9,
 					hideMicroButton = false,
 					keepGapMicroButton = false,
 					disableMicroButton = false,
@@ -557,10 +594,12 @@ ClassicUI.defaults = {
 					xOffsetMicroButton = 0,
 					yOffsetMicroButton = 0,
 					alphaMicroButton = 1,
-					iconMicroButton = 11	-- 11 = EJ Icon (default)
+					iconMicroButton = 11,	-- 11 = EJ Icon (default)
+					classicNotificationMicroButton = false
 				},
 				['HelpMicroButton'] = {
-					order = 12,
+					order = 13,
+					priority = 13,
 					hideMicroButton = true,
 					keepGapMicroButton = false,
 					disableMicroButton = true,
@@ -571,7 +610,8 @@ ClassicUI.defaults = {
 					iconMicroButton = 14	-- 14 = Help Icon (default)
 				},
 				['StoreMicroButton'] = {
-					order = 10,
+					order = 11,
+					priority = 12,
 					hideMicroButton = false,
 					keepGapMicroButton = false,
 					disableMicroButton = false,
@@ -582,7 +622,8 @@ ClassicUI.defaults = {
 					iconMicroButton = 12	-- 12 = Store Icon (default)
 				},
 				['MainMenuMicroButton'] = {
-					order = 11,
+					order = 12,
+					priority = 6,
 					hideMicroButton = false,
 					keepGapMicroButton = false,
 					disableMicroButton = false,
@@ -756,7 +797,8 @@ ClassicUI.defaults = {
 					[1] = false,	-- HonorBar
 					[2] = false,	-- AzeriteBar
 					[3] = false,	-- ArtifactBar
-					[4] = false		-- ReputationBar
+					[4] = false,	-- ReputationBar
+					[5] = false		-- HouseFavorBar
 				},
 				alpha = 0.5,
 				xSize = 0,
@@ -784,7 +826,12 @@ ClassicUI.defaults = {
 					[6] = false,	-- HonorBar+ReputationBar
 					[7] = false,	-- AzeriteBar+ArtifactBar
 					[8] = false,	-- AzeriteBar+ReputationBar
-					[9] = false		-- ArtifactBar+ReputationBar
+					[9] = false,	-- ArtifactBar+ReputationBar
+					[10] = false,	-- ExpBar+HouseFavorBar
+					[11] = false,	-- HonorBar+HouseFavorBar
+					[12] = false,	-- AzeriteBar+HouseFavorBar
+					[13] = false,	-- ArtifactBar+HouseFavorBar
+					[14] = false	-- ReputationBar+HouseFavorBar
 				},
 				alpha = 0.5,
 				xSize = 0,
@@ -944,31 +991,31 @@ end)
 function ClassicUI:OnInitialize()
 	self.db = AceDB:New("ClassicUI_DB", self.defaults, true)
 	self:UpdateDBValuesCache()
-	
+
 	self.optionsTable.args.profiles = AceDBOptions:GetOptionsTable(self.db)
-	
+
 	AceConfig:RegisterOptionsTable("ClassicUI", self.optionsTable)
-	
+
 	self.db.RegisterCallback(self, "OnProfileChanged", "RefreshConfig")
 	self.db.RegisterCallback(self, "OnProfileCopied", "RefreshConfig")
 	self.db.RegisterCallback(self, "OnProfileReset", "RefreshConfig")
 	self.db.RegisterCallback(self, "OnDatabaseShutdown", function()
 		ClassicUI.databaseCleaned = true
 	end)
-	
+
 	self.optionsFramesCatId = { }
 	self.optionsFrames = {}
 	self.optionsFrames.general, self.optionsFramesCatId.general = AceConfigDialog:AddToBlizOptions("ClassicUI", nil, nil, "general")
 	self.optionsFrames.extraFrames, self.optionsFramesCatId.extraFrames = AceConfigDialog:AddToBlizOptions("ClassicUI", L['Extra Frames'], "ClassicUI", "extraFrames")
 	self.optionsFrames.extraOptions, self.optionsFramesCatId.extraOptions = AceConfigDialog:AddToBlizOptions("ClassicUI", L['Extra Options'], "ClassicUI", "extraOptions")
 	self.optionsFrames.profiles, self.optionsFramesCatId.profiles = AceConfigDialog:AddToBlizOptions("ClassicUI", L['Profiles'], "ClassicUI", "profiles")
-	
+
 	self:RegisterChatCommand("ClassicUI", "SlashCommand")
 
 	if (not(self.db.profile.disabledAddonCompartmentIntegration)) then
 		self:AddonCompartmentIntegration(true)
 	end
-	
+
 	-- Some pre-initialization stuff
 	if (ClassicUI.playerClass == nil) then
 		ClassicUI.playerClass = select(2,UnitClass("player"))
@@ -992,7 +1039,7 @@ function ClassicUI:OnInitialize()
 		ClassicUI.MICROBUTTONS_ARRAYINFO[27].pushedTexture = strgsub(ClassicUI.MICROBUTTONS_ARRAYINFO[27].pushedTexture, "PvpN", "PvpA", 1)
 		ClassicUI.MICROBUTTONS_ARRAYINFO[27].disabledTexture = strgsub(ClassicUI.MICROBUTTONS_ARRAYINFO[27].disabledTexture, "PvpN", "PvpA", 1)
 	end
-	
+
 	-- Start ClassicUI Core
 	if (self.db.profile.enabled) then
 		self:Enable()
@@ -1168,6 +1215,8 @@ function ClassicUI:GetSingleBarToHide(n)
 		return 4
 	elseif (n == 4) then	-- ReputationBar (priority = 1)
 		return 1
+	elseif (n == 5) then	-- HouseFavorBar (priority = 5)
+		return 5
 	else
 		return nil
 	end
@@ -1195,6 +1244,16 @@ function ClassicUI:GetDoubleBarsToHide(n)
 		return 0, 1
 	elseif (n == 9) then	-- ArtifactBar+ReputationBar (priority = 4, 1)
 		return 1, 4
+	elseif (n == 10) then	-- ExpBar+HouseFavorBar (priority = 3, 5)
+		return 5, 3
+	elseif (n == 11) then	-- HonorBar+HouseFavorBar (priority = 2, 5)
+		return 5, 2
+	elseif (n == 12) then	-- AzeriteBar+HouseFavorBar (priority = 0, 5)
+		return 5, 0
+	elseif (n == 13) then	-- ArtifactBar+HouseFavorBar (priority = 4, 5)
+		return 5, 4
+	elseif (n == 14) then	-- ReputationBar+HouseFavorBar (priority = 1, 5)
+		return 5, 1
 	else
 		return nil, nil
 	end
@@ -1271,13 +1330,16 @@ function ClassicUI:UpdateDBValuesCache()
 	self.cached_db_profile.barsConfig_MicroButtons_PlayerSpellsMicroButton_disableMicroButton = self.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.disableMicroButton
 	self.cached_db_profile.barsConfig_MicroButtons_AchievementMicroButton_disableMicroButton = self.db.profile.barsConfig.MicroButtons.AchievementMicroButton.disableMicroButton
 	self.cached_db_profile.barsConfig_MicroButtons_QuestLogMicroButton_disableMicroButton = self.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.disableMicroButton
+	self.cached_db_profile.barsConfig_MicroButtons_HousingMicroButton_disableMicroButton = self.db.profile.barsConfig.MicroButtons.HousingMicroButton.disableMicroButton
 	self.cached_db_profile.barsConfig_MicroButtons_GuildMicroButton_disableMicroButton = self.db.profile.barsConfig.MicroButtons.GuildMicroButton.disableMicroButton
 	self.cached_db_profile.barsConfig_MicroButtons_LFDMicroButton_disableMicroButton = self.db.profile.barsConfig.MicroButtons.LFDMicroButton.disableMicroButton
 	self.cached_db_profile.barsConfig_MicroButtons_CollectionsMicroButton_disableMicroButton = self.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.disableMicroButton
 	self.cached_db_profile.barsConfig_MicroButtons_EJMicroButton_disableMicroButton = self.db.profile.barsConfig.MicroButtons.EJMicroButton.disableMicroButton
 	self.cached_db_profile.barsConfig_MicroButtons_StoreMicroButton_disableMicroButton = self.db.profile.barsConfig.MicroButtons.StoreMicroButton.disableMicroButton
 	self.cached_db_profile.barsConfig_MicroButtons_MainMenuMicroButton_disableMicroButton = self.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.disableMicroButton
+	self.cached_db_profile.barsConfig_MicroButtons_HousingMicroButton_classicNotificationMicroButton = self.db.profile.barsConfig.MicroButtons.HousingMicroButton.classicNotificationMicroButton
 	self.cached_db_profile.barsConfig_MicroButtons_GuildMicroButton_classicNotificationMicroButton = self.db.profile.barsConfig.MicroButtons.GuildMicroButton.classicNotificationMicroButton
+	self.cached_db_profile.barsConfig_MicroButtons_EJMicroButton_classicNotificationMicroButton = self.db.profile.barsConfig.MicroButtons.EJMicroButton.classicNotificationMicroButton
 	self.cached_db_profile.barsConfig_MicroButtons_MainMenuMicroButton_classicNotificationMicroButton = self.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.classicNotificationMicroButton
 	self.cached_db_profile.barsConfig_MicroButtons_PlayerSpellsMicroButton_iconMicroButton = self.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.iconMicroButton
 	self.cached_db_profile.barsConfig_MicroButtons_PlayerSpellsMicroButton_iconMicroButton_normalTextureSB = self.MICROBUTTONS_ARRAYINFO[23].normalTextureSB
@@ -1318,6 +1380,7 @@ function ClassicUI:UpdateDBValuesCache()
 	self.cached_db_profile.extraFrames_Minimap_xOffsetQueueButton = self.db.profile.extraFrames.Minimap.xOffsetQueueButton
 	self.cached_db_profile.extraFrames_Minimap_yOffsetQueueButton = self.db.profile.extraFrames.Minimap.yOffsetQueueButton
 	self.cached_db_profile.extraFrames_Bags_freeSlotCounterMod = self.db.profile.extraFrames.Bags.freeSlotCounterMod
+	self.cached_db_profile.extraFrames_Chat_restoreScrollButtons = self.db.profile.extraFrames.Chat.restoreScrollButtons
 	self.cached_db_profile.extraFrames_Chat_restoreBottomScrollButton = self.db.profile.extraFrames.Chat.restoreBottomScrollButton
 	self.cached_db_profile.extraFrames_Chat_socialButtonToBottom = self.db.profile.extraFrames.Chat.socialButtonToBottom
 	self.cached_db_profile.extraConfigs_KeybindsConfig_hideKeybindsMode = self.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode
@@ -1452,17 +1515,18 @@ end
 
 -- Function that hides the CollapseAndExpandButton from the BuffFrame
 function ClassicUI:BuffFrameHideCollapseAndExpandButton()
-	if not ClassicUI.hooked_BuffFrame_RefreshCollapseExpandButtonState then
-		hooksecurefunc(BuffFrame, "RefreshCollapseExpandButtonState", function(self)
+	if not ClassicUI.hooked_BuffFrame_RefreshConsolidationFrameVisibility then
+		hooksecurefunc(BuffFrame, "RefreshConsolidationFrameVisibility", function(self)
 			self.CollapseAndExpandButton:Hide()
 		end)
-		ClassicUI.hooked_BuffFrame_RefreshCollapseExpandButtonState = true
+		ClassicUI.hooked_BuffFrame_RefreshConsolidationFrameVisibility = true
 	end
 	BuffFrame.CollapseAndExpandButton:Hide()
 end
 
 -- Function to update the visibility and position of scroll buttons from the Chat Frame
 function ClassicUI:UpdateScrollButtonsVisibilityAndPosition(cftvmb)
+	if not(ClassicUI.cached_db_profile.extraFrames_Chat_restoreScrollButtons) then return end	-- cached db value
 	local but = cftvmb or ChatFrameToggleVoiceMuteButton
 	local voiceButtonsVisible
 	if not(but) or not(but.isVisible) then
@@ -1477,7 +1541,9 @@ function ClassicUI:UpdateScrollButtonsVisibilityAndPosition(cftvmb)
 			-- Show the 3 scroll buttons
 			if (CUI_ChatFrame1ButtonFrameBottomButton and not(CUI_ChatFrame1ButtonFrameBottomButton:IsShown()) and CUI_ChatFrame1ButtonFrameBottomButton.allowShow) then
 				if not(CUI_ChatFrame1ButtonFrameBottomButton.hooked_ChatFrame_OnUpdate) then
-					hooksecurefunc("ChatFrame_OnUpdate", CUI_ChatFrame1ButtonFrameBottomButton.func_ChatFrame_OnUpdate)
+					for i = 1, 10 do
+						_G["ChatFrame"..i]:HookScript("OnUpdate", CUI_ChatFrame1ButtonFrameBottomButton.func_ChatFrame_OnUpdate)
+					end
 					CUI_ChatFrame1ButtonFrameBottomButton.hooked_ChatFrame_OnUpdate = true
 				end
 				CUI_ChatFrame1ButtonFrameBottomButton:Show()
@@ -1518,7 +1584,9 @@ function ClassicUI:UpdateScrollButtonsVisibilityAndPosition(cftvmb)
 			-- Show the 3 scroll buttons
 			if (CUI_ChatFrame1ButtonFrameBottomButton and not(CUI_ChatFrame1ButtonFrameBottomButton:IsShown()) and CUI_ChatFrame1ButtonFrameBottomButton.allowShow) then
 				if not(CUI_ChatFrame1ButtonFrameBottomButton.hooked_ChatFrame_OnUpdate) then
-					hooksecurefunc("ChatFrame_OnUpdate", CUI_ChatFrame1ButtonFrameBottomButton.func_ChatFrame_OnUpdate)
+					for i = 1, 10 do
+						_G["ChatFrame"..i]:HookScript("OnUpdate", CUI_ChatFrame1ButtonFrameBottomButton.func_ChatFrame_OnUpdate)
+					end
 					CUI_ChatFrame1ButtonFrameBottomButton.hooked_ChatFrame_OnUpdate = true
 				end
 				CUI_ChatFrame1ButtonFrameBottomButton:Show()
@@ -1543,36 +1611,38 @@ function ClassicUI:UpdateScrollButtonsVisibilityAndPosition(cftvmb)
 			hiddenMode = 1
 		end
 	end
-	CUI_ChatFrame1ButtonFrameDownButton:ClearAllPoints()
-	ChatFrameMenuButton:ClearAllPoints()
-	if (ClassicUI.cached_db_profile.extraFrames_Chat_restoreBottomScrollButton) then	-- cached db value
-		CUI_ChatFrame1ButtonFrameBottomButton:ClearAllPoints()
-		if (ClassicUI.cached_db_profile.extraFrames_Chat_socialButtonToBottom) then	-- cached db value
-			CUI_ChatFrame1ButtonFrameBottomButton:SetPoint("BOTTOM", ChatFrameMenuButton, "TOP", 0, -2)
-			if (hiddenMode ~= 1) then
-				CUI_ChatFrame1ButtonFrameDownButton:SetPoint("BOTTOM", CUI_ChatFrame1ButtonFrameBottomButton, "TOP", 0, -2)
+	if (CUI_ChatFrame1ButtonFrameDownButton and CUI_ChatFrame1ButtonFrameUpButton) then
+		CUI_ChatFrame1ButtonFrameDownButton:ClearAllPoints()
+		ChatFrameMenuButton:ClearAllPoints()
+		if (ClassicUI.cached_db_profile.extraFrames_Chat_restoreBottomScrollButton and CUI_ChatFrame1ButtonFrameBottomButton) then	-- cached db value
+			CUI_ChatFrame1ButtonFrameBottomButton:ClearAllPoints()
+			if (ClassicUI.cached_db_profile.extraFrames_Chat_socialButtonToBottom) then	-- cached db value
+				CUI_ChatFrame1ButtonFrameBottomButton:SetPoint("BOTTOM", ChatFrameMenuButton, "TOP", 0, -2)
+				if (hiddenMode ~= 1) then
+					CUI_ChatFrame1ButtonFrameDownButton:SetPoint("BOTTOM", CUI_ChatFrame1ButtonFrameBottomButton, "TOP", 0, -2)
+				else
+					CUI_ChatFrame1ButtonFrameDownButton:SetPoint("BOTTOM", ChatFrameMenuButton, "TOP", 0, -2)
+				end
 			else
-				CUI_ChatFrame1ButtonFrameDownButton:SetPoint("BOTTOM", ChatFrameMenuButton, "TOP", 0, -2)
+				CUI_ChatFrame1ButtonFrameBottomButton:SetPoint("BOTTOM", ChatFrame1ButtonFrame, "BOTTOM", 0, -7)
+				if (hiddenMode ~= 1) then
+					CUI_ChatFrame1ButtonFrameDownButton:SetPoint("BOTTOM", CUI_ChatFrame1ButtonFrameBottomButton, "TOP", 0, -2)
+				else
+					CUI_ChatFrame1ButtonFrameDownButton:SetPoint("BOTTOM", ChatFrame1ButtonFrame, "BOTTOM", 0, -7)
+				end
 			end
 		else
-			CUI_ChatFrame1ButtonFrameBottomButton:SetPoint("BOTTOM", ChatFrame1ButtonFrame, "BOTTOM", 0, -7)
-			if (hiddenMode ~= 1) then
-				CUI_ChatFrame1ButtonFrameDownButton:SetPoint("BOTTOM", CUI_ChatFrame1ButtonFrameBottomButton, "TOP", 0, -2)
+			if (ClassicUI.cached_db_profile.extraFrames_Chat_socialButtonToBottom) then	-- cached db value
+				CUI_ChatFrame1ButtonFrameDownButton:SetPoint("BOTTOM", ChatFrameMenuButton, "TOP", 0, -2)
 			else
 				CUI_ChatFrame1ButtonFrameDownButton:SetPoint("BOTTOM", ChatFrame1ButtonFrame, "BOTTOM", 0, -7)
 			end
 		end
-	else
-		if (ClassicUI.cached_db_profile.extraFrames_Chat_socialButtonToBottom) then	-- cached db value
-			CUI_ChatFrame1ButtonFrameDownButton:SetPoint("BOTTOM", ChatFrameMenuButton, "TOP", 0, -2)
+		if (ClassicUI.cached_db_profile.extraFrames_Chat_socialButtonToBottom or (hiddenMode == 2)) then	-- cached db value
+			ChatFrameMenuButton:SetPoint("BOTTOM", ChatFrameMenuButton:GetParent(), "BOTTOM", 0, -7)
 		else
-			CUI_ChatFrame1ButtonFrameDownButton:SetPoint("BOTTOM", ChatFrame1ButtonFrame, "BOTTOM", 0, -7)
+			ChatFrameMenuButton:SetPoint("BOTTOM", CUI_ChatFrame1ButtonFrameUpButton, "TOP", 0, 0)
 		end
-	end
-	if (ClassicUI.cached_db_profile.extraFrames_Chat_socialButtonToBottom or (hiddenMode == 2)) then	-- cached db value
-		ChatFrameMenuButton:SetPoint("BOTTOM", ChatFrameMenuButton:GetParent(), "BOTTOM", 0, -7)
-	else
-		ChatFrameMenuButton:SetPoint("BOTTOM", CUI_ChatFrame1ButtonFrameUpButton, "TOP", 0, 0)
 	end
 end
 
@@ -1595,7 +1665,8 @@ function ClassicUI:RestoreChatScrollButtons()
 			CUI_ChatFrame1ButtonFrameBottomButtonFlash:SetTexture("Interface\\ChatFrame\\UI-ChatIcon-BlinkHilight")
 			CUI_ChatFrame1ButtonFrameBottomButtonFlash:SetAllPoints(CUI_ChatFrame1ButtonFrameBottomButton)
 			CUI_ChatFrame1ButtonFrameBottomButtonFlash:Hide()
-			MessageFrameScrollButton_OnLoad(CUI_ChatFrame1ButtonFrameBottomButton)
+			CUI_ChatFrame1ButtonFrameBottomButton.clickDelay = ClassicUI.MESSAGE_SCROLLBUTTON_INITIAL_DELAY
+			CUI_ChatFrame1ButtonFrameBottomButton:RegisterForClicks("LeftButtonDown", "LeftButtonUp", "RightButtonUp", "RightButtonDown")
 			CUI_ChatFrame1ButtonFrameBottomButton:SetScript("OnClick", function(self, button)
 				PlaySound(SOUNDKIT.IG_CHAT_BOTTOM)
 				self:GetParent():GetParent():ScrollToBottom()
@@ -1641,19 +1712,20 @@ function ClassicUI:RestoreChatScrollButtons()
 		CUI_ChatFrame1ButtonFrameDownButton:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollDown-Down")
 		CUI_ChatFrame1ButtonFrameDownButton:SetDisabledTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollDown-Disabled")
 		CUI_ChatFrame1ButtonFrameDownButton:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
-		MessageFrameScrollButton_OnLoad(CUI_ChatFrame1ButtonFrameDownButton)
+		CUI_ChatFrame1ButtonFrameDownButton.clickDelay = ClassicUI.MESSAGE_SCROLLBUTTON_INITIAL_DELAY
+		CUI_ChatFrame1ButtonFrameDownButton:RegisterForClicks("LeftButtonDown", "LeftButtonUp", "RightButtonUp", "RightButtonDown")
 		CUI_ChatFrame1ButtonFrameDownButton:SetScript("OnUpdate", function(self, elapsed)
 			if (self:GetButtonState() == "PUSHED") then
 				self.clickDelay = self.clickDelay - elapsed
 				if ( self.clickDelay < 0 ) then
 					self:GetParent():GetParent():ScrollDown()
-					self.clickDelay = MESSAGE_SCROLLBUTTON_SCROLL_DELAY
+					self.clickDelay = ClassicUI.MESSAGE_SCROLLBUTTON_SCROLL_DELAY
 				end
 			end
 		end)
 		CUI_ChatFrame1ButtonFrameDownButton:SetScript("OnClick", function(self, button)
 			if (self:GetButtonState() == "PUSHED") then
-				self.clickDelay = MESSAGE_SCROLLBUTTON_INITIAL_DELAY
+				self.clickDelay = ClassicUI.MESSAGE_SCROLLBUTTON_INITIAL_DELAY
 			else
 				self:GetParent():GetParent():ScrollDown()
 			end
@@ -1673,19 +1745,20 @@ function ClassicUI:RestoreChatScrollButtons()
 		CUI_ChatFrame1ButtonFrameUpButton:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollUp-Down")
 		CUI_ChatFrame1ButtonFrameUpButton:SetDisabledTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollUp-Disabled")
 		CUI_ChatFrame1ButtonFrameUpButton:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
-		MessageFrameScrollButton_OnLoad(CUI_ChatFrame1ButtonFrameUpButton)
+		CUI_ChatFrame1ButtonFrameUpButton.clickDelay = ClassicUI.MESSAGE_SCROLLBUTTON_INITIAL_DELAY
+		CUI_ChatFrame1ButtonFrameUpButton:RegisterForClicks("LeftButtonDown", "LeftButtonUp", "RightButtonUp", "RightButtonDown")
 		CUI_ChatFrame1ButtonFrameUpButton:SetScript("OnUpdate", function(self, elapsed)
 			if (self:GetButtonState() == "PUSHED") then
 				self.clickDelay = self.clickDelay - elapsed
 				if ( self.clickDelay < 0 ) then
 					self:GetParent():GetParent():ScrollUp()
-					self.clickDelay = MESSAGE_SCROLLBUTTON_SCROLL_DELAY
+					self.clickDelay = ClassicUI.MESSAGE_SCROLLBUTTON_SCROLL_DELAY
 				end
 			end
 		end)
 		CUI_ChatFrame1ButtonFrameUpButton:SetScript("OnClick", function(self, button)
 			if (self:GetButtonState() == "PUSHED") then
-				self.clickDelay = MESSAGE_SCROLLBUTTON_INITIAL_DELAY
+				self.clickDelay = ClassicUI.MESSAGE_SCROLLBUTTON_INITIAL_DELAY
 			else
 				self:GetParent():GetParent():ScrollUp()
 			end
@@ -1709,7 +1782,7 @@ function ClassicUI:EFF_PLAYER_ENTERING_WORLD()
 	if (ClassicUI.db.profile.extraFrames.Minimap.enabled) then
 		ClassicUI:EnableOldMinimap()
 	end
-	
+
 	-- [QueueStatusButton]
 	if (ClassicUI.db.profile.extraFrames.Minimap.anchorQueueButtonToMinimap) then
 		QueueStatusButton:SetParent(MinimapBackdrop)
@@ -1756,7 +1829,7 @@ function ClassicUI:EFF_PLAYER_ENTERING_WORLD()
 			end
 		end
 	end)
-	
+
 	-- [Bags]
 	if (ClassicUI.db.profile.extraFrames.Bags.freeSlotCounterMod ~= 0) then
 		ClassicUI:BagsFreeSlotsCounterMod()
@@ -1769,15 +1842,27 @@ function ClassicUI:EFF_PLAYER_ENTERING_WORLD()
 		local font, _, flags = MainMenuBarBackpackButton.Count:GetFont()
 		MainMenuBarBackpackButton.Count:SetFont(font, ClassicUI.db.profile.extraFrames.Bags.freeSlotsCounterFontSize, flags)
 	end
-	
+
 	-- [BuffAndDebuffFrames]
 	if (ClassicUI.db.profile.extraFrames.BuffAndDebuffFrames.hideCollapseAndExpandButton) then
 		ClassicUI:BuffFrameHideCollapseAndExpandButton()
 	end
-	
+
 	-- [Chat]
 	if (ClassicUI.db.profile.extraFrames.Chat.restoreScrollButtons) then
 		ClassicUI:RestoreChatScrollButtons()
+	end
+
+	-- Updates after exit edit mode
+	if not(ClassicUI.onExitEditModeMF) then
+		if (EventRegistry and type(EventRegistry) == "table") then
+			ClassicUI.onExitEditModeEFF = function(self)
+				if (ClassicUI.cached_db_profile.extraFrames_Chat_restoreScrollButtons) then	-- cached db value
+					ClassicUI:UpdateScrollButtonsVisibilityAndPosition()
+				end
+			end
+			EventRegistry:RegisterCallback("EditMode.Exit", ClassicUI.onExitEditModeEFF, ClassicUI)
+		end
 	end
 end
 
@@ -1824,9 +1909,9 @@ end
 -- Function that modifies some attributes of the original frames
 function ClassicUI:ModifyOriginalFrames()
 	-- Modify FrameStrata and FrameLevel and make the ActionBar frames non-clickable
-	MainMenuBar:SetFrameStrata("MEDIUM")
-	MainMenuBar:SetFrameLevel(1)
-	MainMenuBar:EnableMouse(false)
+	MainActionBar:SetFrameStrata("MEDIUM")
+	MainActionBar:SetFrameLevel(1)
+	MainActionBar:EnableMouse(false)
 	PetActionBar:SetFrameStrata("LOW")
 	PetActionBar:SetFrameLevel(2)
 	PetActionBar:EnableMouse(false)
@@ -1851,7 +1936,7 @@ function ClassicUI:ModifyOriginalFrames()
 	MainMenuBarVehicleLeaveButton:SetFrameStrata("MEDIUM")
 	MainMenuBarVehicleLeaveButton:SetFrameLevel(2)
 	-- Modify the size of ActionBars
-	MainMenuBar:SetSize(1024, 53)
+	MainActionBar:SetSize(1024, 53)
 	MultiBarBottomLeft:SetSize(500, 38)
 	MultiBarBottomRight:SetSize(500, 38)
 	MultiBarRight:SetSize(38, 500)
@@ -1873,8 +1958,8 @@ function ClassicUI:SetStrataForMainFrames()
 		end
 		return
 	end
-	MainMenuBar:SetFrameStrata("MEDIUM")
-	MainMenuBar:SetFrameLevel(1)
+	MainActionBar:SetFrameStrata("MEDIUM")
+	MainActionBar:SetFrameLevel(1)
 	PetActionBar:SetFrameStrata("LOW")
 	PetActionBar:SetFrameLevel(2)
 	MultiBarBottomLeft:SetFrameStrata("MEDIUM")
@@ -1937,7 +2022,7 @@ function ClassicUI:UpdateBottomActionBarPositions()
 	if ((EditModeManagerFrame == nil) or not(EditModeManagerFrame:IsInitialized()) or EditModeManagerFrame.layoutApplyInProgress) then
 		return
 	end
-	local barsToUpdate = { MainMenuBar, MultiBarBottomLeft, MultiBarBottomRight, StanceBar, PetActionBar, PossessActionBar, MainMenuBarVehicleLeaveButton }
+	local barsToUpdate = { MainActionBar, MultiBarBottomLeft, MultiBarBottomRight, StanceBar, PetActionBar, PossessActionBar, MainMenuBarVehicleLeaveButton }
 	local offsetX = 0
 	local offsetY = MAIN_ACTION_BAR_DEFAULT_OFFSET_Y
 	if OverrideActionBar and OverrideActionBar:IsShown() then
@@ -2095,7 +2180,7 @@ end
 -- Function that keeps the old restored status bars
 ClassicUI.StatusTrackingBarManager_LayoutBar = function(self, bar, isTopBar)
 	-- Seems that this function does not need protection (InCombatLockdown)
-	
+
 	if ClassicUI.databaseCleaned then return end	-- [DB Integrity Check]
 
 	-- Update the cached number of visible bars
@@ -2104,7 +2189,7 @@ ClassicUI.StatusTrackingBarManager_LayoutBar = function(self, bar, isTopBar)
 	bar.StatusBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar", "BORDER")
 	bar.StatusBar:GetStatusBarTexture():SetDrawLayer("BORDER", 0)
 	bar.StatusBar:GetStatusBarTexture():SetTexCoord(0, 0, 0, 1, 0.16666667, 0, 0.16666667, 1)
-	
+
 	bar:ClearAllPoints()
 	if (isTopBar) then
 		local xOffset = ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.xOffset
@@ -2208,7 +2293,7 @@ end
 ClassicUI.UpdatedStatusBarsEvent = function()
 	-- Update the cached number of visible bars
 	ClassicUI.UpdateCacheVisibleBars(StatusTrackingBarManager)
-	
+
 	if InCombatLockdown() then
 		delayFunc_UpdatedStatusBarsEvent = true
 		if (not fclFrame:IsEventRegistered("PLAYER_REGEN_ENABLED")) then
@@ -2216,13 +2301,13 @@ ClassicUI.UpdatedStatusBarsEvent = function()
 		end
 		return
 	end
-	
+
 	CUI_MultiBarBottomLeft:RelocateBar()
 	CUI_MultiBarRight:RelocateBar()
 	CUI_PetActionBarFrame:RelocateBar()
 	CUI_PossessBarFrame:RelocateBar()
 	CUI_StanceBarFrame:RelocateBar()
-	
+
 	delayFunc_UpdatedStatusBarsEvent = false
 end
 
@@ -2243,14 +2328,14 @@ function ClassicUI:ReloadMainFramesSettings()
 		for k, _ in pairs(self.MicroButtonsGroup) do
 			k:SetScale(self.mbIsStacked and 1 or self.db.profile.barsConfig.MicroButtons.scale)
 		end
-		
+
 		for i = 0, 3 do
 			local bagSlot = _G["CharacterBag"..i.."Slot"]
 			bagSlot.IconBorder:SetAlpha(self.db.profile.barsConfig.BagsIcons.iconBorderAlpha)
 		end
 		CharacterReagentBag0Slot:ClearAllPoints()
 		CharacterReagentBag0Slot:SetPoint("CENTER", CharacterBag3Slot, "LEFT", -5 + self.db.profile.barsConfig.BagsIcons.xOffsetReagentBag, -2 + self.db.profile.barsConfig.BagsIcons.yOffsetReagentBag)
-		
+
 		if InCombatLockdown() then
 			delayFunc_ReloadMainFramesSettings = true
 			if (not fclFrame:IsEventRegistered("PLAYER_REGEN_ENABLED")) then
@@ -2258,14 +2343,14 @@ function ClassicUI:ReloadMainFramesSettings()
 			end
 			return
 		end
-		
+
 		CUI_MainMenuBar:RelocateBar()
 		OverrideActionBar:SetPoint("BOTTOM", OverrideActionBar:GetParent(), "BOTTOM", self.db.profile.barsConfig.OverrideActionBar.xOffset, self.db.profile.barsConfig.OverrideActionBar.yOffset)
 		OverrideActionBar:SetScale(self.db.profile.barsConfig.OverrideActionBar.scale)
 		PetBattleFrame.BottomFrame:SetPoint("BOTTOM", PetBattleFrame.BottomFrame:GetParent(), "BOTTOM", self.db.profile.barsConfig.PetBattleFrameBar.xOffset, self.db.profile.barsConfig.PetBattleFrameBar.yOffset)
 		PetBattleFrame.BottomFrame:SetScale(self.db.profile.barsConfig.PetBattleFrameBar.scale)
 		self.MainMenuBarVehicleLeaveButton_Relocate(MainMenuBarVehicleLeaveButton)
-		
+
 		CUI_MainMenuBar.oldOrigScale = nil
 		CUI_MultiBarBottomLeft.oldOrigScale = nil
 		CUI_MultiBarBottomRight.oldOrigScale = nil
@@ -2274,8 +2359,8 @@ function ClassicUI:ReloadMainFramesSettings()
 		CUI_PetActionBarFrame.oldOrigScale = nil
 		CUI_PossessBarFrame.oldOrigScale = nil
 		CUI_StanceBarFrame.oldOrigScale = nil
-		
-		CUI_MainMenuBar.hook_SetScale(MainMenuBar, MainMenuBar:GetScale())
+
+		CUI_MainMenuBar.hook_SetScale(MainActionBar, MainActionBar:GetScale())
 		CUI_MultiBarBottomLeft.hook_SetScale(MultiBarBottomLeft, MultiBarBottomLeft:GetScale())
 		CUI_MultiBarBottomRight.hook_SetScale(MultiBarBottomRight, MultiBarBottomRight:GetScale())
 		CUI_MultiBarRight.hook_SetScale(MultiBarRight, MultiBarRight:GetScale())
@@ -2395,7 +2480,7 @@ function ClassicUI:EnableOldMinimap()
 		MinimapCompassTexture:Hide()
 		MinimapNorthTag:Show()
 	end
-	
+
 	local iZoom = Minimap:GetZoom()
 	if (iZoom+1 < Minimap:GetZoomLevels()) then
 		Minimap:SetZoom(iZoom+1)
@@ -2413,7 +2498,7 @@ function ClassicUI:EnableOldMinimap()
 		self:ClearAllPoints()
 		self:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", ClassicUI.cached_db_profile.extraFrames_Minimap_xOffset, ClassicUI.cached_db_profile.extraFrames_Minimap_yOffset)	-- cached db value
 	end)
-	
+
 	-- Make ClassicUI compatible with 'Garrison Order Hall Report' addon
 	local GarrisonOrderHallReport = LibStub ~= nil and LibStub("AceAddon-3.0"):GetAddon("GarrisonOrderHallReport", true)
 	if (not(ClassicUI.hooked_GarrisonOrderHallReportSetButtonLook) and GarrisonOrderHallReport ~= nil and GarrisonOrderHallReport.SetButtonLook ~= nil and type(GarrisonOrderHallReport.SetButtonLook) == "function") then
@@ -2495,14 +2580,14 @@ function ClassicUI:EnableOldMinimap()
 	else
 		ExpansionLandingPageMinimapButton:SetPoint("CENTER", MinimapBackdrop, "TOPLEFT", 32 + 6 + 26.5 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetExpansionLandingPage, -105 - 7 - 26.5 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetExpansionLandingPage)
 	end
-	
+
 	local ldbi = LibStub ~= nil and LibStub:GetLibrary("LibDBIcon-1.0", true)
 	if (ldbi ~= nil) then
 		for _, v in pairs(ldbi:GetButtonList()) do
 			ldbi:Refresh(v)
 		end
 	end
-	
+
 	TimeManagerClockButton:SetParent(Minimap)
 	TimeManagerClockButton:ClearAllPoints()
 	TimeManagerClockButton:SetPoint("CENTER", Minimap, "CENTER", 0, -75)
@@ -2523,7 +2608,7 @@ function ClassicUI:EnableOldMinimap()
 	end
 	TimeManagerClockButtonBackground:SetTexCoord(0.015625, 0.8125, 0.015625, 0.390625)
 	TimeManagerClockButtonBackground:Show()
-	
+
 	GameTimeFrame:SetParent(MinimapCluster)
 	GameTimeFrame:ClearAllPoints()
 	if (ClassicUI.db.profile.extraFrames.Minimap.minimapArrangementType == 1) then
@@ -2536,7 +2621,7 @@ function ClassicUI:EnableOldMinimap()
 	GameTimeFrame:SetHitRectInsets(6, 0, 5, 10)
 	GameTimeFrame:SetFrameStrata("LOW")
 	GameTimeFrame:SetFrameLevel(8)
-	
+
 	hooksecurefunc("GameTimeFrame_SetDate", function()
 		GameTimeFrame:SetText(C_DateAndTime_GetCurrentCalendarTime().monthDay)
 		GameTimeFrame:SetNormalTexture("Interface\\Calendar\\UI-Calendar-Button")
@@ -2598,7 +2683,7 @@ function ClassicUI:EnableOldMinimap()
 	MinimapCluster.Tracking.Button:SetFrameLevel(5)
 	MinimapCluster.Tracking.Button:SetSize(32, 32)
 	MinimapCluster.Tracking.Button:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight", "ADD")
-	
+
 	MinimapCluster.Tracking.Button:GetNormalTexture():SetTexture(nil)
 	MinimapCluster.Tracking.Button:GetNormalTexture():SetAlpha(0)
 	MinimapCluster.Tracking.Button:GetNormalTexture():Hide()
@@ -2634,7 +2719,7 @@ function ClassicUI:EnableOldMinimap()
 		MinimapCluster.Tracking.MiniMapTrackingIcon:SetPoint("TOPLEFT", MinimapCluster.Tracking, "TOPLEFT", 6, -6)
 		MinimapCluster.Tracking.MiniMapTrackingIconOverlay:Hide()
 	end)
-	
+
 	Minimap.ZoomIn:SetParent(MinimapBackdrop)
 	Minimap.ZoomIn:ClearAllPoints()
 	if (ClassicUI.db.profile.extraFrames.Minimap.zoomButtonsPositions == 1) then
@@ -2675,7 +2760,7 @@ function ClassicUI:EnableOldMinimap()
 	end)
 	Minimap.ZoomIn:Show()
 	Minimap.ZoomOut:Show()
-	
+
 	MinimapCluster.IndicatorFrame:SetParent(MinimapCluster)
 	MinimapCluster.IndicatorFrame:ClearAllPoints()
 	if (ClassicUI.db.profile.extraFrames.Minimap.minimapArrangementType == 2) then
@@ -2686,17 +2771,17 @@ function ClassicUI:EnableOldMinimap()
 	MinimapCluster.IndicatorFrame:SetSize(33, 33)
 	MinimapCluster.IndicatorFrame:SetFrameStrata("LOW")
 	MinimapCluster.IndicatorFrame:SetFrameLevel(4)
-	
+
 	MinimapCluster.IndicatorFrame.MailFrame:ClearAllPoints()
 	MinimapCluster.IndicatorFrame.MailFrame:SetPoint("TOPLEFT", MinimapCluster.IndicatorFrame, "TOPLEFT", 0, 0)
 	MinimapCluster.IndicatorFrame.MailFrame:SetSize(33, 33)
 	MinimapCluster.IndicatorFrame.MailFrame:SetFrameStrata("LOW")
-	
+
 	MinimapCluster.IndicatorFrame.CraftingOrderFrame:ClearAllPoints()
 	MinimapCluster.IndicatorFrame.CraftingOrderFrame:SetPoint("TOPLEFT", MinimapCluster.IndicatorFrame, "TOPLEFT", 0, 0)
 	MinimapCluster.IndicatorFrame.CraftingOrderFrame:SetSize(33, 33)
 	MinimapCluster.IndicatorFrame.CraftingOrderFrame:SetFrameStrata("LOW")
-	
+
 	if (ClassicUI.db.profile.extraFrames.Minimap.mailIconPriority == 1) then
 		MinimapCluster.IndicatorFrame.MailFrame:SetFrameLevel(6)
 		MinimapCluster.IndicatorFrame.CraftingOrderFrame:SetFrameLevel(5)
@@ -2704,7 +2789,7 @@ function ClassicUI:EnableOldMinimap()
 		MinimapCluster.IndicatorFrame.MailFrame:SetFrameLevel(5)
 		MinimapCluster.IndicatorFrame.CraftingOrderFrame:SetFrameLevel(6)
 	end
-	
+
 	hooksecurefunc("MiniMapIndicatorFrame_UpdatePosition", function()
 		MinimapCluster.IndicatorFrame:ClearAllPoints()
 		if (ClassicUI.cached_db_profile.extraFrames_Minimap_minimapArrangementType == 2) then	-- cached db value
@@ -2720,33 +2805,33 @@ function ClassicUI:EnableOldMinimap()
 		MinimapCluster.IndicatorFrame.CraftingOrderFrame:ClearAllPoints()
 		MinimapCluster.IndicatorFrame.CraftingOrderFrame:SetPoint("TOPLEFT", MinimapCluster.IndicatorFrame, "TOPLEFT", 0, 0)
 	end)
-	
+
 	MiniMapMailIcon:ClearAllPoints()
 	MiniMapMailIcon:SetPoint("TOPLEFT", MinimapCluster.IndicatorFrame.MailFrame, "TOPLEFT", 7, -6)
 	MiniMapMailIcon:SetTexture("Interface\\Icons\\INV_Letter_15")
 	MiniMapMailIcon:SetSize(18, 18)
 	MiniMapMailIcon:SetDrawLayer("ARTWORK", 0)
-	
+
 	MiniMapCraftingOrderIcon:ClearAllPoints()
 	MiniMapCraftingOrderIcon:SetPoint("TOPLEFT", MinimapCluster.IndicatorFrame.CraftingOrderFrame, "TOPLEFT", 7, -6)
 	MiniMapCraftingOrderIcon:SetTexture("Interface\\Icons\\INV_Hammer_12")
 	MiniMapCraftingOrderIcon:SetSize(18, 18)
 	MiniMapCraftingOrderIcon:SetDrawLayer("ARTWORK", 0)
-	
+
 	MinimapCluster.IndicatorFrame.MailFrame:CreateTexture("MiniMapMailBorder", "OVERLAY")
 	MiniMapMailBorder:ClearAllPoints()
 	MiniMapMailBorder:SetPoint("TOPLEFT", MinimapCluster.IndicatorFrame.MailFrame, "TOPLEFT", 0, 0)
 	MiniMapMailBorder:SetTexture("Interface\\Addons\\ClassicUI\\Textures\\MiniMap-TrackingBorder")
 	MiniMapMailBorder:SetSize(52, 52)
 	MiniMapMailBorder:SetDrawLayer("OVERLAY", 0)
-	
+
 	MinimapCluster.IndicatorFrame.CraftingOrderFrame:CreateTexture("MiniMapMailBorder2", "OVERLAY")
 	MiniMapMailBorder2:ClearAllPoints()
 	MiniMapMailBorder2:SetPoint("TOPLEFT", MinimapCluster.IndicatorFrame.CraftingOrderFrame, "TOPLEFT", 0, 0)
 	MiniMapMailBorder2:SetTexture("Interface\\Addons\\ClassicUI\\Textures\\MiniMap-TrackingBorder")
 	MiniMapMailBorder2:SetSize(52, 52)
 	MiniMapMailBorder2:SetDrawLayer("OVERLAY", 0)
-	
+
 	MinimapCluster.IndicatorFrame.MailFrame.MailReminderAnim:HookScript("OnPlay", function()
 		MiniMapMailIcon:Show()
 	end)
@@ -2762,7 +2847,7 @@ function ClassicUI:EnableOldMinimap()
 	hooksecurefunc(MinimapCluster.IndicatorFrame.MailFrame, "ResetMailIcon", function(self)
 		self.MailIcon:Show()
 	end)
-	
+
 	hooksecurefunc(AddonCompartmentFrame, "UpdateDisplay", function(self)
 		if (ClassicUI.cached_db_profile.extraFrames_Minimap_hideAddonCompartment) then	-- cached db value
 			if (self:IsShown()) then
@@ -2777,9 +2862,9 @@ function ClassicUI:EnableOldMinimap()
 	AddonCompartmentFrame:SetFrameStrata("LOW")
 	AddonCompartmentFrame:SetFrameLevel(4)
 	AddonCompartmentFrame:SetScale(self.db.profile.extraFrames.Minimap.scaleAddonCompartment)
-	
+
 	MinimapCluster.InstanceDifficulty:Hide()
-	
+
 	local CUI_MiniMapInstanceDifficulty = CreateFrame("Frame", "CUI_MiniMapInstanceDifficulty", MinimapCluster)
 	CUI_MiniMapInstanceDifficulty:SetFrameStrata("LOW")
 	CUI_MiniMapInstanceDifficulty:SetFrameLevel(11)
@@ -2795,7 +2880,7 @@ function ClassicUI:EnableOldMinimap()
 	CUI_MiniMapInstanceDifficultyText:SetJustifyH("CENTER")
 	CUI_MiniMapInstanceDifficultyText:SetJustifyV("MIDDLE")
 	CUI_MiniMapInstanceDifficultyText:SetPoint("CENTER", CUI_MiniMapInstanceDifficulty, "CENTER", -1, -7)
-	
+
 	local CUI_GuildInstanceDifficulty = CreateFrame("Frame", "CUI_GuildInstanceDifficulty", MinimapCluster)
 	CUI_GuildInstanceDifficulty:SetFrameStrata("LOW")
 	CUI_GuildInstanceDifficulty:SetFrameLevel(11)
@@ -2851,7 +2936,7 @@ function ClassicUI:EnableOldMinimap()
 	CUI_GuildInstanceDifficultyHanger:SetTexture("Interface\\GuildFrame\\GuildDifficulty")
 	CUI_GuildInstanceDifficultyHanger:SetTexCoord(0.6796875, 0.984375, 0.375, 0.625)
 	CUI_GuildInstanceDifficultyHanger:SetPoint("TOPLEFT", CUI_GuildInstanceDifficulty, "TOPLEFT", 0, 0)
-	
+
 	local CUI_MiniMapChallengeMode = CreateFrame("Frame", "CUI_MiniMapChallengeMode", MinimapCluster)
 	CUI_MiniMapChallengeMode:SetFrameStrata("LOW")
 	CUI_MiniMapChallengeMode:SetFrameLevel(11)
@@ -2863,13 +2948,13 @@ function ClassicUI:EnableOldMinimap()
 	CUI_MiniMapChallengeModeTexture:SetTexture("Interface\\Challenges\\challenges-minimap-banner")
 	CUI_MiniMapChallengeModeTexture:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
 	CUI_MiniMapChallengeModeTexture:SetPoint("CENTER", CUI_MiniMapChallengeMode, "CENTER", 0, 0)
-	
+
 	CUI_MiniMapInstanceDifficulty:RegisterEvent("PLAYER_DIFFICULTY_CHANGED")
 	CUI_MiniMapInstanceDifficulty:RegisterEvent("INSTANCE_GROUP_SIZE_CHANGED")
 	CUI_MiniMapInstanceDifficulty:RegisterEvent("UPDATE_INSTANCE_INFO")
 	CUI_MiniMapInstanceDifficulty:RegisterEvent("PLAYER_GUILD_UPDATE")
 	CUI_MiniMapInstanceDifficulty:RegisterEvent("GUILD_PARTY_STATE_UPDATED")
-	
+
 	function CUI_MiniMapInstanceDifficulty:MiniMapInstanceDifficulty_Update()
 		local _, instanceType, difficulty, _, maxPlayers, playerDifficulty, isDynamicInstance, _, instanceGroupSize = GetInstanceInfo()
 		local _, _, isHeroic, isChallengeMode, displayHeroic, displayMythic = GetDifficultyInfo(difficulty)
@@ -2981,10 +3066,10 @@ function ClassicUI:EnableOldMinimap()
 		end
 	end)
 	CUI_MiniMapInstanceDifficulty:SetScript("OnLeave", GameTooltip_Hide)
-	
+
 	CUI_MiniMapInstanceDifficulty:MiniMapInstanceDifficulty_Update()
 	C_Timer.After(0.1, function() RequestGuildPartyState() end)
-	
+
 	CUI_GuildInstanceDifficulty:SetScript("OnEnter", function(self)
 		local guildName = GetGuildInfo("player")
 		local _, instanceType, _, _, maxPlayers = GetInstanceInfo()
@@ -3007,7 +3092,7 @@ function ClassicUI:EnableOldMinimap()
 		GameTooltip:Show()
 	end)
 	CUI_GuildInstanceDifficulty:SetScript("OnLeave", GameTooltip_Hide)
-	
+
 	hooksecurefunc(MinimapCluster, "SetHeaderUnderneath", function(self, headerUnderneath)
 		self.MinimapContainer.Minimap:ClearAllPoints()
 		self.MinimapContainer.Minimap:SetPoint("CENTER", self, "TOP", 9, -92)
@@ -3020,7 +3105,7 @@ function ClassicUI:EnableOldMinimap()
 			self.IndicatorFrame:SetPoint("TOPRIGHT", self, "TOPRIGHT", 7, -59)
 		end
 	end)
-	
+
 	CreateFrame("Button", "MinimapZoneTextButton", MinimapCluster)
 	MinimapZoneTextButton:ClearAllPoints()
 	MinimapZoneTextButton:SetPoint("CENTER", MinimapCluster, "CENTER", 0, 83)
@@ -3049,7 +3134,7 @@ function ClassicUI:EnableOldMinimap()
 	MinimapCluster.BorderTop.TopLeftCorner:Hide()
 	MinimapCluster.BorderTop.BottomRightCorner:Hide()
 	MinimapCluster.BorderTop.TopRightCorner:Hide()
-	
+
 	MiniMapWorldMapButton = MinimapCluster.ZoneTextButton
 	MiniMapWorldMapButton:ClearAllPoints()
 	MiniMapWorldMapButton:SetPoint("TOPRIGHT", MinimapBackdrop, "TOPRIGHT", -2, 23)
@@ -3066,7 +3151,7 @@ function ClassicUI:EnableOldMinimap()
 	MiniMapWorldMapButton:GetHighlightTexture():SetSize(28, 28)
 	MiniMapWorldMapButton:GetHighlightTexture():ClearAllPoints()
 	MiniMapWorldMapButton:GetHighlightTexture():SetPoint("TOPRIGHT", MiniMapWorldMapButton, "TOPRIGHT", 2, -2)
-	
+
 	ClassicUI.Minimap_SetTooltip = function(pvpType, factionName)
 		if (GameTooltip:IsOwned(MinimapZoneTextButton)) then
 			GameTooltip:SetOwner(MinimapZoneTextButton, "ANCHOR_LEFT")
@@ -3114,7 +3199,7 @@ function ClassicUI:EnableOldMinimap()
 	MinimapZoneTextButton:SetScript("OnLeave", function(self)
 		GameTooltip_Hide()
 	end)
-	
+
 	MiniMapWorldMapButton.tooltipText = MicroButtonTooltipText(WORLDMAP_BUTTON, "TOGGLEWORLDMAP")
 	MiniMapWorldMapButton.newbieText = NEWBIE_TOOLTIP_WORLDMAP
 	MiniMapWorldMapButton:RegisterEvent("UPDATE_BINDINGS")
@@ -3128,7 +3213,7 @@ function ClassicUI:EnableOldMinimap()
 		self.tooltipText = MicroButtonTooltipText(WORLDMAP_BUTTON, "TOGGLEWORLDMAP")
 		self.newbieText = NEWBIE_TOOLTIP_WORLDMAP
 	end)
-	
+
 	self.OldMinimapLoaded = true
 end
 
@@ -3141,25 +3226,25 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		end
 		return
 	end
-	
+
 	-- Update the cached number of visible bars (pre update)
 	ClassicUI.cached_NumberVisibleBars = ClassicUI:GetNumberVisibleBars()
 	ClassicUI.cached_NumberRealVisibleBars = ClassicUI.cached_NumberVisibleBars
-	
+
 	-- Create wrapper frames for the [ActionBars], setting their attributes to their originals, and using the original frame as parent
 	-- These frames will be the ones used by the ActionButton to anchor, since they will have fewer restrictions than the original ones and will cause fewer taints errors
 	-- These frames will always be visible, so their actual visibility depends on that of their parent frame (the original ActionBar)
-	
+
 	-- [ActionBars] OverrideActionBar
 	OverrideActionBar:SetPoint("BOTTOM", OverrideActionBar:GetParent(), "BOTTOM", ClassicUI.db.profile.barsConfig.OverrideActionBar.xOffset, ClassicUI.db.profile.barsConfig.OverrideActionBar.yOffset)
 	OverrideActionBar:SetScale(ClassicUI.db.profile.barsConfig.OverrideActionBar.scale)
-	
+
 	-- [ActionBars] PetBattleFrame
 	PetBattleFrame.BottomFrame:SetPoint("BOTTOM", PetBattleFrame.BottomFrame:GetParent(), "BOTTOM", ClassicUI.db.profile.barsConfig.PetBattleFrameBar.xOffset, ClassicUI.db.profile.barsConfig.PetBattleFrameBar.yOffset)
 	PetBattleFrame.BottomFrame:SetScale(ClassicUI.db.profile.barsConfig.PetBattleFrameBar.scale)
-	
+
 	-- [ActionBars] MainMenuBar
-	local CUI_MainMenuBar = CreateFrame("Frame", "CUI_MainMenuBar", MainMenuBar)
+	local CUI_MainMenuBar = CreateFrame("Frame", "CUI_MainMenuBar", MainActionBar)
 	function CUI_MainMenuBar:InitButtons()
 		for i = 1, 12 do
 			local iActionButton = _G["ActionButton"..i]
@@ -3220,7 +3305,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 			end
 		end
 	end
-	hooksecurefunc(MainMenuBar, "SetScale", CUI_MainMenuBar.hook_SetScale)
+	hooksecurefunc(MainActionBar, "SetScale", CUI_MainMenuBar.hook_SetScale)
 	for i = 1, 12 do
 		local iActionButton = _G["ActionButton"..i]
 		if (iActionButton ~= nil) then
@@ -3246,7 +3331,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 			hooksecurefunc(iActionButton:GetParent(), "SetScale", CUI_MainMenuBar.actionButtons[iActionButton].hook_SetScale)
 		end
 	end
-	
+
 	-- [ActionBars] MainMenuBar -> MainMenuBarArtFrame
 	local CUI_MainMenuBarArtFrame = CreateFrame("Frame", "CUI_MainMenuBarArtFrame", CUI_MainMenuBar)
 	CUI_MainMenuBarArtFrame:SetAllPoints(CUI_MainMenuBar)
@@ -3256,7 +3341,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	CUI_MainMenuBarArtFrame:EnableMouse(false)
 	CUI_MainMenuBarArtFrame:SetAlpha(1)
 	CUI_MainMenuBarArtFrame:Show()
-	
+
 	local CUI_MainMenuBarTexture0 = CUI_MainMenuBarArtFrame:CreateTexture("CUI_MainMenuBarTexture0")
 	CUI_MainMenuBarTexture0:SetPoint("BOTTOM", CUI_MainMenuBarArtFrame, "BOTTOM", -384, 0)
 	CUI_MainMenuBarTexture0:SetTexture("Interface\\MainMenuBar\\UI-MainMenuBar-Dwarf")
@@ -3265,7 +3350,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	CUI_MainMenuBarTexture0:SetDrawLayer("BACKGROUND", 0)
 	CUI_MainMenuBarTexture0:SetAlpha(1)
 	CUI_MainMenuBarTexture0:Show()
-	
+
 	local CUI_MainMenuBarTexture1 = CUI_MainMenuBarArtFrame:CreateTexture("CUI_MainMenuBarTexture1")
 	CUI_MainMenuBarTexture1:SetPoint("BOTTOM", CUI_MainMenuBarArtFrame, "BOTTOM", -128, 0)
 	CUI_MainMenuBarTexture1:SetTexture("Interface\\MainMenuBar\\UI-MainMenuBar-Dwarf")
@@ -3274,7 +3359,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	CUI_MainMenuBarTexture1:SetDrawLayer("BACKGROUND", 0)
 	CUI_MainMenuBarTexture1:SetAlpha(1)
 	CUI_MainMenuBarTexture1:Show()
-	
+
 	local CUI_MainMenuBarTexture2 = CUI_MainMenuBarArtFrame:CreateTexture("CUI_MainMenuBarTexture2")
 	CUI_MainMenuBarTexture2:SetPoint("BOTTOM", CUI_MainMenuBarArtFrame, "BOTTOM", 128, 0)
 	CUI_MainMenuBarTexture2:SetTexture("Interface\\MainMenuBar\\UI-MainMenuBar-KeyRing")
@@ -3283,7 +3368,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	CUI_MainMenuBarTexture2:SetDrawLayer("BACKGROUND", 0)
 	CUI_MainMenuBarTexture2:SetAlpha(1)
 	CUI_MainMenuBarTexture2:Show()
-	
+
 	local CUI_MainMenuBarTexture3 = CUI_MainMenuBarArtFrame:CreateTexture("CUI_MainMenuBarTexture3")
 	CUI_MainMenuBarTexture3:SetPoint("BOTTOM", CUI_MainMenuBarArtFrame, "BOTTOM", 384, 0)
 	CUI_MainMenuBarTexture3:SetTexture("Interface\\MainMenuBar\\UI-MainMenuBar-KeyRing")
@@ -3292,7 +3377,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	CUI_MainMenuBarTexture3:SetDrawLayer("BACKGROUND", 0)
 	CUI_MainMenuBarTexture3:SetAlpha(1)
 	CUI_MainMenuBarTexture3:Show()
-	
+
 	local CUI_MainMenuBarMaxLevelBar = CreateFrame("Frame", "CUI_MainMenuBarMaxLevelBar", CUI_MainMenuBar)
 	CUI_MainMenuBarMaxLevelBar:SetPoint("TOP", CUI_MainMenuBar, "TOP", 0, -11)
 	CUI_MainMenuBarMaxLevelBar:SetSize(1024, 7)
@@ -3300,7 +3385,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	CUI_MainMenuBarMaxLevelBar:SetFrameLevel(2)
 	CUI_MainMenuBarMaxLevelBar:EnableMouse(true)
 	CUI_MainMenuBarMaxLevelBar:SetAlpha(1)
-	
+
 	local CUI_MainMenuMaxLevelBar0 = CUI_MainMenuBarMaxLevelBar:CreateTexture("CUI_MainMenuMaxLevelBar0")
 	CUI_MainMenuMaxLevelBar0:SetPoint("BOTTOM", CUI_MainMenuBarMaxLevelBar, "TOP", -384, 0)
 	CUI_MainMenuMaxLevelBar0:SetTexture("Interface\\MainMenuBar\\UI-MainMenuBar-MaxLevel")
@@ -3309,7 +3394,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	CUI_MainMenuMaxLevelBar0:SetDrawLayer("BACKGROUND", 0)
 	CUI_MainMenuMaxLevelBar0:SetAlpha(1)
 	CUI_MainMenuMaxLevelBar0:Show()
-	
+
 	local CUI_MainMenuMaxLevelBar1 = CUI_MainMenuBarMaxLevelBar:CreateTexture("CUI_MainMenuMaxLevelBar1")
 	CUI_MainMenuMaxLevelBar1:SetPoint("LEFT", CUI_MainMenuMaxLevelBar0, "RIGHT", 0, 0)
 	CUI_MainMenuMaxLevelBar1:SetTexture("Interface\\MainMenuBar\\UI-MainMenuBar-MaxLevel")
@@ -3318,7 +3403,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	CUI_MainMenuMaxLevelBar1:SetDrawLayer("BACKGROUND", 0)
 	CUI_MainMenuMaxLevelBar1:SetAlpha(1)
 	CUI_MainMenuMaxLevelBar1:Show()
-	
+
 	local CUI_MainMenuMaxLevelBar2 = CUI_MainMenuBarMaxLevelBar:CreateTexture("CUI_MainMenuMaxLevelBar2")
 	CUI_MainMenuMaxLevelBar2:SetPoint("LEFT", CUI_MainMenuMaxLevelBar1, "RIGHT", 0, 0)
 	CUI_MainMenuMaxLevelBar2:SetTexture("Interface\\MainMenuBar\\UI-MainMenuBar-MaxLevel")
@@ -3327,7 +3412,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	CUI_MainMenuMaxLevelBar2:SetDrawLayer("BACKGROUND", 0)
 	CUI_MainMenuMaxLevelBar2:SetAlpha(1)
 	CUI_MainMenuMaxLevelBar2:Show()
-	
+
 	local CUI_MainMenuMaxLevelBar3 = CUI_MainMenuBarMaxLevelBar:CreateTexture("CUI_MainMenuMaxLevelBar3")
 	CUI_MainMenuMaxLevelBar3:SetPoint("LEFT", CUI_MainMenuMaxLevelBar2, "RIGHT", 0, 0)
 	CUI_MainMenuMaxLevelBar3:SetTexture("Interface\\MainMenuBar\\UI-MainMenuBar-MaxLevel")
@@ -3336,15 +3421,15 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	CUI_MainMenuMaxLevelBar3:SetDrawLayer("BACKGROUND", 0)
 	CUI_MainMenuMaxLevelBar3:SetAlpha(1)
 	CUI_MainMenuMaxLevelBar3:Show()
-	
+
 	if (ClassicUI.cached_NumberRealVisibleBars <= 0) then
 		CUI_MainMenuBarMaxLevelBar:Show()
 	else
 		CUI_MainMenuBarMaxLevelBar:Hide()
 	end
-	
+
 	-- [ActionBars] MainMenuBar -> MainMebuBarPageNumber, ActionBarUpButton and ActionBarDownButton
-	CUI_MainMenuBar.ActionBarPageNumber	= MainMenuBar.ActionBarPageNumber
+	CUI_MainMenuBar.ActionBarPageNumber	= MainActionBar.ActionBarPageNumber
 	CUI_MainMenuBar.ActionBarPageNumber:SetParent(CUI_MainMenuBar)
 	CUI_MainMenuBar.ActionBarPageNumber:SetFrameStrata("MEDIUM")
 	CUI_MainMenuBar.ActionBarPageNumber:SetFrameLevel(3)
@@ -3383,15 +3468,15 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	CUI_MainMenuBar.ActionBarPageNumber.UpButton:SetPoint("CENTER", CUI_MainMenuBarArtFrame, "TOPLEFT", 522, -22)
 	CUI_MainMenuBar.ActionBarPageNumber.DownButton:ClearAllPoints()
 	CUI_MainMenuBar.ActionBarPageNumber.DownButton:SetPoint("CENTER", CUI_MainMenuBarArtFrame, "TOPLEFT", 522, -42)
-	
-	hooksecurefunc(MainMenuBar, "EditModeSetScale", function(self, newScale)
+
+	hooksecurefunc(MainActionBar, "EditModeSetScale", function(self, newScale)
 		self.ActionBarPageNumber:SetScale(1)
 	end)
-	
-	hooksecurefunc(MainMenuBar, "UpdateSystemSettingHideBarScrolling", function(self)
+
+	hooksecurefunc(MainActionBar, "UpdateSystemSettingHideBarScrolling", function(self)
 		self.ActionBarPageNumber:SetShown(true)
 	end)
-	
+
 	-- [ActionBars] MainMenuBar -> MainMenuBarLeftEndCap
 	local CUI_MainMenuBarLeftEndCap = CUI_MainMenuBarArtFrame:CreateTexture("CUI_MainMenuBarLeftEndCap")
 	function CUI_MainMenuBarLeftEndCap:Init()
@@ -3427,7 +3512,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		end
 	end
 	CUI_MainMenuBarLeftEndCap:Init()
-	
+
 	-- [ActionBars] MainMenuBar -> MainMenuBarRightEndCap
 	local CUI_MainMenuBarRightEndCap = CUI_MainMenuBarArtFrame:CreateTexture("CUI_MainMenuBarRightEndCap")
 	function CUI_MainMenuBarRightEndCap:Init()
@@ -3463,7 +3548,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		end
 	end
 	CUI_MainMenuBarRightEndCap:Init()
-	
+
 	-- [SpellFlyout] Set the SpellFlyout and SpellFlyoutButtons layout
 	SpellFlyout.Background.End:SetAtlas(nil)
 	SpellFlyout.Background.End:SetSize(37, 22)
@@ -3479,7 +3564,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	SpellFlyout.Background.VerticalMiddle:SetTexture("Interface\\Buttons\\ActionBarFlyoutButton-FlyoutMid", true, true)
 	SpellFlyout.Background.Start:Hide()
 	SpellFlyout.Background.Start:SetAlpha(0)
-	
+
 	hooksecurefunc(SpellFlyout, "Toggle", function(self, flyoutButton, flyoutID, isActionBar, specID, showFullTooltip, reason)
 		if (not(self:IsShown()) and self.glyphActivating) then
 			return
@@ -3547,8 +3632,8 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 						end
 					end
 					if not(prevButton) then
-						-- Setting 'SpellFlyoutPopupButtonX' position is restricted in combat. It is only a minor adjustment, so it is not necessary to delay it, we just skip it if we're in combat lockdown
-						if not(InCombatLockdown()) then
+						-- Setting 'SpellFlyoutPopupButtonX' position is protected in combat. It is only a minor adjustment, so it is not necessary to delay it, we just skip it if we're in combat lockdown
+						if not(InCombatLockdown()) or not(button:IsProtected()) then
 							if (direction == "UP") then
 								button:SetPoint("BOTTOM", 0, ClassicUI.SPELLFLYOUT_INITIAL_SPACING)
 							elseif (direction == "DOWN") then
@@ -3593,8 +3678,8 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 			--SetClampedTextureRotation(self.Background.End, 90)	-- Calls to 'SetClampedTextureRotation' cause taints, so we set the coords manually
 			self.Background.End:SetTexCoord(0.015625, 0.9140625, 0.59375, 0.9140625, 0.015625, 0.7421875, 0.59375, 0.7421875)
 		end
-		-- Setting 'SpellFlyout' size is restricted in combat. It is only a minor adjustment, so it is not necessary to delay it, we just skip it if we're in combat lockdown
-		if (not(InCombatLockdown()) and (prevButton ~= nil)) then
+		-- Setting 'SpellFlyout' size is protected in combat. It is only a minor adjustment, so it is not necessary to delay it, we just skip it if we're in combat lockdown
+		if ((not(InCombatLockdown()) or not(self:IsProtected())) and (prevButton ~= nil)) then
 			if (direction == "UP" or direction == "DOWN") then
 				self:SetWidth(prevButton:GetWidth())
 				self:SetHeight((prevButton:GetHeight()+ClassicUI.SPELLFLYOUT_DEFAULT_SPACING) * numButtons - ClassicUI.SPELLFLYOUT_DEFAULT_SPACING + ClassicUI.SPELLFLYOUT_INITIAL_SPACING + ClassicUI.SPELLFLYOUT_FINAL_SPACING)
@@ -3615,7 +3700,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 			self.Background.End:SetHeight(nsize)
 		end
 	end)
-	
+
 	-- [ActionBars] MultiBarBottomLeft
 	local CUI_MultiBarBottomLeft = CreateFrame("Frame", "CUI_MultiBarBottomLeft", MultiBarBottomLeft)
 	function CUI_MultiBarBottomLeft:RelocateBar()
@@ -3722,7 +3807,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 			hooksecurefunc(iMultiBarBottomLeftButton:GetParent(), "SetScale", CUI_MultiBarBottomLeft.actionButtons[iMultiBarBottomLeftButton].hook_SetScale)
 		end
 	end
-	
+
 	-- [ActionBars] MultiBarBottomRight
 	local CUI_MultiBarBottomRight = CreateFrame("Frame", "CUI_MultiBarBottomRight", MultiBarBottomRight)
 	function CUI_MultiBarBottomRight:RelocateBar()
@@ -3811,7 +3896,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 			hooksecurefunc(iMultiBarBottomRightButton:GetParent(), "SetScale", CUI_MultiBarBottomRight.actionButtons[iMultiBarBottomRightButton].hook_SetScale)
 		end
 	end
-	
+
 	-- [ActionBars] MultiBarRight
 	local CUI_MultiBarRight = CreateFrame("Frame", "CUI_MultiBarRight", MultiBarRight)
 	function CUI_MultiBarRight:RelocateBar()
@@ -3919,7 +4004,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	MultiBarRight:HookScript("OnShow", function(self)
 		ClassicUI:ReLayoutMainFrames()
 	end)
-	
+
 	-- [ActionBars] MultiBarLeft
 	local CUI_MultiBarLeft = CreateFrame("Frame", "CUI_MultiBarLeft", MultiBarLeft)
 	function CUI_MultiBarLeft:RelocateBar()
@@ -4011,11 +4096,11 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	MultiBarLeft:HookScript("OnShow", function(self)
 		ClassicUI:ReLayoutMainFrames()
 	end)
-	
+
 	-- [ActionBars] PetActionBarFrame (a.k.a. PetActionBar)
 	local CUI_PetActionBarFrame = CreateFrame("Frame", "CUI_PetActionBarFrame", PetActionBar)
 	CUI_PetActionBarFrame.PETACTIONBAR_XPOS = 36
-	
+
 	local CUI_SlidingActionBarTexture0 = CUI_PetActionBarFrame:CreateTexture("CUI_SlidingActionBarTexture0")
 	CUI_SlidingActionBarTexture0:SetPoint("TOPLEFT", CUI_PetActionBarFrame, "TOPLEFT", 0, 0)
 	CUI_SlidingActionBarTexture0:SetTexture("Interface\\PetActionBar\\UI-PetBar")
@@ -4024,7 +4109,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	CUI_SlidingActionBarTexture0:SetDrawLayer("OVERLAY", 0)
 	CUI_SlidingActionBarTexture0:SetAlpha(1)
 	CUI_SlidingActionBarTexture0:Hide()
-	
+
 	local CUI_SlidingActionBarTexture1 = CUI_PetActionBarFrame:CreateTexture("CUI_SlidingActionBarTexture1")
 	CUI_SlidingActionBarTexture1:SetPoint("LEFT", CUI_SlidingActionBarTexture0, "RIGHT", 0, 0)
 	CUI_SlidingActionBarTexture1:SetTexture("Interface\\PetActionBar\\UI-PetBar")
@@ -4033,7 +4118,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	CUI_SlidingActionBarTexture1:SetDrawLayer("OVERLAY", 0)
 	CUI_SlidingActionBarTexture1:SetAlpha(1)
 	CUI_SlidingActionBarTexture1:Hide()
-	
+
 	function CUI_PetActionBarFrame:IsAboveStance(ignoreShowing)
 		return (((StanceBar and GetNumShapeshiftForms() > 0) or (MultiCastActionBarFrame and HasMultiCastActionBar()) or
 			(MainMenuBarVehicleLeaveButton and MainMenuBarVehicleLeaveButton:IsShown() and (MainMenuBarVehicleLeaveButton:GetRight() ~= nil))) and
@@ -4254,10 +4339,10 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	PetActionBar:HookScript("OnShow", function(self)
 		ClassicUI:ReLayoutMainFrames()
 	end)
-	
+
 	-- [ActionBars] PossessBarFrame (a.k.a. PossessActionBar)
 	local CUI_PossessBarFrame = CreateFrame("Frame", "CUI_PossessBarFrame", PossessActionBar)
-	
+
 	local CUI_PossessBackground1 = CUI_PossessBarFrame:CreateTexture("CUI_PossessBackground1")
 	CUI_PossessBackground1:SetPoint("BOTTOMLEFT", CUI_PossessBarFrame, "BOTTOMLEFT", 0, 0)
 	CUI_PossessBackground1:SetTexture("Interface\\ShapeshiftBar\\ShapeshiftBar")
@@ -4266,7 +4351,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	CUI_PossessBackground1:SetDrawLayer("BACKGROUND", 0)
 	CUI_PossessBackground1:SetAlpha(1)
 	CUI_PossessBackground1:Hide()
-	
+
 	local CUI_PossessBackground2 = CUI_PossessBarFrame:CreateTexture("CUI_PossessBackground2")
 	CUI_PossessBackground2:SetPoint("LEFT", CUI_PossessBackground1, "RIGHT", 0, 0)
 	CUI_PossessBackground2:SetTexture("Interface\\ShapeshiftBar\\ShapeshiftBar")
@@ -4275,7 +4360,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	CUI_PossessBackground2:SetDrawLayer("BORDER", 0)
 	CUI_PossessBackground2:SetAlpha(1)
 	CUI_PossessBackground2:Hide()
-	
+
 	function CUI_PossessBarFrame:RelocateBar()
 		local show_multi_action_bar_1 = MultiBarBottomLeft:IsShown()
 		local yPos = (show_multi_action_bar_1) and ClassicUI.ACTION_BAR_OFFSET or 0
@@ -4379,10 +4464,10 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	PossessActionBar:HookScript("OnShow", function(self)
 		ClassicUI:ReLayoutMainFrames()
 	end)
-	
+
 	-- [ActionBars] StanceBarFrame (a.k.a. StanceBar)
 	local CUI_StanceBarFrame = CreateFrame("Frame", "CUI_StanceBarFrame", StanceBar)
-	
+
 	local CUI_StanceBarLeft = CUI_StanceBarFrame:CreateTexture("CUI_StanceBarLeft")
 	CUI_StanceBarLeft:SetPoint("BOTTOMLEFT", CUI_StanceBarFrame, "BOTTOMLEFT", 0, 0)
 	CUI_StanceBarLeft:SetTexture("Interface\\ShapeshiftBar\\ShapeshiftBar")
@@ -4391,7 +4476,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	CUI_StanceBarLeft:SetDrawLayer("BACKGROUND", 0)
 	CUI_StanceBarLeft:SetAlpha(1)
 	CUI_StanceBarLeft:Hide()
-	
+
 	local CUI_StanceBarMiddle = CUI_StanceBarFrame:CreateTexture("CUI_StanceBarMiddle")
 	CUI_StanceBarMiddle:SetPoint("LEFT", CUI_StanceBarLeft, "RIGHT", 0, 0)
 	CUI_StanceBarMiddle:SetTexture("Interface\\ShapeshiftBar\\ShapeshiftBarMiddle", true)
@@ -4400,7 +4485,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	CUI_StanceBarMiddle:SetDrawLayer("BACKGROUND", 0)
 	CUI_StanceBarMiddle:SetAlpha(1)
 	CUI_StanceBarMiddle:Hide()
-	
+
 	local CUI_StanceBarRight = CUI_StanceBarFrame:CreateTexture("CUI_StanceBarRight")
 	CUI_StanceBarRight:SetPoint("LEFT", CUI_StanceBarMiddle, "RIGHT", 0, 0)
 	CUI_StanceBarRight:SetTexture("Interface\\ShapeshiftBar\\ShapeshiftBar")
@@ -4409,7 +4494,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	CUI_StanceBarRight:SetDrawLayer("BORDER", 0)
 	CUI_StanceBarRight:SetAlpha(1)
 	CUI_StanceBarRight:Hide()
-	
+
 	function CUI_StanceBarFrame:RelocateBar()
 		local show_multi_action_bar_1 = MultiBarBottomLeft:IsShown()
 		local yPos = (show_multi_action_bar_1) and ClassicUI.ACTION_BAR_OFFSET or 0
@@ -4523,7 +4608,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	StanceBar:HookScript("OnShow", function(self)
 		ClassicUI:ReLayoutMainFrames()
 	end)
-	
+
 	-- [ActionBars] OverrideActionBar
 	for i = 1, 6 do
 		local iOverrideButton = _G["OverrideActionBarButton"..i]
@@ -4531,11 +4616,11 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 			ClassicUI.LayoutActionButton(iOverrideButton, 7)
 		end
 	end
-	
+
 	-- Init and Set the position of all ActionButtons
 	CUI_MainMenuBar:InitButtons()
 	CUI_MainMenuBar:RelocateButtons()
-	CUI_MainMenuBar.hook_SetScale(MainMenuBar, MainMenuBar:GetScale())
+	CUI_MainMenuBar.hook_SetScale(MainActionBar, MainActionBar:GetScale())
 	CUI_MultiBarBottomLeft:InitButtons()
 	CUI_MultiBarBottomLeft:RelocateButtons()
 	CUI_MultiBarBottomLeft.hook_SetScale(MultiBarBottomLeft, MultiBarBottomLeft:GetScale())
@@ -4557,9 +4642,9 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	CUI_StanceBarFrame:InitButtons()
 	CUI_StanceBarFrame:RelocateButtons()
 	CUI_StanceBarFrame.hook_SetScale(StanceBar, StanceBar:GetScale())
-	
+
 	-- We restore the rest of the interface elements (new frames and textures are created if necessary)
-	
+
 	-- [MainMenuBarVehicleLeaveButton]
 	MainMenuBarVehicleLeaveButton:SetParent(CUI_MainMenuBar)
 	MainMenuBarVehicleLeaveButton:SetSize(32, 32)
@@ -4582,7 +4667,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	end
 	hooksecurefunc(MainMenuBarVehicleLeaveButton, "Update", ClassicUI.MainMenuBarVehicleLeaveButton_Relocate)
 	ClassicUI.MainMenuBarVehicleLeaveButton_Relocate(MainMenuBarVehicleLeaveButton)
-	
+
 	-- [MicroButtons]
 	ClassicUI.mbWidth = 28
 	ClassicUI.mbHeight = 38
@@ -4593,16 +4678,18 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		[PlayerSpellsMicroButton] = 3,
 		[AchievementMicroButton] = 4,
 		[QuestLogMicroButton] = 5,
-		[GuildMicroButton] = 6,
-		[LFDMicroButton] = 7,
-		[CollectionsMicroButton] = 8,
-		[EJMicroButton] = 9,
-		[HelpMicroButton] = 10,
-		[StoreMicroButton] = 11,
-		[MainMenuMicroButton] = 12
+		[HousingMicroButton] = 6,
+		[GuildMicroButton] = 7,
+		[LFDMicroButton] = 8,
+		[CollectionsMicroButton] = 9,
+		[EJMicroButton] = 10,
+		[HelpMicroButton] = 11,
+		[StoreMicroButton] = 12,
+		[MainMenuMicroButton] = 13
 	}
 	ClassicUI.MicroButtonsGroupOrderInfo = {
 		current = { },		-- array with current ordered MicroButtons, execute 'ClassicUI.SetOrderInfoMicroButtons()' to refresh
+		forceHidden = { },	-- array with current forcibly hidden MicroButtons (usually hidden because they do not fit)
 		anchorInfo = {		-- array with the anchor information for the MicroButtons
 			[1] = {
 				point = "BOTTOMLEFT",
@@ -4676,25 +4763,72 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 				relativePoint = "BOTTOMRIGHT",
 				offsetX = -2,
 				offsetY = 0
+			},
+			[13] = {
+				point = "BOTTOMLEFT",
+				relativePoint = "BOTTOMRIGHT",
+				offsetX = -2,
+				offsetY = 0
 			}
 		}
 	}
-	
+
 	-- Function to refresh the 'ClassicUI.MicroButtonsGroupOrderInfo.current' array (current ordering status of the MicroButtons)
 	ClassicUI.SetOrderInfoMicroButtons = function()
 		-- Wipe the current table
 		for k, _ in pairs(ClassicUI.MicroButtonsGroupOrderInfo.current) do
 			ClassicUI.MicroButtonsGroupOrderInfo.current[k] = nil
 		end
+		-- Reset the forceHidden table
+		for k, _ in pairs(ClassicUI.MicroButtonsGroupOrderInfo.forceHidden) do
+			ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[k] = false
+		end
 		-- Add space-consuming MicroButtons to the sort table
+		local numButtonsAdded = 0
 		for k, v in pairs(ClassicUI.db.profile.barsConfig.MicroButtons) do
 			if ((type(v) == 'table') and (type(v.order) == 'number')) then
 				if (not(v.hideMicroButton) or v.keepGapMicroButton) then
 					ClassicUI.MicroButtonsGroupOrderInfo.current[v.order] = {
 						name = k,
-						button = _G[k]
+						button = _G[k],
+						priority = v.priority
 					}
+					numButtonsAdded = numButtonsAdded + 1
 				end
+			end
+		end
+		-- Remove from the table the non-priority MicroButtons that do not fit
+		local numButtonsToRemove = numButtonsAdded - ClassicUI.db.profile.barsConfig.MicroButtons.maxMicroButtonsShown
+		if (numButtonsToRemove > 0) then
+			local buttonsToRemove = { }
+			local minIndex = nil
+			local minPriority = nil
+			for k, v in pairs(ClassicUI.MicroButtonsGroupOrderInfo.current) do
+				if #buttonsToRemove < numButtonsToRemove then
+					tblinsert(buttonsToRemove, { priority = v.priority, order = k, button = v.button })
+					if minIndex == nil or v.priority < minPriority then
+						minIndex = #buttonsToRemove
+						minPriority = v.priority
+					end
+				else
+					if v.priority > minPriority then
+						buttonsToRemove[minIndex].priority = v.priority
+						buttonsToRemove[minIndex].order = k
+						buttonsToRemove[minIndex].button = v.button
+						minIndex = 1
+						minPriority = buttonsToRemove[1].priority
+						for i = 2, numButtonsToRemove do
+							if buttonsToRemove[i].priority < minPriority then
+								minIndex = i
+								minPriority = buttonsToRemove[i].priority
+							end
+						end
+					end
+				end
+			end
+			for i = 1, numButtonsToRemove do
+				ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[buttonsToRemove[i].button] = true
+				ClassicUI.MicroButtonsGroupOrderInfo.current[buttonsToRemove[i].order] = nil
 			end
 		end
 		-- Shrink the table to adjust the sortings by removing the gaps, converting it to an array
@@ -4709,7 +4843,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 			end
 		end
 	end
-	
+
 	-- Function to set the position for all MicroButtons
 	ClassicUI.SetPointsMicroButtons = function()
 		local otherButtons = { }
@@ -4770,15 +4904,26 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 			v.button:SetPoint(anchorInfo.point, relativeFrame, anchorInfo.relativePoint, anchorInfo.offsetX + (ClassicUI.mbIsStacked and 0 or xOffset), anchorInfo.offsetY + (ClassicUI.mbIsStacked and 0 or yOffset))
 			c = c + 1
 		end
+		-- Manage the forceHidden buttons
+		for k, v in pairs(ClassicUI.MicroButtonsGroupOrderInfo.forceHidden) do
+			if (v) then
+				k:Hide()
+			else
+				if not(ClassicUI.db.profile.barsConfig.MicroButtons[k:GetName()].hideMicroButton) then
+					k:Show()
+				end
+				ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[k] = nil
+			end
+		end
 	end
-	
+
 	-- Function to update the parent frame of all MicroButtons
 	ClassicUI.UpdateMicroButtonsParent = function(parent)
 		for k, _ in pairs(ClassicUI.MicroButtonsGroup) do
 			k:SetParent(parent)
 		end
 	end
-	
+
 	-- Function to move the all MicroButtons to a new position
 	ClassicUI.MoveMicroButtons = function(anchor, anchorTo, relAnchor, x, y, isStacked)
 		-- SetPoint of the first and seventh MicroButtons
@@ -4854,15 +4999,15 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		end
 		ClassicUI.mbIsStacked = isStacked
 	end
-	
+
 	ClassicUI.SetOrderInfoMicroButtons()
-	
-	MainMenuBar:HookScript("OnShow", function(self)
+
+	MainActionBar:HookScript("OnShow", function(self)
 		ClassicUI.UpdateMicroButtonsParent(CUI_MainMenuBarArtFrame)
 		if ClassicUI.databaseCleaned then return end	-- [DB Integrity Check]
 		ClassicUI.MoveMicroButtons("BOTTOMLEFT", CUI_MainMenuBarArtFrame, "BOTTOMLEFT", 556 + ClassicUI.db.profile.barsConfig.MicroButtons.xOffset, 2 + ClassicUI.db.profile.barsConfig.MicroButtons.yOffset, false)
 	end)
-	
+
 	hooksecurefunc(OverrideActionBar, "UpdateMicroButtons", function(self)
 		if ActionBarController_GetCurrentActionBarState() == LE_ACTIONBAR_STATE_OVERRIDE then
 			local anchorX, anchorY = 542, 41
@@ -4878,13 +5023,13 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 			ClassicUI.MoveMicroButtons("BOTTOMLEFT", self, "BOTTOMLEFT", anchorX, anchorY, true)
 		end
 	end)
-	
+
 	PetBattleFrame.BottomFrame.MicroButtonFrame:HookScript("OnShow", function(self)
 		ClassicUI.UpdateMicroButtonsParent(self)
 		if ClassicUI.databaseCleaned then return end	-- [DB Integrity Check]
 		ClassicUI.MoveMicroButtons("TOPLEFT", self, "TOPLEFT", -11.5, 7.5, true)
 	end)
-	
+
 	ClassicUI.hook_MicroButtonSetStateFunc = function(self)
 		if ClassicUI.databaseCleaned then return end	-- [DB Integrity Check]
 		if (self:IsEnabled() and ClassicUI.db.profile.barsConfig.MicroButtons[self:GetName()].disableMicroButton) then
@@ -4925,7 +5070,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 			microButton.MainMenuBarPerformanceBar2:SetPoint("TOPLEFT", microButton, "TOPLEFT", 9.6, -13.5)
 		end
 	end
-	
+
 	ClassicUI.HookMicroButtonsClass_UI_Watcher = function(microButton)
 		if (Class_UI_Watcher ~= nil) then
 			if (microButton == PlayerSpellsMicroButton) then
@@ -4956,37 +5101,40 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 						if (not self.IsActive) then return end
 						if (questID == self.tutorialData.ShowAllUIQuest) then
 							if ClassicUI.databaseCleaned then return end	-- [DB Integrity Check]
-							if (ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.hideMicroButton) then
+							if (ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.hideMicroButton or ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[CharacterMicroButton]) then
 								CharacterMicroButton:Hide()
 							end
-							if (ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.hideMicroButton) then
+							if (ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.hideMicroButton or ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[ProfessionMicroButton]) then
 								ProfessionMicroButton:Hide()
 							end
-							if (ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.hideMicroButton) then
+							if (ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.hideMicroButton or ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[PlayerSpellsMicroButton]) then
 								PlayerSpellsMicroButton:Hide()
 							end
-							if (ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.hideMicroButton) then
+							if (ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.hideMicroButton or ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[AchievementMicroButton]) then
 								AchievementMicroButton:Hide()
 							end
-							if (ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.hideMicroButton) then
+							if (ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.hideMicroButton or ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[QuestLogMicroButton]) then
 								QuestLogMicroButton:Hide()
 							end
-							if (ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.hideMicroButton) then
+							if (ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.hideMicroButton or ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[HousingMicroButton]) then
+								HousingMicroButton:Hide()
+							end
+							if (ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.hideMicroButton or ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[GuildMicroButton]) then
 								GuildMicroButton:Hide()
 							end
-							if (ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.hideMicroButton) then
+							if (ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.hideMicroButton or ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[LFDMicroButton]) then
 								LFDMicroButton:Hide()
 							end
-							if (ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.hideMicroButton) then
+							if (ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.hideMicroButton or ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[CollectionsMicroButton]) then
 								CollectionsMicroButton:Hide()
 							end
-							if (ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.hideMicroButton) then
+							if (ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.hideMicroButton or ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[EJMicroButton]) then
 								EJMicroButton:Hide()
 							end
-							if (ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.hideMicroButton) then
+							if (ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.hideMicroButton or ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[StoreMicroButton]) then
 								StoreMicroButton:Hide()
 							end
-							if (ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.hideMicroButton) then
+							if (ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.hideMicroButton or ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[MainMenuMicroButton]) then
 								MainMenuMicroButton:Hide()
 							end
 						end
@@ -4997,37 +5145,37 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 					hooksecurefunc(Class_UI_Watcher, "OnInterrupt", function(sel)	-- apply to TutorialData.UI_Elements.PLAYERSPELLS_MICROBUTTON/OTHER_MICROBUTTONS/STORE_MICROBUTTON microbuttons
 						if (not self.IsActive) then return end
 						if ClassicUI.databaseCleaned then return end	-- [DB Integrity Check]
-						if (ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.hideMicroButton) then
+						if (ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.hideMicroButton or ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[CharacterMicroButton]) then
 							CharacterMicroButton:Hide()
 						end
-						if (ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.hideMicroButton) then
+						if (ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.hideMicroButton or ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[ProfessionMicroButton]) then
 							ProfessionMicroButton:Hide()
 						end
-						if (ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.hideMicroButton) then
+						if (ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.hideMicroButton or ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[PlayerSpellsMicroButton]) then
 							PlayerSpellsMicroButton:Hide()
 						end
-						if (ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.hideMicroButton) then
+						if (ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.hideMicroButton or ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[AchievementMicroButton]) then
 							AchievementMicroButton:Hide()
 						end
-						if (ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.hideMicroButton) then
+						if (ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.hideMicroButton or ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[QuestLogMicroButton]) then
 							QuestLogMicroButton:Hide()
 						end
-						if (ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.hideMicroButton) then
+						if (ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.hideMicroButton or ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[GuildMicroButton]) then
 							GuildMicroButton:Hide()
 						end
-						if (ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.hideMicroButton) then
+						if (ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.hideMicroButton or ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[LFDMicroButton]) then
 							LFDMicroButton:Hide()
 						end
-						if (ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.hideMicroButton) then
+						if (ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.hideMicroButton or ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[CollectionsMicroButton]) then
 							CollectionsMicroButton:Hide()
 						end
-						if (ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.hideMicroButton) then
+						if (ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.hideMicroButton or ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[EJMicroButton]) then
 							EJMicroButton:Hide()
 						end
-						if (ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.hideMicroButton) then
+						if (ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.hideMicroButton or ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[StoreMicroButton]) then
 							StoreMicroButton:Hide()
 						end
-						if (ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.hideMicroButton) then
+						if (ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.hideMicroButton or ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[MainMenuMicroButton]) then
 							MainMenuMicroButton:Hide()
 						end
 					end)
@@ -5041,7 +5189,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 			if not(ClassicUI.hooked_PlayerSpellsFrame_SetTab) then
 				hooksecurefunc(PlayerSpellsFrame, "SetTab", function(self, tabID)
 					if (ClassicUI.cached_db_profile.barsConfig_MicroButtons_PlayerSpellsMicroButton_iconMicroButton == 23) then	-- cached db value
-						if (self.frameTabsToTabID[PlayerSpellsUtil.FrameTabs.SpellBook] == self.internalTabTracker.tabKey) then
+						if (self.frameTabsToTabID[PlayerSpellsUtil.FrameTabs.SpellBook] == self.internalTabTracker.tabID) then
 							PlayerSpellsMicroButton:SetNormalTexture(ClassicUI.cached_db_profile.barsConfig_MicroButtons_PlayerSpellsMicroButton_iconMicroButton_normalTextureSB)	-- cached db value
 							PlayerSpellsMicroButton:SetPushedTexture(ClassicUI.cached_db_profile.barsConfig_MicroButtons_PlayerSpellsMicroButton_iconMicroButton_pushedTextureSB)	-- cached db value
 							PlayerSpellsMicroButton:SetDisabledTexture(ClassicUI.cached_db_profile.barsConfig_MicroButtons_PlayerSpellsMicroButton_iconMicroButton_disabledTextureSB)	-- cached db value
@@ -5058,7 +5206,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 				hooksecurefunc(PlayerSpellsFrame.TabSystem, "SetTab", function(self, tabID)
 					if (ClassicUI.cached_db_profile.barsConfig_MicroButtons_PlayerSpellsMicroButton_iconMicroButton == 23) then	-- cached db value
 						local parent = self:GetParent()
-						if (parent.frameTabsToTabID[PlayerSpellsUtil.FrameTabs.SpellBook] == parent.internalTabTracker.tabKey) then
+						if (parent.frameTabsToTabID[PlayerSpellsUtil.FrameTabs.SpellBook] == parent.internalTabTracker.tabID) then
 							PlayerSpellsMicroButton:SetNormalTexture(ClassicUI.cached_db_profile.barsConfig_MicroButtons_PlayerSpellsMicroButton_iconMicroButton_normalTextureSB)	-- cached db value
 							PlayerSpellsMicroButton:SetPushedTexture(ClassicUI.cached_db_profile.barsConfig_MicroButtons_PlayerSpellsMicroButton_iconMicroButton_pushedTextureSB)	-- cached db value
 							PlayerSpellsMicroButton:SetDisabledTexture(ClassicUI.cached_db_profile.barsConfig_MicroButtons_PlayerSpellsMicroButton_iconMicroButton_disabledTextureSB)	-- cached db value
@@ -5073,7 +5221,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 			end
 		end
 	end
-	
+
 	-- [MicroButtons] CharacterMicroButton
 	CharacterMicroButton:SetParent(CUI_MainMenuBarArtFrame)
 	CharacterMicroButton:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
@@ -5143,15 +5291,15 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	end
 	if (ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.hideMicroButton) then
 		CharacterMicroButton:Hide()
-		ClassicUI.HookMicroButtonsClass_UI_Watcher(CharacterMicroButton)
 	end
+	ClassicUI.HookMicroButtonsClass_UI_Watcher(CharacterMicroButton)
 	if (ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.disableMicroButton) then
 		CharacterMicroButton:Disable()
 	end
 	if (ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.disableMouseMicroButton) then
 		CharacterMicroButton:EnableMouse(false)
 	end
-	
+
 	-- [MicroButtons] CharacterMicroButton -> Portrait texture
 	CharacterMicroButton.PortraitMask:Hide()
 	CharacterMicroButton.PortraitMask:SetAlpha(0)
@@ -5168,7 +5316,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	if (ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.iconMicroButton ~= 0) then
 		CharacterMicroButton.Portrait:Hide()
 	end
-	
+
 	-- [MicroButtons] ProfessionMicroButton
 	ProfessionMicroButton:SetParent(CUI_MainMenuBarArtFrame)
 	ProfessionMicroButton:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
@@ -5220,15 +5368,15 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	end
 	if (ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.hideMicroButton) then
 		ProfessionMicroButton:Hide()
-		ClassicUI.HookMicroButtonsClass_UI_Watcher(ProfessionMicroButton)
 	end
+	ClassicUI.HookMicroButtonsClass_UI_Watcher(ProfessionMicroButton)
 	if (ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.disableMicroButton) then
 		ProfessionMicroButton:Disable()
 	end
 	if (ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.disableMouseMicroButton) then
 		ProfessionMicroButton:EnableMouse(false)
 	end
-	
+
 	-- [MicroButtons] PlayerSpellsMicroButton
 	PlayerSpellsMicroButton:SetParent(CUI_MainMenuBarArtFrame)
 	PlayerSpellsMicroButton:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
@@ -5241,7 +5389,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	PlayerSpellsMicroButton:SetHighlightTexture("Interface\\Buttons\\UI-MicroButton-Hilight", "ADD")
 	if (ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.iconMicroButton == 23) then
 		if (PlayerSpellsFrame ~= nil and PlayerSpellsUtil ~= nil) then
-			if (PlayerSpellsFrame.frameTabsToTabID[PlayerSpellsUtil.FrameTabs.SpellBook] == PlayerSpellsFrame.internalTabTracker.tabKey) then
+			if (PlayerSpellsFrame.frameTabsToTabID[PlayerSpellsUtil.FrameTabs.SpellBook] == PlayerSpellsFrame.internalTabTracker.tabID) then
 				PlayerSpellsMicroButton:SetNormalTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.iconMicroButton].normalTextureSB)
 				PlayerSpellsMicroButton:SetPushedTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.iconMicroButton].pushedTextureSB)
 				PlayerSpellsMicroButton:SetDisabledTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.iconMicroButton].disabledTextureSB)
@@ -5299,15 +5447,15 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	end
 	if (ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.hideMicroButton) then
 		PlayerSpellsMicroButton:Hide()
-		ClassicUI.HookMicroButtonsClass_UI_Watcher(PlayerSpellsMicroButton)
 	end
+	ClassicUI.HookMicroButtonsClass_UI_Watcher(PlayerSpellsMicroButton)
 	if (ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.disableMicroButton) then
 		PlayerSpellsMicroButton:Disable()
 	end
 	if (ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.disableMouseMicroButton) then
 		PlayerSpellsMicroButton:EnableMouse(false)
 	end
-	
+
 	-- [MicroButtons] AchievementMicroButton
 	AchievementMicroButton:SetParent(CUI_MainMenuBarArtFrame)
 	AchievementMicroButton:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
@@ -5360,8 +5508,8 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	end
 	if (ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.hideMicroButton) then
 		AchievementMicroButton:Hide()
-		ClassicUI.HookMicroButtonsClass_UI_Watcher(AchievementMicroButton)
 	end
+	ClassicUI.HookMicroButtonsClass_UI_Watcher(AchievementMicroButton)
 	ClassicUI.hook_AchievementMicroButton_UpdateMicroButton = function(self)
 		if (ClassicUI.cached_db_profile.barsConfig_MicroButtons_AchievementMicroButton_disableMicroButton) then	-- cached db value
 			self:Disable()
@@ -5377,7 +5525,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	if (ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.disableMouseMicroButton) then
 		AchievementMicroButton:EnableMouse(false)
 	end
-	
+
 	-- [MicroButtons] QuestLogMicroButton
 	QuestLogMicroButton:SetParent(CUI_MainMenuBarArtFrame)
 	QuestLogMicroButton:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
@@ -5429,15 +5577,138 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	end
 	if (ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.hideMicroButton) then
 		QuestLogMicroButton:Hide()
-		ClassicUI.HookMicroButtonsClass_UI_Watcher(QuestLogMicroButton)
 	end
+	ClassicUI.HookMicroButtonsClass_UI_Watcher(QuestLogMicroButton)
 	if (ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.disableMicroButton) then
 		QuestLogMicroButton:Disable()
 	end
 	if (ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.disableMouseMicroButton) then
 		QuestLogMicroButton:EnableMouse(false)
 	end
-	
+
+	-- [MicroButtons] HousingMicroButton
+	HousingMicroButton:SetParent(CUI_MainMenuBarArtFrame)
+	HousingMicroButton:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
+	HousingMicroButton:ClearAllPoints()
+	HousingMicroButton:SetFrameStrata("MEDIUM")
+	HousingMicroButton:SetFrameLevel(3)
+	HousingMicroButton:SetNormalAtlas("hud-microbutton-Character-Up")
+	HousingMicroButton:SetPushedAtlas("hud-microbutton-Character-Down")
+	HousingMicroButton:SetDisabledAtlas("hud-microbutton-Character-Disabled")
+	HousingMicroButton:SetHighlightAtlas("hud-microbutton-highlight")
+	HousingMicroButton:SetHighlightTexture("Interface\\Buttons\\UI-MicroButton-Hilight", "ADD")
+	HousingMicroButton:SetNormalTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.iconMicroButton].normalTexture)
+	HousingMicroButton:SetPushedTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.iconMicroButton].pushedTexture)
+	HousingMicroButton:SetDisabledTexture(ClassicUI.MICROBUTTONS_ARRAYINFO[ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.iconMicroButton].disabledTexture)
+	HousingMicroButton:GetDisabledTexture():SetDesaturated(true)
+	HousingMicroButton:GetNormalTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
+	HousingMicroButton:GetPushedTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
+	HousingMicroButton:GetHighlightTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
+	HousingMicroButton:GetDisabledTexture():SetTexCoord(0/32, 32/32, 22/64, 64/64)
+	HousingMicroButton:GetNormalTexture():SetVertexColor(1, 1, 1)
+	HousingMicroButton:GetPushedTexture():SetVertexColor(1, 1, 1)
+	HousingMicroButton:GetDisabledTexture():SetVertexColor(1, 1, 1)
+	HousingMicroButton:GetHighlightTexture():SetVertexColor(1, 1, 1)
+	HousingMicroButton.Background:Hide()
+	HousingMicroButton.Background:SetAlpha(0)
+	HousingMicroButton.PushedBackground:Hide()
+	HousingMicroButton.PushedBackground:SetAlpha(0)
+	HousingMicroButton.FlashBorder:SetAtlas(nil)
+	HousingMicroButton.FlashBorder:SetTexture("Interface\\Addons\\ClassicUI\\Textures\\UI-MicroButton-FlashBorderHilight")
+	HousingMicroButton.FlashBorder:SetTexCoord(0/128, 66/128, 0/128, 80/128)
+	HousingMicroButton.FlashBorder:SetBlendMode("ADD")
+	HousingMicroButton.FlashBorder:ClearAllPoints()
+	HousingMicroButton.FlashBorder:SetSize(34, 44)
+	HousingMicroButton.FlashBorder:SetDrawLayer("OVERLAY", 0)
+	HousingMicroButton.FlashBorder:SetPoint("TOPLEFT", HousingMicroButton, "TOPLEFT", -2, 3)
+	HousingMicroButton.NotificationOverlay:SetFrameStrata("MEDIUM")
+	HousingMicroButton.NotificationOverlay:SetFrameLevel(500)
+	HousingMicroButton.CUI_NotificationOverlay = CreateFrame("Frame", "HousingMicroButton_CUI_NotificationOverlay", HousingMicroButton)
+	HousingMicroButton.CUI_NotificationOverlay:SetFrameStrata("MEDIUM")
+	HousingMicroButton.CUI_NotificationOverlay:SetFrameLevel(500)
+	HousingMicroButton.CUI_NotificationOverlay:ClearAllPoints()
+	HousingMicroButton.CUI_NotificationOverlay:SetAllPoints(HousingMicroButton)
+	HousingMicroButton.CUI_NotificationOverlay:CreateTexture("HousingMicroButton_CUI_NotificationOverlay_UnreadNotificationIcon", "OVERLAY")
+	HousingMicroButton.CUI_NotificationOverlay.UnreadNotificationIcon = HousingMicroButton_CUI_NotificationOverlay_UnreadNotificationIcon
+	HousingMicroButton.CUI_NotificationOverlay.UnreadNotificationIcon:SetAtlas("hud-microbutton-communities-icon-notification")
+	HousingMicroButton.CUI_NotificationOverlay.UnreadNotificationIcon:SetSize(18, 18)
+	HousingMicroButton.CUI_NotificationOverlay.UnreadNotificationIcon:ClearAllPoints()
+	HousingMicroButton.CUI_NotificationOverlay.UnreadNotificationIcon:SetPoint("CENTER", HousingMicroButton.CUI_NotificationOverlay, "TOP", 0, -5)
+	ClassicUI.hook_HousingMicroButton_HousingTutorialsNewPipMixin_Init = function(self)
+		if (ClassicUI.cached_db_profile.barsConfig_MicroButtons_HousingMicroButton_classicNotificationMicroButton) then	-- cached db value
+			HousingMicroButton.NotificationOverlay:SetShown(false)
+			HousingMicroButton.CUI_NotificationOverlay:SetShown(true)
+		end
+	end
+	ClassicUI.hook_HousingMicroButton_HousingTutorialsNewPipMixin_OnHousingDashboardToggled = function(self)
+		if (ClassicUI.cached_db_profile.barsConfig_MicroButtons_HousingMicroButton_classicNotificationMicroButton) then	-- cached db value
+			HousingMicroButton.NotificationOverlay:SetShown(false)
+			if HousingDashboardFrame:IsShown() then
+				HousingMicroButton.CUI_NotificationOverlay:SetShown(false)
+			end
+		end
+	end
+	if (ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.classicNotificationMicroButton) then
+		if not(ClassicUI.hooked_HousingMicroButton_HousingTutorialsNewPipMixin_Init) then
+			hooksecurefunc(HousingTutorialsNewPipMixin, "Init", ClassicUI.hook_HousingMicroButton_HousingTutorialsNewPipMixin_Init)
+			ClassicUI.hooked_HousingMicroButton_HousingTutorialsNewPipMixin_Init = true
+		end
+		if not(ClassicUI.hooked_HousingMicroButton_HousingTutorialsNewPipMixin_OnHousingDashboardToggled) then
+			hooksecurefunc(HousingTutorialsNewPipMixin, "OnHousingDashboardToggled", ClassicUI.hook_HousingMicroButton_HousingTutorialsNewPipMixin_OnHousingDashboardToggled)
+			ClassicUI.hooked_HousingMicroButton_HousingTutorialsNewPipMixin_OnHousingDashboardToggled = true
+		end
+		HousingMicroButton.CUI_NotificationOverlay:SetShown(HousingMicroButton.NotificationOverlay:IsShown())
+		HousingMicroButton.NotificationOverlay:SetAlpha(0)
+		HousingMicroButton.NotificationOverlay:Hide()
+	else
+		HousingMicroButton.CUI_NotificationOverlay:SetAlpha(0)
+		HousingMicroButton.CUI_NotificationOverlay:Hide()
+	end
+	hooksecurefunc(HousingMicroButton, "SetPushed", ClassicUI.hook_MicroButtonSetStateFunc)
+	hooksecurefunc(HousingMicroButton, "SetNormal", ClassicUI.hook_MicroButtonSetStateFunc)
+	HousingMicroButton:HookScript("OnEnter", ClassicUI.hookscript_MicroButtonOnEnter)
+	if (mathabs(ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.alphaMicroButton-ClassicUI.db.defaults.profile.barsConfig.MicroButtons.HousingMicroButton.alphaMicroButton) > STANDARD_EPSILON) then
+		if not(ClassicUI.hooked_HousingMicroButton_OnEnableOnDisable) then
+			HousingMicroButton:HookScript("OnEnable", ClassicUI.hookscript_MicroButtonOnEnable)
+			HousingMicroButton:HookScript("OnDisable", ClassicUI.hookscript_MicroButtonOnDisable)
+			ClassicUI.hooked_HousingMicroButton_OnEnableOnDisable = true
+		end
+		if (HousingMicroButton:IsEnabled()) then
+			ClassicUI.hookscript_MicroButtonOnEnable(HousingMicroButton)
+		else
+			ClassicUI.hookscript_MicroButtonOnDisable(HousingMicroButton)
+		end
+	end
+	if (ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.hideMicroButton) then
+		HousingMicroButton:Hide()
+	else
+		if (PlayerIsTimerunning() and not(HousingMicroButton:IsShown())) then
+			HousingMicroButton:Show()
+		end
+	end
+	ClassicUI.HookMicroButtonsClass_UI_Watcher(HousingMicroButton)
+	ClassicUI.hook_HousingMicroButton_UpdateMicroButton = function(self)
+		if (ClassicUI.cached_db_profile.barsConfig_MicroButtons_HousingMicroButton_disableMicroButton) then	-- cached db value
+			self:Disable()
+		end
+		if (PlayerIsTimerunning()) then
+			if not(self:IsShown()) and not(ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.hideMicroButton) and not(ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[HousingMicroButton]) then
+				self:Show()
+			end
+			self:Disable()
+		end
+	end
+	if not(ClassicUI.hooked_HousingMicroButton_UpdateMicroButton) then
+		hooksecurefunc(HousingMicroButton, "UpdateMicroButton", ClassicUI.hook_HousingMicroButton_UpdateMicroButton)
+		ClassicUI.hooked_HousingMicroButton_UpdateMicroButton = true
+	end
+	if (ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.disableMicroButton or PlayerIsTimerunning()) then
+		HousingMicroButton:Disable()
+	end
+	if (ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.disableMouseMicroButton) then
+		HousingMicroButton:EnableMouse(false)
+	end
+
 	-- [MicroButtons] GuildMicroButton
 	GuildMicroButton:SetParent(CUI_MainMenuBarArtFrame)
 	GuildMicroButton:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
@@ -5495,8 +5766,8 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	GuildMicroButton.CUI_NotificationOverlay.UnreadNotificationIcon:SetPoint("CENTER", GuildMicroButton.CUI_NotificationOverlay, "TOP", 0, -5)
 	ClassicUI.hook_GuildMicroButton_UpdateNotificationIcon = function(self)
 		if (ClassicUI.cached_db_profile.barsConfig_MicroButtons_GuildMicroButton_classicNotificationMicroButton) then	-- cached db value
+			self.NotificationOverlay:SetShown(false)
 			if CommunitiesFrame_IsEnabled() and self:IsEnabled() then
-				self.NotificationOverlay:SetShown(false)
 				self.CUI_NotificationOverlay:SetShown(C_SocialRestrictions_CanReceiveChat() and (self:HasUnseenInvitations() or CommunitiesUtil_DoesAnyCommunityHaveUnreadMessages()))
 			else
 				self.CUI_NotificationOverlay:SetShown(false)
@@ -5536,15 +5807,15 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	end
 	if (ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.hideMicroButton) then
 		GuildMicroButton:Hide()
-		ClassicUI.HookMicroButtonsClass_UI_Watcher(GuildMicroButton)
 	end
+	ClassicUI.HookMicroButtonsClass_UI_Watcher(GuildMicroButton)
 	if (ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.disableMicroButton) then
 		GuildMicroButton:Disable()
 	end
 	if (ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.disableMouseMicroButton) then
 		GuildMicroButton:EnableMouse(false)
 	end
-	
+
 	local GuildMicroButtonTabard = CreateFrame("Frame", "GuildMicroButtonTabard", GuildMicroButton)
 	GuildMicroButtonTabard:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
 	GuildMicroButtonTabard:SetPoint("TOPLEFT", GuildMicroButton, "TOPLEFT", 0, 0)
@@ -5573,7 +5844,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		GuildMicroButtonTabard:SetAlpha(0)
 		GuildMicroButtonTabard:Hide()
 	end
-	
+
 	ClassicUI.GuildMicroButton_UpdateTabard = function(forceUpdate)
 		local button = GuildMicroButton
 		if (not(forceUpdate) and (button:GetNormalTexture():GetAtlas() == nil)) then
@@ -5624,7 +5895,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 			button:SetDisabledTexture(ClassicUI.cached_db_profile.barsConfig_MicroButtons_GuildMicroButton_iconMicroButton_disabledTexture)	-- cached db value
 		end
 	end
-	
+
 	hooksecurefunc(GuildMicroButton, "UpdateMicroButton", function(self)
 		ClassicUI.GuildMicroButton_UpdateTabard()
 		local factionGroup = UnitFactionGroup("player")
@@ -5644,7 +5915,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	end)
 
 	ClassicUI.GuildMicroButton_UpdateTabard(true)
-	
+
 	-- [MicroButtons] LFDMicroButton
 	LFDMicroButton:SetParent(CUI_MainMenuBarArtFrame)
 	LFDMicroButton:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
@@ -5696,8 +5967,8 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	end
 	if (ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.hideMicroButton) then
 		LFDMicroButton:Hide()
-		ClassicUI.HookMicroButtonsClass_UI_Watcher(LFDMicroButton)
 	end
+	ClassicUI.HookMicroButtonsClass_UI_Watcher(LFDMicroButton)
 	ClassicUI.hook_LFDMicroButton_UpdateMicroButton = function(self)
 		if (ClassicUI.cached_db_profile.barsConfig_MicroButtons_LFDMicroButton_disableMicroButton) then	-- cached db value
 			self:Disable()
@@ -5713,7 +5984,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	if (ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.disableMouseMicroButton) then
 		LFDMicroButton:EnableMouse(false)
 	end
-	
+
 	-- [MicroButtons] CollectionsMicroButton
 	CollectionsMicroButton:SetParent(CUI_MainMenuBarArtFrame)
 	CollectionsMicroButton:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
@@ -5765,8 +6036,8 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	end
 	if (ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.hideMicroButton) then
 		CollectionsMicroButton:Hide()
-		ClassicUI.HookMicroButtonsClass_UI_Watcher(CollectionsMicroButton)
 	end
+	ClassicUI.HookMicroButtonsClass_UI_Watcher(CollectionsMicroButton)
 	ClassicUI.hook_CollectionsMicroButton_UpdateMicroButton = function(self)
 		if (ClassicUI.cached_db_profile.barsConfig_MicroButtons_CollectionsMicroButton_disableMicroButton) then	-- cached db value
 			self:Disable()
@@ -5782,7 +6053,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	if (ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.disableMouseMicroButton) then
 		CollectionsMicroButton:EnableMouse(false)
 	end
-	
+
 	-- [MicroButtons] EJMicroButton
 	EJMicroButton:SetParent(CUI_MainMenuBarArtFrame)
 	EJMicroButton:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
@@ -5817,6 +6088,38 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	EJMicroButton.FlashBorder:SetSize(34, 44)
 	EJMicroButton.FlashBorder:SetDrawLayer("OVERLAY", 0)
 	EJMicroButton.FlashBorder:SetPoint("TOPLEFT", EJMicroButton, "TOPLEFT", -2, 3)
+	EJMicroButton.NotificationOverlay:SetFrameStrata("MEDIUM")
+	EJMicroButton.NotificationOverlay:SetFrameLevel(500)
+	EJMicroButton.CUI_NotificationOverlay = CreateFrame("Frame", "EJMicroButton_CUI_NotificationOverlay", EJMicroButton)
+	EJMicroButton.CUI_NotificationOverlay:SetFrameStrata("MEDIUM")
+	EJMicroButton.CUI_NotificationOverlay:SetFrameLevel(500)
+	EJMicroButton.CUI_NotificationOverlay:ClearAllPoints()
+	EJMicroButton.CUI_NotificationOverlay:SetAllPoints(EJMicroButton)
+	EJMicroButton.CUI_NotificationOverlay:CreateTexture("EJMicroButton_CUI_NotificationOverlay_UnreadNotificationIcon", "OVERLAY")
+	EJMicroButton.CUI_NotificationOverlay.UnreadNotificationIcon = EJMicroButton_CUI_NotificationOverlay_UnreadNotificationIcon
+	EJMicroButton.CUI_NotificationOverlay.UnreadNotificationIcon:SetAtlas("hud-microbutton-communities-icon-notification")
+	EJMicroButton.CUI_NotificationOverlay.UnreadNotificationIcon:SetSize(18, 18)
+	EJMicroButton.CUI_NotificationOverlay.UnreadNotificationIcon:ClearAllPoints()
+	EJMicroButton.CUI_NotificationOverlay.UnreadNotificationIcon:SetPoint("CENTER", EJMicroButton.CUI_NotificationOverlay, "TOP", 0, -5)
+	ClassicUI.hook_EJMicroButton_UpdateNotificationIcon = function(self)
+		if (ClassicUI.cached_db_profile.barsConfig_MicroButtons_EJMicroButton_classicNotificationMicroButton) then	-- cached db value
+			self.NotificationOverlay:SetShown(false)
+			local show = not GetCVarBitfield("closedInfoFramesAccountWide", Enum.FrameTutorialAccount.EnconterJournalTutorialsTabSeen)
+			self.CUI_NotificationOverlay:SetShown(show)
+		end
+	end
+	if (ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.classicNotificationMicroButton) then
+		if not(ClassicUI.hooked_EJMicroButton_UpdateNotificationIcon) then
+			hooksecurefunc(EJMicroButton, "UpdateNotificationIcon", ClassicUI.hook_EJMicroButton_UpdateNotificationIcon)
+			ClassicUI.hooked_EJMicroButton_UpdateNotificationIcon = true
+		end
+		EJMicroButton.CUI_NotificationOverlay:SetShown(EJMicroButton.NotificationOverlay:IsShown())
+		EJMicroButton.NotificationOverlay:SetAlpha(0)
+		EJMicroButton.NotificationOverlay:Hide()
+	else
+		EJMicroButton.CUI_NotificationOverlay:SetAlpha(0)
+		EJMicroButton.CUI_NotificationOverlay:Hide()
+	end
 	hooksecurefunc(EJMicroButton, "SetPushed", ClassicUI.hook_MicroButtonSetStateFunc)
 	hooksecurefunc(EJMicroButton, "SetNormal", ClassicUI.hook_MicroButtonSetStateFunc)
 	EJMicroButton:HookScript("OnEnter", ClassicUI.hookscript_MicroButtonOnEnter)
@@ -5834,8 +6137,8 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	end
 	if (ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.hideMicroButton) then
 		EJMicroButton:Hide()
-		ClassicUI.HookMicroButtonsClass_UI_Watcher(EJMicroButton)
 	end
+	ClassicUI.HookMicroButtonsClass_UI_Watcher(EJMicroButton)
 	ClassicUI.hook_EJMicroButton_UpdateMicroButton = function(self)
 		if (ClassicUI.cached_db_profile.barsConfig_MicroButtons_EJMicroButton_disableMicroButton) then	-- cached db value
 			self:Disable()
@@ -5851,7 +6154,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	if (ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.disableMouseMicroButton) then
 		EJMicroButton:EnableMouse(false)
 	end
-	
+
 	-- [MicroButtons] HelpMicroButton
 	HelpMicroButton:SetParent(CUI_MainMenuBarArtFrame)
 	HelpMicroButton:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
@@ -5903,8 +6206,8 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	end
 	if (ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.hideMicroButton) then
 		HelpMicroButton:Hide()
-		ClassicUI.HookMicroButtonsClass_UI_Watcher(HelpMicroButton)
 	end
+	ClassicUI.HookMicroButtonsClass_UI_Watcher(HelpMicroButton)
 	if (ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.disableMicroButton) then
 		HelpMicroButton:Disable()
 	end
@@ -5912,7 +6215,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		HelpMicroButton:EnableMouse(false)
 	end
 	-- This button is generally unused, since 'MainMenuMicroButton' is used instead
-	
+
 	-- [MicroButtons] StoreMicroButton
 	StoreMicroButton:SetParent(CUI_MainMenuBarArtFrame)
 	StoreMicroButton:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
@@ -5963,13 +6266,13 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		end
 	end
 	ClassicUI.hook_StoreMicroButton_UpdateMicroButton = function(self)
-		if (ClassicUI.cached_db_profile.barsConfig_MicroButtons_StoreMicroButton_hideMicroButton) then	-- cached db value
+		if (ClassicUI.cached_db_profile.barsConfig_MicroButtons_StoreMicroButton_hideMicroButton or ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[self]) then	-- cached db value
 			self:Hide()
 		end
 		if (ClassicUI.cached_db_profile.barsConfig_MicroButtons_StoreMicroButton_disableMicroButton) then	-- cached db value
 			self:Disable()
 		end
-		if not( StoreFrame and StoreFrame_IsShown() ) then
+		if ( C_CatalogShop_IsShop2Enabled() and not( CatalogShopFrame and CatalogShopInboundInterface.IsShown() ) ) or ( not(C_CatalogShop_IsShop2Enabled()) and not( StoreFrame and StoreFrame_IsShown() ) ) then
 			if (ClassicUI.cached_db_profile.barsConfig_MicroButtons_CharacterMicroButton_disableMicroButton) then	-- cached db value
 				CharacterMicroButton:Disable()
 			end
@@ -5981,6 +6284,9 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 			end
 			if (ClassicUI.cached_db_profile.barsConfig_MicroButtons_QuestLogMicroButton_disableMicroButton) then	-- cached db value
 				QuestLogMicroButton:Disable()
+			end
+			if (ClassicUI.cached_db_profile.barsConfig_MicroButtons_HousingMicroButton_disableMicroButton) then	-- cached db value
+				HousingMicroButton:Disable()
 			end
 			if (ClassicUI.cached_db_profile.barsConfig_MicroButtons_GuildMicroButton_disableMicroButton) then	-- cached db value
 				GuildMicroButton:Disable()
@@ -6002,28 +6308,18 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 			end
 		end
 	end
-	if (ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.hideMicroButton) or (ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.disableMicroButton) or
-		(ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.disableMicroButton) or (ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.disableMicroButton) or
-		(ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.disableMicroButton) or (ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.disableMicroButton) or
-		(ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.disableMicroButton) or (ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.disableMicroButton) or
-		(ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.disableMicroButton) or (ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.disableMicroButton) or
-		(ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.disableMicroButton) or (ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.disableMicroButton) then
-		if not(ClassicUI.hooked_StoreMicroButton_UpdateMicroButton) then
-			hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
-			ClassicUI.hooked_StoreMicroButton_UpdateMicroButton = true
-		end
-		if (ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.hideMicroButton) then
-			StoreMicroButton:Hide()
-			ClassicUI.HookMicroButtonsClass_UI_Watcher(StoreMicroButton)
-		end
-		if (ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.disableMicroButton) then
-			StoreMicroButton:Disable()
-		end
+	if (ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.hideMicroButton) then
+		StoreMicroButton:Hide()
+	end
+	ClassicUI.HookMicroButtonsClass_UI_Watcher(StoreMicroButton)
+	hooksecurefunc(StoreMicroButton, "UpdateMicroButton", ClassicUI.hook_StoreMicroButton_UpdateMicroButton)
+	if (ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.disableMicroButton) then
+		StoreMicroButton:Disable()
 	end
 	if (ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.disableMouseMicroButton) then
 		StoreMicroButton:EnableMouse(false)
 	end
-	
+
 	-- [MicroButtons] MainMenuMicroButton
 	MainMenuMicroButton:SetParent(CUI_MainMenuBarArtFrame)
 	MainMenuMicroButton:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
@@ -6077,7 +6373,8 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	ClassicUI.hook_MainMenuMicroButton_UpdateNotificationIcon = function(self)
 		if (ClassicUI.cached_db_profile.barsConfig_MicroButtons_MainMenuMicroButton_classicNotificationMicroButton) then	-- cached db value
 			self.NotificationOverlay:SetShown(false)
-			self.CUI_NotificationOverlay:SetShown(CurrentVersionHasNewUnseenSettings())
+			local needEditModeNotification = EditModeManagerFrame:CanEnterEditMode() and EditModeManagerFrame.Tutorial:HasHelptipsToShow()
+			self.CUI_NotificationOverlay:SetShown(needEditModeNotification or CurrentVersionHasNewUnseenSettings())
 		end
 	end
 	if (ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.classicNotificationMicroButton) then
@@ -6118,10 +6415,10 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	end
 	if (ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.hideMicroButton) then
 		MainMenuMicroButton:Hide()
-		ClassicUI.HookMicroButtonsClass_UI_Watcher(MainMenuMicroButton)
 	end
+	ClassicUI.HookMicroButtonsClass_UI_Watcher(MainMenuMicroButton)
 	ClassicUI.hook_MainMenuMicroButton_UpdateMicroButton = function(self)
-		if not( GameMenuFrame and GameMenuFrame:IsShown() ) then
+		if not( ( GameMenuFrame and GameMenuFrame:IsShown() ) or ( SettingsPanel:IsShown()) or ( KeyBindingFrame and KeyBindingFrame:IsShown()) or ( MacroFrame and MacroFrame:IsShown()) ) then
 			if (ClassicUI.cached_db_profile.barsConfig_MicroButtons_MainMenuMicroButton_disableMicroButton) then	-- cached db value
 				self:Disable()
 			end
@@ -6136,6 +6433,9 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 			end
 			if (ClassicUI.cached_db_profile.barsConfig_MicroButtons_QuestLogMicroButton_disableMicroButton) then	-- cached db value
 				QuestLogMicroButton:Disable()
+			end
+			if (ClassicUI.cached_db_profile.barsConfig_MicroButtons_HousingMicroButton_disableMicroButton) then	-- cached db value
+				HousingMicroButton:Disable()
 			end
 			if (ClassicUI.cached_db_profile.barsConfig_MicroButtons_GuildMicroButton_disableMicroButton) then	-- cached db value
 				GuildMicroButton:Disable()
@@ -6156,9 +6456,10 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	end
 	if (ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.disableMicroButton) or (ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.disableMicroButton) or
 		(ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.disableMicroButton) or (ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.disableMicroButton) or
-		(ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.disableMicroButton) or (ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.disableMicroButton) or
-		(ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.disableMicroButton) or (ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.disableMicroButton) or
-		(ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.disableMicroButton) or (ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.disableMicroButton) then
+		(ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.disableMicroButton) or (ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.disableMicroButton) or
+		(ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.disableMicroButton) or (ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.disableMicroButton) or
+		(ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.disableMicroButton) or (ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.disableMicroButton) or
+		(ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.disableMicroButton) then
 		if not(ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton) then
 			hooksecurefunc(MainMenuMicroButton, "UpdateMicroButton", ClassicUI.hook_MainMenuMicroButton_UpdateMicroButton)
 			ClassicUI.hooked_MainMenuMicroButton_UpdateMicroButton = true
@@ -6170,7 +6471,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	if (ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.disableMouseMicroButton) then
 		MainMenuMicroButton:EnableMouse(false)
 	end
-	
+
 	if (MainMenuMicroButton.MainMenuBarPerformanceBar ~= nil) then
 		MainMenuMicroButton.MainMenuBarPerformanceBar:SetSize(ClassicUI.mbWidth, ClassicUI.mbHeight)
 		MainMenuMicroButton.MainMenuBarPerformanceBar:SetTexCoord(0/32, 32/32, 22/64, 64/64)
@@ -6180,13 +6481,14 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 			MainMenuMicroButton.MainMenuBarPerformanceBar:Hide()
 		end
 	end
-	
+
 	local CUI_MicroButtonPulseHiddenFrame = CreateFrame("Frame", "CUI_MicroButtonPulseHiddenFrame", UIParent)
 	CUI_MicroButtonPulseHiddenFrame:Hide()
 	ProfessionMicroButton.FlashContent:SetParent(CUI_MicroButtonPulseHiddenFrame)
 	PlayerSpellsMicroButton.FlashContent:SetParent(CUI_MicroButtonPulseHiddenFrame)
 	AchievementMicroButton.FlashContent:SetParent(CUI_MicroButtonPulseHiddenFrame)
 	QuestLogMicroButton.FlashContent:SetParent(CUI_MicroButtonPulseHiddenFrame)
+	HousingMicroButton.FlashContent:SetParent(CUI_MicroButtonPulseHiddenFrame)
 	GuildMicroButton.FlashContent:SetParent(CUI_MicroButtonPulseHiddenFrame)
 	LFDMicroButton.FlashContent:SetParent(CUI_MicroButtonPulseHiddenFrame)
 	CollectionsMicroButton.FlashContent:SetParent(CUI_MicroButtonPulseHiddenFrame)
@@ -6194,7 +6496,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	HelpMicroButton.FlashContent:SetParent(CUI_MicroButtonPulseHiddenFrame)
 	StoreMicroButton.FlashContent:SetParent(CUI_MicroButtonPulseHiddenFrame)
 	MainMenuMicroButton.FlashContent:SetParent(CUI_MicroButtonPulseHiddenFrame)
-	
+
 	-- [MicroButtons] MainMenuMicroButton -> HelpOpenWebTicketButton
 	if (HelpOpenWebTicketButton ~= nil) then
 		HelpOpenWebTicketButton:SetParent(_G[ClassicUI.db.profile.barsConfig.MicroButtons.helpOpenWebTicketButtonAnchor] or MainMenuMicroButton)
@@ -6207,7 +6509,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 			end)
 		end
 	end
-	
+
 	-- [MicroButtons] MainMenuMicroButton -> MainMenuBarDownload texture
 	local CUI_MainMenuBarDownload = MainMenuMicroButton:CreateTexture("CUI_MainMenuBarDownload")
 	CUI_MainMenuBarDownload:SetPoint("BOTTOM", MainMenuMicroButton, "BOTTOM", 0, 7)
@@ -6217,7 +6519,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	CUI_MainMenuBarDownload:SetDrawLayer("OVERLAY", 0)
 	CUI_MainMenuBarDownload:SetAlpha(1)
 	CUI_MainMenuBarDownload:Hide()
-	
+
 	MainMenuMicroButton:HookScript("OnUpdate", function(self, elapsed)
 		if (self.updateInterval >= 1) then	-- PERFORMANCE_BAR_UPDATE_INTERVAL = 1
 			local status = GetFileStreamingStatus()
@@ -6272,7 +6574,47 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 			end
 		end
 	end)
-	
+
+	-- [MicroButtons] -> Extra hooks
+	hooksecurefunc("MicroMenuBar_ClearFullScreenFrame", function()
+		if (ClassicUI.cached_db_profile.barsConfig_MicroButtons_CharacterMicroButton_disableMicroButton) then	-- cached db value
+			CharacterMicroButton:Disable()
+		end
+		if (ClassicUI.cached_db_profile.barsConfig_MicroButtons_ProfessionMicroButton_disableMicroButton) then	-- cached db value
+			ProfessionMicroButton:Disable()
+		end
+		if (ClassicUI.cached_db_profile.barsConfig_MicroButtons_PlayerSpellsMicroButton_disableMicroButton) then	-- cached db value
+			PlayerSpellsMicroButton:Disable()
+		end
+		if (ClassicUI.cached_db_profile.barsConfig_MicroButtons_QuestLogMicroButton_disableMicroButton) then	-- cached db value
+			QuestLogMicroButton:Disable()
+		end
+		if (ClassicUI.cached_db_profile.barsConfig_MicroButtons_HousingMicroButton_disableMicroButton) then	-- cached db value
+			HousingMicroButton:Disable()
+		end
+		if (ClassicUI.cached_db_profile.barsConfig_MicroButtons_GuildMicroButton_disableMicroButton) then	-- cached db value
+			GuildMicroButton:Disable()
+		end
+		if (ClassicUI.cached_db_profile.barsConfig_MicroButtons_LFDMicroButton_disableMicroButton) then	-- cached db value
+			LFDMicroButton:Disable()
+		end
+		if (ClassicUI.cached_db_profile.barsConfig_MicroButtons_AchievementMicroButton_disableMicroButton) then	-- cached db value
+			AchievementMicroButton:Disable()
+		end
+		if (ClassicUI.cached_db_profile.barsConfig_MicroButtons_EJMicroButton_disableMicroButton) then	-- cached db value
+			EJMicroButton:Disable()
+		end
+		if (ClassicUI.cached_db_profile.barsConfig_MicroButtons_CollectionsMicroButton_disableMicroButton) then	-- cached db value
+			CollectionsMicroButton:Disable()
+		end
+		if (ClassicUI.cached_db_profile.barsConfig_MicroButtons_StoreMicroButton_disableMicroButton) then	-- cached db value
+			StoreMicroButton:Disable()
+		end
+		if (ClassicUI.cached_db_profile.barsConfig_MicroButtons_MainMenuMicroButton_disableMicroButton) then	-- cached db value
+			MainMenuMicroButton:Disable()
+		end
+	end)
+
 	-- [MicroButtons] -> Set the current position and scale
 	if not(PetBattleFrame.BottomFrame.MicroButtonFrame:IsVisible()) then
 		if ActionBarController_GetCurrentActionBarState() == LE_ACTIONBAR_STATE_OVERRIDE then
@@ -6298,7 +6640,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		ClassicUI.MoveMicroButtons("TOPLEFT", PetBattleFrame.BottomFrame.MicroButtonFrame, "TOPLEFT", -11.5, 7.5, true)
 	end
 	ClassicUI.SetPointsMicroButtons()
-	
+
 	-- [Bags]
 	ClassicUI.BaseBagSlotButton_UpdateTextures = function(self)
 		self:GetPushedTexture():SetAtlas(nil)
@@ -6308,7 +6650,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		self:GetPushedTexture():SetAlpha(1)
 		--self:GetPushedTexture():ClearAllPoints()		-- not needed
 		--self:GetPushedTexture():SetAllPoints(self)	-- not needed
-		
+
 		self:GetHighlightTexture():SetAtlas(nil)
 		self:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
 		self:GetHighlightTexture():SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
@@ -6316,7 +6658,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		self:GetHighlightTexture():SetAlpha(1)
 		--self:GetHighlightTexture():ClearAllPoints()	-- not needed
 		--self:GetHighlightTexture():SetAllPoints(self)	-- not needed
-		
+
 		self.SlotHighlightTexture:SetAtlas(nil)
 		self.SlotHighlightTexture:SetTexture("Interface\\Buttons\\CheckButtonHilight")
 		self.SlotHighlightTexture:SetBlendMode("ADD")
@@ -6325,7 +6667,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		self.SlotHighlightTexture:SetAlpha(1)
 		--self.SlotHighlightTexture:ClearAllPoints()	-- not needed
 		--self.SlotHighlightTexture:SetAllPoints(self)	-- not needed
-		
+
 		self:GetNormalTexture():SetAtlas(nil)
 		self:GetNormalTexture():SetTexture("Interface\\Buttons\\UI-Quickslot2")
 		self:GetNormalTexture():SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
@@ -6334,7 +6676,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		self:GetNormalTexture():ClearAllPoints()
 		self:GetNormalTexture():SetPoint("CENTER", self, "CENTER", 0, -1)
 	end
-	
+
 	for i = 0, 3 do
 		local bagSlot = _G["CharacterBag"..i.."Slot"]
 		bagSlot.IconBorder:SetTexture("Interface\\Common\\WhiteIconFrame")
@@ -6367,13 +6709,13 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	if (EventRegistry and type(EventRegistry) == "table") then
 		EventRegistry:RegisterCallback("MainMenuBarManager.OnExpandChanged", ClassicUI.onExpandChangedMainMenuBarManager, BagsBar)
 	end
-	
+
 	-- 'GetInventoryItemQuality' function seems to load asynchronously, so it can return 'nil' sometimes
 	ClassicUI:TrySetBagItemButtonQuality(CharacterBag0Slot)
 	ClassicUI:TrySetBagItemButtonQuality(CharacterBag1Slot)
 	ClassicUI:TrySetBagItemButtonQuality(CharacterBag2Slot)
 	ClassicUI:TrySetBagItemButtonQuality(CharacterBag3Slot)
-	
+
 	CharacterBag0Slot.CircleMask:Hide()
 	ClassicUI.BaseBagSlotButton_UpdateTextures(CharacterBag0Slot)
 	CharacterBag0Slot:SetParent(CUI_MainMenuBarArtFrame)
@@ -6441,10 +6783,10 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	MicroButtonAndBagsBar:Hide()
 	MicroButtonAndBagsBar:ClearAllPoints()
 	MicroButtonAndBagsBar:SetPoint("BOTTOMRIGHT", UIParent, "BOTTOMRIGHT", -6, 6 + ClassicUI.MICROBUTTONANDBAGSBAR_CUI_OFFSET_Y)	-- this prevents Blizzard from rescaling MultiBarRight and MultiBarLeft in the 'UpdateRightActionBarPositions()' function
-	
+
 	ClassicUI:SetStrataForMainFrames()
 	ClassicUI:ReLayoutMainFrames()
-	
+
 	--[StatusBars]
 	StatusTrackingBarManager:SetParent(CUI_MainMenuBar)
 	StatusTrackingBarManager:ClearAllPoints()
@@ -6594,7 +6936,15 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 				--self.StatusBar:SetAnimatedTextureColors(r, g, b)	-- not available, 'StatusBar' no longer inherits from 'AnimatedStatusBarTemplate'
 			end
 		end
-		if ((bar.priority == 0) or (bar.barIndex == 5)) then		-- AzeriteBar (priority = 0) (barIndex = 5)
+		if (bar.barIndex == StatusTrackingBarInfo.BarsEnum.HouseFavor) then		-- HouseFavorBar (priority = 5) (barIndex = 6)
+			bar.priority = 5
+			if (bar.ShouldBeVisible == nil) then
+				bar.ShouldBeVisible = function(self)
+					return C_Housing_GetTrackedHouseGuid()
+				end
+			end
+			bar:SetBarColor(ARTIFACT_BAR_COLOR:GetRGB())
+		elseif (bar.barIndex == StatusTrackingBarInfo.BarsEnum.Azerite) then	-- AzeriteBar (priority = 0) (barIndex = 5)
 			bar.priority = 0
 			if (bar.ShouldBeVisible == nil) then
 				bar.ShouldBeVisible = function(self)
@@ -6603,7 +6953,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 				end
 			end
 			bar:SetBarColor(ARTIFACT_BAR_COLOR:GetRGB())
-		elseif ((bar.priority == 4) or (bar.barIndex == 3)) then	-- ArtifactBar (priority = 4) (barIndex = 3)
+		elseif (bar.barIndex == StatusTrackingBarInfo.BarsEnum.Artifact) then	-- ArtifactBar (priority = 4) (barIndex = 3)
 			bar.priority = 4
 			if (bar.ShouldBeVisible == nil) then
 				bar.ShouldBeVisible = function(self)
@@ -6611,23 +6961,23 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 				end
 			end
 			bar:SetBarColor(ARTIFACT_BAR_COLOR:GetRGB())
-		elseif ((bar.priority == 2) or (bar.barIndex == 2)) then	-- HonorBar (priority = 2) (barIndex = 2)
+		elseif (bar.barIndex == StatusTrackingBarInfo.BarsEnum.Honor) then		-- HonorBar (priority = 2) (barIndex = 2)
 			bar.priority = 2
 			if (bar.ShouldBeVisible == nil) then
 				bar.ShouldBeVisible = function(self)
-					return IsWatchingHonorAsXP() or C_PvP.IsActiveBattlefield() or IsInActiveWorldPVP()
+					return IsWatchingHonorAsXP() or C_PvP_IsActiveBattlefield() or IsInActiveWorldPVP()
 				end
 			end
 			bar.StatusBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar", "BORDER")
 			bar.StatusBar:GetStatusBarTexture():SetDrawLayer("BORDER", 0)
 			bar.StatusBar:GetStatusBarTexture():SetTexCoord(0, 0, 0, 1, 0.16666667, 0, 0.16666667, 1)
 			bar:SetBarColor(1.0, 0.24, 0)
-		elseif ((bar.priority == 1) or (bar.barIndex == 1)) then	-- ReputationBar (priority = 1) (barIndex = 1)
+		elseif (bar.barIndex == StatusTrackingBarInfo.BarsEnum.Reputation) then	-- ReputationBar (priority = 1) (barIndex = 1)
 			bar.priority = 1
 			if (bar.ShouldBeVisible == nil) then
 				bar.ShouldBeVisible = function(self)
 					local watchedFactionData = C_Reputation_GetWatchedFactionData()
-					return (watchedFactionData ~= nil and watchedFactionData.name ~= nil)
+					return watchedFactionData and watchedFactionData.name ~= nil and watchedFactionData.name ~= ""
 				end
 			end
 			hooksecurefunc(bar, "Update", function(self)
@@ -6673,7 +7023,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 					end
 				end
 			end
-		elseif ((bar.priority == 3) or (bar.barIndex == 4)) then	-- ExpBar (priority = 3) (barIndex = 4)
+		elseif (bar.barIndex == StatusTrackingBarInfo.BarsEnum.Experience) then	-- ExpBar (priority = 3) (barIndex = 4)
 			bar.priority = 3
 			if (bar.ShouldBeVisible == nil) then
 				bar.ShouldBeVisible = function(self)
@@ -6756,19 +7106,19 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 					end
 				end
 			end)
-			
+
 			bar.ExhaustionTick:SetSize(32, 32)
 			bar.ExhaustionTick:GetNormalTexture():SetAtlas(nil)
 			bar.ExhaustionTick:SetNormalTexture("Interface\\MainMenuBar\\UI-ExhaustionTickNormal")
 			bar.ExhaustionTick:GetHighlightTexture():SetAtlas(nil)
 			bar.ExhaustionTick:SetHighlightTexture("Interface\\MainMenuBar\\UI-ExhaustionTickHighlight", "ADD")
-			
+
 			bar.ExhaustionLevelFillBar:SetAtlas(nil)
 			bar.ExhaustionLevelFillBar:SetColorTexture(1.0, 1.0, 1.0, 1.0)
 			bar.ExhaustionLevelFillBar:SetSize(0, 8)
 			bar.ExhaustionLevelFillBar:ClearAllPoints()
 			bar.ExhaustionLevelFillBar:SetPoint("TOPLEFT", bar, "TOPLEFT", 0, 0)
-			
+
 			local playerCurrXP = UnitXP("player")
 			local playerMaxXP = UnitXPMax("player")
 			local exhaustionThreshold = GetXPExhaustion()
@@ -6818,7 +7168,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 			self:Hide()
 		end
 	end)
-	
+
 	-- Hooks to keep action bars updated with changes
 	hooksecurefunc("MultiActionBar_Update", ClassicUI.UpdatedStatusBarsEvent)
 	hooksecurefunc(StatusTrackingBarManager, "UpdateBarsShown", ClassicUI.UpdatedStatusBarsEvent)
@@ -6849,21 +7199,25 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 			end
 		end
 	end)
-	
+
 	-- Update frames after exit edit mode
-	ClassicUI.onExitEditMode = function(self)
-		ClassicUI:SetStrataForMainFrames()
-		ClassicUI:ReLayoutMainFrames()
-		ClassicUI:ReloadMainFramesSettings()
-		ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
-		ClassicUI.UpdatedStatusBarsEvent()
-		ClassicUI:UpdateScrollButtonsVisibilityAndPosition()
-	end
-	
 	if (EventRegistry and type(EventRegistry) == "table") then
-		EventRegistry:RegisterCallback("EditMode.Exit", ClassicUI.onExitEditMode, ClassicUI)
+		ClassicUI.onExitEditModeMF = function(self)
+			ClassicUI:SetStrataForMainFrames()
+			ClassicUI:ReLayoutMainFrames()
+			ClassicUI:ReloadMainFramesSettings()
+			ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
+			ClassicUI.UpdatedStatusBarsEvent()
+			if (ClassicUI.cached_db_profile.extraFrames_Chat_restoreScrollButtons) then	-- cached db value
+				ClassicUI:UpdateScrollButtonsVisibilityAndPosition()
+			end
+		end
+		if (ClassicUI.onExitEditModeEFF) then
+			EventRegistry:UnregisterCallback("EditMode.Exit", ClassicUI)
+		end
+		EventRegistry:RegisterCallback("EditMode.Exit", ClassicUI.onExitEditModeMF, ClassicUI)
 	end
-	
+
 	ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
 	ClassicUI.UpdatedStatusBarsEvent()
 end
@@ -6886,42 +7240,19 @@ function ClassicUI:ADDON_LOADED(addonName)
 	if (ClassicUI:IsEnabled()) then
 		if (addonName == "Blizzard_NewPlayerExperience") then
 			if (ClassicUI.HookMicroButtonsClass_UI_Watcher ~= nil ) then
-				if (ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.hideMicroButton) then
-					ClassicUI.HookMicroButtonsClass_UI_Watcher(CharacterMicroButton)
-				end
-				if (ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.hideMicroButton) then
-					ClassicUI.HookMicroButtonsClass_UI_Watcher(ProfessionMicroButton)
-				end
-				if (ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.hideMicroButton) then
-					ClassicUI.HookMicroButtonsClass_UI_Watcher(PlayerSpellsMicroButton)
-				end
-				if (ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.hideMicroButton) then
-					ClassicUI.HookMicroButtonsClass_UI_Watcher(AchievementMicroButton)
-				end
-				if (ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.hideMicroButton) then
-					ClassicUI.HookMicroButtonsClass_UI_Watcher(QuestLogMicroButton)
-				end
-				if (ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.hideMicroButton) then
-					ClassicUI.HookMicroButtonsClass_UI_Watcher(GuildMicroButton)
-				end
-				if (ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.hideMicroButton) then
-					ClassicUI.HookMicroButtonsClass_UI_Watcher(LFDMicroButton)
-				end
-				if (ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.hideMicroButton) then
-					ClassicUI.HookMicroButtonsClass_UI_Watcher(CollectionsMicroButton)
-				end
-				if (ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.hideMicroButton) then
-					ClassicUI.HookMicroButtonsClass_UI_Watcher(EJMicroButton)
-				end
-				if (ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.hideMicroButton) then
-					ClassicUI.HookMicroButtonsClass_UI_Watcher(HelpMicroButton)
-				end
-				if (ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.hideMicroButton) then
-					ClassicUI.HookMicroButtonsClass_UI_Watcher(StoreMicroButton)
-				end
-				if (ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.hideMicroButton) then
-					ClassicUI.HookMicroButtonsClass_UI_Watcher(MainMenuMicroButton)
-				end
+				ClassicUI.HookMicroButtonsClass_UI_Watcher(CharacterMicroButton)
+				ClassicUI.HookMicroButtonsClass_UI_Watcher(ProfessionMicroButton)
+				ClassicUI.HookMicroButtonsClass_UI_Watcher(PlayerSpellsMicroButton)
+				ClassicUI.HookMicroButtonsClass_UI_Watcher(AchievementMicroButton)
+				ClassicUI.HookMicroButtonsClass_UI_Watcher(QuestLogMicroButton)
+				ClassicUI.HookMicroButtonsClass_UI_Watcher(HousingMicroButton)
+				ClassicUI.HookMicroButtonsClass_UI_Watcher(GuildMicroButton)
+				ClassicUI.HookMicroButtonsClass_UI_Watcher(LFDMicroButton)
+				ClassicUI.HookMicroButtonsClass_UI_Watcher(CollectionsMicroButton)
+				ClassicUI.HookMicroButtonsClass_UI_Watcher(EJMicroButton)
+				ClassicUI.HookMicroButtonsClass_UI_Watcher(HelpMicroButton)
+				ClassicUI.HookMicroButtonsClass_UI_Watcher(StoreMicroButton)
+				ClassicUI.HookMicroButtonsClass_UI_Watcher(MainMenuMicroButton)
 			end
 			ClassicUI.addonLoaded_Blizzard_NewPlayerExperience = true
 			if (ClassicUI.addonLoaded_Blizzard_PlayerSpells) then
@@ -6940,7 +7271,6 @@ function ClassicUI:ADDON_LOADED(addonName)
 		end
 	end
 end
-
 
 -- Function that determines whether the order of the MicroButtons in the user's DB corresponds to the default order.
 function ClassicUI:IsMicroButtonsOrderDefaultDB()
@@ -6996,9 +7326,63 @@ function ClassicUI:ReorderMicroButtonsDB(mb, dir)
 	end
 end
 
+-- Function that determines whether the priority of the MicroButtons in the user's DB corresponds to the default priority.
+function ClassicUI:IsMicroButtonsPriorityDefaultDB()
+	if (self.db ~= nil) then
+		for k, v in pairs(self.db.profile.barsConfig.MicroButtons) do
+			if ((type(v) == 'table') and (type(v.priority) == 'number') and (v.priority ~= self.db.defaults.profile.barsConfig.MicroButtons[k].priority)) then
+				return false
+			end
+		end
+		return true
+	else
+		return false
+	end
+end
+
+-- Function that allows changing the priority of a MicroButton in the user's DB. It also allows reset them to default values.
+function ClassicUI:RepriorizeMicroButtonsDB(mb, dir)
+	if (mb == nil and dir == "DEFAULT") then
+		for k, v in pairs(self.db.profile.barsConfig.MicroButtons) do
+			if ((type(v) == 'table') and (type(v.priority) == 'number') and (v.priority ~= self.db.defaults.profile.barsConfig.MicroButtons[k].priority)) then
+				self.db.profile.barsConfig.MicroButtons[k].priority = self.db.defaults.profile.barsConfig.MicroButtons[k].priority
+			end
+		end
+	else
+		if (mb ~= nil and self.db.profile.barsConfig.MicroButtons[mb] ~= nil and self.db.profile.barsConfig.MicroButtons[mb].priority ~= nil) then
+			local oldValue, newValue
+			if (dir == "UP") then
+				if (self.db.profile.barsConfig.MicroButtons[mb].priority > self.MICROBUTTONS_MIN_PRIORITY) then
+					oldValue = self.db.profile.barsConfig.MicroButtons[mb].priority
+					newValue = self.db.profile.barsConfig.MicroButtons[mb].priority - 1
+				end
+			elseif (dir == "DOWN") then
+				if (self.db.profile.barsConfig.MicroButtons[mb].priority < self.MICROBUTTONS_MAX_PRIORITY) then
+					oldValue = self.db.profile.barsConfig.MicroButtons[mb].priority
+					newValue = self.db.profile.barsConfig.MicroButtons[mb].priority + 1
+				end
+			elseif (dir == "DEFAULT") then
+				if (self.db.profile.barsConfig.MicroButtons[mb].priority ~= self.db.defaults.profile.barsConfig.MicroButtons[mb].priority) then
+					oldValue = self.db.profile.barsConfig.MicroButtons[mb].priority
+					newValue = self.db.defaults.profile.barsConfig.MicroButtons[mb].priority
+				end
+			end
+			if (oldValue ~= nil and newValue ~= nil) then
+				self.db.profile.barsConfig.MicroButtons[mb].priority = newValue
+				for k, v in pairs(self.db.profile.barsConfig.MicroButtons) do
+					if ((type(v) == 'table') and (type(v.priority) == 'number') and (k ~= mb) and (v.priority == newValue)) then
+						self.db.profile.barsConfig.MicroButtons[k].priority = oldValue
+						break
+					end
+				end
+			end
+		end
+	end
+end
+
 -- Function that hides the dividers of the MainMenuBar
 function ClassicUI:HideMainMenuBarDividers(actionBar, forceHide)
-	if (actionBar == nil) then actionBar = MainMenuBar end
+	if (actionBar == nil) then actionBar = MainActionBar end
 	local actionBarDividersPool = actionBar.isHorizontal and actionBar.HorizontalDividersPool or actionBar.VerticalDividersPool
 	if (actionBarDividersPool ~= nil and actionBarDividersPool.EnumerateActive ~= nil) then
 		for divider, _ in actionBarDividersPool:EnumerateActive() do
@@ -7087,33 +7471,33 @@ end
 -- Function to recreate the classic AutoCastable frame for an ActionButton
 ClassicUI.CreateClassicAutoCastable = function(iActionButton)
 	if (iActionButton.ClassicAutoCastable) then return end
-	
+
 	-- Recreate the classic animation frames, textures and animations
 	local parentName = iActionButton:GetName()
-	
+
 	local iabcact = iActionButton:CreateTexture(parentName.."ClassicAutoCastable", "OVERLAY", nil, 1)
 	iabcact:SetTexture("Interface\\Buttons\\UI-AutoCastableOverlay")
-	
+
 	iabcact:SetSize(58, 58)
 	iabcact:ClearAllPoints()
 	iabcact:SetPoint("CENTER", 0, 0)
-	
+
 	if (iActionButton.AutoCastOverlay:IsShown()) then
 		iabcact:Show()
 	else
 		iabcact:Hide()
 	end
-	
+
 	-- Create an intermediary parent frame to easily hide this animation if desired
 	local iabpcact = CreateFrame("Frame", nil, iActionButton)
 	iabpcact:SetPoint("CENTER", iActionButton, "CENTER", 0, 0)
 	iabpcact:SetAlpha(1)
 	iabpcact:Show()
 	iabcact:SetParent(iabpcact)
-	
+
 	iActionButton.ParentClassicAutoCastable = iabpcact
 	iActionButton.ClassicAutoCastable = iabcact
-	
+
 	iActionButton.AutoCastOverlay:HookScript("OnShow", function(self)
 		if (self:GetParent().ClassicAutoCastable ~= nil) then
 			self:GetParent().ClassicAutoCastable:Show()
@@ -7130,12 +7514,12 @@ end
 -- Function to recreate the classic AutoCastShine animation frame for an ActionButton
 ClassicUI.CreateClassicAutoCastShine = function(iActionButton)
 	if (iActionButton.ClassicAutoCastShine) then return end
-	
+
 	-- Recreate the classic animation frames, textures and animations
 	local parentName = iActionButton:GetName().."ClassicShine"
 	local iabcset = CreateFrame("Frame", parentName, iActionButton)
 	iabcset.sparkles = {}
-	
+
 	iabcset.sparkles[1] = iabcset:CreateTexture(parentName.."1", "OVERLAY")
 	iabcset.sparkles[1]:SetBlendMode("ADD")
 	iabcset.sparkles[1]:SetTexCoord(0.3984375, 0.4453125, 0.40234375, 0.44921875)
@@ -7144,7 +7528,7 @@ ClassicUI.CreateClassicAutoCastShine = function(iActionButton)
 	iabcset.sparkles[1]:SetPoint("CENTER", 0, 0)
 	iabcset.sparkles[1]:SetSize(13, 13)
 	iabcset.sparkles[1]:Hide()
-	
+
 	iabcset.sparkles[2] = iabcset:CreateTexture(parentName.."2", "OVERLAY")
 	iabcset.sparkles[2]:SetBlendMode("ADD")
 	iabcset.sparkles[2]:SetTexCoord(0.3984375, 0.4453125, 0.40234375, 0.44921875)
@@ -7153,7 +7537,7 @@ ClassicUI.CreateClassicAutoCastShine = function(iActionButton)
 	iabcset.sparkles[2]:SetPoint("CENTER", 0, 0)
 	iabcset.sparkles[2]:SetSize(10, 10)
 	iabcset.sparkles[2]:Hide()
-	
+
 	iabcset.sparkles[3] = iabcset:CreateTexture(parentName.."3", "OVERLAY")
 	iabcset.sparkles[3]:SetBlendMode("ADD")
 	iabcset.sparkles[3]:SetTexCoord(0.3984375, 0.4453125, 0.40234375, 0.44921875)
@@ -7162,7 +7546,7 @@ ClassicUI.CreateClassicAutoCastShine = function(iActionButton)
 	iabcset.sparkles[3]:SetPoint("CENTER", 0, 0)
 	iabcset.sparkles[3]:SetSize(7, 7)
 	iabcset.sparkles[3]:Hide()
-	
+
 	iabcset.sparkles[4] = iabcset:CreateTexture(parentName.."4", "OVERLAY")
 	iabcset.sparkles[4]:SetBlendMode("ADD")
 	iabcset.sparkles[4]:SetTexCoord(0.3984375, 0.4453125, 0.40234375, 0.44921875)
@@ -7171,7 +7555,7 @@ ClassicUI.CreateClassicAutoCastShine = function(iActionButton)
 	iabcset.sparkles[4]:SetPoint("CENTER", 0, 0)
 	iabcset.sparkles[4]:SetSize(4, 4)
 	iabcset.sparkles[4]:Hide()
-	
+
 	iabcset.sparkles[5] = iabcset:CreateTexture(parentName.."5", "OVERLAY")
 	iabcset.sparkles[5]:SetBlendMode("ADD")
 	iabcset.sparkles[5]:SetTexCoord(0.3984375, 0.4453125, 0.40234375, 0.44921875)
@@ -7180,7 +7564,7 @@ ClassicUI.CreateClassicAutoCastShine = function(iActionButton)
 	iabcset.sparkles[5]:SetPoint("CENTER", 0, 0)
 	iabcset.sparkles[5]:SetSize(13, 13)
 	iabcset.sparkles[5]:Hide()
-	
+
 	iabcset.sparkles[6] = iabcset:CreateTexture(parentName.."6", "OVERLAY")
 	iabcset.sparkles[6]:SetBlendMode("ADD")
 	iabcset.sparkles[6]:SetTexCoord(0.3984375, 0.4453125, 0.40234375, 0.44921875)
@@ -7189,7 +7573,7 @@ ClassicUI.CreateClassicAutoCastShine = function(iActionButton)
 	iabcset.sparkles[6]:SetPoint("CENTER", 0, 0)
 	iabcset.sparkles[6]:SetSize(10, 10)
 	iabcset.sparkles[6]:Hide()
-	
+
 	iabcset.sparkles[7] = iabcset:CreateTexture(parentName.."7", "OVERLAY")
 	iabcset.sparkles[7]:SetBlendMode("ADD")
 	iabcset.sparkles[7]:SetTexCoord(0.3984375, 0.4453125, 0.40234375, 0.44921875)
@@ -7198,7 +7582,7 @@ ClassicUI.CreateClassicAutoCastShine = function(iActionButton)
 	iabcset.sparkles[7]:SetPoint("CENTER", 0, 0)
 	iabcset.sparkles[7]:SetSize(7, 7)
 	iabcset.sparkles[7]:Hide()
-	
+
 	iabcset.sparkles[8] = iabcset:CreateTexture(parentName.."8", "OVERLAY")
 	iabcset.sparkles[8]:SetBlendMode("ADD")
 	iabcset.sparkles[8]:SetTexCoord(0.3984375, 0.4453125, 0.40234375, 0.44921875)
@@ -7207,7 +7591,7 @@ ClassicUI.CreateClassicAutoCastShine = function(iActionButton)
 	iabcset.sparkles[8]:SetPoint("CENTER", 0, 0)
 	iabcset.sparkles[8]:SetSize(4, 4)
 	iabcset.sparkles[8]:Hide()
-	
+
 	iabcset.sparkles[9] = iabcset:CreateTexture(parentName.."9", "OVERLAY")
 	iabcset.sparkles[9]:SetBlendMode("ADD")
 	iabcset.sparkles[9]:SetTexCoord(0.3984375, 0.4453125, 0.40234375, 0.44921875)
@@ -7216,7 +7600,7 @@ ClassicUI.CreateClassicAutoCastShine = function(iActionButton)
 	iabcset.sparkles[9]:SetPoint("CENTER", 0, 0)
 	iabcset.sparkles[9]:SetSize(13, 13)
 	iabcset.sparkles[9]:Hide()
-	
+
 	iabcset.sparkles[10] = iabcset:CreateTexture(parentName.."10", "OVERLAY")
 	iabcset.sparkles[10]:SetBlendMode("ADD")
 	iabcset.sparkles[10]:SetTexCoord(0.3984375, 0.4453125, 0.40234375, 0.44921875)
@@ -7225,7 +7609,7 @@ ClassicUI.CreateClassicAutoCastShine = function(iActionButton)
 	iabcset.sparkles[10]:SetPoint("CENTER", 0, 0)
 	iabcset.sparkles[10]:SetSize(10, 10)
 	iabcset.sparkles[10]:Hide()
-	
+
 	iabcset.sparkles[11] = iabcset:CreateTexture(parentName.."11", "OVERLAY")
 	iabcset.sparkles[11]:SetBlendMode("ADD")
 	iabcset.sparkles[11]:SetTexCoord(0.3984375, 0.4453125, 0.40234375, 0.44921875)
@@ -7234,7 +7618,7 @@ ClassicUI.CreateClassicAutoCastShine = function(iActionButton)
 	iabcset.sparkles[11]:SetPoint("CENTER", 0, 0)
 	iabcset.sparkles[11]:SetSize(7, 7)
 	iabcset.sparkles[11]:Hide()
-	
+
 	iabcset.sparkles[12] = iabcset:CreateTexture(parentName.."12", "OVERLAY")
 	iabcset.sparkles[12]:SetBlendMode("ADD")
 	iabcset.sparkles[12]:SetTexCoord(0.3984375, 0.4453125, 0.40234375, 0.44921875)
@@ -7243,7 +7627,7 @@ ClassicUI.CreateClassicAutoCastShine = function(iActionButton)
 	iabcset.sparkles[12]:SetPoint("CENTER", 0, 0)
 	iabcset.sparkles[12]:SetSize(4, 4)
 	iabcset.sparkles[12]:Hide()
-	
+
 	iabcset.sparkles[13] = iabcset:CreateTexture(parentName.."13", "OVERLAY")
 	iabcset.sparkles[13]:SetBlendMode("ADD")
 	iabcset.sparkles[13]:SetTexCoord(0.3984375, 0.4453125, 0.40234375, 0.44921875)
@@ -7252,7 +7636,7 @@ ClassicUI.CreateClassicAutoCastShine = function(iActionButton)
 	iabcset.sparkles[13]:SetPoint("CENTER", 0, 0)
 	iabcset.sparkles[13]:SetSize(13, 13)
 	iabcset.sparkles[13]:Hide()
-	
+
 	iabcset.sparkles[14] = iabcset:CreateTexture(parentName.."14", "OVERLAY")
 	iabcset.sparkles[14]:SetBlendMode("ADD")
 	iabcset.sparkles[14]:SetTexCoord(0.3984375, 0.4453125, 0.40234375, 0.44921875)
@@ -7261,7 +7645,7 @@ ClassicUI.CreateClassicAutoCastShine = function(iActionButton)
 	iabcset.sparkles[14]:SetPoint("CENTER", 0, 0)
 	iabcset.sparkles[14]:SetSize(10, 10)
 	iabcset.sparkles[14]:Hide()
-	
+
 	iabcset.sparkles[15] = iabcset:CreateTexture(parentName.."15", "OVERLAY")
 	iabcset.sparkles[15]:SetBlendMode("ADD")
 	iabcset.sparkles[15]:SetTexCoord(0.3984375, 0.4453125, 0.40234375, 0.44921875)
@@ -7270,7 +7654,7 @@ ClassicUI.CreateClassicAutoCastShine = function(iActionButton)
 	iabcset.sparkles[15]:SetPoint("CENTER", 0, 0)
 	iabcset.sparkles[15]:SetSize(7, 7)
 	iabcset.sparkles[15]:Hide()
-	
+
 	iabcset.sparkles[16] = iabcset:CreateTexture(parentName.."16", "OVERLAY")
 	iabcset.sparkles[16]:SetBlendMode("ADD")
 	iabcset.sparkles[16]:SetTexCoord(0.3984375, 0.4453125, 0.40234375, 0.44921875)
@@ -7279,28 +7663,28 @@ ClassicUI.CreateClassicAutoCastShine = function(iActionButton)
 	iabcset.sparkles[16]:SetPoint("CENTER", 0, 0)
 	iabcset.sparkles[16]:SetSize(4, 4)
 	iabcset.sparkles[16]:Hide()
-	
+
 	iabcset:SetSize(28, 28)
 	iabcset:ClearAllPoints()
 	iabcset:SetPoint("CENTER", 0, 0)
-	
+
 	if (iActionButton.AutoCastOverlay.autoCastEnabled) then
 		iabcset:Show()
 		ClassicUI.AutoCastShine_AutoCastStart(iabcset)
 	else
 		iabcset:Hide()
 	end
-	
+
 	-- Create an intermediary parent frame to easily hide this animation if desired
 	local iabpcset = CreateFrame("Frame", nil, iActionButton)
 	iabpcset:SetPoint("CENTER", iActionButton, "CENTER", 0, 0)
 	iabpcset:SetAlpha(1)
 	iabpcset:Show()
 	iabcset:SetParent(iabpcset)
-	
+
 	iActionButton.ParentClassicAutoCastShine = iabpcset
 	iActionButton.ClassicAutoCastShine = iabcset
-	
+
 	hooksecurefunc(iActionButton.AutoCastOverlay, "ShowAutoCastEnabled", function(self, isEnabled)
 		if (self:GetParent().ClassicAutoCastShine ~= nil) then
 			if (isEnabled) then
@@ -7318,11 +7702,11 @@ end
 -- Function to recreate the classic SpellActivationAlert animation frame for an ActionButton
 ClassicUI.CreateClassicSpellActivationAlertFrame = function(iActionButton)
 	if (iActionButton.ClassicSpellActivationAlert) then return end
-	
+
 	-- Recreate the classic animation frames and animations
 	local parentName = iActionButton:GetName()
 	local iabcsaa = CreateFrame("Frame", nil, iActionButton)
-	
+
 	iabcsaa.spark = iabcsaa:CreateTexture(parentName.."Spark", "BACKGROUND")
 	iabcsaa.spark:SetTexCoord(0.00781250, 0.61718750, 0.00390625, 0.26953125)
 	iabcsaa.spark:SetTexture("Interface\\SpellActivationOverlay\\IconAlert")
@@ -7331,7 +7715,7 @@ ClassicUI.CreateClassicSpellActivationAlertFrame = function(iActionButton)
 	iabcsaa.spark:ClearAllPoints()
 	iabcsaa.spark:SetPoint("CENTER")
 	iabcsaa.spark:SetAlpha(0)
-	
+
 	iabcsaa.innerGlow = iabcsaa:CreateTexture(parentName.."InnerGlow", "ARTWORK")
 	iabcsaa.innerGlow:SetTexCoord(0.00781250, 0.50781250, 0.27734375, 0.52734375)
 	iabcsaa.innerGlow:SetTexture("Interface\\SpellActivationOverlay\\IconAlert")
@@ -7340,7 +7724,7 @@ ClassicUI.CreateClassicSpellActivationAlertFrame = function(iActionButton)
 	iabcsaa.innerGlow:ClearAllPoints()
 	iabcsaa.innerGlow:SetPoint("CENTER")
 	iabcsaa.innerGlow:SetAlpha(0)
-	
+
 	iabcsaa.innerGlowOver = iabcsaa:CreateTexture(parentName.."InnerGlowOver", "ARTWORK")
 	iabcsaa.innerGlowOver:SetTexCoord(0.00781250, 0.50781250, 0.53515625, 0.78515625)
 	iabcsaa.innerGlowOver:SetTexture("Interface\\SpellActivationOverlay\\IconAlert")
@@ -7348,7 +7732,7 @@ ClassicUI.CreateClassicSpellActivationAlertFrame = function(iActionButton)
 	iabcsaa.innerGlowOver:SetPoint("TOPLEFT", iabcsaa.innerGlow, "TOPLEFT")
 	iabcsaa.innerGlowOver:SetPoint("BOTTOMRIGHT", iabcsaa.innerGlow, "BOTTOMRIGHT")
 	iabcsaa.innerGlowOver:SetAlpha(0)
-	
+
 	iabcsaa.outerGlow = iabcsaa:CreateTexture(parentName.."OuterGlow", "ARTWORK")
 	iabcsaa.outerGlow:SetTexCoord(0.00781250, 0.50781250, 0.27734375, 0.52734375)
 	iabcsaa.outerGlow:SetTexture("Interface\\SpellActivationOverlay\\IconAlert")
@@ -7357,7 +7741,7 @@ ClassicUI.CreateClassicSpellActivationAlertFrame = function(iActionButton)
 	iabcsaa.outerGlow:ClearAllPoints()
 	iabcsaa.outerGlow:SetPoint("CENTER")
 	iabcsaa.outerGlow:SetAlpha(0)
-	
+
 	iabcsaa.outerGlowOver = iabcsaa:CreateTexture(parentName.."OuterGlowOver", "ARTWORK")
 	iabcsaa.outerGlowOver:SetTexCoord(0.00781250, 0.50781250, 0.53515625, 0.78515625)
 	iabcsaa.outerGlowOver:SetTexture("Interface\\SpellActivationOverlay\\IconAlert")
@@ -7365,7 +7749,7 @@ ClassicUI.CreateClassicSpellActivationAlertFrame = function(iActionButton)
 	iabcsaa.outerGlowOver:SetPoint("TOPLEFT", iabcsaa.outerGlow, "TOPLEFT")
 	iabcsaa.outerGlowOver:SetPoint("BOTTOMRIGHT", iabcsaa.outerGlow, "BOTTOMRIGHT")
 	iabcsaa.outerGlowOver:SetAlpha(0)
-	
+
 	iabcsaa.ants = iabcsaa:CreateTexture(parentName.."Ants", "OVERLAY")
 	iabcsaa.ants:SetTexture("Interface\\SpellActivationOverlay\\IconAlertAnts")
 	iabcsaa.ants:ClearAllPoints()
@@ -7373,20 +7757,20 @@ ClassicUI.CreateClassicSpellActivationAlertFrame = function(iActionButton)
 	iabcsaa.ants:ClearAllPoints()
 	iabcsaa.ants:SetPoint("CENTER")
 	iabcsaa.ants:SetAlpha(0)
-	
+
 	iabcsaa.OnUpdate = function(self, elapsed)
 		AnimateTexCoords(self.ants, 256, 256, 48, 48, 22, elapsed, 0.01)
 		local cooldown = self:GetParent().cooldown
 		-- we need some threshold to avoid dimming the glow during the gdc
 		-- (using 1500 exactly seems risky, what if casting speed is slowed or something?)
-		if(cooldown and cooldown:IsShown() and cooldown:GetCooldownDuration() > 3000) then
+		if (cooldown and cooldown:IsShown() and cooldown:GetCooldownDuration() > 3000) then
 			self:SetAlpha(0.5)
 		else
 			self:SetAlpha(1.0)
 		end
 	end
 	iabcsaa:SetScript("OnUpdate", iabcsaa.OnUpdate)
-	
+
 	iabcsaa.OnHide = function(self)
 		if ( self.animOut:IsPlaying() ) then
 			self.animOut:Stop()
@@ -7394,69 +7778,69 @@ ClassicUI.CreateClassicSpellActivationAlertFrame = function(iActionButton)
 		end
 	end
 	iabcsaa:SetScript("OnHide", iabcsaa.OnHide)
-	
+
 	local tmpanim
 	iabcsaa.animIn = iabcsaa:CreateAnimationGroup()
 	iabcsaa.animIn.pstatus = 0	-- Add extra status info for this AnimationGroup: 0 = Finished, 1 = Playing, 2 = Stopped, 3 = Paused
-	
+
 	tmpanim = iabcsaa.animIn:CreateAnimation("Scale")
 	tmpanim:SetTarget(iabcsaa.spark)
 	tmpanim:SetDuration(0.2)
 	tmpanim:SetScale(1.5, 1.5)
 	tmpanim:SetOrder(1)
-	
+
 	tmpanim = iabcsaa.animIn:CreateAnimation("Alpha")
 	tmpanim:SetTarget(iabcsaa.spark)
 	tmpanim:SetDuration(0.2)
 	tmpanim:SetFromAlpha(0)
 	tmpanim:SetToAlpha(1)
 	tmpanim:SetOrder(1)
-	
+
 	tmpanim = iabcsaa.animIn:CreateAnimation("Scale")
 	tmpanim:SetTarget(iabcsaa.innerGlow)
 	tmpanim:SetDuration(0.3)
 	tmpanim:SetScale(2, 2)
 	tmpanim:SetOrder(1)
-	
+
 	tmpanim = iabcsaa.animIn:CreateAnimation("Scale")
 	tmpanim:SetTarget(iabcsaa.innerGlowOver)
 	tmpanim:SetDuration(0.3)
 	tmpanim:SetScale(2, 2)
 	tmpanim:SetOrder(1)
-	
+
 	tmpanim = iabcsaa.animIn:CreateAnimation("Alpha")
 	tmpanim:SetTarget(iabcsaa.innerGlowOver)
 	tmpanim:SetDuration(0.3)
 	tmpanim:SetFromAlpha(1)
 	tmpanim:SetToAlpha(0)
 	tmpanim:SetOrder(1)
-	
+
 	tmpanim = iabcsaa.animIn:CreateAnimation("Scale")
 	tmpanim:SetTarget(iabcsaa.outerGlow)
 	tmpanim:SetDuration(0.3)
 	tmpanim:SetScale(0.5, 0.5)
 	tmpanim:SetOrder(1)
-	
+
 	tmpanim = iabcsaa.animIn:CreateAnimation("Scale")
 	tmpanim:SetTarget(iabcsaa.outerGlowOver)
 	tmpanim:SetDuration(0.3)
 	tmpanim:SetScale(0.5, 0.5)
 	tmpanim:SetOrder(1)
-	
+
 	tmpanim = iabcsaa.animIn:CreateAnimation("Alpha")
 	tmpanim:SetTarget(iabcsaa.outerGlowOver)
 	tmpanim:SetDuration(0.3)
 	tmpanim:SetFromAlpha(1)
 	tmpanim:SetToAlpha(0)
 	tmpanim:SetOrder(1)
-	
+
 	tmpanim = iabcsaa.animIn:CreateAnimation("Scale")
 	tmpanim:SetTarget(iabcsaa.spark)
 	tmpanim:SetStartDelay(0.2)
 	tmpanim:SetDuration(0.2)
 	tmpanim:SetScale(0.666666, 0.666666)
 	tmpanim:SetOrder(1)
-	
+
 	tmpanim = iabcsaa.animIn:CreateAnimation("Alpha")
 	tmpanim:SetTarget(iabcsaa.spark)
 	tmpanim:SetStartDelay(0.2)
@@ -7464,7 +7848,7 @@ ClassicUI.CreateClassicSpellActivationAlertFrame = function(iActionButton)
 	tmpanim:SetFromAlpha(1)
 	tmpanim:SetToAlpha(0)
 	tmpanim:SetOrder(1)
-	
+
 	tmpanim = iabcsaa.animIn:CreateAnimation("Alpha")
 	tmpanim:SetTarget(iabcsaa.innerGlow)
 	tmpanim:SetStartDelay(0.3)
@@ -7472,7 +7856,7 @@ ClassicUI.CreateClassicSpellActivationAlertFrame = function(iActionButton)
 	tmpanim:SetFromAlpha(1)
 	tmpanim:SetToAlpha(0)
 	tmpanim:SetOrder(1)
-	
+
 	tmpanim = iabcsaa.animIn:CreateAnimation("Alpha")
 	tmpanim:SetTarget(iabcsaa.ants)
 	tmpanim:SetStartDelay(0.3)
@@ -7480,7 +7864,7 @@ ClassicUI.CreateClassicSpellActivationAlertFrame = function(iActionButton)
 	tmpanim:SetFromAlpha(0)
 	tmpanim:SetToAlpha(1)
 	tmpanim:SetOrder(1)
-	
+
 	iabcsaa.animIn.OnPlay = function(self)
 		local frame = self:GetParent()
 		local frameWidth, frameHeight = frame:GetSize()
@@ -7498,7 +7882,7 @@ ClassicUI.CreateClassicSpellActivationAlertFrame = function(iActionButton)
 		frame:Show()
 	end
 	iabcsaa.animIn:SetScript("OnPlay", iabcsaa.animIn.OnPlay)
-	
+
 	iabcsaa.animIn.OnFinished = function(self)
 		local frame = self:GetParent()
 		local frameWidth, frameHeight = frame:GetSize()
@@ -7513,61 +7897,61 @@ ClassicUI.CreateClassicSpellActivationAlertFrame = function(iActionButton)
 		self.pstatus = 0
 	end
 	iabcsaa.animIn:SetScript("OnFinished", iabcsaa.animIn.OnFinished)
-	
+
 	iabcsaa.animIn.OnStop = function(self)
 		self.pstatus = 2
 	end
 	iabcsaa.animIn:SetScript("OnStop", iabcsaa.animIn.OnStop)
-	
+
 	iabcsaa.animIn.OnPause = function(self)
 		self.pstatus = 3
 	end
 	iabcsaa.animIn:SetScript("OnPause", iabcsaa.animIn.OnPause)
-	
+
 	iabcsaa.animIn.IsStopped = function(self)
 		return (self.pstatus == 2)
 	end
-	
+
 	iabcsaa.animIn.IsStoppedOrPaused = function(self)
 		return (self.pstatus >= 2)
 	end
-	
+
 	iabcsaa.animOut = iabcsaa:CreateAnimationGroup()
-	
+
 	tmpanim = iabcsaa.animOut:CreateAnimation("Alpha")
 	tmpanim:SetTarget(iabcsaa.outerGlowOver)
 	tmpanim:SetDuration(0.2)
 	tmpanim:SetFromAlpha(0)
 	tmpanim:SetToAlpha(1)
 	tmpanim:SetOrder(1)
-	
+
 	tmpanim = iabcsaa.animOut:CreateAnimation("Alpha")
 	tmpanim:SetTarget(iabcsaa.ants)
 	tmpanim:SetDuration(0.2)
 	tmpanim:SetFromAlpha(1)
 	tmpanim:SetToAlpha(0)
 	tmpanim:SetOrder(1)
-	
+
 	tmpanim = iabcsaa.animOut:CreateAnimation("Alpha")
 	tmpanim:SetTarget(iabcsaa.outerGlowOver)
 	tmpanim:SetDuration(0.2)
 	tmpanim:SetFromAlpha(1)
 	tmpanim:SetToAlpha(0)
 	tmpanim:SetOrder(2)
-	
+
 	tmpanim = iabcsaa.animOut:CreateAnimation("Alpha")
 	tmpanim:SetTarget(iabcsaa.outerGlow)
 	tmpanim:SetDuration(0.2)
 	tmpanim:SetFromAlpha(1)
 	tmpanim:SetToAlpha(0)
 	tmpanim:SetOrder(2)
-	
+
 	iabcsaa.animOut.OnFinished = function(self)
 		local frame = self:GetParent()
 		frame:Hide()
 	end
 	iabcsaa.animOut:SetScript("OnFinished", iabcsaa.animOut.OnFinished)
-	
+
 	-- Create an intermediary parent frame to easily hide this animation if desired
 	local iabpcsaa = CreateFrame("Frame", nil, iActionButton)
 	iabpcsaa.cooldown = iActionButton.cooldown
@@ -7575,20 +7959,18 @@ ClassicUI.CreateClassicSpellActivationAlertFrame = function(iActionButton)
 	iabpcsaa:SetAlpha(1)
 	iabpcsaa:Show()
 	iabcsaa:SetParent(iabpcsaa)
-	
+
 	iActionButton.ParentClassicSpellActivationAlert = iabpcsaa
 	iActionButton.ClassicSpellActivationAlert = iabcsaa
 	local frameWidth, frameHeight = iActionButton:GetSize()
 	iabcsaa:SetSize(frameWidth * 1.4, frameHeight * 1.4)
 	iabcsaa:SetPoint("CENTER", iActionButton, "CENTER", 0, 0)
 	iabcsaa:Hide()
-	
+
 	-- Global hooks to the main functions that show/hide these animations
 	if not ClassicUI.hooked_ActionButton_ShowHideOverlayGlow then
 		hooksecurefunc(ActionButtonSpellAlertManager, "ShowAlert", function(self, button)
-			if not(button.ClassicSpellActivationAlert) then
-				return
-			end
+			if not(button.ClassicSpellActivationAlert) then return end
 			if button.ClassicSpellActivationAlert.animOut:IsPlaying() then
 				button.ClassicSpellActivationAlert.animOut:Stop()
 			end
@@ -7597,9 +7979,7 @@ ClassicUI.CreateClassicSpellActivationAlertFrame = function(iActionButton)
 			end
 		end)
 		hooksecurefunc(ActionButtonSpellAlertManager, "HideAlert", function(self, button)
-			if not(button.ClassicSpellActivationAlert) then
-				return
-			end
+			if not(button.ClassicSpellActivationAlert) then	return end
 			if button.ClassicSpellActivationAlert.animIn:IsPlaying() then
 				button.ClassicSpellActivationAlert.animIn:Stop()
 			end
@@ -7922,7 +8302,7 @@ ClassicUI.LayoutActionButton = function(iActionButton, typeActionButton)
 		return
 	end
 	local newBLScale = typeABprofile.scale or 1
-	
+
 	local name = iActionButton:GetName()
 	if not(typeABprofile.BLStyle0AllowNewBackgroundArt) then
 		iActionButton.SlotArt:SetAlpha(0)
@@ -8732,7 +9112,7 @@ ClassicUI.LayoutActionButton = function(iActionButton, typeActionButton)
 			else
 				iabcf:SetAlpha(1)
 				iabcf:SetScale(ClassicUI.ACTIONBUTTON_NEWLAYOUT_SCALE)
-				if not ClassicUI.hooked_ActionButtonCooldown_OnCooldownDone then
+				if not ClassicUI.hooked_ActionButtonCooldown_OnCooldownDone_CooldownFlash then
 					hooksecurefunc("ActionButtonCooldown_OnCooldownDone", function(self, requireCooldownUpdate)
 						local cooldownFlash = self:GetParent().CooldownFlash
 						local spellCastAnimFrame = self:GetParent().SpellCastAnimFrame
@@ -8742,7 +9122,7 @@ ClassicUI.LayoutActionButton = function(iActionButton, typeActionButton)
 							end
 						end
 					end)
-					ClassicUI.hooked_ActionButtonCooldown_OnCooldownDone = true
+					ClassicUI.hooked_ActionButtonCooldown_OnCooldownDone_CooldownFlash = true
 				end
 			end
 		end
@@ -9079,21 +9459,23 @@ end
 
 -- Main function that loads the core features of ClassicUI. This function at the end calls to 'ClassicUI:PLAYER_ENTERING_WORLD()'.
 function ClassicUI:MainFunction(isLogin)
-	
+
 	-- Get and set the cached values for the status bar variables
 	ClassicUI:UpdateStatusBarOptionsCache()
-	
+
 	-- Create the basic default-value cache for ActionButtons
 	ClassicUI:InitActionButtonInfoCache()
-	
-	-- Seems that this frame does not need protection (InCombatLockdown) to be moved
+
+	-- Seems that this frame normally does not need protection (InCombatLockdown) to be moved, as long as there are no protected frames anchored to it.
 	hooksecurefunc("UIParent_ManageFramePositions", function()
-		UIParentBottomManagedFrameContainer:ClearAllPoints()
-		UIParentBottomManagedFrameContainer:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, MAIN_ACTION_BAR_DEFAULT_OFFSET_Y + 100)
+		if (not(InCombatLockdown()) or not(UIParentBottomManagedFrameContainer:IsProtected())) then
+			UIParentBottomManagedFrameContainer:ClearAllPoints()
+			UIParentBottomManagedFrameContainer:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, MAIN_ACTION_BAR_DEFAULT_OFFSET_Y + 100)
+		end
 	end)
 	UIParentBottomManagedFrameContainer:ClearAllPoints()
 	UIParentBottomManagedFrameContainer:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, MAIN_ACTION_BAR_DEFAULT_OFFSET_Y + 100)
-	
+
 	if InCombatLockdown() then
 		delayFunc_MainFunction = true
 		if (not fclFrame:IsEventRegistered("PLAYER_REGEN_ENABLED")) then
@@ -9101,26 +9483,26 @@ function ClassicUI:MainFunction(isLogin)
 		end
 		return
 	end
-	
+
 	-- We reset certain attributes of the ActionBars to their old values and disable their interaction with the mouse
 	ClassicUI:ModifyOriginalFrames()
-	
-	hooksecurefunc(MainMenuBar, "UpdateEndCaps", function(self, overrideHideEndCaps)
+
+	hooksecurefunc(MainActionBar, "UpdateEndCaps", function(self, overrideHideEndCaps)
 		self.EndCaps.LeftEndCap:Hide()
 		self.EndCaps.RightEndCap:Hide()
 		self.EndCaps:Hide()
 	end)
-	MainMenuBar.EndCaps.LeftEndCap:Hide()
-	MainMenuBar.EndCaps.RightEndCap:Hide()
-	MainMenuBar.EndCaps:Hide()
-	hooksecurefunc(MainMenuBar, "UpdateSystemSettingHideBarArt", function(self)
+	MainActionBar.EndCaps.LeftEndCap:Hide()
+	MainActionBar.EndCaps.RightEndCap:Hide()
+	MainActionBar.EndCaps:Hide()
+	hooksecurefunc(MainActionBar, "UpdateSystemSettingHideBarArt", function(self)
 		self.BorderArt:SetShown(false)
 	end)
-	MainMenuBar.BorderArt:SetShown(false)
-	hooksecurefunc(MainMenuBar, "UpdateDividers", function(self)
+	MainActionBar.BorderArt:SetShown(false)
+	hooksecurefunc(MainActionBar, "UpdateDividers", function(self)
 		ClassicUI:HideMainMenuBarDividers(self)
 	end)
-	ClassicUI:HideMainMenuBarDividers(MainMenuBar, true)
+	ClassicUI:HideMainMenuBarDividers(MainActionBar, true)
 
 	if (not ClassicUI.frame:IsEventRegistered("PLAYER_SPECIALIZATION_CHANGED")) then
 		ClassicUI.frame:RegisterUnitEvent("PLAYER_SPECIALIZATION_CHANGED", "player")
@@ -9285,7 +9667,7 @@ function ClassicUI:ToggleVisibilityKeybinds(mode)
 		ACTIONBUTTON_UPDATEHOTKEYS_HOOKED = true
 		ClassicUI:HookPetBattleKeybindsVisibilityMode()
 		if (mode == 2) then
-			for i=1, #PetBattleFrame.BottomFrame.abilityButtons do
+			for i = 1, #PetBattleFrame.BottomFrame.abilityButtons do
 				local actionButton = PetBattleFrame.BottomFrame.abilityButtons[i]
 				if (actionButton and actionButton.HotKey) then
 					actionButton.HotKey:SetAlpha(0)
@@ -9297,7 +9679,7 @@ function ClassicUI:ToggleVisibilityKeybinds(mode)
 			PetBattleFrame.BottomFrame.CatchButton.HotKey:SetAlpha(0)
 			PetBattleFrame.BottomFrame.CatchButton.HotKey:Hide()
 		elseif (mode == 3) then
-			for i=1, #PetBattleFrame.BottomFrame.abilityButtons do
+			for i = 1, #PetBattleFrame.BottomFrame.abilityButtons do
 				local actionButton = PetBattleFrame.BottomFrame.abilityButtons[i]
 				if (actionButton and actionButton.HotKey) then
 					actionButton.HotKey:SetAlpha(1)
@@ -9356,7 +9738,7 @@ function ClassicUI:ToggleVisibilityKeybinds(mode)
 				actionButtonHK:SetAlpha(1)
 			end
 		end
-		for i=1, #PetBattleFrame.BottomFrame.abilityButtons do
+		for i = 1, #PetBattleFrame.BottomFrame.abilityButtons do
 			local actionButton = PetBattleFrame.BottomFrame.abilityButtons[i]
 			if (actionButton and actionButton.HotKey) then
 				actionButton.HotKey:SetAlpha(1)
