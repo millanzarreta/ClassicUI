@@ -411,6 +411,8 @@ L['GreyOnCooldown'] = true
 L['Enable GreyOnCooldown'] = true
 L['DesaturateUnusableActions'] = 'Desaturate unusable actions'
 L['DesaturateUnusableActionsDesc'] = 'Desaturate unusable actions (such as unlearned talents) regardless of their cooldown status'
+L['DesaturatePetActionButtons'] = 'Desaturate PetActionButtons'
+L['DesaturatePetActionButtonsDesc'] = 'Check this option to desaturate pet action buttons on the pet action bar when they are on cooldown'
 L['minDuration'] = true
 L['minDurationDesc'] = 'Set the minimum value (in seconds) of the cooldown to be desaturated'
 L['LossOfControlUI CC Remover'] = true
@@ -439,6 +441,7 @@ L['MINIMAP_OPTIONS_DESC'] = 'Enable this option to restore the old Minimap. You 
 L['CHAT_OPTIONS_DESC'] = 'With these options you can restore old chat features, such as scroll arrows.'
 L['CUI_GUILD_PROTECTEDFUNC'] = 'Functionality not available from ClassicUI Guild Panel, please use Blizzard\'s default Guild UI for this action'
 
+L['CLASSICUI_OPENPANEL_AFTERCOMBAT'] = 'The options panel will open after combat ends.'
 L['CLASSICUI_HELP_LINE1'] = 'Available slash commands:'
 L['CLASSICUI_HELP_LINE2'] = '-----------------'
 L['CLASSICUI_HELP_LINE3'] = '/ClassicUI: Shows the main ClassicUI config panel.'

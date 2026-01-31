@@ -1632,8 +1632,14 @@ ClassicUI.optionsTable = {
 									order = 1,
 									name = L['MicroButtons Order']
 								},
-								buttonOrderUp = {
+								orderValueText = {
 									order = 2,
+									type = "description",
+									width = 0.20,
+									name = function() return ' |cffeda55f[|r|cffff6720'..(ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.order < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.order..'|r|cffeda55f]|r' end
+								},
+								buttonOrderUp = {
+									order = 3,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.order <= ClassicUI.MICROBUTTONS_MIN_ORDER) and '-disabled' or '')..':0|t' end,
 									desc = L['UP'],
@@ -1648,7 +1654,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								buttonOrderDown = {
-									order = 3,
+									order = 4,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.order >= ClassicUI.MICROBUTTONS_MAX_ORDER) and '-disabled' or '')..':0|t' end,
 									desc = L['DOWN'],
@@ -1664,12 +1670,12 @@ ClassicUI.optionsTable = {
 								},
 								Spacer1 = {
 									type = "description",
-									order = 4,
+									order = 5,
 									name = "",
 									width = 0.05
 								},
 								buttonOrderDefault = {
-									order = 5,
+									order = 6,
 									type = "execute",
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsOrderDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultOrderDesc'],
@@ -1685,22 +1691,22 @@ ClassicUI.optionsTable = {
 								},
 								Header2 = {
 									type = 'header',
-									order = 6,
+									order = 7,
 									name = L['MicroButtons Priority']
 								},
 								prioritySectionDesc = {
-									order = 7,
+									order = 8,
 									type = "description",
 									name = L['MICROBUTTONS_PRIORITY_DESC']
 								},
 								priorityValueText = {
-									order = 8,
+									order = 9,
 									type = "description",
 									width = 0.20,
 									name = function() return ' |cffbad152[|r|cff62e632'..(ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.priority < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.priority..'|r|cffbad152]|r' end
 								},
 								buttonPriorityUp = {
-									order = 9,
+									order = 10,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.priority <= ClassicUI.MICROBUTTONS_MIN_PRIORITY) and '-disabled' or '')..':0|t' end,
 									desc = L['UP'],
@@ -1715,7 +1721,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								buttonPriorityDown = {
-									order = 10,
+									order = 11,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.priority >= ClassicUI.MICROBUTTONS_MAX_PRIORITY) and '-disabled' or '')..':0|t' end,
 									desc = L['DOWN'],
@@ -1731,12 +1737,12 @@ ClassicUI.optionsTable = {
 								},
 								Spacer2 = {
 									type = "description",
-									order = 11,
+									order = 12,
 									name = "",
 									width = 0.05
 								},
 								buttonPriorityDefault = {
-									order = 12,
+									order = 13,
 									type = "execute",
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsPriorityDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultPriorityDesc'],
@@ -1751,7 +1757,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								priorityIconList = {
-									order = 13,
+									order = 14,
 									type = "description",
 									name = function()
 										local prioOrderedArray = {}
@@ -1778,11 +1784,11 @@ ClassicUI.optionsTable = {
 								},
 								Header3 = {
 									type = 'header',
-									order = 14,
+									order = 15,
 									name = L['CharacterMicroButton']
 								},
 								hideMicroButton = {
-									order = 15,
+									order = 16,
 									type = "toggle",
 									name = L['Hide MicroButton'],
 									desc = L['Hide MicroButton'],
@@ -1803,7 +1809,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								keepGapMicroButton = {
-									order = 16,
+									order = 17,
 									type = "toggle",
 									name = L['Keep MicroButton Gap'],
 									desc = L['KeepMicroButtonGapDesc'],
@@ -1818,7 +1824,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								disableMicroButton = {
-									order = 17,
+									order = 18,
 									type = "toggle",
 									name = L['Disable MicroButton'],
 									desc = L['Disable MicroButton'],
@@ -1846,7 +1852,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								disableMouseMicroButton = {
-									order = 18,
+									order = 19,
 									type = "toggle",
 									name = L['Disable Mouse'],
 									desc = L['DisableMouseMicroButtonDesc'],
@@ -1863,7 +1869,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								xOffsetMicroButton = {
-									order = 19,
+									order = 20,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -1880,7 +1886,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								yOffsetMicroButton = {
-									order = 20,
+									order = 21,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -1897,7 +1903,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								alphaMicroButton = {
-									order = 21,
+									order = 22,
 									type = "range",
 									softMin = 0,
 									softMax = 1,
@@ -1927,7 +1933,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								iconMicroButton = {
-									order = 22,
+									order = 23,
 									type = "select",
 									style = "radio",
 									name = L['iconMicroButton'],
@@ -1992,8 +1998,14 @@ ClassicUI.optionsTable = {
 									order = 1,
 									name = L['MicroButtons Order']
 								},
-								buttonOrderUp = {
+								orderValueText = {
 									order = 2,
+									type = "description",
+									width = 0.20,
+									name = function() return ' |cffeda55f[|r|cffff6720'..(ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.order < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.order..'|r|cffeda55f]|r' end
+								},
+								buttonOrderUp = {
+									order = 3,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.order <= ClassicUI.MICROBUTTONS_MIN_ORDER) and '-disabled' or '')..':0|t' end,
 									desc = L['UP'],
@@ -2008,7 +2020,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								buttonOrderDown = {
-									order = 3,
+									order = 4,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.order >= ClassicUI.MICROBUTTONS_MAX_ORDER) and '-disabled' or '')..':0|t' end,
 									desc = L['DOWN'],
@@ -2024,12 +2036,12 @@ ClassicUI.optionsTable = {
 								},
 								Spacer1 = {
 									type = "description",
-									order = 4,
+									order = 5,
 									name = "",
 									width = 0.05
 								},
 								buttonOrderDefault = {
-									order = 5,
+									order = 6,
 									type = "execute",
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsOrderDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultOrderDesc'],
@@ -2045,22 +2057,22 @@ ClassicUI.optionsTable = {
 								},
 								Header2 = {
 									type = 'header',
-									order = 6,
+									order = 7,
 									name = L['MicroButtons Priority']
 								},
 								prioritySectionDesc = {
-									order = 7,
+									order = 8,
 									type = "description",
 									name = L['MICROBUTTONS_PRIORITY_DESC']
 								},
 								priorityValueText = {
-									order = 8,
+									order = 9,
 									type = "description",
 									width = 0.20,
 									name = function() return ' |cffbad152[|r|cff62e632'..(ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.priority < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.priority..'|r|cffbad152]|r' end
 								},
 								buttonPriorityUp = {
-									order = 9,
+									order = 10,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.priority <= ClassicUI.MICROBUTTONS_MIN_PRIORITY) and '-disabled' or '')..':0|t' end,
 									desc = L['UP'],
@@ -2075,7 +2087,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								buttonPriorityDown = {
-									order = 10,
+									order = 11,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.ProfessionMicroButton.priority >= ClassicUI.MICROBUTTONS_MAX_PRIORITY) and '-disabled' or '')..':0|t' end,
 									desc = L['DOWN'],
@@ -2091,12 +2103,12 @@ ClassicUI.optionsTable = {
 								},
 								Spacer2 = {
 									type = "description",
-									order = 11,
+									order = 12,
 									name = "",
 									width = 0.05
 								},
 								buttonPriorityDefault = {
-									order = 12,
+									order = 13,
 									type = "execute",
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsPriorityDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultPriorityDesc'],
@@ -2111,7 +2123,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								priorityIconList = {
-									order = 13,
+									order = 14,
 									type = "description",
 									name = function()
 										local prioOrderedArray = {}
@@ -2138,11 +2150,11 @@ ClassicUI.optionsTable = {
 								},
 								Header3 = {
 									type = 'header',
-									order = 14,
+									order = 15,
 									name = L['ProfessionMicroButton']
 								},
 								hideMicroButton = {
-									order = 15,
+									order = 16,
 									type = "toggle",
 									name = L['Hide MicroButton'],
 									desc = L['Hide MicroButton'],
@@ -2163,7 +2175,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								keepGapMicroButton = {
-									order = 16,
+									order = 17,
 									type = "toggle",
 									name = L['Keep MicroButton Gap'],
 									desc = L['KeepMicroButtonGapDesc'],
@@ -2178,7 +2190,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								disableMicroButton = {
-									order = 17,
+									order = 18,
 									type = "toggle",
 									name = L['Disable MicroButton'],
 									desc = L['Disable MicroButton'],
@@ -2206,7 +2218,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								disableMouseMicroButton = {
-									order = 18,
+									order = 19,
 									type = "toggle",
 									name = L['Disable Mouse'],
 									desc = L['DisableMouseMicroButtonDesc'],
@@ -2223,7 +2235,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								xOffsetMicroButton = {
-									order = 19,
+									order = 20,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -2240,7 +2252,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								yOffsetMicroButton = {
-									order = 20,
+									order = 21,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -2257,7 +2269,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								alphaMicroButton = {
-									order = 21,
+									order = 22,
 									type = "range",
 									softMin = 0,
 									softMax = 1,
@@ -2287,7 +2299,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								iconMicroButton = {
-									order = 22,
+									order = 23,
 									type = "select",
 									style = "radio",
 									name = L['iconMicroButton'],
@@ -2346,8 +2358,14 @@ ClassicUI.optionsTable = {
 									order = 1,
 									name = L['MicroButtons Order']
 								},
-								buttonOrderUp = {
+								orderValueText = {
 									order = 2,
+									type = "description",
+									width = 0.20,
+									name = function() return ' |cffeda55f[|r|cffff6720'..(ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.order < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.order..'|r|cffeda55f]|r' end
+								},
+								buttonOrderUp = {
+									order = 3,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.order <= ClassicUI.MICROBUTTONS_MIN_ORDER) and '-disabled' or '')..':0|t' end,
 									desc = L['UP'],
@@ -2362,7 +2380,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								buttonOrderDown = {
-									order = 3,
+									order = 4,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.order >= ClassicUI.MICROBUTTONS_MAX_ORDER) and '-disabled' or '')..':0|t' end,
 									desc = L['DOWN'],
@@ -2378,12 +2396,12 @@ ClassicUI.optionsTable = {
 								},
 								Spacer1 = {
 									type = "description",
-									order = 4,
+									order = 5,
 									name = "",
 									width = 0.05
 								},
 								buttonOrderDefault = {
-									order = 5,
+									order = 6,
 									type = "execute",
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsOrderDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultOrderDesc'],
@@ -2399,22 +2417,22 @@ ClassicUI.optionsTable = {
 								},
 								Header2 = {
 									type = 'header',
-									order = 6,
+									order = 7,
 									name = L['MicroButtons Priority']
 								},
 								prioritySectionDesc = {
-									order = 7,
+									order = 8,
 									type = "description",
 									name = L['MICROBUTTONS_PRIORITY_DESC']
 								},
 								priorityValueText = {
-									order = 8,
+									order = 9,
 									type = "description",
 									width = 0.20,
 									name = function() return ' |cffbad152[|r|cff62e632'..(ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.priority < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.priority..'|r|cffbad152]|r' end
 								},
 								buttonPriorityUp = {
-									order = 9,
+									order = 10,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.priority <= ClassicUI.MICROBUTTONS_MIN_PRIORITY) and '-disabled' or '')..':0|t' end,
 									desc = L['UP'],
@@ -2429,7 +2447,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								buttonPriorityDown = {
-									order = 10,
+									order = 11,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.PlayerSpellsMicroButton.priority >= ClassicUI.MICROBUTTONS_MAX_PRIORITY) and '-disabled' or '')..':0|t' end,
 									desc = L['DOWN'],
@@ -2445,12 +2463,12 @@ ClassicUI.optionsTable = {
 								},
 								Spacer2 = {
 									type = "description",
-									order = 11,
+									order = 12,
 									name = "",
 									width = 0.05
 								},
 								buttonPriorityDefault = {
-									order = 12,
+									order = 13,
 									type = "execute",
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsPriorityDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultPriorityDesc'],
@@ -2465,7 +2483,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								priorityIconList = {
-									order = 13,
+									order = 14,
 									type = "description",
 									name = function()
 										local prioOrderedArray = {}
@@ -2492,11 +2510,11 @@ ClassicUI.optionsTable = {
 								},
 								Header3 = {
 									type = 'header',
-									order = 14,
+									order = 15,
 									name = L['PlayerSpellsMicroButton']
 								},
 								hideMicroButton = {
-									order = 15,
+									order = 16,
 									type = "toggle",
 									name = L['Hide MicroButton'],
 									desc = L['Hide MicroButton'],
@@ -2517,7 +2535,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								keepGapMicroButton = {
-									order = 16,
+									order = 17,
 									type = "toggle",
 									name = L['Keep MicroButton Gap'],
 									desc = L['KeepMicroButtonGapDesc'],
@@ -2532,7 +2550,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								disableMicroButton = {
-									order = 17,
+									order = 18,
 									type = "toggle",
 									name = L['Disable MicroButton'],
 									desc = L['Disable MicroButton'],
@@ -2560,7 +2578,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								disableMouseMicroButton = {
-									order = 18,
+									order = 19,
 									type = "toggle",
 									name = L['Disable Mouse'],
 									desc = L['DisableMouseMicroButtonDesc'],
@@ -2577,7 +2595,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								xOffsetMicroButton = {
-									order = 19,
+									order = 20,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -2594,7 +2612,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								yOffsetMicroButton = {
-									order = 20,
+									order = 21,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -2611,7 +2629,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								alphaMicroButton = {
-									order = 21,
+									order = 22,
 									type = "range",
 									softMin = 0,
 									softMax = 1,
@@ -2641,7 +2659,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								iconMicroButton = {
-									order = 22,
+									order = 23,
 									type = "select",
 									style = "radio",
 									name = L['iconMicroButton'],
@@ -2733,8 +2751,14 @@ ClassicUI.optionsTable = {
 									order = 1,
 									name = L['MicroButtons Order']
 								},
-								buttonOrderUp = {
+								orderValueText = {
 									order = 2,
+									type = "description",
+									width = 0.20,
+									name = function() return ' |cffeda55f[|r|cffff6720'..(ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.order < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.order..'|r|cffeda55f]|r' end
+								},
+								buttonOrderUp = {
+									order = 3,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.order <= ClassicUI.MICROBUTTONS_MIN_ORDER) and '-disabled' or '')..':0|t' end,
 									desc = L['UP'],
@@ -2749,7 +2773,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								buttonOrderDown = {
-									order = 3,
+									order = 4,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.order >= ClassicUI.MICROBUTTONS_MAX_ORDER) and '-disabled' or '')..':0|t' end,
 									desc = L['DOWN'],
@@ -2765,12 +2789,12 @@ ClassicUI.optionsTable = {
 								},
 								Spacer1 = {
 									type = "description",
-									order = 4,
+									order = 5,
 									name = "",
 									width = 0.05
 								},
 								buttonOrderDefault = {
-									order = 5,
+									order = 6,
 									type = "execute",
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsOrderDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultOrderDesc'],
@@ -2786,22 +2810,22 @@ ClassicUI.optionsTable = {
 								},
 								Header2 = {
 									type = 'header',
-									order = 6,
+									order = 7,
 									name = L['MicroButtons Priority']
 								},
 								prioritySectionDesc = {
-									order = 7,
+									order = 8,
 									type = "description",
 									name = L['MICROBUTTONS_PRIORITY_DESC']
 								},
 								priorityValueText = {
-									order = 8,
+									order = 9,
 									type = "description",
 									width = 0.20,
 									name = function() return ' |cffbad152[|r|cff62e632'..(ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.priority < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.priority..'|r|cffbad152]|r' end
 								},
 								buttonPriorityUp = {
-									order = 9,
+									order = 10,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.priority <= ClassicUI.MICROBUTTONS_MIN_PRIORITY) and '-disabled' or '')..':0|t' end,
 									desc = L['UP'],
@@ -2816,7 +2840,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								buttonPriorityDown = {
-									order = 10,
+									order = 11,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.AchievementMicroButton.priority >= ClassicUI.MICROBUTTONS_MAX_PRIORITY) and '-disabled' or '')..':0|t' end,
 									desc = L['DOWN'],
@@ -2832,12 +2856,12 @@ ClassicUI.optionsTable = {
 								},
 								Spacer2 = {
 									type = "description",
-									order = 11,
+									order = 12,
 									name = "",
 									width = 0.05
 								},
 								buttonPriorityDefault = {
-									order = 12,
+									order = 13,
 									type = "execute",
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsPriorityDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultPriorityDesc'],
@@ -2852,7 +2876,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								priorityIconList = {
-									order = 13,
+									order = 14,
 									type = "description",
 									name = function()
 										local prioOrderedArray = {}
@@ -2879,11 +2903,11 @@ ClassicUI.optionsTable = {
 								},
 								Header3 = {
 									type = 'header',
-									order = 14,
+									order = 15,
 									name = L['AchievementMicroButton']
 								},
 								hideMicroButton = {
-									order = 15,
+									order = 16,
 									type = "toggle",
 									name = L['Hide MicroButton'],
 									desc = L['Hide MicroButton'],
@@ -2904,7 +2928,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								keepGapMicroButton = {
-									order = 16,
+									order = 17,
 									type = "toggle",
 									name = L['Keep MicroButton Gap'],
 									desc = L['KeepMicroButtonGapDesc'],
@@ -2919,7 +2943,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								disableMicroButton = {
-									order = 17,
+									order = 18,
 									type = "toggle",
 									name = L['Disable MicroButton'],
 									desc = L['Disable MicroButton'],
@@ -2955,7 +2979,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								disableMouseMicroButton = {
-									order = 18,
+									order = 19,
 									type = "toggle",
 									name = L['Disable Mouse'],
 									desc = L['DisableMouseMicroButtonDesc'],
@@ -2972,7 +2996,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								xOffsetMicroButton = {
-									order = 19,
+									order = 20,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -2989,7 +3013,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								yOffsetMicroButton = {
-									order = 20,
+									order = 21,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -3006,7 +3030,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								alphaMicroButton = {
-									order = 21,
+									order = 22,
 									type = "range",
 									softMin = 0,
 									softMax = 1,
@@ -3036,7 +3060,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								iconMicroButton = {
-									order = 22,
+									order = 23,
 									type = "select",
 									style = "radio",
 									name = L['iconMicroButton'],
@@ -3095,8 +3119,14 @@ ClassicUI.optionsTable = {
 									order = 1,
 									name = L['MicroButtons Order']
 								},
-								buttonOrderUp = {
+								orderValueText = {
 									order = 2,
+									type = "description",
+									width = 0.20,
+									name = function() return ' |cffeda55f[|r|cffff6720'..(ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.order < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.order..'|r|cffeda55f]|r' end
+								},
+								buttonOrderUp = {
+									order = 3,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.order <= ClassicUI.MICROBUTTONS_MIN_ORDER) and '-disabled' or '')..':0|t' end,
 									desc = L['UP'],
@@ -3111,7 +3141,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								buttonOrderDown = {
-									order = 3,
+									order = 4,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.order >= ClassicUI.MICROBUTTONS_MAX_ORDER) and '-disabled' or '')..':0|t' end,
 									desc = L['DOWN'],
@@ -3127,12 +3157,12 @@ ClassicUI.optionsTable = {
 								},
 								Spacer1 = {
 									type = "description",
-									order = 4,
+									order = 5,
 									name = "",
 									width = 0.05
 								},
 								buttonOrderDefault = {
-									order = 5,
+									order = 6,
 									type = "execute",
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsOrderDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultOrderDesc'],
@@ -3148,22 +3178,22 @@ ClassicUI.optionsTable = {
 								},
 								Header2 = {
 									type = 'header',
-									order = 6,
+									order = 7,
 									name = L['MicroButtons Priority']
 								},
 								prioritySectionDesc = {
-									order = 7,
+									order = 8,
 									type = "description",
 									name = L['MICROBUTTONS_PRIORITY_DESC']
 								},
 								priorityValueText = {
-									order = 8,
+									order = 9,
 									type = "description",
 									width = 0.20,
 									name = function() return ' |cffbad152[|r|cff62e632'..(ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.priority < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.priority..'|r|cffbad152]|r' end
 								},
 								buttonPriorityUp = {
-									order = 9,
+									order = 10,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.priority <= ClassicUI.MICROBUTTONS_MIN_PRIORITY) and '-disabled' or '')..':0|t' end,
 									desc = L['UP'],
@@ -3178,7 +3208,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								buttonPriorityDown = {
-									order = 10,
+									order = 11,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.priority >= ClassicUI.MICROBUTTONS_MAX_PRIORITY) and '-disabled' or '')..':0|t' end,
 									desc = L['DOWN'],
@@ -3194,12 +3224,12 @@ ClassicUI.optionsTable = {
 								},
 								Spacer2 = {
 									type = "description",
-									order = 11,
+									order = 12,
 									name = "",
 									width = 0.05
 								},
 								buttonPriorityDefault = {
-									order = 12,
+									order = 13,
 									type = "execute",
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsPriorityDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultPriorityDesc'],
@@ -3214,7 +3244,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								priorityIconList = {
-									order = 13,
+									order = 14,
 									type = "description",
 									name = function()
 										local prioOrderedArray = {}
@@ -3241,11 +3271,11 @@ ClassicUI.optionsTable = {
 								},
 								Header3 = {
 									type = 'header',
-									order = 14,
+									order = 15,
 									name = L['QuestLogMicroButton']
 								},
 								hideMicroButton = {
-									order = 15,
+									order = 16,
 									type = "toggle",
 									name = L['Hide MicroButton'],
 									desc = L['Hide MicroButton'],
@@ -3266,7 +3296,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								keepGapMicroButton = {
-									order = 16,
+									order = 17,
 									type = "toggle",
 									name = L['Keep MicroButton Gap'],
 									desc = L['KeepMicroButtonGapDesc'],
@@ -3281,7 +3311,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								disableMicroButton = {
-									order = 17,
+									order = 18,
 									type = "toggle",
 									name = L['Disable MicroButton'],
 									desc = L['Disable MicroButton'],
@@ -3309,7 +3339,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								disableMouseMicroButton = {
-									order = 18,
+									order = 19,
 									type = "toggle",
 									name = L['Disable Mouse'],
 									desc = L['DisableMouseMicroButtonDesc'],
@@ -3326,7 +3356,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								xOffsetMicroButton = {
-									order = 19,
+									order = 20,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -3343,7 +3373,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								yOffsetMicroButton = {
-									order = 20,
+									order = 21,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -3360,7 +3390,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								alphaMicroButton = {
-									order = 21,
+									order = 22,
 									type = "range",
 									softMin = 0,
 									softMax = 1,
@@ -3390,7 +3420,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								iconMicroButton = {
-									order = 22,
+									order = 23,
 									type = "select",
 									style = "radio",
 									name = L['iconMicroButton'],
@@ -3449,8 +3479,14 @@ ClassicUI.optionsTable = {
 									order = 1,
 									name = L['MicroButtons Order']
 								},
-								buttonOrderUp = {
+								orderValueText = {
 									order = 2,
+									type = "description",
+									width = 0.20,
+									name = function() return ' |cffeda55f[|r|cffff6720'..(ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.order < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.order..'|r|cffeda55f]|r' end
+								},
+								buttonOrderUp = {
+									order = 3,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.order <= ClassicUI.MICROBUTTONS_MIN_ORDER) and '-disabled' or '')..':0|t' end,
 									desc = L['UP'],
@@ -3465,7 +3501,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								buttonOrderDown = {
-									order = 3,
+									order = 4,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.order >= ClassicUI.MICROBUTTONS_MAX_ORDER) and '-disabled' or '')..':0|t' end,
 									desc = L['DOWN'],
@@ -3481,12 +3517,12 @@ ClassicUI.optionsTable = {
 								},
 								Spacer1 = {
 									type = "description",
-									order = 4,
+									order = 5,
 									name = "",
 									width = 0.05
 								},
 								buttonOrderDefault = {
-									order = 5,
+									order = 6,
 									type = "execute",
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsOrderDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultOrderDesc'],
@@ -3502,22 +3538,22 @@ ClassicUI.optionsTable = {
 								},
 								Header2 = {
 									type = 'header',
-									order = 6,
+									order = 7,
 									name = L['MicroButtons Priority']
 								},
 								prioritySectionDesc = {
-									order = 7,
+									order = 8,
 									type = "description",
 									name = L['MICROBUTTONS_PRIORITY_DESC']
 								},
 								priorityValueText = {
-									order = 8,
+									order = 9,
 									type = "description",
 									width = 0.20,
 									name = function() return ' |cffbad152[|r|cff62e632'..(ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.priority < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.priority..'|r|cffbad152]|r' end
 								},
 								buttonPriorityUp = {
-									order = 9,
+									order = 10,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.priority <= ClassicUI.MICROBUTTONS_MIN_PRIORITY) and '-disabled' or '')..':0|t' end,
 									desc = L['UP'],
@@ -3532,7 +3568,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								buttonPriorityDown = {
-									order = 10,
+									order = 11,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.priority >= ClassicUI.MICROBUTTONS_MAX_PRIORITY) and '-disabled' or '')..':0|t' end,
 									desc = L['DOWN'],
@@ -3548,12 +3584,12 @@ ClassicUI.optionsTable = {
 								},
 								Spacer2 = {
 									type = "description",
-									order = 11,
+									order = 12,
 									name = "",
 									width = 0.05
 								},
 								buttonPriorityDefault = {
-									order = 12,
+									order = 13,
 									type = "execute",
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsPriorityDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultPriorityDesc'],
@@ -3568,7 +3604,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								priorityIconList = {
-									order = 13,
+									order = 14,
 									type = "description",
 									name = function()
 										local prioOrderedArray = {}
@@ -3595,11 +3631,11 @@ ClassicUI.optionsTable = {
 								},
 								Header3 = {
 									type = 'header',
-									order = 14,
+									order = 15,
 									name = L['HousingMicroButton']
 								},
 								hideMicroButton = {
-									order = 15,
+									order = 16,
 									type = "toggle",
 									name = L['Hide MicroButton'],
 									desc = L['Hide MicroButton'],
@@ -3620,7 +3656,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								keepGapMicroButton = {
-									order = 16,
+									order = 17,
 									type = "toggle",
 									name = L['Keep MicroButton Gap'],
 									desc = L['KeepMicroButtonGapDesc'],
@@ -3635,7 +3671,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								disableMicroButton = {
-									order = 17,
+									order = 18,
 									type = "toggle",
 									name = L['Disable MicroButton'],
 									desc = L['Disable MicroButton'],
@@ -3667,7 +3703,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								disableMouseMicroButton = {
-									order = 18,
+									order = 19,
 									type = "toggle",
 									name = L['Disable Mouse'],
 									desc = L['DisableMouseMicroButtonDesc'],
@@ -3684,7 +3720,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								classicNotificationMicroButton = {
-									order = 19,
+									order = 20,
 									type = "toggle",
 									name = L['classicNotificationMicroButton'],
 									desc = L['classicNotificationMicroButtonDesc'],
@@ -3737,7 +3773,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								xOffsetMicroButton = {
-									order = 20,
+									order = 21,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -3754,7 +3790,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								yOffsetMicroButton = {
-									order = 21,
+									order = 22,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -3771,7 +3807,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								alphaMicroButton = {
-									order = 22,
+									order = 23,
 									type = "range",
 									softMin = 0,
 									softMax = 1,
@@ -3801,7 +3837,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								iconMicroButton = {
-									order = 23,
+									order = 24,
 									type = "select",
 									style = "radio",
 									name = L['iconMicroButton'],
@@ -3858,8 +3894,14 @@ ClassicUI.optionsTable = {
 									order = 1,
 									name = L['MicroButtons Order']
 								},
-								buttonOrderUp = {
+								orderValueText = {
 									order = 2,
+									type = "description",
+									width = 0.20,
+									name = function() return ' |cffeda55f[|r|cffff6720'..(ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.order < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.order..'|r|cffeda55f]|r' end
+								},
+								buttonOrderUp = {
+									order = 3,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.order <= ClassicUI.MICROBUTTONS_MIN_ORDER) and '-disabled' or '')..':0|t' end,
 									desc = L['UP'],
@@ -3874,7 +3916,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								buttonOrderDown = {
-									order = 3,
+									order = 4,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.order >= ClassicUI.MICROBUTTONS_MAX_ORDER) and '-disabled' or '')..':0|t' end,
 									desc = L['DOWN'],
@@ -3890,12 +3932,12 @@ ClassicUI.optionsTable = {
 								},
 								Spacer1 = {
 									type = "description",
-									order = 4,
+									order = 5,
 									name = "",
 									width = 0.05
 								},
 								buttonOrderDefault = {
-									order = 5,
+									order = 6,
 									type = "execute",
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsOrderDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultOrderDesc'],
@@ -3911,22 +3953,22 @@ ClassicUI.optionsTable = {
 								},
 								Header2 = {
 									type = 'header',
-									order = 6,
+									order = 7,
 									name = L['MicroButtons Priority']
 								},
 								prioritySectionDesc = {
-									order = 7,
+									order = 8,
 									type = "description",
 									name = L['MICROBUTTONS_PRIORITY_DESC']
 								},
 								priorityValueText = {
-									order = 8,
+									order = 9,
 									type = "description",
 									width = 0.20,
 									name = function() return ' |cffbad152[|r|cff62e632'..(ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.priority < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.priority..'|r|cffbad152]|r' end
 								},
 								buttonPriorityUp = {
-									order = 9,
+									order = 10,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.priority <= ClassicUI.MICROBUTTONS_MIN_PRIORITY) and '-disabled' or '')..':0|t' end,
 									desc = L['UP'],
@@ -3941,7 +3983,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								buttonPriorityDown = {
-									order = 10,
+									order = 11,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.priority >= ClassicUI.MICROBUTTONS_MAX_PRIORITY) and '-disabled' or '')..':0|t' end,
 									desc = L['DOWN'],
@@ -3957,12 +3999,12 @@ ClassicUI.optionsTable = {
 								},
 								Spacer2 = {
 									type = "description",
-									order = 11,
+									order = 12,
 									name = "",
 									width = 0.05
 								},
 								buttonPriorityDefault = {
-									order = 12,
+									order = 13,
 									type = "execute",
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsPriorityDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultPriorityDesc'],
@@ -3977,7 +4019,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								priorityIconList = {
-									order = 13,
+									order = 14,
 									type = "description",
 									name = function()
 										local prioOrderedArray = {}
@@ -4004,11 +4046,11 @@ ClassicUI.optionsTable = {
 								},
 								Header3 = {
 									type = 'header',
-									order = 14,
+									order = 15,
 									name = L['GuildMicroButton']
 								},
 								hideMicroButton = {
-									order = 15,
+									order = 16,
 									type = "toggle",
 									name = L['Hide MicroButton'],
 									desc = L['Hide MicroButton'],
@@ -4029,7 +4071,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								keepGapMicroButton = {
-									order = 16,
+									order = 17,
 									type = "toggle",
 									name = L['Keep MicroButton Gap'],
 									desc = L['KeepMicroButtonGapDesc'],
@@ -4044,7 +4086,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								disableMicroButton = {
-									order = 17,
+									order = 18,
 									type = "toggle",
 									name = L['Disable MicroButton'],
 									desc = L['Disable MicroButton'],
@@ -4076,7 +4118,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								disableMouseMicroButton = {
-									order = 18,
+									order = 19,
 									type = "toggle",
 									name = L['Disable Mouse'],
 									desc = L['DisableMouseMicroButtonDesc'],
@@ -4093,7 +4135,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								classicNotificationMicroButton = {
-									order = 19,
+									order = 20,
 									type = "toggle",
 									name = L['classicNotificationMicroButton'],
 									desc = L['classicNotificationMicroButtonDesc'],
@@ -4142,7 +4184,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								goToGuildPanelOptionsPanel = {
-									order = 20,
+									order = 21,
 									type = "execute",
 									name = L['goToGuildPanelOptionsPanel'],
 									desc = L['goToGuildPanelOptionsPanelDesc'],
@@ -4177,7 +4219,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								xOffsetMicroButton = {
-									order = 21,
+									order = 22,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -4194,7 +4236,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								yOffsetMicroButton = {
-									order = 22,
+									order = 23,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -4211,7 +4253,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								alphaMicroButton = {
-									order = 23,
+									order = 24,
 									type = "range",
 									softMin = 0,
 									softMax = 1,
@@ -4241,7 +4283,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								iconMicroButton = {
-									order = 24,
+									order = 25,
 									type = "select",
 									style = "radio",
 									name = L['iconMicroButton'],
@@ -4355,8 +4397,14 @@ ClassicUI.optionsTable = {
 									order = 1,
 									name = L['MicroButtons Order']
 								},
-								buttonOrderUp = {
+								orderValueText = {
 									order = 2,
+									type = "description",
+									width = 0.20,
+									name = function() return ' |cffeda55f[|r|cffff6720'..(ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.order < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.order..'|r|cffeda55f]|r' end
+								},
+								buttonOrderUp = {
+									order = 3,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.order <= ClassicUI.MICROBUTTONS_MIN_ORDER) and '-disabled' or '')..':0|t' end,
 									desc = L['UP'],
@@ -4371,7 +4419,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								buttonOrderDown = {
-									order = 3,
+									order = 4,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.order >= ClassicUI.MICROBUTTONS_MAX_ORDER) and '-disabled' or '')..':0|t' end,
 									desc = L['DOWN'],
@@ -4387,12 +4435,12 @@ ClassicUI.optionsTable = {
 								},
 								Spacer1 = {
 									type = "description",
-									order = 4,
+									order = 5,
 									name = "",
 									width = 0.05
 								},
 								buttonOrderDefault = {
-									order = 5,
+									order = 6,
 									type = "execute",
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsOrderDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultOrderDesc'],
@@ -4408,22 +4456,22 @@ ClassicUI.optionsTable = {
 								},
 								Header2 = {
 									type = 'header',
-									order = 6,
+									order = 7,
 									name = L['MicroButtons Priority']
 								},
 								prioritySectionDesc = {
-									order = 7,
+									order = 8,
 									type = "description",
 									name = L['MICROBUTTONS_PRIORITY_DESC']
 								},
 								priorityValueText = {
-									order = 8,
+									order = 9,
 									type = "description",
 									width = 0.20,
 									name = function() return ' |cffbad152[|r|cff62e632'..(ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.priority < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.priority..'|r|cffbad152]|r' end
 								},
 								buttonPriorityUp = {
-									order = 9,
+									order = 10,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.priority <= ClassicUI.MICROBUTTONS_MIN_PRIORITY) and '-disabled' or '')..':0|t' end,
 									desc = L['UP'],
@@ -4438,7 +4486,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								buttonPriorityDown = {
-									order = 10,
+									order = 11,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.LFDMicroButton.priority >= ClassicUI.MICROBUTTONS_MAX_PRIORITY) and '-disabled' or '')..':0|t' end,
 									desc = L['DOWN'],
@@ -4454,12 +4502,12 @@ ClassicUI.optionsTable = {
 								},
 								Spacer2 = {
 									type = "description",
-									order = 11,
+									order = 12,
 									name = "",
 									width = 0.05
 								},
 								buttonPriorityDefault = {
-									order = 12,
+									order = 13,
 									type = "execute",
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsPriorityDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultPriorityDesc'],
@@ -4474,7 +4522,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								priorityIconList = {
-									order = 13,
+									order = 14,
 									type = "description",
 									name = function()
 										local prioOrderedArray = {}
@@ -4501,11 +4549,11 @@ ClassicUI.optionsTable = {
 								},
 								Header3 = {
 									type = 'header',
-									order = 14,
+									order = 15,
 									name = L['LFDMicroButton']
 								},
 								hideMicroButton = {
-									order = 15,
+									order = 16,
 									type = "toggle",
 									name = L['Hide MicroButton'],
 									desc = L['Hide MicroButton'],
@@ -4526,7 +4574,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								keepGapMicroButton = {
-									order = 16,
+									order = 17,
 									type = "toggle",
 									name = L['Keep MicroButton Gap'],
 									desc = L['KeepMicroButtonGapDesc'],
@@ -4541,7 +4589,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								disableMicroButton = {
-									order = 17,
+									order = 18,
 									type = "toggle",
 									name = L['Disable MicroButton'],
 									desc = L['Disable MicroButton'],
@@ -4577,7 +4625,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								disableMouseMicroButton = {
-									order = 18,
+									order = 19,
 									type = "toggle",
 									name = L['Disable Mouse'],
 									desc = L['DisableMouseMicroButtonDesc'],
@@ -4594,7 +4642,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								xOffsetMicroButton = {
-									order = 19,
+									order = 20,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -4611,7 +4659,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								yOffsetMicroButton = {
-									order = 20,
+									order = 21,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -4628,7 +4676,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								alphaMicroButton = {
-									order = 21,
+									order = 22,
 									type = "range",
 									softMin = 0,
 									softMax = 1,
@@ -4658,7 +4706,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								iconMicroButton = {
-									order = 22,
+									order = 23,
 									type = "select",
 									style = "radio",
 									name = L['iconMicroButton'],
@@ -4717,8 +4765,14 @@ ClassicUI.optionsTable = {
 									order = 1,
 									name = L['MicroButtons Order']
 								},
-								buttonOrderUp = {
+								orderValueText = {
 									order = 2,
+									type = "description",
+									width = 0.20,
+									name = function() return ' |cffeda55f[|r|cffff6720'..(ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.order < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.order..'|r|cffeda55f]|r' end
+								},
+								buttonOrderUp = {
+									order = 3,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.order <= ClassicUI.MICROBUTTONS_MIN_ORDER) and '-disabled' or '')..':0|t' end,
 									desc = L['UP'],
@@ -4733,7 +4787,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								buttonOrderDown = {
-									order = 3,
+									order = 4,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.order >= ClassicUI.MICROBUTTONS_MAX_ORDER) and '-disabled' or '')..':0|t' end,
 									desc = L['DOWN'],
@@ -4749,12 +4803,12 @@ ClassicUI.optionsTable = {
 								},
 								Spacer1 = {
 									type = "description",
-									order = 4,
+									order = 5,
 									name = "",
 									width = 0.05
 								},
 								buttonOrderDefault = {
-									order = 5,
+									order = 6,
 									type = "execute",
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsOrderDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultOrderDesc'],
@@ -4770,22 +4824,22 @@ ClassicUI.optionsTable = {
 								},
 								Header2 = {
 									type = 'header',
-									order = 6,
+									order = 7,
 									name = L['MicroButtons Priority']
 								},
 								prioritySectionDesc = {
-									order = 7,
+									order = 8,
 									type = "description",
 									name = L['MICROBUTTONS_PRIORITY_DESC']
 								},
 								priorityValueText = {
-									order = 8,
+									order = 9,
 									type = "description",
 									width = 0.20,
 									name = function() return ' |cffbad152[|r|cff62e632'..(ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.priority < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.priority..'|r|cffbad152]|r' end
 								},
 								buttonPriorityUp = {
-									order = 9,
+									order = 10,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.priority <= ClassicUI.MICROBUTTONS_MIN_PRIORITY) and '-disabled' or '')..':0|t' end,
 									desc = L['UP'],
@@ -4800,7 +4854,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								buttonPriorityDown = {
-									order = 10,
+									order = 11,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.CollectionsMicroButton.priority >= ClassicUI.MICROBUTTONS_MAX_PRIORITY) and '-disabled' or '')..':0|t' end,
 									desc = L['DOWN'],
@@ -4816,12 +4870,12 @@ ClassicUI.optionsTable = {
 								},
 								Spacer2 = {
 									type = "description",
-									order = 11,
+									order = 12,
 									name = "",
 									width = 0.05
 								},
 								buttonPriorityDefault = {
-									order = 12,
+									order = 13,
 									type = "execute",
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsPriorityDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultPriorityDesc'],
@@ -4836,7 +4890,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								priorityIconList = {
-									order = 13,
+									order = 14,
 									type = "description",
 									name = function()
 										local prioOrderedArray = {}
@@ -4863,11 +4917,11 @@ ClassicUI.optionsTable = {
 								},
 								Header3 = {
 									type = 'header',
-									order = 14,
+									order = 15,
 									name = L['CollectionsMicroButton']
 								},
 								hideMicroButton = {
-									order = 15,
+									order = 16,
 									type = "toggle",
 									name = L['Hide MicroButton'],
 									desc = L['Hide MicroButton'],
@@ -4888,7 +4942,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								keepGapMicroButton = {
-									order = 16,
+									order = 17,
 									type = "toggle",
 									name = L['Keep MicroButton Gap'],
 									desc = L['KeepMicroButtonGapDesc'],
@@ -4903,7 +4957,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								disableMicroButton = {
-									order = 17,
+									order = 18,
 									type = "toggle",
 									name = L['Disable MicroButton'],
 									desc = L['Disable MicroButton'],
@@ -4935,7 +4989,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								disableMouseMicroButton = {
-									order = 18,
+									order = 19,
 									type = "toggle",
 									name = L['Disable Mouse'],
 									desc = L['DisableMouseMicroButtonDesc'],
@@ -4952,7 +5006,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								xOffsetMicroButton = {
-									order = 19,
+									order = 20,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -4969,7 +5023,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								yOffsetMicroButton = {
-									order = 20,
+									order = 21,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -4986,7 +5040,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								alphaMicroButton = {
-									order = 21,
+									order = 22,
 									type = "range",
 									softMin = 0,
 									softMax = 1,
@@ -5016,7 +5070,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								iconMicroButton = {
-									order = 22,
+									order = 23,
 									type = "select",
 									style = "radio",
 									name = L['iconMicroButton'],
@@ -5075,8 +5129,14 @@ ClassicUI.optionsTable = {
 									order = 1,
 									name = L['MicroButtons Order']
 								},
-								buttonOrderUp = {
+								orderValueText = {
 									order = 2,
+									type = "description",
+									width = 0.20,
+									name = function() return ' |cffeda55f[|r|cffff6720'..(ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.order < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.order..'|r|cffeda55f]|r' end
+								},
+								buttonOrderUp = {
+									order = 3,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.order <= ClassicUI.MICROBUTTONS_MIN_ORDER) and '-disabled' or '')..':0|t' end,
 									desc = L['UP'],
@@ -5091,7 +5151,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								buttonOrderDown = {
-									order = 3,
+									order = 4,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.order >= ClassicUI.MICROBUTTONS_MAX_ORDER) and '-disabled' or '')..':0|t' end,
 									desc = L['DOWN'],
@@ -5107,12 +5167,12 @@ ClassicUI.optionsTable = {
 								},
 								Spacer1 = {
 									type = "description",
-									order = 4,
+									order = 5,
 									name = "",
 									width = 0.05
 								},
 								buttonOrderDefault = {
-									order = 5,
+									order = 6,
 									type = "execute",
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsOrderDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultOrderDesc'],
@@ -5128,22 +5188,22 @@ ClassicUI.optionsTable = {
 								},
 								Header2 = {
 									type = 'header',
-									order = 6,
+									order = 7,
 									name = L['MicroButtons Priority']
 								},
 								prioritySectionDesc = {
-									order = 7,
+									order = 8,
 									type = "description",
 									name = L['MICROBUTTONS_PRIORITY_DESC']
 								},
 								priorityValueText = {
-									order = 8,
+									order = 9,
 									type = "description",
 									width = 0.20,
 									name = function() return ' |cffbad152[|r|cff62e632'..(ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.priority < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.priority..'|r|cffbad152]|r' end
 								},
 								buttonPriorityUp = {
-									order = 9,
+									order = 10,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.priority <= ClassicUI.MICROBUTTONS_MIN_PRIORITY) and '-disabled' or '')..':0|t' end,
 									desc = L['UP'],
@@ -5158,7 +5218,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								buttonPriorityDown = {
-									order = 10,
+									order = 11,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.priority >= ClassicUI.MICROBUTTONS_MAX_PRIORITY) and '-disabled' or '')..':0|t' end,
 									desc = L['DOWN'],
@@ -5174,12 +5234,12 @@ ClassicUI.optionsTable = {
 								},
 								Spacer2 = {
 									type = "description",
-									order = 11,
+									order = 12,
 									name = "",
 									width = 0.05
 								},
 								buttonPriorityDefault = {
-									order = 12,
+									order = 13,
 									type = "execute",
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsPriorityDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultPriorityDesc'],
@@ -5194,7 +5254,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								priorityIconList = {
-									order = 13,
+									order = 14,
 									type = "description",
 									name = function()
 										local prioOrderedArray = {}
@@ -5221,11 +5281,11 @@ ClassicUI.optionsTable = {
 								},
 								Header3 = {
 									type = 'header',
-									order = 14,
+									order = 15,
 									name = L['EJMicroButton']
 								},
 								hideMicroButton = {
-									order = 15,
+									order = 16,
 									type = "toggle",
 									name = L['Hide MicroButton'],
 									desc = L['Hide MicroButton'],
@@ -5246,7 +5306,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								keepGapMicroButton = {
-									order = 16,
+									order = 17,
 									type = "toggle",
 									name = L['Keep MicroButton Gap'],
 									desc = L['KeepMicroButtonGapDesc'],
@@ -5261,7 +5321,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								disableMicroButton = {
-									order = 17,
+									order = 18,
 									type = "toggle",
 									name = L['Disable MicroButton'],
 									desc = L['Disable MicroButton'],
@@ -5297,7 +5357,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								disableMouseMicroButton = {
-									order = 18,
+									order = 19,
 									type = "toggle",
 									name = L['Disable Mouse'],
 									desc = L['DisableMouseMicroButtonDesc'],
@@ -5314,7 +5374,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								classicNotificationMicroButton = {
-									order = 19,
+									order = 20,
 									type = "toggle",
 									name = L['classicNotificationMicroButton'],
 									desc = L['classicNotificationMicroButtonDesc'],
@@ -5363,7 +5423,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								xOffsetMicroButton = {
-									order = 20,
+									order = 21,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -5380,7 +5440,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								yOffsetMicroButton = {
-									order = 21,
+									order = 22,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -5397,7 +5457,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								alphaMicroButton = {
-									order = 22,
+									order = 23,
 									type = "range",
 									softMin = 0,
 									softMax = 1,
@@ -5427,7 +5487,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								iconMicroButton = {
-									order = 23,
+									order = 24,
 									type = "select",
 									style = "radio",
 									name = L['iconMicroButton'],
@@ -5486,8 +5546,14 @@ ClassicUI.optionsTable = {
 									order = 1,
 									name = L['MicroButtons Order']
 								},
-								buttonOrderUp = {
+								orderValueText = {
 									order = 2,
+									type = "description",
+									width = 0.20,
+									name = function() return ' |cffeda55f[|r|cffff6720'..(ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.order < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.order..'|r|cffeda55f]|r' end
+								},
+								buttonOrderUp = {
+									order = 3,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.order <= ClassicUI.MICROBUTTONS_MIN_ORDER) and '-disabled' or '')..':0|t' end,
 									desc = L['UP'],
@@ -5502,7 +5568,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								buttonOrderDown = {
-									order = 3,
+									order = 4,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.order >= ClassicUI.MICROBUTTONS_MAX_ORDER) and '-disabled' or '')..':0|t' end,
 									desc = L['DOWN'],
@@ -5518,12 +5584,12 @@ ClassicUI.optionsTable = {
 								},
 								Spacer1 = {
 									type = "description",
-									order = 4,
+									order = 5,
 									name = "",
 									width = 0.05
 								},
 								buttonOrderDefault = {
-									order = 5,
+									order = 6,
 									type = "execute",
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsOrderDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultOrderDesc'],
@@ -5539,22 +5605,22 @@ ClassicUI.optionsTable = {
 								},
 								Header2 = {
 									type = 'header',
-									order = 6,
+									order = 7,
 									name = L['MicroButtons Priority']
 								},
 								prioritySectionDesc = {
-									order = 7,
+									order = 8,
 									type = "description",
 									name = L['MICROBUTTONS_PRIORITY_DESC']
 								},
 								priorityValueText = {
-									order = 8,
+									order = 9,
 									type = "description",
 									width = 0.20,
 									name = function() return ' |cffbad152[|r|cff62e632'..(ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.priority < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.priority..'|r|cffbad152]|r' end
 								},
 								buttonPriorityUp = {
-									order = 9,
+									order = 10,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.priority <= ClassicUI.MICROBUTTONS_MIN_PRIORITY) and '-disabled' or '')..':0|t' end,
 									desc = L['UP'],
@@ -5569,7 +5635,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								buttonPriorityDown = {
-									order = 10,
+									order = 11,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.HelpMicroButton.priority >= ClassicUI.MICROBUTTONS_MAX_PRIORITY) and '-disabled' or '')..':0|t' end,
 									desc = L['DOWN'],
@@ -5585,12 +5651,12 @@ ClassicUI.optionsTable = {
 								},
 								Spacer2 = {
 									type = "description",
-									order = 11,
+									order = 12,
 									name = "",
 									width = 0.05
 								},
 								buttonPriorityDefault = {
-									order = 12,
+									order = 13,
 									type = "execute",
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsPriorityDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultPriorityDesc'],
@@ -5605,7 +5671,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								priorityIconList = {
-									order = 13,
+									order = 14,
 									type = "description",
 									name = function()
 										local prioOrderedArray = {}
@@ -5632,11 +5698,11 @@ ClassicUI.optionsTable = {
 								},
 								Header3 = {
 									type = 'header',
-									order = 14,
+									order = 15,
 									name = L['HelpMicroButton']
 								},
 								hideMicroButton = {
-									order = 15,
+									order = 16,
 									type = "toggle",
 									name = L['Hide MicroButton'],
 									desc = L['Hide MicroButton'],
@@ -5654,7 +5720,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								keepGapMicroButton = {
-									order = 16,
+									order = 17,
 									type = "toggle",
 									name = L['Keep MicroButton Gap'],
 									desc = L['KeepMicroButtonGapDesc'],
@@ -5669,7 +5735,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								disableMicroButton = {
-									order = 17,
+									order = 18,
 									type = "toggle",
 									name = L['Disable MicroButton'],
 									desc = L['Disable MicroButton'],
@@ -5685,7 +5751,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								disableMouseMicroButton = {
-									order = 18,
+									order = 19,
 									type = "toggle",
 									name = L['Disable Mouse'],
 									desc = L['DisableMouseMicroButtonDesc'],
@@ -5702,7 +5768,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								xOffsetMicroButton = {
-									order = 19,
+									order = 20,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -5719,7 +5785,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								yOffsetMicroButton = {
-									order = 20,
+									order = 21,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -5736,7 +5802,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								alphaMicroButton = {
-									order = 21,
+									order = 22,
 									type = "range",
 									softMin = 0,
 									softMax = 1,
@@ -5766,7 +5832,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								iconMicroButton = {
-									order = 22,
+									order = 23,
 									type = "select",
 									style = "radio",
 									name = L['iconMicroButton'],
@@ -5825,8 +5891,14 @@ ClassicUI.optionsTable = {
 									order = 1,
 									name = L['MicroButtons Order']
 								},
-								buttonOrderUp = {
+								orderValueText = {
 									order = 2,
+									type = "description",
+									width = 0.20,
+									name = function() return ' |cffeda55f[|r|cffff6720'..(ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.order < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.order..'|r|cffeda55f]|r' end
+								},
+								buttonOrderUp = {
+									order = 3,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.order <= ClassicUI.MICROBUTTONS_MIN_ORDER) and '-disabled' or '')..':0|t' end,
 									desc = L['UP'],
@@ -5841,7 +5913,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								buttonOrderDown = {
-									order = 3,
+									order = 4,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.order >= ClassicUI.MICROBUTTONS_MAX_ORDER) and '-disabled' or '')..':0|t' end,
 									desc = L['DOWN'],
@@ -5857,12 +5929,12 @@ ClassicUI.optionsTable = {
 								},
 								Spacer1 = {
 									type = "description",
-									order = 4,
+									order = 5,
 									name = "",
 									width = 0.05
 								},
 								buttonOrderDefault = {
-									order = 5,
+									order = 6,
 									type = "execute",
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsOrderDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultOrderDesc'],
@@ -5878,22 +5950,22 @@ ClassicUI.optionsTable = {
 								},
 								Header2 = {
 									type = 'header',
-									order = 6,
+									order = 7,
 									name = L['MicroButtons Priority']
 								},
 								prioritySectionDesc = {
-									order = 7,
+									order = 8,
 									type = "description",
 									name = L['MICROBUTTONS_PRIORITY_DESC']
 								},
 								priorityValueText = {
-									order = 8,
+									order = 9,
 									type = "description",
 									width = 0.20,
 									name = function() return ' |cffbad152[|r|cff62e632'..(ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.priority < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.priority..'|r|cffbad152]|r' end
 								},
 								buttonPriorityUp = {
-									order = 9,
+									order = 10,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.priority <= ClassicUI.MICROBUTTONS_MIN_PRIORITY) and '-disabled' or '')..':0|t' end,
 									desc = L['UP'],
@@ -5908,7 +5980,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								buttonPriorityDown = {
-									order = 10,
+									order = 11,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.StoreMicroButton.priority >= ClassicUI.MICROBUTTONS_MAX_PRIORITY) and '-disabled' or '')..':0|t' end,
 									desc = L['DOWN'],
@@ -5924,12 +5996,12 @@ ClassicUI.optionsTable = {
 								},
 								Spacer2 = {
 									type = "description",
-									order = 11,
+									order = 12,
 									name = "",
 									width = 0.05
 								},
 								buttonPriorityDefault = {
-									order = 12,
+									order = 13,
 									type = "execute",
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsPriorityDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultPriorityDesc'],
@@ -5944,7 +6016,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								priorityIconList = {
-									order = 13,
+									order = 14,
 									type = "description",
 									name = function()
 										local prioOrderedArray = {}
@@ -5971,11 +6043,11 @@ ClassicUI.optionsTable = {
 								},
 								Header3 = {
 									type = 'header',
-									order = 14,
+									order = 15,
 									name = L['StoreMicroButton']
 								},
 								hideMicroButton = {
-									order = 15,
+									order = 16,
 									type = "toggle",
 									name = L['Hide MicroButton'],
 									desc = L['Hide MicroButton'],
@@ -6005,7 +6077,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								keepGapMicroButton = {
-									order = 16,
+									order = 17,
 									type = "toggle",
 									name = L['Keep MicroButton Gap'],
 									desc = L['KeepMicroButtonGapDesc'],
@@ -6020,7 +6092,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								disableMicroButton = {
-									order = 17,
+									order = 18,
 									type = "toggle",
 									name = L['Disable MicroButton'],
 									desc = L['Disable MicroButton'],
@@ -6048,7 +6120,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								disableMouseMicroButton = {
-									order = 18,
+									order = 19,
 									type = "toggle",
 									name = L['Disable Mouse'],
 									desc = L['DisableMouseMicroButtonDesc'],
@@ -6065,7 +6137,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								xOffsetMicroButton = {
-									order = 19,
+									order = 20,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -6082,7 +6154,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								yOffsetMicroButton = {
-									order = 20,
+									order = 21,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -6099,7 +6171,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								alphaMicroButton = {
-									order = 21,
+									order = 22,
 									type = "range",
 									softMin = 0,
 									softMax = 1,
@@ -6129,7 +6201,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								iconMicroButton = {
-									order = 22,
+									order = 23,
 									type = "select",
 									style = "radio",
 									name = L['iconMicroButton'],
@@ -6188,8 +6260,14 @@ ClassicUI.optionsTable = {
 									order = 1,
 									name = L['MicroButtons Order']
 								},
-								buttonOrderUp = {
+								orderValueText = {
 									order = 2,
+									type = "description",
+									width = 0.20,
+									name = function() return ' |cffeda55f[|r|cffff6720'..(ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.order < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.order..'|r|cffeda55f]|r' end
+								},
+								buttonOrderUp = {
+									order = 3,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.order <= ClassicUI.MICROBUTTONS_MIN_ORDER) and '-disabled' or '')..':0|t' end,
 									desc = L['UP'],
@@ -6204,7 +6282,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								buttonOrderDown = {
-									order = 3,
+									order = 4,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.order >= ClassicUI.MICROBUTTONS_MAX_ORDER) and '-disabled' or '')..':0|t' end,
 									desc = L['DOWN'],
@@ -6220,12 +6298,12 @@ ClassicUI.optionsTable = {
 								},
 								Spacer1 = {
 									type = "description",
-									order = 4,
+									order = 5,
 									name = "",
 									width = 0.05
 								},
 								buttonOrderDefault = {
-									order = 5,
+									order = 6,
 									type = "execute",
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsOrderDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultOrderDesc'],
@@ -6241,22 +6319,22 @@ ClassicUI.optionsTable = {
 								},
 								Header2 = {
 									type = 'header',
-									order = 6,
+									order = 7,
 									name = L['MicroButtons Priority']
 								},
 								prioritySectionDesc = {
-									order = 7,
+									order = 8,
 									type = "description",
 									name = L['MICROBUTTONS_PRIORITY_DESC']
 								},
 								priorityValueText = {
-									order = 8,
+									order = 9,
 									type = "description",
 									width = 0.20,
 									name = function() return ' |cffbad152[|r|cff62e632'..(ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.priority < 10 and '0' or '')..ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.priority..'|r|cffbad152]|r' end
 								},
 								buttonPriorityUp = {
-									order = 9,
+									order = 10,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-u'..((ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.priority <= ClassicUI.MICROBUTTONS_MIN_PRIORITY) and '-disabled' or '')..':0|t' end,
 									desc = L['UP'],
@@ -6271,7 +6349,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								buttonPriorityDown = {
-									order = 10,
+									order = 11,
 									type = "execute",
 									name = function() return '|TInterface\\Addons\\ClassicUI\\Textures\\arrow-custom-1-d'..((ClassicUI.db.profile.barsConfig.MicroButtons.MainMenuMicroButton.priority >= ClassicUI.MICROBUTTONS_MAX_PRIORITY) and '-disabled' or '')..':0|t' end,
 									desc = L['DOWN'],
@@ -6287,12 +6365,12 @@ ClassicUI.optionsTable = {
 								},
 								Spacer2 = {
 									type = "description",
-									order = 11,
+									order = 12,
 									name = "",
 									width = 0.05
 								},
 								buttonPriorityDefault = {
-									order = 12,
+									order = 13,
 									type = "execute",
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsPriorityDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultPriorityDesc'],
@@ -6307,7 +6385,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								priorityIconList = {
-									order = 13,
+									order = 14,
 									type = "description",
 									name = function()
 										local prioOrderedArray = {}
@@ -6334,11 +6412,11 @@ ClassicUI.optionsTable = {
 								},
 								Header3 = {
 									type = 'header',
-									order = 14,
+									order = 15,
 									name = L['MainMenuMicroButton']
 								},
 								hideMicroButton = {
-									order = 15,
+									order = 16,
 									type = "toggle",
 									name = L['Hide MicroButton'],
 									desc = L['Hide MicroButton'],
@@ -6359,7 +6437,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								keepGapMicroButton = {
-									order = 16,
+									order = 17,
 									type = "toggle",
 									name = L['Keep MicroButton Gap'],
 									desc = L['KeepMicroButtonGapDesc'],
@@ -6374,7 +6452,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								disableMicroButton = {
-									order = 17,
+									order = 18,
 									type = "toggle",
 									name = L['Disable MicroButton'],
 									desc = L['Disable MicroButton'],
@@ -6411,7 +6489,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								disableMouseMicroButton = {
-									order = 18,
+									order = 19,
 									type = "toggle",
 									name = L['Disable Mouse'],
 									desc = L['DisableMouseMicroButtonDesc'],
@@ -6428,7 +6506,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								classicNotificationMicroButton = {
-									order = 19,
+									order = 20,
 									type = "toggle",
 									name = L['classicNotificationMicroButton'],
 									desc = L['classicNotificationMicroButtonDesc'],
@@ -6477,7 +6555,7 @@ ClassicUI.optionsTable = {
 									end,
 								},
 								hideLatencyBar = {
-									order = 20,
+									order = 21,
 									type = "toggle",
 									name = L['Hide Small Latency Bar'],
 									desc = L['Hide Small Latency Bar'],
@@ -6501,7 +6579,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								xOffsetMicroButton = {
-									order = 21,
+									order = 22,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -6518,7 +6596,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								yOffsetMicroButton = {
-									order = 22,
+									order = 23,
 									type = "range",
 									softMin = -500,
 									softMax = 500,
@@ -6535,7 +6613,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								alphaMicroButton = {
-									order = 23,
+									order = 24,
 									type = "range",
 									softMin = 0,
 									softMax = 1,
@@ -6565,7 +6643,7 @@ ClassicUI.optionsTable = {
 									end
 								},
 								iconMicroButton = {
-									order = 24,
+									order = 25,
 									type = "select",
 									style = "radio",
 									name = L['iconMicroButton'],
@@ -11398,14 +11476,16 @@ ClassicUI.optionsTable = {
 								return ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode
 							end,
 							set = function(_, value)
-								ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode = value
-								ClassicUI.cached_db_profile.extraConfigs_KeybindsConfig_hideKeybindsMode = value
 								if ((ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode >= 2) and (value < 2)) then
+									ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode = value
+									ClassicUI.cached_db_profile.extraConfigs_KeybindsConfig_hideKeybindsMode = value
 									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
 										ClassicUI:ToggleVisibilityKeybinds(value)
 										ReloadUI()
 									end
 								else
+									ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode = value
+									ClassicUI.cached_db_profile.extraConfigs_KeybindsConfig_hideKeybindsMode = value
 									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
 										ClassicUI:ToggleVisibilityKeybinds(value)
 									end
@@ -11521,15 +11601,17 @@ ClassicUI.optionsTable = {
 								return ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.enabled
 							end,
 							set = function(_,value)
-								ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.enabled = value
-								ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_enabled = value
 								if ((not value) and (ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.enabled)) then
+									ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.enabled = value
+									ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_enabled = value
 									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
 										ReloadUI()
 									end
 								else
+									ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.enabled = value
+									ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_enabled = value
 									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
-										ClassicUI:HookGreyOnCooldownIcons()
+										ClassicUI:GOC_MainFunction()
 									end
 								end
 							end
@@ -11549,36 +11631,28 @@ ClassicUI.optionsTable = {
 							set = function(_,value)
 								ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.desaturateUnusableActions = value
 								ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturateUnusableActions = value
-								if ((ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) and (ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.enabled) and value) then
-									ClassicUI:HookGreyOnCooldownIcons()
+								if ((ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) and (ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.enabled)) then
+									if (GREYONCOOLDOWN_HOOKED == ClassicUI) then
+										ClassicUI:GOC_UpdateAllActionButtons()
+									end
 								end
 							end
 						},
-						minDuration = {
+						desaturatePetActionButtons = {
 							order = 11,
-							type = "range",
+							type = "toggle",
+							name = L['DesaturatePetActionButtons'],
+							desc = L['DesaturatePetActionButtonsDesc'],
 							width = "double",
-							min = 0.01,
-							softMin = 0.01,
-							softMax = 12,
-							step = 0.01,
-							bigStep = 0.05,
-							name = L['minDuration'],
-							desc = L['minDurationDesc'],
-							get = function() return ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.minDuration end,
+							get = function() return ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.desaturatePetActionButtons end,
 							set = function(_,value)
-								ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.minDuration = value
-								ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_minDuration = value
-							end
-						},
-						minDurationToDefault = {
-							order = 12,
-							type = "execute",
-							name = '|T851904:0|t '..L['Default'],
-							desc = L['DefaultDesc'],
-							func = function()
-								ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.minDuration = ClassicUI.db.defaults.profile.extraConfigs.GreyOnCooldownConfig.minDuration
-								ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_minDuration = ClassicUI.db.defaults.profile.extraConfigs.GreyOnCooldownConfig.minDuration
+								ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.desaturatePetActionButtons = value
+								ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturatePetActionButtons = value
+								if ((ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) and (ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.enabled)) then
+									if (GREYONCOOLDOWN_HOOKED == ClassicUI) then
+										ClassicUI:GOC_HookGOCPetActionButtons()
+									end
+								end
 							end
 						}
 					}
@@ -11625,11 +11699,13 @@ ClassicUI.optionsTable = {
 							set = function(_,value)
 								if ((not value) and (ClassicUI.db.profile.extraConfigs.LossOfControlUIConfig.enabled)) then
 									ClassicUI.db.profile.extraConfigs.LossOfControlUIConfig.enabled = value
+									ClassicUI.cached_db_profile.extraConfigs_LossOfControlUIConfig_enabled = value
 									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
 										ReloadUI()
 									end
 								else
 									ClassicUI.db.profile.extraConfigs.LossOfControlUIConfig.enabled = value
+									ClassicUI.cached_db_profile.extraConfigs_LossOfControlUIConfig_enabled = value
 									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
 										ClassicUI:HookLossOfControlUICCRemover()
 									end

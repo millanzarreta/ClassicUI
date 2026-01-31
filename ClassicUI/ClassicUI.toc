@@ -1,7 +1,7 @@
-## Interface: 110207
+## Interface: 120000
 ## Title: ClassicUI
 ## Author: millanzarreta
-## Version: 2.1.4
+## Version: 3.0.0
 ## IconTexture: Interface\Addons\ClassicUI\micon
 ## Notes: Restores the classic interface pre-Dragonflight
 ## Notes-esES: Restaura la interfaz clasica pre-Dragonflight
@@ -13,7 +13,7 @@
 ## Category-esMX: Barras de acción
 ## Category-frFR: Barres d’action
 ## Category-itIT: Barre delle azioni
-## Category-koKR: 행동 단축바
+## Category-koKR: 액션 바
 ## Category-ptBR: Barras de ação
 ## Category-ruRU: Панели команд
 ## Category-zhCN: 动作条
@@ -25,7 +25,7 @@
 ## LoadOnDemand: 0
 ## SavedVariables: ClassicUI_DB
 ## OptionalDeps: Ace3, LibStub, CallbackHandler-1.0
-## X-Curse-Packaged-Version: 2.1.4
+## X-Curse-Packaged-Version: 3.0.0
 ## X-Curse-Project-Name: ClassicUI
 ## X-Curse-Project-ID: ClassicUI
 ## X-Curse-Repository-ID: ClassicUI-mainline

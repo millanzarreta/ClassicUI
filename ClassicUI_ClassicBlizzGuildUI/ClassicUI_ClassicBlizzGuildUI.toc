@@ -1,7 +1,7 @@
-## Interface: 110207
+## Interface: 120000
 ## Title: ClassicUI [|cffeda55fClassicBlizzGuildUI|r]
 ## Author: millanzarreta
-## Version: 2.1.4
+## Version: 3.0.0
 ## IconTexture: Interface\Addons\ClassicUI_ClassicBlizzGuildUI\micon
 ## Notes: ClassicUI: [|cffeda55fClassicBlizzGuildUI|r] Module
 ## Notes-esES: ClassicUI: Modulo [|cffeda55fClassicBlizzGuildUI|r]
@@ -13,7 +13,7 @@
 ## Category-esMX: Barras de acción
 ## Category-frFR: Barres d’action
 ## Category-itIT: Barre delle azioni
-## Category-koKR: 행동 단축바
+## Category-koKR: 액션 바
 ## Category-ptBR: Barras de ação
 ## Category-ruRU: Панели команд
 ## Category-zhCN: 动作条

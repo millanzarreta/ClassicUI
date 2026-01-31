@@ -1,7 +1,7 @@
 -- ------------------------------------------------------------ --
 -- Addon: ClassicUI                                             --
 --                                                              --
--- Version: 2.1.4                                               --
+-- Version: 3.0.0                                               --
 -- Author: Millán - Sanguino                                    --
 --                                                              --
 -- License: GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007 --
@@ -41,10 +41,21 @@ local pairs = pairs
 local ipairs = ipairs
 local next = next
 local InCombatLockdown = InCombatLockdown
-local ActionHasRange = ActionHasRange
 local AnimateTexCoords = AnimateTexCoords
-local IsActionInRange = IsActionInRange
-local IsUsableAction = IsUsableAction
+local GetActionInfo = GetActionInfo
+local GetPetActionInfo = GetPetActionInfo
+local GetPetActionSlotUsable = GetPetActionSlotUsable
+local GetPetActionCooldown = GetPetActionCooldown
+local C_ActionBar_GetActionCooldown = C_ActionBar.GetActionCooldown
+local C_ActionBar_GetActionCooldownDuration = C_ActionBar.GetActionCooldownDuration
+local C_Item_GetItemCooldown = C_Item.GetItemCooldown
+local C_Spell_IsSpellUsable = C_Spell.IsSpellUsable
+local C_Spell_GetSpellCooldown = C_Spell.GetSpellCooldown
+local C_Spell_GetSpellCooldownDuration = C_Spell.GetSpellCooldownDuration
+local C_ActionBar_HasRangeRequirements = C_ActionBar.HasRangeRequirements
+local C_ActionBar_IsActionInRange = C_ActionBar.IsActionInRange
+local C_ActionBar_IsUsableAction = C_ActionBar.IsUsableAction
+local C_ActionBar_IsEquippedAction = C_ActionBar.IsEquippedAction
 local ActionBarController_GetCurrentActionBarState = ActionBarController_GetCurrentActionBarState
 local BNConnected = BNConnected
 local C_DateAndTime_GetCurrentCalendarTime = C_DateAndTime.GetCurrentCalendarTime
@@ -80,7 +91,6 @@ local GetCallPetSpellInfo = GetCallPetSpellInfo
 local GetFileStreamingStatus = GetFileStreamingStatus
 local GetBackgroundLoadingStatus = GetBackgroundLoadingStatus
 local GetPossessInfo = GetPossessInfo
-local IsEquippedAction = IsEquippedAction
 local IsCommunitiesUIDisabledByTrialAccount = IsCommunitiesUIDisabledByTrialAccount
 local IsRestrictedAccount = IsRestrictedAccount
 local GetDifficultyInfo = GetDifficultyInfo
@@ -91,11 +101,13 @@ local GetNetStats = GetNetStats
 local InGuildParty = InGuildParty
 
 -- Global constants
-ClassicUI.VERSION = "2.1.4"
+ClassicUI.VERSION = "3.0.0"
 ClassicUI.STANDARD_EPSILON = STANDARD_EPSILON
 ClassicUI.SCALE_EPSILON = SCALE_EPSILON
 ClassicUI.ACTIONBUTTON_NEWLAYOUT_SCALE = 0.826
 ClassicUI.ACTION_BAR_OFFSET = 45
+ClassicUI.NUM_ACTIONBAR_BUTTONS = NUM_ACTIONBAR_BUTTONS or 12
+ClassicUI.NUM_PET_ACTION_SLOTS = NUM_PET_ACTION_SLOTS or 10
 ClassicUI.SPELLFLYOUT_DEFAULT_SPACING = 4
 ClassicUI.SPELLFLYOUT_INITIAL_SPACING = 7	-- changed to 9 in Blizzard code since 11.1.0
 ClassicUI.SPELLFLYOUT_FINAL_SPACING = 4	-- changed to 9 in Blizzard code since 10.0.0
@@ -370,7 +382,7 @@ ClassicUI.ACIaddonData = {
 	icon = "Interface\\Addons\\ClassicUI\\micon",
 	notCheckable = true,
 	func = function()
-		Settings.OpenToCategory(ClassicUI.optionsFramesCatId.general)
+		ClassicUI:ShowConfig(ClassicUI.optionsFramesCatId.general)
 	end
 }
 -- Recreate the old global variables from the classic AutoCastShine action button animation
@@ -380,6 +392,17 @@ ClassicUI.AUTOCAST_SHINE_B = 0.32
 ClassicUI.AUTOCAST_SHINE_SPEEDS = { 2, 4, 6, 8 }
 ClassicUI.AUTOCAST_SHINE_TIMERS = { 0, 0, 0, 0 }
 ClassicUI.AUTOCAST_SHINES = {}
+
+-- GreyOnCooldown
+ClassicUI.GOC_GCD = 1.88
+ClassicUI.GOC_RelatedActionSpells = {
+	[372608] = { 372610 },
+	[372610] = { 372608 },
+	[403092] = { 372608, 372610 },
+	[425782] = { 372608, 372610 },
+	[372606] = { 372608, 372610 }
+}
+ClassicUI.GOC_RegisteredActionSpells = {}
 
 -- Cache variables
 ClassicUI.cached_NumberVisibleBars = 0
@@ -923,7 +946,7 @@ ClassicUI.defaults = {
 			['GreyOnCooldownConfig'] = {
 				enabled = false,
 				desaturateUnusableActions = true,
-				minDuration = 1.88
+				desaturatePetActionButtons = true
 			},
 			['LossOfControlUIConfig'] = {
 				enabled = false
@@ -945,6 +968,7 @@ local delayFunc_UpdatedStatusBarsEvent = false
 local delayFunc_CUI_PetActionBarFrame_RelocateBar_Update = false
 local delayFunc_ActionButtonProtectedApplyLayout = false
 local delayFunc_BarHookProtectedApplySetScale = false
+local delayFunc_ClassicUI_ShowConfig = { false, 0 }
 fclFrame:SetScript("OnEvent",function(self,event)
 	if event=="PLAYER_REGEN_ENABLED" then
 		fclFrame:UnregisterEvent("PLAYER_REGEN_ENABLED")
@@ -984,6 +1008,10 @@ fclFrame:SetScript("OnEvent",function(self,event)
 			delayFunc_BarHookProtectedApplySetScale = true
 			ClassicUI:BarHookProtectedApplySetScale()
 		end
+		if (delayFunc_ClassicUI_ShowConfig[1]) then
+			delayFunc_ClassicUI_ShowConfig[1] = false
+			ClassicUI:ShowConfig(delayFunc_ClassicUI_ShowConfig[2])
+		end
 	end
 end)
 
@@ -1012,11 +1040,14 @@ function ClassicUI:OnInitialize()
 
 	self:RegisterChatCommand("ClassicUI", "SlashCommand")
 
-	if (not(self.db.profile.disabledAddonCompartmentIntegration)) then
-		self:AddonCompartmentIntegration(true)
+	-- Some pre-initialization stuff
+	if NUM_ACTIONBAR_BUTTONS ~= nil then
+		ClassicUI.NUM_ACTIONBAR_BUTTONS = NUM_ACTIONBAR_BUTTONS
+	end
+	if NUM_PET_ACTION_SLOTS ~= nil then
+		ClassicUI.NUM_PET_ACTION_SLOTS = NUM_PET_ACTION_SLOTS
 	end
 
-	-- Some pre-initialization stuff
 	if (ClassicUI.playerClass == nil) then
 		ClassicUI.playerClass = select(2,UnitClass("player"))
 		ClassicUI.MICROBUTTONS_OPTION_ICONS['Class Icon'] = strgsub(ClassicUI.MICROBUTTONS_OPTION_ICONS['Class Icon'], "Warlock", ClassicUI.playerClass, 1)
@@ -1038,6 +1069,10 @@ function ClassicUI:OnInitialize()
 		ClassicUI.MICROBUTTONS_ARRAYINFO[27].normalTexture = strgsub(ClassicUI.MICROBUTTONS_ARRAYINFO[27].normalTexture, "PvpN", "PvpA", 1)
 		ClassicUI.MICROBUTTONS_ARRAYINFO[27].pushedTexture = strgsub(ClassicUI.MICROBUTTONS_ARRAYINFO[27].pushedTexture, "PvpN", "PvpA", 1)
 		ClassicUI.MICROBUTTONS_ARRAYINFO[27].disabledTexture = strgsub(ClassicUI.MICROBUTTONS_ARRAYINFO[27].disabledTexture, "PvpN", "PvpA", 1)
+	end
+
+	if (not(self.db.profile.disabledAddonCompartmentIntegration)) then
+		self:AddonCompartmentIntegration(true)
 	end
 
 	-- Start ClassicUI Core
@@ -1186,6 +1221,15 @@ end
 
 -- Show Options Menu
 function ClassicUI:ShowConfig(category)
+	if InCombatLockdown() then
+		delayFunc_ClassicUI_ShowConfig[1] = true
+		delayFunc_ClassicUI_ShowConfig[2] = category
+		if (not fclFrame:IsEventRegistered("PLAYER_REGEN_ENABLED")) then
+			fclFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+		end
+		ClassicUI:Print("|cffd2a679" .. L['CLASSICUI_OPENPANEL_AFTERCOMBAT'] .. "|r")
+		return
+	end
 	if (category ~= nil) then
 		if (category == 0) then
 			Settings.OpenToCategory(self.optionsFramesCatId.general)
@@ -1385,8 +1429,9 @@ function ClassicUI:UpdateDBValuesCache()
 	self.cached_db_profile.extraFrames_Chat_socialButtonToBottom = self.db.profile.extraFrames.Chat.socialButtonToBottom
 	self.cached_db_profile.extraConfigs_KeybindsConfig_hideKeybindsMode = self.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode
 	self.cached_db_profile.extraConfigs_GreyOnCooldownConfig_enabled = self.db.profile.extraConfigs.GreyOnCooldownConfig.enabled
-	self.cached_db_profile.extraConfigs_GreyOnCooldownConfig_minDuration = self.db.profile.extraConfigs.GreyOnCooldownConfig.minDuration
 	self.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturateUnusableActions = self.db.profile.extraConfigs.GreyOnCooldownConfig.desaturateUnusableActions
+	self.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturatePetActionButtons = self.db.profile.extraConfigs.GreyOnCooldownConfig.desaturatePetActionButtons
+	self.cached_db_profile.extraConfigs_LossOfControlUIConfig_enabled = self.db.profile.extraConfigs.LossOfControlUIConfig.enabled
 	self.cached_db_profile.extraConfigs_GuildPanelMode_defaultOpenOldMenu = self.db.profile.extraConfigs.GuildPanelMode.defaultOpenOldMenu
 	self.cached_db_profile.extraConfigs_GuildPanelMode_rightClickMicroButtonOpenOldMenu = self.db.profile.extraConfigs.GuildPanelMode.rightClickMicroButtonOpenOldMenu
 	self.cached_db_profile.extraConfigs_GuildPanelMode_middleClickMicroButtonOpenOldMenu = self.db.profile.extraConfigs.GuildPanelMode.middleClickMicroButtonOpenOldMenu
@@ -1898,7 +1943,7 @@ function ClassicUI:ExtraOptionsFunc()
 	end
 	-- Extra Option: GreyOnCooldown
 	if (ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.enabled) then
-		self:HookGreyOnCooldownIcons()
+		self:GOC_MainFunction()
 	end
 	-- Extra Option: LossOfControlUI
 	if (ClassicUI.db.profile.extraConfigs.LossOfControlUIConfig.enabled) then
@@ -2448,6 +2493,11 @@ function ClassicUI:EnableOldMinimap()
 	MinimapBackdrop:SetPoint("CENTER", MinimapCluster, "CENTER", 0, -20)
 	MinimapBackdrop:SetSize(192,192)
 	MinimapBackdrop:CreateTexture("MinimapBorder", "ARTWORK")
+	MinimapBackdrop.StaticOverlayTexture:ClearAllPoints()
+	MinimapBackdrop.StaticOverlayTexture:SetPoint("CENTER", MinimapBackdrop, "CENTER",8, 23)
+	MinimapBackdrop.StaticOverlayTexture:SetSize(135, 135)
+	MinimapBackdrop.StaticOverlayTexture:SetDrawLayer("ARTWORK", -1)
+	MinimapBackdrop.StaticOverlayTexture:SetTexCoord(0.056, 0.935, 0.084, 0.921)
 	MinimapBorder:ClearAllPoints()
 	MinimapBorder:SetAllPoints(MinimapBackdrop)
 	MinimapBorder:SetTexture("Interface\\Minimap\\UI-Minimap-Border")
@@ -3246,7 +3296,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	-- [ActionBars] MainMenuBar
 	local CUI_MainMenuBar = CreateFrame("Frame", "CUI_MainMenuBar", MainActionBar)
 	function CUI_MainMenuBar:InitButtons()
-		for i = 1, 12 do
+		for i = 1, ClassicUI.NUM_ACTIONBAR_BUTTONS do
 			local iActionButton = _G["ActionButton"..i]
 			if (iActionButton ~= nil) then
 				iActionButton:SetFrameStrata("MEDIUM")
@@ -3259,7 +3309,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		ActionButton1:ClearAllPoints()
 		ActionButton1:SetPoint("BOTTOMLEFT", CUI_MainMenuBarArtFrame, "BOTTOMLEFT", 8, 4)
 		local prevActionButton = ActionButton1
-		for i = 2, 12 do
+		for i = 2, ClassicUI.NUM_ACTIONBAR_BUTTONS do
 			local iActionButton = _G["ActionButton"..i]
 			iActionButton:ClearAllPoints()
 			iActionButton:SetPoint("LEFT", prevActionButton, "RIGHT", 6, 0)
@@ -3296,7 +3346,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 				end
 				CUI_MainMenuBar:SetScale(newMainScale)
 				CUI_MainMenuBar.oldOrigScale = scale
-				for i = 1, 12 do
+				for i = 1, ClassicUI.NUM_ACTIONBAR_BUTTONS do
 					local iActionButton = _G["ActionButton"..i]
 					if (iActionButton ~= nil) then
 						iActionButton:SetScale(ClassicUI.cached_db_profile.barsConfig_MainMenuBar_scale / (iActionButton:GetParent():GetScale() * scale) * ClassicUI.cached_ActionButtonInfo.currentScale[iActionButton])	-- cached db value
@@ -3306,7 +3356,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		end
 	end
 	hooksecurefunc(MainActionBar, "SetScale", CUI_MainMenuBar.hook_SetScale)
-	for i = 1, 12 do
+	for i = 1, ClassicUI.NUM_ACTIONBAR_BUTTONS do
 		local iActionButton = _G["ActionButton"..i]
 		if (iActionButton ~= nil) then
 			CUI_MainMenuBar.actionButtons[iActionButton] = { }
@@ -3626,9 +3676,17 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 						end
 						-- Apply the current layout to the new SpellFlyoutButton (delayed if combat lockdown)
 						ClassicUI:ActionButtonProtectedApplyLayout(button, 6)
-						-- GreyOnCooldown (extra option) hook for the new SpellFlyoutButton
-						if (ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_enabled and ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturateUnusableActions) then	-- cached db value
-							ClassicUI.HookGOCActionBarButtonUpdateUsable(button)
+						-- GreyOnCooldown (extra option) hook for the new SpellFlyoutButton (only if GOC_HookGOCSpellFlyout is not being used)
+						if (ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_enabled) then	-- cached db value
+							if (GREYONCOOLDOWN_HOOKED == ClassicUI and not(GREYONCOOLDOWN_SPELLFLYOUT_HOOKED)) then
+								ClassicUI:GOC_HookGOCActionButtonUpdate(button)
+							end
+						end
+						-- Apply LossOfControlUI CC Remover (extra option) to the new SpellFlyoutButton
+						if (ClassicUI.cached_db_profile.extraConfigs_LossOfControlUIConfig_enabled) then
+							if (button.enableLOCCooldown) then
+								button.enableLOCCooldown = nil
+							end
 						end
 					end
 					if not(prevButton) then
@@ -3726,7 +3784,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		self:SetPoint("BOTTOMLEFT", ActionButton1, "TOPLEFT", ClassicUI.cached_db_profile.barsConfig_BottomMultiActionBars_xOffset, yPos)	-- cached db value
 	end
 	function CUI_MultiBarBottomLeft:InitButtons()
-		for i = 1, 12 do
+		for i = 1, ClassicUI.NUM_ACTIONBAR_BUTTONS do
 			local iMultiBarBottomLeftButton = _G["MultiBarBottomLeftButton"..i]
 			if (iMultiBarBottomLeftButton ~= nil) then
 				iMultiBarBottomLeftButton:SetFrameStrata("MEDIUM")
@@ -3739,7 +3797,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		MultiBarBottomLeftButton1:ClearAllPoints()
 		MultiBarBottomLeftButton1:SetPoint("BOTTOMLEFT", self, "BOTTOMLEFT", 0, 0)
 		local prevActionButton = MultiBarBottomLeftButton1
-		for i = 2, 12 do
+		for i = 2, ClassicUI.NUM_ACTIONBAR_BUTTONS do
 			local iMultiBarBottomLeftButton = _G["MultiBarBottomLeftButton"..i]
 			iMultiBarBottomLeftButton:ClearAllPoints()
 			iMultiBarBottomLeftButton:SetPoint("LEFT", prevActionButton, "RIGHT", 6, 0)
@@ -3772,7 +3830,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 				end
 				CUI_MultiBarBottomLeft:SetScale(newMainScale)
 				CUI_MultiBarBottomLeft.oldOrigScale = scale
-				for i = 1, 12 do
+				for i = 1, ClassicUI.NUM_ACTIONBAR_BUTTONS do
 					local iMultiBarBottomLeftButton = _G["MultiBarBottomLeftButton"..i]
 					if (iMultiBarBottomLeftButton ~= nil) then
 						iMultiBarBottomLeftButton:SetScale(ClassicUI.cached_db_profile.barsConfig_BottomMultiActionBars_scale / (iMultiBarBottomLeftButton:GetParent():GetScale() * scale) * ClassicUI.cached_ActionButtonInfo.currentScale[iMultiBarBottomLeftButton])	-- cached db value
@@ -3782,7 +3840,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		end
 	end
 	hooksecurefunc(MultiBarBottomLeft, "SetScale", CUI_MultiBarBottomLeft.hook_SetScale)
-	for i = 1, 12 do
+	for i = 1, ClassicUI.NUM_ACTIONBAR_BUTTONS do
 		local iMultiBarBottomLeftButton = _G["MultiBarBottomLeftButton"..i]
 		if (iMultiBarBottomLeftButton ~= nil) then
 			CUI_MultiBarBottomLeft.actionButtons[iMultiBarBottomLeftButton] = { }
@@ -3815,7 +3873,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		self:SetPoint("LEFT", CUI_MultiBarBottomLeft, "RIGHT", 10, 0)
 	end
 	function CUI_MultiBarBottomRight:InitButtons()
-		for i = 1, 12 do
+		for i = 1, ClassicUI.NUM_ACTIONBAR_BUTTONS do
 			local iMultiBarBottomRightButton = _G["MultiBarBottomRightButton"..i]
 			if (iMultiBarBottomRightButton ~= nil) then
 				iMultiBarBottomRightButton:SetFrameStrata("MEDIUM")
@@ -3828,7 +3886,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		MultiBarBottomRightButton1:ClearAllPoints()
 		MultiBarBottomRightButton1:SetPoint("BOTTOMLEFT", self, "BOTTOMLEFT", 0, 0)
 		local prevActionButton = MultiBarBottomRightButton1
-		for i = 2, 12 do
+		for i = 2, ClassicUI.NUM_ACTIONBAR_BUTTONS do
 			local iMultiBarBottomRightButton = _G["MultiBarBottomRightButton"..i]
 			iMultiBarBottomRightButton:ClearAllPoints()
 			iMultiBarBottomRightButton:SetPoint("LEFT", prevActionButton, "RIGHT", 6, 0)
@@ -3861,7 +3919,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 				end
 				CUI_MultiBarBottomRight:SetScale(newMainScale)
 				CUI_MultiBarBottomRight.oldOrigScale = scale
-				for i = 1, 12 do
+				for i = 1, ClassicUI.NUM_ACTIONBAR_BUTTONS do
 					local iMultiBarBottomRightButton = _G["MultiBarBottomRightButton"..i]
 					if (iMultiBarBottomRightButton ~= nil) then
 						iMultiBarBottomRightButton:SetScale(ClassicUI.cached_db_profile.barsConfig_BottomMultiActionBars_scale / (iMultiBarBottomRightButton:GetParent():GetScale() * scale) * ClassicUI.cached_ActionButtonInfo.currentScale[iMultiBarBottomRightButton])	-- cached db value
@@ -3871,7 +3929,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		end
 	end
 	hooksecurefunc(MultiBarBottomRight, "SetScale", CUI_MultiBarBottomRight.hook_SetScale)
-	for i = 1, 12 do
+	for i = 1, ClassicUI.NUM_ACTIONBAR_BUTTONS do
 		local iMultiBarBottomRightButton = _G["MultiBarBottomRightButton"..i]
 		if (iMultiBarBottomRightButton ~= nil) then
 			CUI_MultiBarBottomRight.actionButtons[iMultiBarBottomRightButton] = { }
@@ -3920,7 +3978,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		self:SetPoint("BOTTOMRIGHT", UIParent, "BOTTOMRIGHT", ClassicUI.cached_db_profile.barsConfig_RightMultiActionBars_xOffset, yPos)	-- cached db value
 	end
 	function CUI_MultiBarRight:InitButtons()
-		for i = 1, 12 do
+		for i = 1, ClassicUI.NUM_ACTIONBAR_BUTTONS do
 			local iMultiBarRightButton = _G["MultiBarRightButton"..i]
 			if (iMultiBarRightButton ~= nil) then
 				iMultiBarRightButton:SetFrameStrata("MEDIUM")
@@ -3933,7 +3991,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		MultiBarRightButton1:ClearAllPoints()
 		MultiBarRightButton1:SetPoint("TOPRIGHT", self, "TOPRIGHT", 0, 0)
 		local prevActionButton = MultiBarRightButton1
-		for i = 2, 12 do
+		for i = 2, ClassicUI.NUM_ACTIONBAR_BUTTONS do
 			local iMultiBarRightButton = _G["MultiBarRightButton"..i]
 			iMultiBarRightButton:ClearAllPoints()
 			iMultiBarRightButton:SetPoint("TOP", prevActionButton, "BOTTOM", 0, -6)
@@ -3966,7 +4024,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 				end
 				CUI_MultiBarRight:SetScale(newMainScale)
 				CUI_MultiBarRight.oldOrigScale = scale
-				for i = 1, 12 do
+				for i = 1, ClassicUI.NUM_ACTIONBAR_BUTTONS do
 					local iMultiBarRightButton = _G["MultiBarRightButton"..i]
 					if (iMultiBarRightButton ~= nil) then
 						iMultiBarRightButton:SetScale(ClassicUI.cached_db_profile.barsConfig_RightMultiActionBars_scale / (iMultiBarRightButton:GetParent():GetScale() * scale) * ClassicUI.cached_ActionButtonInfo.currentScale[iMultiBarRightButton])	-- cached db value
@@ -3976,7 +4034,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		end
 	end
 	hooksecurefunc(MultiBarRight, "SetScale", CUI_MultiBarRight.hook_SetScale)
-	for i = 1, 12 do
+	for i = 1, ClassicUI.NUM_ACTIONBAR_BUTTONS do
 		local iMultiBarRightButton = _G["MultiBarRightButton"..i]
 		if (iMultiBarRightButton ~= nil) then
 			CUI_MultiBarRight.actionButtons[iMultiBarRightButton] = { }
@@ -4012,7 +4070,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		self:SetPoint("TOPRIGHT", CUI_MultiBarRight, "TOPLEFT", -5, 0)
 	end
 	function CUI_MultiBarLeft:InitButtons()
-		for i = 1, 12 do
+		for i = 1, ClassicUI.NUM_ACTIONBAR_BUTTONS do
 			local iMultiBarLeftButton = _G["MultiBarLeftButton"..i]
 			if (iMultiBarLeftButton ~= nil) then
 				iMultiBarLeftButton:SetFrameStrata("MEDIUM")
@@ -4025,7 +4083,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		MultiBarLeftButton1:ClearAllPoints()
 		MultiBarLeftButton1:SetPoint("TOPRIGHT", self, "TOPRIGHT", 0, 0)
 		local prevActionButton = MultiBarLeftButton1
-		for i = 2, 12 do
+		for i = 2, ClassicUI.NUM_ACTIONBAR_BUTTONS do
 			local iMultiBarLeftButton = _G["MultiBarLeftButton"..i]
 			iMultiBarLeftButton:ClearAllPoints()
 			iMultiBarLeftButton:SetPoint("TOP", prevActionButton, "BOTTOM", 0, -6)
@@ -4058,7 +4116,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 				end
 				CUI_MultiBarLeft:SetScale(newMainScale)
 				CUI_MultiBarLeft.oldOrigScale = scale
-				for i = 1, 12 do
+				for i = 1, ClassicUI.NUM_ACTIONBAR_BUTTONS do
 					local iMultiBarLeftButton = _G["MultiBarLeftButton"..i]
 					if (iMultiBarLeftButton ~= nil) then
 						iMultiBarLeftButton:SetScale(ClassicUI.cached_db_profile.barsConfig_RightMultiActionBars_scale / (iMultiBarLeftButton:GetParent():GetScale() * scale) * ClassicUI.cached_ActionButtonInfo.currentScale[iMultiBarLeftButton])	-- cached db value
@@ -4068,7 +4126,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		end
 	end
 	hooksecurefunc(MultiBarLeft, "SetScale", CUI_MultiBarLeft.hook_SetScale)
-	for i = 1, 12 do
+	for i = 1, ClassicUI.NUM_ACTIONBAR_BUTTONS do
 		local iMultiBarLeftButton = _G["MultiBarLeftButton"..i]
 		if (iMultiBarLeftButton ~= nil) then
 			CUI_MultiBarLeft.actionButtons[iMultiBarLeftButton] = { }
@@ -4224,7 +4282,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		end
 	end
 	function CUI_PetActionBarFrame:InitButtons()
-		for i = 1, 10 do
+		for i = 1, ClassicUI.NUM_PET_ACTION_SLOTS do
 			local iPetActionButton = _G["PetActionButton"..i]
 			if (iPetActionButton ~= nil) then
 				iPetActionButton:SetParent(self)
@@ -7758,13 +7816,67 @@ ClassicUI.CreateClassicSpellActivationAlertFrame = function(iActionButton)
 	iabcsaa.ants:SetPoint("CENTER")
 	iabcsaa.ants:SetAlpha(0)
 
+	if (ClassicUI.ClassicSpellActivationAlertCurve == nil) then
+		ClassicUI.ClassicSpellActivationAlertCurve = C_CurveUtil.CreateCurve()
+		ClassicUI.ClassicSpellActivationAlertCurve:SetType(Enum.LuaCurveType.Step)
+		ClassicUI.ClassicSpellActivationAlertCurve:AddPoint(0, 1)
+		ClassicUI.ClassicSpellActivationAlertCurve:AddPoint(3.0, 0.5)
+	end
+
 	iabcsaa.OnUpdate = function(self, elapsed)
 		AnimateTexCoords(self.ants, 256, 256, 48, 48, 22, elapsed, 0.01)
-		local cooldown = self:GetParent().cooldown
+		local button = self:GetParent():GetParent()
+		local cooldown = button.cooldown
 		-- we need some threshold to avoid dimming the glow during the gdc
 		-- (using 1500 exactly seems risky, what if casting speed is slowed or something?)
-		if (cooldown and cooldown:IsShown() and cooldown:GetCooldownDuration() > 3000) then
-			self:SetAlpha(0.5)
+		if (cooldown and cooldown:IsShown()) then
+			local isInCooldown = true
+			local isOnGCD = true
+			if (button.action) then
+				local actionCooldownInfo = C_ActionBar_GetActionCooldown(button.action)
+				if (actionCooldownInfo) then
+					local actionInfoType, actionInfoID, actionInfoSubType = GetActionInfo(button.action)
+					if issecretvalue(actionCooldownInfo.duration) then
+						if actionInfoType == "spell" or actionInfoSubType == "spell" or actionInfoSubType == "pet" then
+							isInCooldown = actionCooldownInfo.timeUntilEndOfStartRecovery ~= nil
+							isOnGCD = actionCooldownInfo.isOnGCD
+						elseif actionInfoType == "item" then
+							local _, durationSeconds = C_Item_GetItemCooldown(actionInfoID)
+							isInCooldown = durationSeconds > 0
+							isOnGCD = durationSeconds > 0 and durationSeconds <= 3.0
+						else
+							local duration = C_ActionBar_GetActionCooldownDuration(button.action)
+							self:SetAlpha(duration:EvaluateRemainingDuration(ClassicUI.ClassicSpellActivationAlertCurve))
+							return
+						end
+					else
+						isInCooldown = actionCooldownInfo.duration > 0
+						if actionInfoType == "spell" or actionInfoSubType == "spell" or actionInfoSubType == "pet" then
+							isOnGCD = actionCooldownInfo.isOnGCD or (actionCooldownInfo.duration > 0 and actionCooldownInfo.duration <= 3.0)
+						else
+							isOnGCD = actionCooldownInfo.duration > 0 and actionCooldownInfo.duration <= 3.0
+						end
+					end
+				end
+			else
+				if (button.spellID) then
+					local spellCooldownInfo = C_Spell_GetSpellCooldown(button.spellID)
+					if spellCooldownInfo then
+						if issecretvalue(spellCooldownInfo.duration) then
+							isInCooldown = spellCooldownInfo.timeUntilEndOfStartRecovery ~= nil
+							isOnGCD = spellCooldownInfo.isOnGCD
+						else
+							isInCooldown = spellCooldownInfo.duration > 0
+							isOnGCD = spellCooldownInfo.isOnGCD or (spellCooldownInfo.duration > 0 and spellCooldownInfo.duration <= 3.0)
+						end
+					end
+				end
+			end
+			if (not(isInCooldown) or isOnGCD) then
+				self:SetAlpha(1.0)
+			else
+				self:SetAlpha(0.5)
+			end
 		else
 			self:SetAlpha(1.0)
 		end
@@ -7970,6 +8082,7 @@ ClassicUI.CreateClassicSpellActivationAlertFrame = function(iActionButton)
 	-- Global hooks to the main functions that show/hide these animations
 	if not ClassicUI.hooked_ActionButton_ShowHideOverlayGlow then
 		hooksecurefunc(ActionButtonSpellAlertManager, "ShowAlert", function(self, button)
+			if issecretvalue(button) then return end	-- function also used by secret-protected CooldownViewer items
 			if not(button.ClassicSpellActivationAlert) then return end
 			if button.ClassicSpellActivationAlert.animOut:IsPlaying() then
 				button.ClassicSpellActivationAlert.animOut:Stop()
@@ -7979,6 +8092,7 @@ ClassicUI.CreateClassicSpellActivationAlertFrame = function(iActionButton)
 			end
 		end)
 		hooksecurefunc(ActionButtonSpellAlertManager, "HideAlert", function(self, button)
+			if issecretvalue(button) then return end	-- function also used by secret-protected CooldownViewer items
 			if not(button.ClassicSpellActivationAlert) then	return end
 			if button.ClassicSpellActivationAlert.animIn:IsPlaying() then
 				button.ClassicSpellActivationAlert.animIn:Stop()
@@ -8087,7 +8201,7 @@ ClassicUI.RestoreModernLayoutActionButton = function(iActionButton, typeActionBu
 	if (iabbt ~= nil) then
 		iabbt:SetAtlas("UI-HUD-ActionBar-IconFrame-Border")
 		iabbt:SetBlendMode("BLEND")
-		if ((iActionButton.action ~= nil) and (IsEquippedAction(iActionButton.action))) then
+		if ((iActionButton.action ~= nil) and (C_ActionBar_IsEquippedAction(iActionButton.action))) then
 			iabbt:SetAlpha(0.5)
 		else
 			iabbt:SetAlpha(1)
@@ -8664,7 +8778,7 @@ ClassicUI.LayoutActionButton = function(iActionButton, typeActionButton)
 			iabbt:SetAtlas(nil)
 			iabbt:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
 			iabbt:SetBlendMode("ADD")
-			if ((iActionButton.action ~= nil) and (IsEquippedAction(iActionButton.action))) then
+			if ((iActionButton.action ~= nil) and (C_ActionBar_IsEquippedAction(iActionButton.action))) then
 				iabbt:SetAlpha(0.5)
 			else
 				iabbt:SetAlpha(1)
@@ -8993,6 +9107,7 @@ ClassicUI.LayoutActionButton = function(iActionButton, typeActionButton)
 		else
 			if not ClassicUI.hooked_ActionButton_SetupOverlayGlow then
 				hooksecurefunc(ActionButtonSpellAlertManager, "ShowAlert", function(self, button)
+					if issecretvalue(button) then return end	-- function also used by secret-protected CooldownViewer items
 					if ClassicUI.databaseCleaned then return end	-- [DB Integrity Check]
 					local iabsaa = button.SpellActivationAlert
 					local iabcsaa = button.ClassicSpellActivationAlert
@@ -9257,28 +9372,28 @@ end
 ClassicUI.LayoutGroupActionButtons = function(groups)
 	if ((groups == nil) or (type(groups) ~= "table")) then return end
 	if (groups[0]) then
-		for i = 1, 12 do
+		for i = 1, ClassicUI.NUM_ACTIONBAR_BUTTONS do
 			ClassicUI:ActionButtonProtectedApplyLayout(_G["ActionButton"..i], 0)
 		end
 	end
 	if (groups[1]) then
-		for i = 1, 12 do
+		for i = 1, ClassicUI.NUM_ACTIONBAR_BUTTONS do
 			ClassicUI:ActionButtonProtectedApplyLayout(_G["MultiBarBottomLeftButton"..i], 1)
 		end
-		for i = 1, 12 do
+		for i = 1, ClassicUI.NUM_ACTIONBAR_BUTTONS do
 			ClassicUI:ActionButtonProtectedApplyLayout(_G["MultiBarBottomRightButton"..i], 1)
 		end
 	end
 	if (groups[2]) then
-		for i = 1, 12 do
+		for i = 1, ClassicUI.NUM_ACTIONBAR_BUTTONS do
 			ClassicUI:ActionButtonProtectedApplyLayout(_G["MultiBarLeftButton"..i], 2)
 		end
-		for i = 1, 12 do
+		for i = 1, ClassicUI.NUM_ACTIONBAR_BUTTONS do
 			ClassicUI:ActionButtonProtectedApplyLayout(_G["MultiBarRightButton"..i], 2)
 		end
 	end
 	if (groups[3]) then
-		for i = 1, 10 do
+		for i = 1, ClassicUI.NUM_PET_ACTION_SLOTS do
 			ClassicUI:ActionButtonProtectedApplyLayout(_G["PetActionButton"..i], 3)
 		end
 	end
@@ -9338,7 +9453,7 @@ end
 
 -- Function that initializes the cache with the information of all the ActionButtons to the default values
 function ClassicUI:InitActionButtonInfoCache()
-	for i = 1, 12 do
+	for i = 1, ClassicUI.NUM_ACTIONBAR_BUTTONS do
 		self.cached_ActionButtonInfo.hooked_UpdateButtonArt[_G["ActionButton"..i]] = false
 		self.cached_ActionButtonInfo.hooked_UpdateButtonArt[_G["MultiBarBottomLeftButton"..i]] = false
 		self.cached_ActionButtonInfo.hooked_UpdateButtonArt[_G["MultiBarBottomRightButton"..i]] = false
@@ -9385,24 +9500,26 @@ function ClassicUI:InitActionButtonInfoCache()
 		self.cached_ActionButtonInfo.currLayout[_G["MultiBarRightButton"..i]] = 1
 		self.cached_ActionButtonInfo.currLayout[_G["MultiBarLeftButton"..i]] = 1
 	end
-	for i = 1, 10 do
+	for i = 1, ClassicUI.NUM_PET_ACTION_SLOTS do
 		self.cached_ActionButtonInfo.hooked_UpdateButtonArt[_G["PetActionButton"..i]] = false
-		self.cached_ActionButtonInfo.hooked_UpdateButtonArt[_G["StanceButton"..i]] = false
 		self.cached_ActionButtonInfo.hooked_UpdateHotkeys[_G["PetActionButton"..i]] = false
-		self.cached_ActionButtonInfo.hooked_UpdateHotkeys[_G["StanceButton"..i]] = false
 		self.cached_ActionButtonInfo.hooked_UpdateFlyout[_G["PetActionButton"..i]] = false
-		self.cached_ActionButtonInfo.hooked_UpdateFlyout[_G["StanceButton"..i]] = false
 		self.cached_ActionButtonInfo.hooked_PlaySpellCastAnim[_G["PetActionButton"..i]] = false
-		self.cached_ActionButtonInfo.hooked_PlaySpellCastAnim[_G["StanceButton"..i]] = false
 		self.cached_ActionButtonInfo.hooked_UpdateAssistedCombatRotationFrame[_G["PetActionButton"..i]] = false
-		self.cached_ActionButtonInfo.hooked_UpdateAssistedCombatRotationFrame[_G["StanceButton"..i]] = false
 		self.cached_ActionButtonInfo.spellActivationAlertAdjusted[_G["PetActionButton"..i]] = false
-		self.cached_ActionButtonInfo.spellActivationAlertAdjusted[_G["StanceButton"..i]] = false
 		self.cached_ActionButtonInfo.typeActionButton[_G["PetActionButton"..i]] = 3
-		self.cached_ActionButtonInfo.typeActionButton[_G["StanceButton"..i]] = 4
 		self.cached_ActionButtonInfo.currentScale[_G["PetActionButton"..i]] = 1
-		self.cached_ActionButtonInfo.currentScale[_G["StanceButton"..i]] = 1
 		self.cached_ActionButtonInfo.currLayout[_G["PetActionButton"..i]] = 1
+	end
+	for i = 1, 10 do
+		self.cached_ActionButtonInfo.hooked_UpdateButtonArt[_G["StanceButton"..i]] = false
+		self.cached_ActionButtonInfo.hooked_UpdateHotkeys[_G["StanceButton"..i]] = false
+		self.cached_ActionButtonInfo.hooked_UpdateFlyout[_G["StanceButton"..i]] = false
+		self.cached_ActionButtonInfo.hooked_PlaySpellCastAnim[_G["StanceButton"..i]] = false
+		self.cached_ActionButtonInfo.hooked_UpdateAssistedCombatRotationFrame[_G["StanceButton"..i]] = false
+		self.cached_ActionButtonInfo.spellActivationAlertAdjusted[_G["StanceButton"..i]] = false
+		self.cached_ActionButtonInfo.typeActionButton[_G["StanceButton"..i]] = 4
+		self.cached_ActionButtonInfo.currentScale[_G["StanceButton"..i]] = 1
 		self.cached_ActionButtonInfo.currLayout[_G["StanceButton"..i]] = 1
 	end
 	for i = 1, 6 do
@@ -9525,7 +9642,7 @@ end
 -- Togle the visibilitity mode from 2 or 3 to another mode requires a ReloadUI
 function ClassicUI:ToggleVisibilityKeybinds(mode)
 	if (mode == 1) then
-		for i = 1, 12 do
+		for i = 1, ClassicUI.NUM_ACTIONBAR_BUTTONS do
 			local actionButtonHK
 			actionButtonHK = _G["ExtraActionButton"..i.."HotKey"]
 			if (actionButtonHK) then
@@ -9551,10 +9668,6 @@ function ClassicUI:ToggleVisibilityKeybinds(mode)
 			if (actionButtonHK) then
 				actionButtonHK:SetAlpha(0)
 			end
-			actionButtonHK = _G["PetActionButton"..i.."HotKey"]
-			if (actionButtonHK) then
-				actionButtonHK:SetAlpha(0)
-			end
 			actionButtonHK = _G["StanceButton"..i.."HotKey"]
 			if (actionButtonHK) then
 				actionButtonHK:SetAlpha(0)
@@ -9564,6 +9677,12 @@ function ClassicUI:ToggleVisibilityKeybinds(mode)
 				actionButtonHK:SetAlpha(0)
 			end
 			actionButtonHK = _G["OverrideActionBarButton"..i.."HotKey"]
+			if (actionButtonHK) then
+				actionButtonHK:SetAlpha(0)
+			end
+		end
+		for i = 1, ClassicUI.NUM_PET_ACTION_SLOTS do
+			local actionButtonHK = _G["PetActionButton"..i.."HotKey"]
 			if (actionButtonHK) then
 				actionButtonHK:SetAlpha(0)
 			end
@@ -9581,7 +9700,7 @@ function ClassicUI:ToggleVisibilityKeybinds(mode)
 		PetBattleFrame.BottomFrame.CatchButton.HotKey:SetAlpha(0)
 		PetBattleFrame.BottomFrame.CatchButton.HotKey:Hide()
 	elseif (mode == 2) or (mode == 3) then
-		for i = 1, 12 do
+		for i = 1, ClassicUI.NUM_ACTIONBAR_BUTTONS do
 			local actionButton
 			actionButton = _G["ExtraActionButton"..i]
 			if (actionButton) then
@@ -9631,14 +9750,6 @@ function ClassicUI:ToggleVisibilityKeybinds(mode)
 					actionButton:UpdateHotkeys()
 				end
 			end
-			actionButton = _G["PetActionButton"..i]
-			if (actionButton) then
-				actionButton.HotKey:SetAlpha(1)
-				if (actionButton.UpdateHotkeys ~= nil) then
-					ClassicUI:HookKeybindsVisibilityMode(actionButton)
-					actionButton:UpdateHotkeys()
-				end
-			end
 			actionButton = _G["StanceButton"..i]
 			if (actionButton) then
 				actionButton.HotKey:SetAlpha(1)
@@ -9656,6 +9767,16 @@ function ClassicUI:ToggleVisibilityKeybinds(mode)
 				end
 			end
 			actionButton = _G["OverrideActionBarButton"..i]
+			if (actionButton) then
+				actionButton.HotKey:SetAlpha(1)
+				if (actionButton.UpdateHotkeys ~= nil) then
+					ClassicUI:HookKeybindsVisibilityMode(actionButton)
+					actionButton:UpdateHotkeys()
+				end
+			end
+		end
+		for i = 1, ClassicUI.NUM_PET_ACTION_SLOTS do
+			local actionButton = _G["PetActionButton"..i]
 			if (actionButton) then
 				actionButton.HotKey:SetAlpha(1)
 				if (actionButton.UpdateHotkeys ~= nil) then
@@ -9695,7 +9816,7 @@ function ClassicUI:ToggleVisibilityKeybinds(mode)
 			PetBattleAbilityButton_UpdateHotKey(PetBattleFrame.BottomFrame.CatchButton)
 		end
 	else
-		for i = 1, 12 do
+		for i = 1, ClassicUI.NUM_ACTIONBAR_BUTTONS do
 			local actionButtonHK
 			actionButtonHK = _G["ExtraActionButton"..i.."HotKey"]
 			if (actionButtonHK) then
@@ -9721,10 +9842,6 @@ function ClassicUI:ToggleVisibilityKeybinds(mode)
 			if (actionButtonHK) then
 				actionButtonHK:SetAlpha(1)
 			end
-			actionButtonHK = _G["PetActionButton"..i.."HotKey"]
-			if (actionButtonHK) then
-				actionButtonHK:SetAlpha(1)
-			end
 			actionButtonHK = _G["StanceButton"..i.."HotKey"]
 			if (actionButtonHK) then
 				actionButtonHK:SetAlpha(1)
@@ -9734,6 +9851,12 @@ function ClassicUI:ToggleVisibilityKeybinds(mode)
 				actionButtonHK:SetAlpha(1)
 			end
 			actionButtonHK = _G["OverrideActionBarButton"..i.."HotKey"]
+			if (actionButtonHK) then
+				actionButtonHK:SetAlpha(1)
+			end
+		end
+		for i = 1, ClassicUI.NUM_PET_ACTION_SLOTS do
+			local actionButtonHK = _G["PetActionButton"..i.."HotKey"]
 			if (actionButtonHK) then
 				actionButtonHK:SetAlpha(1)
 			end
@@ -9761,7 +9884,7 @@ function ClassicUI:HookKeybindsVisibilityMode(actionBarButton)
 		hooksecurefunc(actionBarButton, "UpdateHotkeys", function(self, actionButtonType)
 			if (ClassicUI.cached_db_profile.extraConfigs_KeybindsConfig_hideKeybindsMode == 2) then	-- cached db value
 				self.HotKey:SetText(RANGE_INDICATOR)
-				local valid = IsActionInRange(self.action)
+				local valid = C_ActionBar_IsActionInRange(self.action)
 				local checksRange = (valid ~= nil)
 				local inRange = checksRange and valid
 				ActionButton_UpdateRangeIndicator(self, checksRange, inRange)
@@ -9795,7 +9918,7 @@ end
 -- Extra Option: ActionBar Names Visibility. Main function to Show/Hide name text from ActionBars
 function ClassicUI:ToggleVisibilityActionButtonNames(mode)
 	if (mode) then
-		for i = 1, 12 do
+		for i = 1, ClassicUI.NUM_ACTIONBAR_BUTTONS do
 			local actionButtonName
 			actionButtonName = _G["ExtraActionButton"..i.."Name"]
 			if (actionButtonName) then
@@ -9818,10 +9941,6 @@ function ClassicUI:ToggleVisibilityActionButtonNames(mode)
 				actionButtonName:SetAlpha(0)
 			end
 			actionButtonName = _G["MultiBarRightButton"..i.."Name"]
-			if (actionButtonName) then
-				actionButtonName:SetAlpha(0)
-			end
-			actionButtonName = _G["PetActionButton"..i.."Name"]
 			if (actionButtonName) then
 				actionButtonName:SetAlpha(0)
 			end
@@ -9838,8 +9957,14 @@ function ClassicUI:ToggleVisibilityActionButtonNames(mode)
 				actionButtonName:SetAlpha(0)
 			end
 		end
+		for i = 1, ClassicUI.NUM_PET_ACTION_SLOTS do
+			local actionButtonName = _G["PetActionButton"..i.."Name"]
+			if (actionButtonName) then
+				actionButtonName:SetAlpha(0)
+			end
+		end
 	else
-		for i = 1, 12 do
+		for i = 1, ClassicUI.NUM_ACTIONBAR_BUTTONS do
 			local actionButtonName
 			actionButtonName = _G["ExtraActionButton"..i.."Name"]
 			if (actionButtonName) then
@@ -9865,10 +9990,6 @@ function ClassicUI:ToggleVisibilityActionButtonNames(mode)
 			if (actionButtonName) then
 				actionButtonName:SetAlpha(1)
 			end
-			actionButtonName = _G["PetActionButton"..i.."Name"]
-			if (actionButtonName) then
-				actionButtonName:SetAlpha(1)
-			end
 			actionButtonName = _G["StanceButton"..i.."Name"]
 			if (actionButtonName) then
 				actionButtonName:SetAlpha(1)
@@ -9878,6 +9999,12 @@ function ClassicUI:ToggleVisibilityActionButtonNames(mode)
 				actionButtonName:SetAlpha(1)
 			end
 			actionButtonName = _G["OverrideActionBarButton"..i.."Name"]
+			if (actionButtonName) then
+				actionButtonName:SetAlpha(1)
+			end
+		end
+		for i = 1, ClassicUI.NUM_PET_ACTION_SLOTS do
+			local actionButtonName = _G["PetActionButton"..i.."Name"]
 			if (actionButtonName) then
 				actionButtonName:SetAlpha(1)
 			end
@@ -9885,38 +10012,67 @@ function ClassicUI:ToggleVisibilityActionButtonNames(mode)
 	end
 end
 
--- Extra Option: LossOfControlUI. Main function to disable Cooldown effect on action bars caused by CC
+-- Extra Option: LossOfControlUI. Main function to disable Cooldown effect on action bars caused by crowd control (CC)
 function ClassicUI:HookLossOfControlUICCRemover()
 	if (not DISABLELOSSOFCONTROLUI_HOOKED) then
-		hooksecurefunc('ActionButton_UpdateCooldown', function(self)
-			if (self.cooldown.currentCooldownType == COOLDOWN_TYPE_LOSS_OF_CONTROL) then
-				local start, duration, enable, charges, maxCharges, chargeStart, chargeDuration, modRate, chargeModRate
-				if (self.spellID) then
-					local spellCooldownInfo = C_Spell.GetSpellCooldown(self.spellID) or {startTime = 0, duration = 0, isEnabled = false, modRate = 0}
-					start, duration, enable, modRate = spellCooldownInfo.startTime, spellCooldownInfo.duration, spellCooldownInfo.isEnabled, spellCooldownInfo.modRate
-					local chargeInfo = C_Spell.GetSpellCharges(self.spellID) or {currentCharges = 0, maxCharges = 0, cooldownStartTime = 0, cooldownDuration = 0, chargeModRate = 0}
-					charges, maxCharges, chargeStart, chargeDuration, chargeModRate = chargeInfo.currentCharges, chargeInfo.maxCharges, chargeInfo.cooldownStartTime, chargeInfo.cooldownDuration, chargeInfo.chargeModRate
-				else
-					start, duration, enable, modRate = GetActionCooldown(self.action)
-					charges, maxCharges, chargeStart, chargeDuration, chargeModRate = GetActionCharges(self.action)
-				end
-				self.cooldown:SetEdgeTexture("Interface\\Cooldown\\edge")
-				self.cooldown:SetSwipeColor(0, 0, 0)
-				self.cooldown:SetHideCountdownNumbers(false)
-				if (charges and maxCharges and maxCharges > 1 and charges < maxCharges) then
-					if chargeStart == 0 then
-						ClearChargeCooldown(self)
-					else
-						if self.chargeCooldown then
-							CooldownFrame_Set(self.chargeCooldown, chargeStart, chargeDuration, true, true, chargeModRate)
-						end
-					end
-				else
-					ClearChargeCooldown(self)
-				end
-				CooldownFrame_Set(self.cooldown, start, duration, enable, false, modRate)
+		-- Globally disable Loss of Control (LoC) cooldown effects on action buttons through 'ActionButton_ApplyCooldown'
+		hooksecurefunc('ActionButton_ApplyCooldown', function(normalCooldown, cooldownInfo, chargeCooldown, chargeInfo, lossOfControlCooldown, lossOfControlInfo)
+			if (lossOfControlInfo and (issecretvalue(lossOfControlInfo.startTime) or issecretvalue(lossOfControlInfo.duration) or issecretvalue(lossOfControlInfo.modRate) or lossOfControlInfo.startTime ~= 0 or lossOfControlInfo.duration ~= 0 or lossOfControlInfo.modRate ~= 0)) then
+				ActionButton_ApplyCooldown(normalCooldown, cooldownInfo, chargeCooldown, chargeInfo, lossOfControlCooldown)
 			end
 		end)
+		-- Explicitly disable Loss of Control (LoC) cooldown effects on Blizzard default action buttons
+		for i = 1, ClassicUI.NUM_ACTIONBAR_BUTTONS do
+			local actionButton
+			actionButton = _G["ExtraActionButton"..i]
+			if (actionButton and actionButton.enableLOCCooldown) then
+				actionButton.enableLOCCooldown = nil
+			end
+			actionButton = _G["ActionButton"..i]
+			if (actionButton and actionButton.enableLOCCooldown) then
+				actionButton.enableLOCCooldown = nil
+			end
+			actionButton = _G["MultiBarBottomLeftButton"..i]
+			if (actionButton and actionButton.enableLOCCooldown) then
+				actionButton.enableLOCCooldown = nil
+			end
+			actionButton = _G["MultiBarBottomRightButton"..i]
+			if (actionButton and actionButton.enableLOCCooldown) then
+				actionButton.enableLOCCooldown = nil
+			end
+			actionButton = _G["MultiBarLeftButton"..i]
+			if (actionButton and actionButton.enableLOCCooldown) then
+				actionButton.enableLOCCooldown = nil
+			end
+			actionButton = _G["MultiBarRightButton"..i]
+			if (actionButton and actionButton.enableLOCCooldown) then
+				actionButton.enableLOCCooldown = nil
+			end
+			actionButton = _G["StanceButton"..i]
+			if (actionButton and actionButton.enableLOCCooldown) then
+				actionButton.enableLOCCooldown = nil
+			end
+			actionButton = _G["PossessButton"..i]
+			if (actionButton and actionButton.enableLOCCooldown) then
+				actionButton.enableLOCCooldown = nil
+			end
+			actionButton = _G["OverrideActionBarButton"..i]
+			if (actionButton and actionButton.enableLOCCooldown) then
+				actionButton.enableLOCCooldown = nil
+			end
+		end
+		for i = 1, ClassicUI.NUM_PET_ACTION_SLOTS do
+			local actionButton = _G["PetActionButton"..i]
+			if (actionButton and actionButton.enableLOCCooldown) then
+				actionButton.enableLOCCooldown = nil
+			end
+		end
+		for i = 1, 40 do
+			local actionButton = _G["SpellFlyoutPopupButton"..i]
+			if (actionButton and actionButton.enableLOCCooldown) then
+				actionButton.enableLOCCooldown = nil
+			end
+		end
 		DISABLELOSSOFCONTROLUI_HOOKED = true
 	end
 end
@@ -9933,7 +10089,7 @@ function ClassicUI:HookRedRangeIcons()
 					end
 					local icon = self.icon
 					local normalTexture = self.NormalTexture
-					if (ActionHasRange(self.action) and IsActionInRange(self.action) == false) then
+					if (C_ActionBar_HasRangeRequirements(self.action) and C_ActionBar_IsActionInRange(self.action) == false) then
 						icon:SetVertexColor(0.8, 0.1, 0.1)
 						if (normalTexture ~= nil) then
 							normalTexture:SetVertexColor(0.8, 0.1, 0.1)
@@ -9941,7 +10097,7 @@ function ClassicUI:HookRedRangeIcons()
 						self.redRangeRed = true
 					else
 						if isUsable == nil or notEnoughMana == nil then
-							isUsable, notEnoughMana = IsUsableAction(self.action)
+							isUsable, notEnoughMana = C_ActionBar_IsUsableAction(self.action)
 						end
 						if (isUsable) then
 							icon:SetVertexColor(1.0, 1.0, 1.0)
@@ -9978,7 +10134,7 @@ function ClassicUI:HookRedRangeIcons()
 				local normalTexture = self.NormalTexture
 				local action = self.action
 				if (action) then
-					local isUsable, notEnoughMana = IsUsableAction(action)
+					local isUsable, notEnoughMana = C_ActionBar_IsUsableAction(action)
 					if (isUsable) then
 						icon:SetVertexColor(1.0, 1.0, 1.0)
 						if (normalTexture ~= nil) then
@@ -10004,7 +10160,7 @@ function ClassicUI:HookRedRangeIcons()
 				self.redRangeRed = false
 			end
 		end)
-		for i = 1, 12 do
+		for i = 1, ClassicUI.NUM_ACTIONBAR_BUTTONS do
 			local actionButton
 			actionButton = _G["ExtraActionButton"..i]
 			if (actionButton) then
@@ -10030,10 +10186,6 @@ function ClassicUI:HookRedRangeIcons()
 			if (actionButton) then
 				HookRRActionBarButtonUpdateUsable(actionButton)
 			end
-			actionButton = _G["PetActionButton"..i]
-			if (actionButton) then
-				HookRRActionBarButtonUpdateUsable(actionButton)
-			end
 			actionButton = _G["StanceButton"..i]
 			if (actionButton) then
 				HookRRActionBarButtonUpdateUsable(actionButton)
@@ -10047,12 +10199,18 @@ function ClassicUI:HookRedRangeIcons()
 				HookRRActionBarButtonUpdateUsable(actionButton)
 			end
 		end
+		for i = 1, ClassicUI.NUM_PET_ACTION_SLOTS do
+			local actionButton = _G["PetActionButton"..i]
+			if (actionButton) then
+				HookRRActionBarButtonUpdateUsable(actionButton)
+			end
+		end
 		ActionBarController:HookScript("OnEvent", function(self, event, ...)	-- Needed because Blizzard doesn't update the range text color on action bar page change
 			if (event == "ACTIONBAR_PAGE_CHANGED") then
-				for i = 1, 12 do
+				for i = 1, ClassicUI.NUM_ACTIONBAR_BUTTONS do
 					local actionButton = _G["ActionButton"..i]
 					if (actionButton) then
-						local valid = IsActionInRange(actionButton.action)
+						local valid = C_ActionBar_IsActionInRange(actionButton.action)
 						local checksRange = (valid ~= nil)
 						local inRange = checksRange and valid
 						ActionButton_UpdateRangeIndicator(actionButton, checksRange, inRange)
@@ -10064,255 +10222,562 @@ function ClassicUI:HookRedRangeIcons()
 	end
 end
 
--- Function to hook the "UpdateUsable" function of actionButtons for the GreyOnCooldown functionality
-ClassicUI.HookGOCActionBarButtonUpdateUsable = function(actionBarButton)
-	if ((ActionButtonGreyOnCooldownCUI_UpdateUsable == nil) or (type(ActionButtonGreyOnCooldownCUI_UpdateUsable) ~= "function")) then
-		function ActionButtonGreyOnCooldownCUI_UpdateUsable(self)
-			if (ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturateUnusableActions) then	-- cached db value
-				if ((not self.onCooldown) or (self.onCooldown == 0)) then
-					local icon = self.icon
-					local spellID = self.spellID
-					local action = self.action
-					if (icon) then
-						if (action and type(action)~="table" and type(action)~="string") then
-							local isUsable, notEnoughMana = IsUsableAction(action)
-							if (isUsable or notEnoughMana) then
-								if (icon:IsDesaturated()) then
-									icon:SetDesaturated(false)
-								end
-							else
-								if (not icon:IsDesaturated()) then
-									icon:SetDesaturated(true)
-								end
+-- Extra Option: GreyOnCooldown. Function to call the GOCUpdateCheck() for all action buttons
+function ClassicUI:GOC_UpdateAllActionButtons()
+	for i = 1, ClassicUI.NUM_ACTIONBAR_BUTTONS do
+		local actionButton
+		actionButton = _G["ExtraActionButton"..i]
+		if (actionButton and actionButton.GOCUpdateCheck) then
+			actionButton:GOCUpdateCheck()
+		end
+		actionButton = _G["ActionButton"..i]
+		if (actionButton and actionButton.GOCUpdateCheck) then
+			actionButton:GOCUpdateCheck()
+		end
+		actionButton = _G["MultiBarBottomLeftButton"..i]
+		if (actionButton and actionButton.GOCUpdateCheck) then
+			actionButton:GOCUpdateCheck()
+		end
+		actionButton = _G["MultiBarBottomRightButton"..i]
+		if (actionButton and actionButton.GOCUpdateCheck) then
+			actionButton:GOCUpdateCheck()
+		end
+		actionButton = _G["MultiBarLeftButton"..i]
+		if (actionButton and actionButton.GOCUpdateCheck) then
+			actionButton:GOCUpdateCheck()
+		end
+		actionButton = _G["MultiBarRightButton"..i]
+		if (actionButton and actionButton.GOCUpdateCheck) then
+			actionButton:GOCUpdateCheck()
+		end
+		actionButton = _G["StanceButton"..i]
+		if (actionButton and actionButton.GOCUpdateCheck) then
+			actionButton:GOCUpdateCheck()
+		end
+		actionButton = _G["PossessButton"..i]
+		if (actionButton and actionButton.GOCUpdateCheck) then
+			actionButton:GOCUpdateCheck()
+		end
+		actionButton = _G["OverrideActionBarButton"..i]
+		if (actionButton and actionButton.GOCUpdateCheck) then
+			actionButton:GOCUpdateCheck()
+		end
+	end
+	for i = 1, 40 do
+		local actionButton = _G["SpellFlyoutPopupButton"..i]
+		if (actionButton and actionButton.GOCUpdateCheck) then
+			actionButton:GOCUpdateCheck()
+		end
+	end
+	if (ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.desaturatePetActionButtons) then
+		for i = 1, ClassicUI.NUM_PET_ACTION_SLOTS do
+			local actionButton = _G["PetActionButton"..i]
+			if (actionButton and actionButton.GOCUpdateCheck) then
+				actionButton:GOCUpdateCheck()
+			end
+		end
+	end
+end
+
+-- Extra Option: GreyOnCooldown. Function to update the RegisteredActionSpells table (ActionButtons)
+ClassicUI.GOC_UpdateActionButtonAction = function(button)
+	if (button.action) then
+		local actionInfoType, actionInfoID, actionInfoSubType = GetActionInfo(button.action)
+		if (actionInfoType == "spell" or actionInfoSubType == "spell" or actionInfoSubType == "pet") then
+			if (actionInfoID ~= button._actionSpellId) then
+				if (button._actionSpellId and ClassicUI.GOC_RegisteredActionSpells[button._actionSpellId]) then
+					ClassicUI.GOC_RegisteredActionSpells[button._actionSpellId][button] = nil
+				end
+				if (ClassicUI.GOC_RegisteredActionSpells[actionInfoID] == nil) then
+					ClassicUI.GOC_RegisteredActionSpells[actionInfoID] = { }
+				end
+				ClassicUI.GOC_RegisteredActionSpells[actionInfoID][button] = true
+				button._actionSpellId = actionInfoID
+			end
+		else
+			if (button._actionSpellId and ClassicUI.GOC_RegisteredActionSpells[button._actionSpellId]) then
+				ClassicUI.GOC_RegisteredActionSpells[button._actionSpellId][button] = nil
+			end
+			button._actionSpellId = nil
+		end
+	else
+		if (button._actionSpellId and ClassicUI.GOC_RegisteredActionSpells[button._actionSpellId]) then
+			ClassicUI.GOC_RegisteredActionSpells[button._actionSpellId][button] = nil
+		end
+		button._actionSpellId = nil
+	end
+	if (button.GOCUpdateCheck) then
+		button:GOCUpdateCheck()
+	end
+end
+
+-- Extra Option: GreyOnCooldown. Function to update the RegisteredActionSpells table (PetActionButtons)
+ClassicUI.GOC_UpdatePetActionButtonAction = function(button)
+	local index = button.index or button.id
+	if (index) then
+		local _, _, _, _, _, _, spellID = GetPetActionInfo(index)
+		if (spellID ~= nil) then
+			if (spellID ~= button._actionSpellId) then
+				if (button._actionSpellId and ClassicUI.GOC_RegisteredActionSpells[button._actionSpellId]) then
+					ClassicUI.GOC_RegisteredActionSpells[button._actionSpellId][button] = nil
+				end
+				if (ClassicUI.GOC_RegisteredActionSpells[spellID] == nil) then
+					ClassicUI.GOC_RegisteredActionSpells[spellID] = { }
+				end
+				ClassicUI.GOC_RegisteredActionSpells[spellID][button] = true
+				button._actionSpellId = spellID
+			end
+		else
+			if (button._actionSpellId and ClassicUI.GOC_RegisteredActionSpells[button._actionSpellId]) then
+				ClassicUI.GOC_RegisteredActionSpells[button._actionSpellId][button] = nil
+			end
+			button._actionSpellId = nil
+		end
+	else
+		if (button._actionSpellId and ClassicUI.GOC_RegisteredActionSpells[button._actionSpellId]) then
+			ClassicUI.GOC_RegisteredActionSpells[button._actionSpellId][button] = nil
+		end
+		button._actionSpellId = nil
+	end
+	if (button.GOCUpdateCheck) then
+		button:GOCUpdateCheck()
+	end
+end
+
+-- Extra Option: GreyOnCooldown. Main GOC ActionButton Update function to desaturate the entire action icon when the spell is on cooldown or unusable
+ClassicUI.GOC_GOCActionButtonUpdateCheck = function(self, isOnGCD)
+	if not(self.icon) then return end
+	local duration
+	local useGCDCurve = false
+	if (self.action) then
+		if (ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturateUnusableActions) then
+			local isUsable, notEnoughMana = C_ActionBar_IsUsableAction(self.action)
+			if not(isUsable or notEnoughMana) then
+				self.icon:SetDesaturation(1)
+				return
+			end
+		end
+		duration = C_ActionBar_GetActionCooldownDuration(self.action)
+		if duration:HasSecretValues() then
+			local actionInfoType, actionInfoID, actionInfoSubType = GetActionInfo(self.action)
+			if actionInfoType == "item" then
+				local _, durationSeconds, enableCooldownTimer = C_Item_GetItemCooldown(actionInfoID)
+				if (isOnGCD == nil) then
+					isOnGCD = (enableCooldownTimer and durationSeconds > 0 and durationSeconds <= ClassicUI.GOC_GCD) or false
+				end
+				if not(isOnGCD) then
+					duration = durationSeconds
+				else
+					duration = nil
+				end
+			else
+				if (isOnGCD == nil) then
+					local actionCooldownInfo = C_ActionBar_GetActionCooldown(self.action)
+					if actionCooldownInfo then
+						isOnGCD = actionCooldownInfo.isOnGCD or false
+						if not(isOnGCD) then
+							if actionInfoType == "macro" and actionInfoSubType=="item" then
+								useGCDCurve = true
 							end
-						elseif (spellID and type(spellID)~="table" and type(spellID)~="string") then
-							local isUsable, notEnoughMana = C_Spell.IsSpellUsable(spellID)
-							if (isUsable or notEnoughMana) then
-								if (icon:IsDesaturated()) then
-									icon:SetDesaturated(false)
-								end
-							else
-								if (not icon:IsDesaturated()) then
-									icon:SetDesaturated(true)
-								end
-							end
+						end
+					end
+				end
+				if isOnGCD then
+					duration = nil
+				end
+			end
+		else
+			if not(isOnGCD) then
+				local actionCooldownInfo = C_ActionBar_GetActionCooldown(self.action)
+				if actionCooldownInfo then
+					isOnGCD = actionCooldownInfo.isOnGCD or (not(issecretvalue(actionCooldownInfo.activeCategory)) and actionCooldownInfo.activeCategory == 2316) or false
+					if not(isOnGCD) then
+						local actionInfoType, _, actionInfoSubType = GetActionInfo(self.action)
+						if actionInfoType ~= "spell" and actionInfoSubType~="spell" and actionInfoSubType~="pet" then
+							isOnGCD = (actionCooldownInfo.isEnabled and duration:GetRemainingDuration() > 0 and duration:GetTotalDuration() <= ClassicUI.GOC_GCD) or false
+						end
+					end
+				end
+			end
+			if isOnGCD then
+				duration = nil
+			end
+		end
+	elseif (self.spellID) then
+		if (ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturateUnusableActions) then
+			local isUsable, notEnoughMana = C_Spell_IsSpellUsable(self.spellID)
+			if not(isUsable or notEnoughMana) then
+				self.icon:SetDesaturation(1)
+				return
+			end
+		end
+		if (isOnGCD == nil) then
+			local spellCooldownInfo = C_Spell_GetSpellCooldown(self.spellID)
+			if spellCooldownInfo then
+				isOnGCD = spellCooldownInfo.isOnGCD or (not(issecretvalue(spellCooldownInfo.activeCategory)) and spellCooldownInfo.activeCategory == 2316) or false
+			end
+		end
+		if not(isOnGCD) then
+			duration = C_Spell_GetSpellCooldownDuration(self.spellID)
+		end
+	end
+	if duration then
+		if type(duration)=="number" then
+			if (duration > 0) then
+				self.icon:SetDesaturation(1)
+			else
+				self.icon:SetDesaturation(0)
+			end
+		else
+			if duration:HasSecretValues() then
+				if not(useGCDCurve) then
+					self.icon:SetDesaturation(duration:EvaluateRemainingDuration(ClassicUI.GOC_DesaturationCurve))
+				else
+					self.icon:SetDesaturation(duration:EvaluateRemainingDuration(ClassicUI.GOC_DesaturationCurveGCD))
+				end
+			else
+				if (duration:GetRemainingDuration() > 0) then
+					self.icon:SetDesaturation(1)
+				else
+					self.icon:SetDesaturation(0)
+				end
+			end
+		end
+	else
+		self.icon:SetDesaturation(0)
+	end
+end
+
+-- Extra Option: GreyOnCooldown. Main GOC PetActionButton Update function to desaturate the entire action icon when the spell is on cooldown or unusable
+ClassicUI.GOC_GOCPetActionButtonUpdateCheck = function(self)
+	local index = self.index or self.id
+	if not(self.icon and index and GetPetActionInfo(index)) then return end
+	if (ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturatePetActionButtons) then
+		if (ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturateUnusableActions) then
+			if not(GetPetActionSlotUsable(index)) then
+				self.icon:SetDesaturation(1)
+				return
+			end
+		end
+		local _, duration, enable = GetPetActionCooldown(index)
+		if (enable and duration and duration > 0 and duration > ClassicUI.GOC_GCD) then
+			self.icon:SetDesaturation(1)
+		else
+			self.icon:SetDesaturation(0)
+		end
+	else
+		self.icon:SetDesaturation(0)
+	end
+end
+
+-- Extra Option: GreyOnCooldown. Hook function to update the ActionButton (self)
+ClassicUI.GOC_ButtonUpdateHookFunc = function(self)
+	if (self.GOCUpdateCheck) then
+		self:GOCUpdateCheck()
+	end
+end
+
+-- Extra Option: GreyOnCooldown. Hook function to update the ActionButton (self:GetParent())
+ClassicUI.GOC_ButtonParentUpdateHookFunc = function(self)
+	if (self:GetParent().GOCUpdateCheck) then
+		self:GetParent():GOCUpdateCheck()
+	end
+end
+
+-- Extra Option: GreyOnCooldown. Function that establishes the needed GOC hooks for an ActionButton
+function ClassicUI:GOC_HookGOCActionButtonUpdate(button)
+	-- Establish the main GOC ActionButton Update function
+	if (GREYONCOOLDOWN_UPDATECHECK_SET_AB == nil) then
+		GREYONCOOLDOWN_UPDATECHECK_SET_AB = {}
+	end
+	if not(GREYONCOOLDOWN_UPDATECHECK_SET_AB[button]) then
+		button.GOCUpdateCheck = ActionButton_GreyOnCooldown_UpdateCheck
+		GREYONCOOLDOWN_UPDATECHECK_SET_AB[button] = true
+	end
+	-- ActionButton essentials GOC hooks (AB hooks: OnCooldownDone, OnShow, OnHide, Update, UpdateUsable)
+	if button.cooldown then
+		if (GREYONCOOLDOWN_ONCOOLDOWNDONE_HOOKED_ABC == nil) then
+			GREYONCOOLDOWN_ONCOOLDOWNDONE_HOOKED_ABC = {}
+		end
+		if not(GREYONCOOLDOWN_ONCOOLDOWNDONE_HOOKED_ABC[button]) then
+			button.cooldown:HookScript("OnCooldownDone", ClassicUI.GOC_ButtonParentUpdateHookFunc)
+			GREYONCOOLDOWN_ONCOOLDOWNDONE_HOOKED_ABC[button] = true
+		end
+		if (GREYONCOOLDOWN_ONSHOW_HOOKED_ABC == nil) then
+			GREYONCOOLDOWN_ONSHOW_HOOKED_ABC = {}
+		end
+		if not(GREYONCOOLDOWN_ONSHOW_HOOKED_ABC[button]) then
+			button.cooldown:HookScript("OnShow", ClassicUI.GOC_ButtonParentUpdateHookFunc)
+			GREYONCOOLDOWN_ONSHOW_HOOKED_ABC[button] = true
+		end
+		if (GREYONCOOLDOWN_ONHIDE_HOOKED_ABC == nil) then
+			GREYONCOOLDOWN_ONHIDE_HOOKED_ABC = {}
+		end
+		if not(GREYONCOOLDOWN_ONHIDE_HOOKED_ABC[button]) then
+			button.cooldown:HookScript("OnHide", ClassicUI.GOC_ButtonParentUpdateHookFunc)
+			GREYONCOOLDOWN_ONHIDE_HOOKED_ABC[button] = true
+		end
+	end
+	if type(button.Update)=="function" then
+		if (GREYONCOOLDOWN_UPDATE_HOOKED_AB == nil) then
+			GREYONCOOLDOWN_UPDATE_HOOKED_AB = {}
+		end
+		if not(GREYONCOOLDOWN_UPDATE_HOOKED_AB[button]) then
+			hooksecurefunc(button, "Update", ClassicUI.GOC_ButtonUpdateHookFunc)
+			GREYONCOOLDOWN_UPDATE_HOOKED_AB[button] = true
+		end
+	end
+	if type(button.UpdateUsable)=="function" then
+		if (GREYONCOOLDOWN_UPDATEUSABLE_HOOKED_AB == nil) then
+			GREYONCOOLDOWN_UPDATEUSABLE_HOOKED_AB = {}
+		end
+		if not(GREYONCOOLDOWN_UPDATEUSABLE_HOOKED_AB[button]) then
+			hooksecurefunc(button, "UpdateUsable", ClassicUI.GOC_ButtonUpdateHookFunc)
+			GREYONCOOLDOWN_UPDATEUSABLE_HOOKED_AB[button] = true
+		end
+	end
+	-- ActionButton GOC hooks to update the RegisteredActionSpells when needed (AB hooks: UpdateAction)
+	if type(button.UpdateAction) == "function" then
+		if (GREYONCOOLDOWN_UPDATEACTION_HOOKED_AB == nil) then
+			GREYONCOOLDOWN_UPDATEACTION_HOOKED_AB = {}
+		end
+		if not(GREYONCOOLDOWN_UPDATEACTION_HOOKED_AB[button]) then
+			hooksecurefunc(button, "UpdateAction", ClassicUI.GOC_UpdateActionButtonAction)
+			GREYONCOOLDOWN_UPDATEACTION_HOOKED_AB[button] = true
+		end
+	end
+	ClassicUI.GOC_UpdateActionButtonAction(button)
+end
+
+-- Extra Option: GreyOnCooldown. Function that establishes the needed GOC hooks for an PetActionButton
+function ClassicUI:GOC_HookGOCPetActionButtonUpdate(button)
+	-- Establish the main GOC PetActionButton Update function
+	if (GREYONCOOLDOWN_UPDATECHECK_SET_AB == nil) then
+		GREYONCOOLDOWN_UPDATECHECK_SET_AB = {}
+	end
+	if not(GREYONCOOLDOWN_UPDATECHECK_SET_AB[button]) then
+		button.GOCUpdateCheck = PetActionButton_GreyOnCooldown_UpdateCheck
+		GREYONCOOLDOWN_UPDATECHECK_SET_AB[button] = true
+	end
+	-- PetActionButton essentials GOC hooks (AB hooks: OnCooldownDone, OnShow, OnHide, Update, UpdateCooldowns)
+	if button.cooldown then
+		if (GREYONCOOLDOWN_ONCOOLDOWNDONE_HOOKED_ABC == nil) then
+			GREYONCOOLDOWN_ONCOOLDOWNDONE_HOOKED_ABC = {}
+		end
+		if not(GREYONCOOLDOWN_ONCOOLDOWNDONE_HOOKED_ABC[button]) then
+			button.cooldown:HookScript("OnCooldownDone", ClassicUI.GOC_ButtonParentUpdateHookFunc)
+			GREYONCOOLDOWN_ONCOOLDOWNDONE_HOOKED_ABC[button] = true
+		end
+		if (GREYONCOOLDOWN_ONSHOW_HOOKED_ABC == nil) then
+			GREYONCOOLDOWN_ONSHOW_HOOKED_ABC = {}
+		end
+		if not(GREYONCOOLDOWN_ONSHOW_HOOKED_ABC[button]) then
+			button.cooldown:HookScript("OnShow", ClassicUI.GOC_ButtonParentUpdateHookFunc)
+			GREYONCOOLDOWN_ONSHOW_HOOKED_ABC[button] = true
+		end
+		if (GREYONCOOLDOWN_ONHIDE_HOOKED_ABC == nil) then
+			GREYONCOOLDOWN_ONHIDE_HOOKED_ABC = {}
+		end
+		if not(GREYONCOOLDOWN_ONHIDE_HOOKED_ABC[button]) then
+			button.cooldown:HookScript("OnHide", ClassicUI.GOC_ButtonParentUpdateHookFunc)
+			GREYONCOOLDOWN_ONHIDE_HOOKED_ABC[button] = true
+		end
+	end
+	if type(button.Update)=="function" then
+		if (GREYONCOOLDOWN_UPDATE_HOOKED_AB == nil) then
+			GREYONCOOLDOWN_UPDATE_HOOKED_AB = {}
+		end
+		if not(GREYONCOOLDOWN_UPDATE_HOOKED_AB[button]) then
+			hooksecurefunc(button, "Update", ClassicUI.GOC_ButtonUpdateHookFunc)
+			GREYONCOOLDOWN_UPDATE_HOOKED_AB[button] = true
+		end
+	end
+	if not(GREYONCOOLDOWN_UPDATECOOLDOWNS_HOOKED_PAB) then
+		if (PetActionBar ~= nil and type(PetActionBar.UpdateCooldowns) == "function") then
+			hooksecurefunc(PetActionBar, "UpdateCooldowns", function(self)
+				for i = 1, ClassicUI.NUM_PET_ACTION_SLOTS do
+					local button = self.actionButtons[i]
+					if button then
+						ClassicUI.GOC_UpdatePetActionButtonAction(button)
+					end
+				end
+			end)
+		end
+		GREYONCOOLDOWN_UPDATECOOLDOWNS_HOOKED_PAB = true
+	end
+	ClassicUI.GOC_UpdatePetActionButtonAction(button)
+end
+
+-- Extra Option: GreyOnCooldown. Function to handle the SPELL_UPDATE_COOLDOWN event
+function ClassicUI:SPELL_UPDATE_COOLDOWN(spellID, baseSpellID, category, startRecoveryCategory)
+	if (spellID == nil) then
+		spellID = baseSpellID
+		if (spellID == nil) then
+			return
+		end
+	end
+	local spellCooldownInfo = C_Spell_GetSpellCooldown(spellID)
+	if (spellCooldownInfo) then
+		if (ClassicUI.GOC_RegisteredActionSpells[spellID]) then
+			for k, _ in pairs(ClassicUI.GOC_RegisteredActionSpells[spellID]) do
+				if (k.GOCUpdateCheck) then
+					k:GOCUpdateCheck(spellCooldownInfo.isOnGCD or false)
+				end
+			end
+		end
+	end
+	if (ClassicUI.GOC_RelatedActionSpells[spellID] ~= nil) then
+		for _, relatedSpellID in pairs(ClassicUI.GOC_RelatedActionSpells[spellID]) do
+			spellCooldownInfo = C_Spell_GetSpellCooldown(relatedSpellID)
+			if (spellCooldownInfo) then
+				if (ClassicUI.GOC_RegisteredActionSpells[relatedSpellID]) then
+					for k, _ in pairs(ClassicUI.GOC_RegisteredActionSpells[relatedSpellID]) do
+						if (k.GOCUpdateCheck) then
+							k:GOCUpdateCheck(spellCooldownInfo.isOnGCD or false)
 						end
 					end
 				end
 			end
 		end
 	end
-	if (actionBarButton ~= nil and actionBarButton.UpdateUsable ~= nil) then
-		if (GREYONCOOLDOWN_UPDATEUSABLE_HOOKED_AB == nil) then
-			GREYONCOOLDOWN_UPDATEUSABLE_HOOKED_AB = {}
-		end
-		if not(GREYONCOOLDOWN_UPDATEUSABLE_HOOKED_AB[actionBarButton]) then
-			hooksecurefunc(actionBarButton, "UpdateUsable", ActionButtonGreyOnCooldownCUI_UpdateUsable)
-			GREYONCOOLDOWN_UPDATEUSABLE_HOOKED_AB[actionBarButton] = true
-		end
+end
+
+-- Extra Option: GreyOnCooldown. Function to set hooks for SpellFlyout frame to detect the newly created SpellFlyoutButtons
+function ClassicUI:GOC_HookGOCSpellFlyout()
+	if not(GREYONCOOLDOWN_SPELLFLYOUT_HOOKED) then
+		hooksecurefunc(SpellFlyout, "Toggle", function(self, flyoutButton, flyoutID, isActionBar, specID, showFullTooltip, reason)
+			if (not(self:IsShown()) and self.glyphActivating) then
+				return
+			end
+			if (not(self:IsShown()) and self.flyoutButton == nil) then
+				return
+			end
+			local offSpec = specID and (specID ~= 0)
+			local _, _, numSlots, isKnown = GetFlyoutInfo(flyoutID)
+			if ((not isKnown and not offSpec) or numSlots == 0) then
+				return
+			end
+			local numButtons = 0
+			for i = 1, numSlots do
+				local spellID, _, isKnownSlot, _, slotSpecID = GetFlyoutSlotInfo(flyoutID, i)
+				local visible = true
+				local petIndex, petName = GetCallPetSpellInfo(spellID)
+				if (isActionBar and petIndex and (not petName or petName == "")) then
+					visible = false
+				end
+				if (((not offSpec or slotSpecID == 0) and visible and isKnownSlot) or (offSpec and slotSpecID == specID)) then
+					local button = _G["SpellFlyoutPopupButton"..numButtons+1]
+					if (button ~= nil) then
+						ClassicUI:GOC_HookGOCActionButtonUpdate(button)
+					end
+					numButtons = numButtons+1
+				end
+			end
+		end)
+		GREYONCOOLDOWN_SPELLFLYOUT_HOOKED = true
 	end
 end
 
--- Function to hook some functions from the CooldownViewer Blizzard for the GreyOnCooldown functionality
-ClassicUI.HookGOCCooldownViewer = function(cooldownViewer)
-	if ((CooldownViewerGreyOnCooldownCUI_RefreshIcon == nil) or (type(CooldownViewerGreyOnCooldownCUI_RefreshIcon) ~= "function")) then
-		function CooldownViewerGreyOnCooldownCUI_RefreshIcon(self)
-			if (self.layoutIndex == nil or not(ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturateUnusableActions)) then return end	-- cached db value
-			local spellID = self:GetSpellID()
-			if not spellID then return end
-			local iconTexture = self:GetIconTexture()
-			if not iconTexture then return end
-			local desaturated = self.cooldownDesaturated and not(self:IsExpired())
-			if (desaturated) then
-				if not(iconTexture:IsDesaturated()) then
-					iconTexture:SetDesaturated(true)
-				end
-			else
-				local isUsable, notEnoughMana = C_Spell.IsSpellUsable(spellID)
-				local forceDesaturated = not(isUsable) and not(notEnoughMana)
-				if (forceDesaturated) then
-					if not(iconTexture:IsDesaturated()) then
-						iconTexture:SetDesaturated(true)
-					end
-				else
-					if (iconTexture:IsDesaturated()) then
-						iconTexture:SetDesaturated(false)
-					end
-				end
-			end
+-- Extra Option: GreyOnCooldown. Function to iterate through ActionButtons and hook them
+function ClassicUI:GOC_HookGOCActionButtons()
+	for i = 1, ClassicUI.NUM_ACTIONBAR_BUTTONS do
+		local actionButton
+		actionButton = _G["ExtraActionButton"..i]
+		if (actionButton) then
+			ClassicUI:GOC_HookGOCActionButtonUpdate(actionButton)
+		end
+		actionButton = _G["ActionButton"..i]
+		if (actionButton) then
+			ClassicUI:GOC_HookGOCActionButtonUpdate(actionButton)
+		end
+		actionButton = _G["MultiBarBottomLeftButton"..i]
+		if (actionButton) then
+			ClassicUI:GOC_HookGOCActionButtonUpdate(actionButton)
+		end
+		actionButton = _G["MultiBarBottomRightButton"..i]
+		if (actionButton) then
+			ClassicUI:GOC_HookGOCActionButtonUpdate(actionButton)
+		end
+		actionButton = _G["MultiBarLeftButton"..i]
+		if (actionButton) then
+			ClassicUI:GOC_HookGOCActionButtonUpdate(actionButton)
+		end
+		actionButton = _G["MultiBarRightButton"..i]
+		if (actionButton) then
+			ClassicUI:GOC_HookGOCActionButtonUpdate(actionButton)
+		end
+		actionButton = _G["StanceButton"..i]
+		if (actionButton) then
+			ClassicUI:GOC_HookGOCActionButtonUpdate(actionButton)
+		end
+		actionButton = _G["PossessButton"..i]
+		if (actionButton) then
+			ClassicUI:GOC_HookGOCActionButtonUpdate(actionButton)
+		end
+		actionButton = _G["OverrideActionBarButton"..i]
+		if (actionButton) then
+			ClassicUI:GOC_HookGOCActionButtonUpdate(actionButton)
 		end
 	end
-	if ((CooldownViewerGreyOnCooldownCUI_RefreshLayout == nil) or (type(CooldownViewerGreyOnCooldownCUI_RefreshLayout) ~= "function")) then
-		function CooldownViewerGreyOnCooldownCUI_RefreshLayout(self)
-			if (ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturateUnusableActions) then	-- cached db value
-				for k, _ in self.itemFramePool:EnumerateActive() do
-					if not(GREYONCOOLDOWN_UPDATEUSABLE_HOOKED_CV_RIC[k]) then
-						hooksecurefunc(k, "RefreshIconDesaturation", CooldownViewerGreyOnCooldownCUI_RefreshIcon)
-						GREYONCOOLDOWN_UPDATEUSABLE_HOOKED_CV_RIC[k] = true
-					end
-					if not(GREYONCOOLDOWN_UPDATEUSABLE_HOOKED_CV_RID[k]) then
-						hooksecurefunc(k, "RefreshIconColor", CooldownViewerGreyOnCooldownCUI_RefreshIcon)
-						GREYONCOOLDOWN_UPDATEUSABLE_HOOKED_CV_RID[k] = true
-					end
-				end
-			end
+	for i = 1, 40 do
+		local actionButton = _G["SpellFlyoutPopupButton"..i]
+		if (actionButton) then
+			ClassicUI:GOC_HookGOCActionButtonUpdate(actionButton)
 		end
 	end
-	if (cooldownViewer ~= nil and cooldownViewer.itemFramePool ~= nil) then
-		if (GREYONCOOLDOWN_UPDATEUSABLE_HOOKED_CV_RL == nil) then
-			GREYONCOOLDOWN_UPDATEUSABLE_HOOKED_CV_RL = {}
+	-- SpellFlyoutButtons are created dynamically as needed. This needs to be monitored to apply GOC hooks to new ones.
+	-- Controlled in the ClassicUI 'SpellFlyout.Toogle' hook if ClassicUI core is enabled
+	if not(ClassicUI:IsEnabled()) then
+		ClassicUI:GOC_HookGOCSpellFlyout()
+	end
+	if not(GREYONCOOLDOWN_ACTIONBUTTON_UPDATECOOLDOWN_HOOKED) then
+		hooksecurefunc("ActionButton_UpdateCooldown", ClassicUI.GOC_ButtonUpdateHookFunc)
+		GREYONCOOLDOWN_ACTIONBUTTON_UPDATECOOLDOWN_HOOKED = true
+	end
+	if not(GREYONCOOLDOWN_MULTICASTSPELLBUTTON_UPDATECOOLDOWN_HOOKED) then
+		hooksecurefunc("MultiCastSpellButton_UpdateCooldown", ClassicUI.GOC_ButtonUpdateHookFunc)
+		GREYONCOOLDOWN_MULTICASTSPELLBUTTON_UPDATECOOLDOWN_HOOKED = true
+	end
+end
+
+-- Extra Option: GreyOnCooldown. Function to iterate through PetActionButtons and hook them
+function ClassicUI:GOC_HookGOCPetActionButtons()
+	for i = 1, ClassicUI.NUM_PET_ACTION_SLOTS do
+		local petActionButton = _G["PetActionButton"..i]
+		if (petActionButton) then
+			ClassicUI:GOC_HookGOCPetActionButtonUpdate(petActionButton)
 		end
-		if (GREYONCOOLDOWN_UPDATEUSABLE_HOOKED_CV_RIC == nil) then
-			GREYONCOOLDOWN_UPDATEUSABLE_HOOKED_CV_RIC = {}
-		end
-		if (GREYONCOOLDOWN_UPDATEUSABLE_HOOKED_CV_RID == nil) then
-			GREYONCOOLDOWN_UPDATEUSABLE_HOOKED_CV_RID = {}
-		end
-		if not(GREYONCOOLDOWN_UPDATEUSABLE_HOOKED_CV_RL[cooldownViewer]) then
-			hooksecurefunc(cooldownViewer, "RefreshLayout", CooldownViewerGreyOnCooldownCUI_RefreshLayout)
-			GREYONCOOLDOWN_UPDATEUSABLE_HOOKED_CV_RL[cooldownViewer] = true
-		end
-		CooldownViewerGreyOnCooldownCUI_RefreshLayout(cooldownViewer)
 	end
 end
 
 -- Extra Option: GreyOnCooldown. Main function to desaturate the entire action icon when the spell is on cooldown or unusable
-function ClassicUI:HookGreyOnCooldownIcons()
-	if (not GREYONCOOLDOWN_HOOKED) then
-		local UpdateFuncCache = {}
-		function ActionButtonGreyOnCooldownCUI_UpdateCooldown(self, expectedUpdate)
-			local icon = self.icon
-			local spellID = self.spellID
-			local action = self.action
-			if (icon and ((action and type(action)~="table" and type(action)~="string") or (spellID and type(spellID)~="table" and type(spellID)~="string"))) then
-				local start, duration
-				if (spellID) then
-					local spellCooldownInfo = C_Spell.GetSpellCooldown(spellID) or {startTime = 0, duration = 0}
-					start, duration = spellCooldownInfo.startTime, spellCooldownInfo.duration
-				else
-					start, duration = GetActionCooldown(action)
-				end
-				if (duration >= ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_minDuration) then	-- cached db value
-					if start > 3085367 and start <= 4294967.295 then
-						start = start - 4294967.296
-					end
-					if ((not self.onCooldown) or (self.onCooldown == 0)) then
-						self.onCooldown = start + duration
-						local nextTime = start + duration - GetTime() - 0.1
-						if (nextTime < -0.1) then
-							nextTime = 0.025
-						elseif (nextTime < 0) then
-							nextTime = 0.051
-						end
-						if nextTime <= 4294967.295 then
-							local func = UpdateFuncCache[self]
-							if not func then
-								func = function() ActionButtonGreyOnCooldownCUI_UpdateCooldown(self, true) end
-								UpdateFuncCache[self] = func
-							end
-							C_Timer.After(nextTime, func)
-						end
-					elseif (expectedUpdate or (self.onCooldown > start + duration + 0.025)) then
-						if (self.onCooldown ~= start + duration) then
-							self.onCooldown = start + duration
-						end
-						local nextTime = 0.025
-						local timeRemains = self.onCooldown - GetTime()
-						if (timeRemains > 0.041) then
-							nextTime = timeRemains / 1.5
-						end
-						if nextTime <= 4294967.295 then
-							local func = UpdateFuncCache[self]
-							if not func then
-								func = function() ActionButtonGreyOnCooldownCUI_UpdateCooldown(self, true) end
-								UpdateFuncCache[self] = func
-							end
-							C_Timer.After(nextTime, func)
-						end
-					end
-					if (not icon:IsDesaturated()) then
-						icon:SetDesaturated(true)
-					end
-				else
-					self.onCooldown = 0
-					if (ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturateUnusableActions and action) then	-- cached db value
-						local isUsable, notEnoughMana = IsUsableAction(action)
-						if (isUsable or notEnoughMana) then
-							if (icon:IsDesaturated()) then
-								icon:SetDesaturated(false)
-							end
-						else
-							if (not icon:IsDesaturated()) then
-								icon:SetDesaturated(true)
-							end
-						end
-					else
-						if (icon:IsDesaturated()) then
-							icon:SetDesaturated(false)
-						end
-					end
-				end
-			end
+function ClassicUI:GOC_MainFunction()
+	-- Main desaturation Curve that distinguishes between zero and a non-zero value
+	ClassicUI.GOC_DesaturationCurve = C_CurveUtil.CreateCurve()
+	ClassicUI.GOC_DesaturationCurve:SetType(Enum.LuaCurveType.Step)
+	ClassicUI.GOC_DesaturationCurve:AddPoint(0, 0)
+	ClassicUI.GOC_DesaturationCurve:AddPoint(0.001, 1)
+	-- Alternative desaturation Curve that establishes the GCD duration as the step-point (for cases where isOnGCD is not available/reliable)
+	ClassicUI.GOC_DesaturationCurveGCD = C_CurveUtil.CreateCurve()
+	ClassicUI.GOC_DesaturationCurveGCD:SetType(Enum.LuaCurveType.Step)
+	ClassicUI.GOC_DesaturationCurveGCD:AddPoint(0, 0)
+	ClassicUI.GOC_DesaturationCurveGCD:AddPoint(ClassicUI.GOC_GCD, 1)
+
+	-- Set ActionButton hooks to desaturate the entire action icon when the spell is on cooldown or unusable
+	if not(GREYONCOOLDOWN_HOOKED) then
+		ActionButton_GreyOnCooldown_UpdateCheck = ClassicUI.GOC_GOCActionButtonUpdateCheck
+		PetActionButton_GreyOnCooldown_UpdateCheck = ClassicUI.GOC_GOCPetActionButtonUpdateCheck
+		-- Register the SPELL_UPDATE_COOLDOWN event to update the AB (isOnGCD is updated at this event)
+		if not(ClassicUI.frame:IsEventRegistered("SPELL_UPDATE_COOLDOWN")) then
+			ClassicUI.frame:RegisterEvent("SPELL_UPDATE_COOLDOWN")
 		end
-		-- We hook to 'ActionButton_UpdateCooldown' instead of 'ActionButton_OnUpdate' because 'ActionButton_OnUpdate' is much more expensive. So, we need use C_Timer.After to trigger the function when cooldown ends.
-		hooksecurefunc('ActionButton_UpdateCooldown', ActionButtonGreyOnCooldownCUI_UpdateCooldown)
-		GREYONCOOLDOWN_HOOKED = true
-	end
-	if (ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.desaturateUnusableActions) then
-		if (not GREYONCOOLDOWN_UPDATEUSABLE_HOOKED) then
-			for i = 1, 12 do
-				local actionButton
-				actionButton = _G["ExtraActionButton"..i]
-				if (actionButton) then
-					ClassicUI.HookGOCActionBarButtonUpdateUsable(actionButton)
-				end
-				actionButton = _G["ActionButton"..i]
-				if (actionButton) then
-					ClassicUI.HookGOCActionBarButtonUpdateUsable(actionButton)
-				end
-				actionButton = _G["MultiBarBottomLeftButton"..i]
-				if (actionButton) then
-					ClassicUI.HookGOCActionBarButtonUpdateUsable(actionButton)
-				end
-				actionButton = _G["MultiBarBottomRightButton"..i]
-				if (actionButton) then
-					ClassicUI.HookGOCActionBarButtonUpdateUsable(actionButton)
-				end
-				actionButton = _G["MultiBarLeftButton"..i]
-				if (actionButton) then
-					ClassicUI.HookGOCActionBarButtonUpdateUsable(actionButton)
-				end
-				actionButton = _G["MultiBarRightButton"..i]
-				if (actionButton) then
-					ClassicUI.HookGOCActionBarButtonUpdateUsable(actionButton)
-				end
-				actionButton = _G["PetActionButton"..i]
-				if (actionButton) then
-					ClassicUI.HookGOCActionBarButtonUpdateUsable(actionButton)
-				end
-				actionButton = _G["StanceButton"..i]
-				if (actionButton) then
-					ClassicUI.HookGOCActionBarButtonUpdateUsable(actionButton)
-				end
-				actionButton = _G["PossessButton"..i]
-				if (actionButton) then
-					ClassicUI.HookGOCActionBarButtonUpdateUsable(actionButton)
-				end
-				actionButton = _G["OverrideActionBarButton"..i]
-				if (actionButton) then
-					ClassicUI.HookGOCActionBarButtonUpdateUsable(actionButton)
-				end
-			end
-			for i = 1, 40 do
-				local actionButton = _G["SpellFlyoutPopupButton"..i]
-				if (actionButton) then
-					ClassicUI.HookGOCActionBarButtonUpdateUsable(actionButton)
-				end
-			end
-			ClassicUI.HookGOCCooldownViewer(EssentialCooldownViewer)
-			ClassicUI.HookGOCCooldownViewer(UtilityCooldownViewer)
-			GREYONCOOLDOWN_UPDATEUSABLE_HOOKED = true
+		-- Main ActionButtons
+		ClassicUI:GOC_HookGOCActionButtons()
+		-- Handle PetActionButtons
+		if (ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.desaturatePetActionButtons) then
+			ClassicUI:GOC_HookGOCPetActionButtons()
 		end
+		GREYONCOOLDOWN_HOOKED = ClassicUI or true
 	end
 end
 
