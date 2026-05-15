@@ -1,7 +1,7 @@
 -- ------------------------------------------------------------ --
 -- Addon: ClassicUI                                             --
 --                                                              --
--- Version: 3.0.0                                               --
+-- Version: 3.0.1                                               --
 -- Author: Millán - Sanguino                                    --
 --                                                              --
 -- License: GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007 --
@@ -48,10 +48,12 @@ local GetPetActionSlotUsable = GetPetActionSlotUsable
 local GetPetActionCooldown = GetPetActionCooldown
 local C_ActionBar_GetActionCooldown = C_ActionBar.GetActionCooldown
 local C_ActionBar_GetActionCooldownDuration = C_ActionBar.GetActionCooldownDuration
+local C_ActionBar_GetActionChargeDuration = C_ActionBar.GetActionChargeDuration
 local C_Item_GetItemCooldown = C_Item.GetItemCooldown
 local C_Spell_IsSpellUsable = C_Spell.IsSpellUsable
 local C_Spell_GetSpellCooldown = C_Spell.GetSpellCooldown
 local C_Spell_GetSpellCooldownDuration = C_Spell.GetSpellCooldownDuration
+local C_Spell_GetSpellChargeDuration = C_Spell.GetSpellChargeDuration
 local C_ActionBar_HasRangeRequirements = C_ActionBar.HasRangeRequirements
 local C_ActionBar_IsActionInRange = C_ActionBar.IsActionInRange
 local C_ActionBar_IsUsableAction = C_ActionBar.IsUsableAction
@@ -101,7 +103,7 @@ local GetNetStats = GetNetStats
 local InGuildParty = InGuildParty
 
 -- Global constants
-ClassicUI.VERSION = "3.0.0"
+ClassicUI.VERSION = "3.0.1"
 ClassicUI.STANDARD_EPSILON = STANDARD_EPSILON
 ClassicUI.SCALE_EPSILON = SCALE_EPSILON
 ClassicUI.ACTIONBUTTON_NEWLAYOUT_SCALE = 0.826
@@ -415,6 +417,7 @@ ClassicUI.cached_ActionButtonInfo = {
 	hooked_UpdateHotkeys = { },
 	hooked_UpdateFlyout = { },
 	hooked_PlaySpellCastAnim = { },
+	hooked_OnCooldownDone_CooldownFlash = { },
 	hooked_UpdateAssistedCombatRotationFrame = { },
 	spellActivationAlertAdjusted = { },
 	typeActionButton = { },
@@ -850,11 +853,11 @@ ClassicUI.defaults = {
 					[7] = false,	-- AzeriteBar+ArtifactBar
 					[8] = false,	-- AzeriteBar+ReputationBar
 					[9] = false,	-- ArtifactBar+ReputationBar
-					[10] = false,	-- ExpBar+HouseFavorBar
-					[11] = false,	-- HonorBar+HouseFavorBar
-					[12] = false,	-- AzeriteBar+HouseFavorBar
-					[13] = false,	-- ArtifactBar+HouseFavorBar
-					[14] = false	-- ReputationBar+HouseFavorBar
+					[10] = false,	-- HouseFavorBar+ExpBar
+					[11] = false,	-- HouseFavorBar+HonorBar
+					[12] = false,	-- HouseFavorBar+AzeriteBar
+					[13] = false,	-- HouseFavorBar+ArtifactBar
+					[14] = false	-- HouseFavorBar+ReputationBar
 				},
 				alpha = 0.5,
 				xSize = 0,
@@ -929,7 +932,7 @@ ClassicUI.defaults = {
 			}
 		},
 		extraConfigs = {
-			['forceExtraOptions'] = false,
+			['forceExtraOptions'] = true,
 			['GuildPanelMode'] = {
 				defaultOpenOldMenu = false,
 				leftClickMicroButtonOpenOldMenu = false,
@@ -946,6 +949,7 @@ ClassicUI.defaults = {
 			['GreyOnCooldownConfig'] = {
 				enabled = false,
 				desaturateUnusableActions = true,
+				desaturateActionsWithoutResources = false,
 				desaturatePetActionButtons = true
 			},
 			['LossOfControlUIConfig'] = {
@@ -1084,7 +1088,7 @@ function ClassicUI:OnInitialize()
 	else
 		self:Disable()
 		self:ExtraFramesFunc(true)
-		if (self.db.profile.forceExtraOptions) then
+		if (self.db.profile.extraConfigs.forceExtraOptions) then
 			self:ExtraOptionsFunc()
 		end
 	end
@@ -1136,15 +1140,15 @@ function ClassicUI:SlashCommand(str)
 		ClassicUI:ShowConfig(2)
 	elseif (cmd == "forceextraoptions") or (cmd == "fextraoptions") or (cmd == "feo") then
 		if (arg1 == "enable") or (arg1 == "on") then
-			if (not ClassicUI.db.profile.forceExtraOptions) then
-				ClassicUI.db.profile.forceExtraOptions = true
+			if (not ClassicUI.db.profile.extraConfigs.forceExtraOptions) then
+				ClassicUI.db.profile.extraConfigs.forceExtraOptions = true
 				if (not ClassicUI:IsEnabled()) then
 					ClassicUI:ExtraOptionsFunc()
 				end
 			end
 		elseif (arg1 == "disable") or (arg1 == "off") then
-			if (ClassicUI.db.profile.forceExtraOptions) then
-				ClassicUI.db.profile.forceExtraOptions = false
+			if (ClassicUI.db.profile.extraConfigs.forceExtraOptions) then
+				ClassicUI.db.profile.extraConfigs.forceExtraOptions = false
 				if (not ClassicUI:IsEnabled()) then
 					ReloadUI()
 				end
@@ -1154,6 +1158,8 @@ function ClassicUI:SlashCommand(str)
 		end
 	elseif (cmd == "profiles") then
 		ClassicUI:ShowConfig(3)
+	elseif (cmd == "changed") or (cmd == "modified") or (cmd == "diffdefaults") then
+		ClassicUI:PrintChangedProfileOptions()
 	elseif (cmd == "reset") then
 		ClassicUI.db:ResetProfile()
 	elseif (cmd == "help") then
@@ -1207,6 +1213,125 @@ function ClassicUI:ShowHelp()
 	ClassicUI:Print("|cffd2a679" .. L['CLASSICUI_HELP_LINE7'] .. "|r")
 	ClassicUI:Print("|cffd2a679" .. L['CLASSICUI_HELP_LINE8'] .. "|r")
 	ClassicUI:Print("|cffd2a679" .. L['CLASSICUI_HELP_LINE9'] .. "|r")
+	ClassicUI:Print("|cffd2a679" .. L['CLASSICUI_HELP_LINE10'] .. "|r")
+end
+
+-- Print profile options that differ from their default values
+function ClassicUI:PrintChangedProfileOptions()
+	local function FormatPath(path, key)
+		if (type(key) == "string" and key:match("^[%a_][%w_]*$")) then
+			return path .. "." .. key
+		end
+		return path .. "[" .. tostring(key) .. "]"
+	end
+
+	local function FormatValue(value)
+		if (type(value) == "string") then
+			return '"' .. value .. '"'
+		end
+		return tostring(value)
+	end
+
+	local function ValuesAreEqual(value, defaultValue)
+		if (type(value) ~= type(defaultValue)) then
+			return false
+		end
+		if (type(value) == "number") then
+			return mathabs(value - defaultValue) <= ClassicUI.STANDARD_EPSILON
+		end
+		return value == defaultValue
+	end
+
+	local function CopyTableWithoutMetatables(source)
+		if (type(source) ~= "table") then
+			return source
+		end
+		local copy = {}
+		for key, value in pairs(source) do
+			copy[key] = CopyTableWithoutMetatables(value)
+		end
+		return copy
+	end
+
+	local function RemoveDefaults(db, defaults, blocker)
+		if (type(db) ~= "table" or type(defaults) ~= "table") then
+			return
+		end
+		for key, defaultValue in pairs(defaults) do
+			if (key == "*" or key == "**") then
+				if (type(defaultValue) == "table") then
+					for dbKey, dbValue in pairs(db) do
+						if (type(dbValue) == "table") then
+							if (defaults[dbKey] == nil and (not blocker or blocker[dbKey] == nil)) then
+								RemoveDefaults(dbValue, defaultValue)
+								if (next(dbValue) == nil) then
+									db[dbKey] = nil
+								end
+							elseif (key == "**") then
+								RemoveDefaults(dbValue, defaultValue, defaults[dbKey])
+							end
+						end
+					end
+				elseif (key == "*") then
+					for dbKey, dbValue in pairs(db) do
+						if (defaults[dbKey] == nil and ValuesAreEqual(dbValue, defaultValue)) then
+							db[dbKey] = nil
+						end
+					end
+				end
+			elseif (type(defaultValue) == "table" and type(db[key]) == "table") then
+				RemoveDefaults(db[key], defaultValue, blocker and blocker[key])
+				if (next(db[key]) == nil) then
+					db[key] = nil
+				end
+			elseif ValuesAreEqual(db[key], defaultValue) and (not blocker or blocker[key] == nil) then
+				db[key] = nil
+			end
+		end
+	end
+
+	local function GetDefaultValue(defaults, inheritedDefaults, key)
+		if (type(defaults) == "table" and defaults[key] ~= nil) then
+			return defaults[key]
+		end
+		if (type(inheritedDefaults) == "table" and inheritedDefaults[key] ~= nil) then
+			return inheritedDefaults[key]
+		end
+		if (type(defaults) == "table" and defaults["**"] ~= nil) then
+			return defaults["**"]
+		end
+		if (type(defaults) == "table" and defaults["*"] ~= nil) then
+			return defaults["*"]
+		end
+		return nil
+	end
+
+	local function AddChangedOptions(current, defaults, inheritedDefaults, path, changes)
+		for key, value in pairs(current) do
+			local defaultValue = GetDefaultValue(defaults, inheritedDefaults, key)
+			if (defaultValue ~= nil and type(value) == "table") then
+				local childDefaults = (type(defaults) == "table" and defaults[key]) or defaultValue
+				local childInheritedDefaults = (type(defaults) == "table" and defaults[key] ~= nil) and defaults["**"] or nil
+				AddChangedOptions(value, childDefaults, childInheritedDefaults, FormatPath(path, key), changes)
+			elseif (defaultValue ~= nil) then
+				tblinsert(changes, FormatPath(path, key) .. " = " .. FormatValue(value) .. " (" .. L['default'] .. L[': '] .. FormatValue(defaultValue) .. ")")
+			end
+		end
+	end
+
+	local changes = {}
+	local profileCopy = CopyTableWithoutMetatables(self.db.profile)
+	RemoveDefaults(profileCopy, self.defaults.profile)
+	AddChangedOptions(profileCopy, self.defaults.profile, nil, "", changes)
+	tblsort(changes, function(a, b) return strlower(a) < strlower(b) end)
+
+	ClassicUI:Print(L['Changed profile options'] .. L[': '] .. #changes)
+	if (#changes == 0) then
+		return
+	end
+	for _, change in ipairs(changes) do
+		ClassicUI:Print(change)
+	end
 end
 
 -- Function loaded when ClassicUI is Enabled
@@ -1249,14 +1374,14 @@ end
 
 -- Function to get the identifier of SingleStatusBars for our 'n' config number
 function ClassicUI:GetSingleBarToHide(n)
-	if (n == 0) then		-- ExpBar (priority = 3)
-		return 3
+	if (n == 0) then		-- ExpBar (priority = 4)
+		return 4
 	elseif (n == 1) then	-- HonorBar (priority = 2)
 		return 2
 	elseif (n == 2) then	-- AzeriteBar (priority = 0)
 		return 0
-	elseif (n == 3) then	-- ArtifactBar (priority = 4)
-		return 4
+	elseif (n == 3) then	-- ArtifactBar (priority = 3)
+		return 3
 	elseif (n == 4) then	-- ReputationBar (priority = 1)
 		return 1
 	elseif (n == 5) then	-- HouseFavorBar (priority = 5)
@@ -1268,35 +1393,35 @@ end
 
 -- Function to get the identifiers of DoubleStatusBars for our 'n' config number
 function ClassicUI:GetDoubleBarsToHide(n)
-	if (n == 0) then		-- ExpBar+HonorBar (priority = 3, 2)
-		return 2, 3
-	elseif (n == 1) then	-- ExpBar+AzeriteBar (priority = 3, 0)
-		return 0, 3
-	elseif (n == 2) then	-- ExpBar+ArtifactBar (priority = 3, 4)
-		return 3, 4
-	elseif (n == 3) then	-- ExpBar+ReputationBar (priority = 3, 1)
-		return 1, 3
+	if (n == 0) then		-- ExpBar+HonorBar (priority = 4, 2)
+		return 4, 2
+	elseif (n == 1) then	-- ExpBar+AzeriteBar (priority = 4, 0)
+		return 4, 0
+	elseif (n == 2) then	-- ExpBar+ArtifactBar (priority = 4, 3)
+		return 4, 3
+	elseif (n == 3) then	-- ExpBar+ReputationBar (priority = 4, 1)
+		return 4, 1
 	elseif (n == 4) then	-- HonorBar+AzeriteBar (priority = 2, 0)
-		return 0, 2
-	elseif (n == 5) then	-- HonorBar+ArtifactBar (priority = 2, 4)
-		return 2, 4
+		return 2, 0
+	elseif (n == 5) then	-- HonorBar+ArtifactBar (priority = 2, 3)
+		return 3, 2
 	elseif (n == 6) then	-- HonorBar+ReputationBar (priority = 2, 1)
-		return 1, 2
-	elseif (n == 7) then	-- AzeriteBar+ArtifactBar (priority = 0, 4)
-		return 0, 4
+		return 2, 1
+	elseif (n == 7) then	-- AzeriteBar+ArtifactBar (priority = 0, 3)
+		return 3, 0
 	elseif (n == 8) then	-- AzeriteBar+ReputationBar (priority = 0, 1)
-		return 0, 1
-	elseif (n == 9) then	-- ArtifactBar+ReputationBar (priority = 4, 1)
-		return 1, 4
-	elseif (n == 10) then	-- ExpBar+HouseFavorBar (priority = 3, 5)
-		return 5, 3
-	elseif (n == 11) then	-- HonorBar+HouseFavorBar (priority = 2, 5)
-		return 5, 2
-	elseif (n == 12) then	-- AzeriteBar+HouseFavorBar (priority = 0, 5)
-		return 5, 0
-	elseif (n == 13) then	-- ArtifactBar+HouseFavorBar (priority = 4, 5)
+		return 1, 0
+	elseif (n == 9) then	-- ArtifactBar+ReputationBar (priority = 3, 1)
+		return 3, 1
+	elseif (n == 10) then	-- HouseFavorBar+ExpBar (priority = 5, 4)
 		return 5, 4
-	elseif (n == 14) then	-- ReputationBar+HouseFavorBar (priority = 1, 5)
+	elseif (n == 11) then	-- HouseFavorBar+HonorBar (priority = 5, 2)
+		return 5, 2
+	elseif (n == 12) then	-- HouseFavorBar+AzeriteBar (priority = 5, 0)
+		return 5, 0
+	elseif (n == 13) then	-- HouseFavorBar+ArtifactBar (priority = 5, 3)
+		return 5, 3
+	elseif (n == 14) then	-- HouseFavorBar+ReputationBar (priority = 5, 1)
 		return 5, 1
 	else
 		return nil, nil
@@ -1430,6 +1555,7 @@ function ClassicUI:UpdateDBValuesCache()
 	self.cached_db_profile.extraConfigs_KeybindsConfig_hideKeybindsMode = self.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode
 	self.cached_db_profile.extraConfigs_GreyOnCooldownConfig_enabled = self.db.profile.extraConfigs.GreyOnCooldownConfig.enabled
 	self.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturateUnusableActions = self.db.profile.extraConfigs.GreyOnCooldownConfig.desaturateUnusableActions
+	self.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturateActionsWithoutResources = self.db.profile.extraConfigs.GreyOnCooldownConfig.desaturateActionsWithoutResources
 	self.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturatePetActionButtons = self.db.profile.extraConfigs.GreyOnCooldownConfig.desaturatePetActionButtons
 	self.cached_db_profile.extraConfigs_LossOfControlUIConfig_enabled = self.db.profile.extraConfigs.LossOfControlUIConfig.enabled
 	self.cached_db_profile.extraConfigs_GuildPanelMode_defaultOpenOldMenu = self.db.profile.extraConfigs.GuildPanelMode.defaultOpenOldMenu
@@ -1455,15 +1581,13 @@ function ClassicUI:StatusTrackingBarManager_UpdateBarsShown()
 				tblinsert(visBars, bar)
 			end
 		end
-		tblsort(visBars, function(left, right) return left:GetPriority() < right:GetPriority() end)
-		local width = StatusTrackingBarManager:GetParent():GetSize()
+		tblsort(visBars, function(left, right) return left:GetPriority() > right:GetPriority() end)
 		local visBarsSize = #visBars
-		local TOP_BAR = true
 		if (visBarsSize > 1) then
-			self.StatusTrackingBarManager_LayoutBar(StatusTrackingBarManager, visBars[2], not TOP_BAR)
-			self.StatusTrackingBarManager_LayoutBar(StatusTrackingBarManager, visBars[1], TOP_BAR)
+			self.StatusTrackingBarManager_LayoutBar(StatusTrackingBarManager, visBars[2], false)
+			self.StatusTrackingBarManager_LayoutBar(StatusTrackingBarManager, visBars[1], true)
 		elseif (visBarsSize == 1) then
-			self.StatusTrackingBarManager_LayoutBar(StatusTrackingBarManager, visBars[1], not TOP_BAR)
+			self.StatusTrackingBarManager_LayoutBar(StatusTrackingBarManager, visBars[1], false)
 		end
 	end
 end
@@ -2149,7 +2273,7 @@ ClassicUI.UpdateCacheVisibleBars = function(self)
 						tblinsert(barsShown, v:GetPriority())
 					end
 				end
-				tblsort(barsShown)
+				tblsort(barsShown, function(left, right) return left > right end)
 				if (#barsShown > 1) then
 					for _, v in pairs(ClassicUI.cached_DoubleStatusBar_hide) do
 						local barToHide1, barToHide2 = ClassicUI:GetDoubleBarsToHide(v)
@@ -2184,7 +2308,7 @@ ClassicUI.UpdateCacheVisibleBars = function(self)
 						tblinsert(barsShown, v:GetPriority())
 					end
 				end
-				tblsort(barsShown)
+				tblsort(barsShown, function(left, right) return left > right end)
 				if (#barsShown > 0) then
 					for _, v in pairs(ClassicUI.cached_SingleStatusBar_hide) do
 						local barToHide = ClassicUI:GetSingleBarToHide(v)
@@ -2673,23 +2797,29 @@ function ClassicUI:EnableOldMinimap()
 	GameTimeFrame:SetFrameLevel(8)
 
 	hooksecurefunc("GameTimeFrame_SetDate", function()
-		GameTimeFrame:SetText(C_DateAndTime_GetCurrentCalendarTime().monthDay)
+		GameTimeFrame:GetNormalTexture():SetAtlas(nil)
 		GameTimeFrame:SetNormalTexture("Interface\\Calendar\\UI-Calendar-Button")
 		GameTimeFrame:GetNormalTexture():SetTexCoord(0, 0, 0, 0.78125, 0.390625, 0, 0.390625, 0.78125)
+		GameTimeFrame:GetPushedTexture():SetAtlas(nil)
 		GameTimeFrame:SetPushedTexture("Interface\\Calendar\\UI-Calendar-Button")
 		GameTimeFrame:GetPushedTexture():SetTexCoord(0.5, 0, 0.5, 0.78125, 0.890625, 0, 0.890625, 0.78125)
+		GameTimeFrame:GetHighlightTexture():SetAtlas(nil)
 		GameTimeFrame:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight", "ADD")
-		--GameTimeFrame:GetHighlightTexture:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)	-- not needed
+		GameTimeFrame:GetHighlightTexture():SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
 		GameTimeFrame:GetNormalTexture():SetDrawLayer("BACKGROUND")
 		GameTimeFrame:GetPushedTexture():SetDrawLayer("BACKGROUND")
 		GameTimeFrame:GetFontString():SetDrawLayer("BACKGROUND")
+		GameTimeFrame:SetText(C_DateAndTime_GetCurrentCalendarTime().monthDay)
 	end)
+	GameTimeFrame:GetNormalTexture():SetAtlas(nil)
 	GameTimeFrame:SetNormalTexture("Interface\\Calendar\\UI-Calendar-Button")
 	GameTimeFrame:GetNormalTexture():SetTexCoord(0, 0, 0, 0.78125, 0.390625, 0, 0.390625, 0.78125)
+	GameTimeFrame:GetPushedTexture():SetAtlas(nil)
 	GameTimeFrame:SetPushedTexture("Interface\\Calendar\\UI-Calendar-Button")
 	GameTimeFrame:GetPushedTexture():SetTexCoord(0.5, 0, 0.5, 0.78125, 0.890625, 0, 0.890625, 0.78125)
+	GameTimeFrame:GetHighlightTexture():SetAtlas(nil)
 	GameTimeFrame:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight", "ADD")
-	--GameTimeFrame:GetHighlightTexture:SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)	-- not needed
+	GameTimeFrame:GetHighlightTexture():SetTexCoord(0, 0, 0, 1, 1, 0, 1, 1)
 	GameTimeFrame:SetNormalFontObject("GameFontBlack")
 	GameTimeFrame:SetFontString(GameTimeFrame:CreateFontString(nil, "BACKGROUND", "GameFontBlack"))
 	GameTimeFrame:GetFontString():ClearAllPoints()
@@ -3361,7 +3491,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		if (iActionButton ~= nil) then
 			CUI_MainMenuBar.actionButtons[iActionButton] = { }
 			CUI_MainMenuBar.actionButtons[iActionButton].hook_SetScale = function(self, scale)
-				local newMainScale = ClassicUI.cached_db_profile.barsConfig_MainMenuBar_scale / (scale * iActionButton.bar:GetScale()) * ClassicUI.cached_ActionButtonInfo.currentScale[iActionButton]	-- cached db value
+				local newMainScale = ClassicUI.cached_db_profile.barsConfig_MainMenuBar_scale / (scale * (iActionButton.bar and iActionButton.bar:GetScale() or 1)) * ClassicUI.cached_ActionButtonInfo.currentScale[iActionButton]	-- cached db value
 				if (mathabs(iActionButton:GetScale()-newMainScale) > SCALE_EPSILON) then
 					if InCombatLockdown() then
 						if (ClassicUI.queuePending_HookSetScale[CUI_MainMenuBar.actionButtons[iActionButton]] == nil) then
@@ -3845,7 +3975,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		if (iMultiBarBottomLeftButton ~= nil) then
 			CUI_MultiBarBottomLeft.actionButtons[iMultiBarBottomLeftButton] = { }
 			CUI_MultiBarBottomLeft.actionButtons[iMultiBarBottomLeftButton].hook_SetScale = function(self, scale)
-				local newMainScale = ClassicUI.cached_db_profile.barsConfig_BottomMultiActionBars_scale / (scale * iMultiBarBottomLeftButton.bar:GetScale()) * ClassicUI.cached_ActionButtonInfo.currentScale[iMultiBarBottomLeftButton]	-- cached db value
+				local newMainScale = ClassicUI.cached_db_profile.barsConfig_BottomMultiActionBars_scale / (scale * (iMultiBarBottomLeftButton.bar and iMultiBarBottomLeftButton.bar:GetScale() or 1)) * ClassicUI.cached_ActionButtonInfo.currentScale[iMultiBarBottomLeftButton]	-- cached db value
 				if (mathabs(iMultiBarBottomLeftButton:GetScale()-newMainScale) > SCALE_EPSILON) then
 					if InCombatLockdown() then
 						if (ClassicUI.queuePending_HookSetScale[CUI_MultiBarBottomLeft.actionButtons[iMultiBarBottomLeftButton]] == nil) then
@@ -3934,7 +4064,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		if (iMultiBarBottomRightButton ~= nil) then
 			CUI_MultiBarBottomRight.actionButtons[iMultiBarBottomRightButton] = { }
 			CUI_MultiBarBottomRight.actionButtons[iMultiBarBottomRightButton].hook_SetScale = function(self, scale)
-				local newMainScale = ClassicUI.cached_db_profile.barsConfig_BottomMultiActionBars_scale / (scale * iMultiBarBottomRightButton.bar:GetScale()) * ClassicUI.cached_ActionButtonInfo.currentScale[iMultiBarBottomRightButton]	-- cached db value
+				local newMainScale = ClassicUI.cached_db_profile.barsConfig_BottomMultiActionBars_scale / (scale * (iMultiBarBottomRightButton.bar and iMultiBarBottomRightButton.bar:GetScale() or 1)) * ClassicUI.cached_ActionButtonInfo.currentScale[iMultiBarBottomRightButton]	-- cached db value
 				if (mathabs(iMultiBarBottomRightButton:GetScale()-newMainScale) > SCALE_EPSILON) then
 					if InCombatLockdown() then
 						if (ClassicUI.queuePending_HookSetScale[CUI_MultiBarBottomRight.actionButtons[iMultiBarBottomRightButton]] == nil) then
@@ -4039,7 +4169,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		if (iMultiBarRightButton ~= nil) then
 			CUI_MultiBarRight.actionButtons[iMultiBarRightButton] = { }
 			CUI_MultiBarRight.actionButtons[iMultiBarRightButton].hook_SetScale = function(self, scale)
-				local newMainScale = ClassicUI.cached_db_profile.barsConfig_RightMultiActionBars_scale / (scale * iMultiBarRightButton.bar:GetScale()) * ClassicUI.cached_ActionButtonInfo.currentScale[iMultiBarRightButton]	-- cached db value
+				local newMainScale = ClassicUI.cached_db_profile.barsConfig_RightMultiActionBars_scale / (scale * (iMultiBarRightButton.bar and iMultiBarRightButton.bar:GetScale() or 1)) * ClassicUI.cached_ActionButtonInfo.currentScale[iMultiBarRightButton]	-- cached db value
 				if (mathabs(iMultiBarRightButton:GetScale()-newMainScale) > SCALE_EPSILON) then
 					if InCombatLockdown() then
 						if (ClassicUI.queuePending_HookSetScale[CUI_MultiBarRight.actionButtons[iMultiBarRightButton]] == nil) then
@@ -4131,7 +4261,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		if (iMultiBarLeftButton ~= nil) then
 			CUI_MultiBarLeft.actionButtons[iMultiBarLeftButton] = { }
 			CUI_MultiBarLeft.actionButtons[iMultiBarLeftButton].hook_SetScale = function(self, scale)
-				local newMainScale = ClassicUI.cached_db_profile.barsConfig_RightMultiActionBars_scale / (scale * iMultiBarLeftButton.bar:GetScale()) * ClassicUI.cached_ActionButtonInfo.currentScale[iMultiBarLeftButton]	-- cached db value
+				local newMainScale = ClassicUI.cached_db_profile.barsConfig_RightMultiActionBars_scale / (scale * (iMultiBarLeftButton.bar and iMultiBarLeftButton.bar:GetScale() or 1)) * ClassicUI.cached_ActionButtonInfo.currentScale[iMultiBarLeftButton]	-- cached db value
 				if (mathabs(iMultiBarLeftButton:GetScale()-newMainScale) > SCALE_EPSILON) then
 					if InCombatLockdown() then
 						if (ClassicUI.queuePending_HookSetScale[CUI_MultiBarLeft.actionButtons[iMultiBarLeftButton]] == nil) then
@@ -4178,7 +4308,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	CUI_SlidingActionBarTexture1:Hide()
 
 	function CUI_PetActionBarFrame:IsAboveStance(ignoreShowing)
-		return (((StanceBar and GetNumShapeshiftForms() > 0) or (MultiCastActionBarFrame and HasMultiCastActionBar()) or
+		return (((StanceBar and GetNumShapeshiftForms() > 0) or
 			(MainMenuBarVehicleLeaveButton and MainMenuBarVehicleLeaveButton:IsShown() and (MainMenuBarVehicleLeaveButton:GetRight() ~= nil))) and
 			(not MultiBarBottomLeft:IsShown() and MultiBarBottomRight:IsShown()) and
 			(ignoreShowing or (PetActionBarFrame and PetActionBarFrame:IsShown())))
@@ -4189,8 +4319,6 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		elseif (MainMenuBarVehicleLeaveButton and MainMenuBarVehicleLeaveButton:IsShown() and (MainMenuBarVehicleLeaveButton:GetRight() ~= nil)) then
 			self.PETACTIONBAR_XPOS = MainMenuBarVehicleLeaveButton:GetRight() + 20 + ClassicUI.cached_db_profile.barsConfig_PetActionBarFrame_xOffsetIfStanceBar	-- cached db value
 		elseif (StanceBar and GetNumShapeshiftForms() > 0) then
-			self.PETACTIONBAR_XPOS = 500 + ClassicUI.cached_db_profile.barsConfig_PetActionBarFrame_xOffsetIfStanceBar	-- cached db value
-		elseif (MultiCastActionBarFrame and HasMultiCastActionBar()) then
 			self.PETACTIONBAR_XPOS = 500 + ClassicUI.cached_db_profile.barsConfig_PetActionBarFrame_xOffsetIfStanceBar	-- cached db value
 		else
 			self.PETACTIONBAR_XPOS = 36 + ClassicUI.cached_db_profile.barsConfig_PetActionBarFrame_xOffset	-- cached db value
@@ -4716,8 +4844,6 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 				self:SetPoint("LEFT", PossessButton2, "RIGHT", 30, 0)
 			elseif (GetNumShapeshiftForms() > 0) then
 				self:SetPoint("LEFT", _G["StanceButton"..GetNumShapeshiftForms()], "RIGHT", 30, 0)
-			elseif (HasMultiCastActionBar()) then
-				self:SetPoint("LEFT", MultiCastActionBarFrame, "RIGHT", 30, 0)
 			else
 				self:SetPoint("LEFT", CUI_PossessBarFrame, "LEFT", 10, 0)
 			end
@@ -5200,7 +5326,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 					ClassicUI.hooked_Class_UI_Watcher_QUEST_ACCEPTED = true
 				end
 				if not(ClassicUI.hooked_Class_UI_Watcher_OnInterrupt) then
-					hooksecurefunc(Class_UI_Watcher, "OnInterrupt", function(sel)	-- apply to TutorialData.UI_Elements.PLAYERSPELLS_MICROBUTTON/OTHER_MICROBUTTONS/STORE_MICROBUTTON microbuttons
+					hooksecurefunc(Class_UI_Watcher, "OnInterrupt", function(self)	-- apply to TutorialData.UI_Elements.PLAYERSPELLS_MICROBUTTON/OTHER_MICROBUTTONS/STORE_MICROBUTTON microbuttons
 						if (not self.IsActive) then return end
 						if ClassicUI.databaseCleaned then return end	-- [DB Integrity Check]
 						if (ClassicUI.db.profile.barsConfig.MicroButtons.CharacterMicroButton.hideMicroButton or ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[CharacterMicroButton]) then
@@ -5217,6 +5343,9 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 						end
 						if (ClassicUI.db.profile.barsConfig.MicroButtons.QuestLogMicroButton.hideMicroButton or ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[QuestLogMicroButton]) then
 							QuestLogMicroButton:Hide()
+						end
+						if (ClassicUI.db.profile.barsConfig.MicroButtons.HousingMicroButton.hideMicroButton or ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[HousingMicroButton]) then
+							HousingMicroButton:Hide()
 						end
 						if (ClassicUI.db.profile.barsConfig.MicroButtons.GuildMicroButton.hideMicroButton or ClassicUI.MicroButtonsGroupOrderInfo.forceHidden[GuildMicroButton]) then
 							GuildMicroButton:Hide()
@@ -5960,7 +6089,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		if not(IsCommunitiesUIDisabledByTrialAccount() or factionGroup == "Neutral" or Kiosk_IsEnabled()) and
 			not(C_Club_IsEnabled() and not BNConnected()) and
 			not(C_Club_IsEnabled() and C_Club_IsRestricted() ~= Enum.ClubRestrictionReason.None) and
-				(CommunitiesFrame and CommunitiesFrame:IsShown()) or (GuildFrame and GuildFrame:IsShown()) then
+				((CommunitiesFrame and CommunitiesFrame:IsShown()) or (GuildFrame and GuildFrame:IsShown())) then
 			GuildMicroButtonTabard:SetPoint("TOPLEFT", -1, -2)
 			GuildMicroButtonTabard:SetAlpha(0.70)
 		else
@@ -6767,6 +6896,8 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	if (EventRegistry and type(EventRegistry) == "table") then
 		EventRegistry:RegisterCallback("MainMenuBarManager.OnExpandChanged", ClassicUI.onExpandChangedMainMenuBarManager, BagsBar)
 	end
+	MainMenuBarBackpackButton:ClearAllPoints()
+	MainMenuBarBackpackButton:SetPoint("BOTTOMRIGHT", CUI_MainMenuBarArtFrame, "BOTTOMRIGHT", -4, 6)
 
 	-- 'GetInventoryItemQuality' function seems to load asynchronously, so it can return 'nil' sometimes
 	ClassicUI:TrySetBagItemButtonQuality(CharacterBag0Slot)
@@ -6819,8 +6950,6 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	MainMenuBarBackpackButton:SetParent(CUI_MainMenuBarArtFrame)
 	MainMenuBarBackpackButton:SetSize(30, 30)
 	MainMenuBarBackpackButton.IconBorder:SetSize(30, 30)
-	MainMenuBarBackpackButton:ClearAllPoints()
-	MainMenuBarBackpackButton:SetPoint("BOTTOMRIGHT", CUI_MainMenuBarArtFrame, "BOTTOMRIGHT", -4, 6)
 	MainMenuBarBackpackButton:SetFrameStrata("MEDIUM")
 	MainMenuBarBackpackButton:SetFrameLevel(3)
 	hooksecurefunc(CharacterBag0Slot, "SetBarExpanded", function(self, isExpanded) if not(self:IsShown()) then self:Show() end end)
@@ -6846,6 +6975,9 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	ClassicUI:ReLayoutMainFrames()
 
 	--[StatusBars]
+	local CUI_StatusTrackingBarManager_DummyParent = CreateFrame("Frame", "CUI_StatusTrackingBarManager_DummyParent", CUI_MainMenuBar) -- dummy parent so that Blizzard continues to manage the status bar animations
+	CUI_StatusTrackingBarManager_DummyParent:Show()
+	CUI_StatusTrackingBarManager_DummyParent:SetAlpha(0)
 	StatusTrackingBarManager:SetParent(CUI_MainMenuBar)
 	StatusTrackingBarManager:ClearAllPoints()
 	StatusTrackingBarManager:SetPoint("BOTTOM", CUI_MainMenuBar, "BOTTOM", 0, 0)
@@ -6853,7 +6985,18 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	StatusTrackingBarManager.MainStatusTrackingBarContainer.BarFrameTexture:SetSize(1024, 7)
 	StatusTrackingBarManager.MainStatusTrackingBarContainer:ClearAllPoints()
 	StatusTrackingBarManager.MainStatusTrackingBarContainer:SetPoint("BOTTOM", CUI_MainMenuBar, "TOP", 0, -3)
-	StatusTrackingBarManager.MainStatusTrackingBarContainer:Hide()
+	StatusTrackingBarManager.MainStatusTrackingBarContainer.oriparent = StatusTrackingBarManager.MainStatusTrackingBarContainer:GetParent()
+	StatusTrackingBarManager.MainStatusTrackingBarContainer:SetParent(CUI_StatusTrackingBarManager_DummyParent)
+	for _, animation in ipairs({ StatusTrackingBarManager.MainStatusTrackingBarContainer.FadeInAnimation:GetAnimations() }) do
+		if (animation:GetDuration() > 0.01) then
+			animation:SetDuration(0.01)
+		end
+	end
+	for _, animation in ipairs({ StatusTrackingBarManager.MainStatusTrackingBarContainer.FadeOutAnimation:GetAnimations() }) do
+		if (animation:GetDuration() > 0.01) then
+			animation:SetDuration(0.01)
+		end
+	end
 	StatusTrackingBarManager.MainStatusTrackingBarContainer.BarFrameTexture:Hide()
 	for _, bar in ipairs(StatusTrackingBarManager.MainStatusTrackingBarContainer.bars) do
 		bar.oriparent = bar:GetParent()
@@ -6864,7 +7007,18 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	StatusTrackingBarManager.SecondaryStatusTrackingBarContainer.BarFrameTexture:SetSize(1024, 10)
 	StatusTrackingBarManager.SecondaryStatusTrackingBarContainer:ClearAllPoints()
 	StatusTrackingBarManager.SecondaryStatusTrackingBarContainer:SetPoint("TOP", CUI_MainMenuBar, "TOP", 0, 0)
-	StatusTrackingBarManager.SecondaryStatusTrackingBarContainer:Hide()
+	StatusTrackingBarManager.SecondaryStatusTrackingBarContainer.oriparent = StatusTrackingBarManager.SecondaryStatusTrackingBarContainer:GetParent()
+	StatusTrackingBarManager.SecondaryStatusTrackingBarContainer:SetParent(CUI_StatusTrackingBarManager_DummyParent)
+	for _, animation in ipairs({ StatusTrackingBarManager.SecondaryStatusTrackingBarContainer.FadeInAnimation:GetAnimations() }) do
+		if (animation:GetDuration() > 0.01) then
+			animation:SetDuration(0.01)
+		end
+	end
+	for _, animation in ipairs({ StatusTrackingBarManager.SecondaryStatusTrackingBarContainer.FadeOutAnimation:GetAnimations() }) do
+		if (animation:GetDuration() > 0.01) then
+			animation:SetDuration(0.01)
+		end
+	end
 	StatusTrackingBarManager.SecondaryStatusTrackingBarContainer.BarFrameTexture:Hide()
 	for _, bar in ipairs(StatusTrackingBarManager.SecondaryStatusTrackingBarContainer.bars) do
 		bar.oriparent = bar:GetParent()
@@ -6998,7 +7152,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 			bar.priority = 5
 			if (bar.ShouldBeVisible == nil) then
 				bar.ShouldBeVisible = function(self)
-					return C_Housing_GetTrackedHouseGuid()
+					return C_Housing_GetTrackedHouseGuid() ~= nil
 				end
 			end
 			bar:SetBarColor(ARTIFACT_BAR_COLOR:GetRGB())
@@ -7011,8 +7165,8 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 				end
 			end
 			bar:SetBarColor(ARTIFACT_BAR_COLOR:GetRGB())
-		elseif (bar.barIndex == StatusTrackingBarInfo.BarsEnum.Artifact) then	-- ArtifactBar (priority = 4) (barIndex = 3)
-			bar.priority = 4
+		elseif (bar.barIndex == StatusTrackingBarInfo.BarsEnum.Artifact) then	-- ArtifactBar (priority = 3) (barIndex = 3)
+			bar.priority = 3
 			if (bar.ShouldBeVisible == nil) then
 				bar.ShouldBeVisible = function(self)
 					return HasArtifactEquipped() and not C_ArtifactUI.IsEquippedArtifactMaxed() and not C_ArtifactUI.IsEquippedArtifactDisabled()
@@ -7035,7 +7189,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 			if (bar.ShouldBeVisible == nil) then
 				bar.ShouldBeVisible = function(self)
 					local watchedFactionData = C_Reputation_GetWatchedFactionData()
-					return watchedFactionData and watchedFactionData.name ~= nil and watchedFactionData.name ~= ""
+					return watchedFactionData and watchedFactionData.name ~= nil and watchedFactionData.name ~= "" or false
 				end
 			end
 			hooksecurefunc(bar, "Update", function(self)
@@ -7081,8 +7235,8 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 					end
 				end
 			end
-		elseif (bar.barIndex == StatusTrackingBarInfo.BarsEnum.Experience) then	-- ExpBar (priority = 3) (barIndex = 4)
-			bar.priority = 3
+		elseif (bar.barIndex == StatusTrackingBarInfo.BarsEnum.Experience) then	-- ExpBar (priority = 4) (barIndex = 4)
+			bar.priority = 4
 			if (bar.ShouldBeVisible == nil) then
 				bar.ShouldBeVisible = function(self)
 					return not IsPlayerAtEffectiveMaxLevel() and not IsXPUserDisabled()
@@ -7216,23 +7370,13 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 			end
 		end
 	end
-	hooksecurefunc(StatusTrackingBarManager.MainStatusTrackingBarContainer, "UpdateShownState", function(self)
-		if self:IsShown() then
-			self:Hide()
-		end
-	end)
-	hooksecurefunc(StatusTrackingBarManager.SecondaryStatusTrackingBarContainer, "UpdateShownState", function(self)
-		if self:IsShown() then
-			self:Hide()
-		end
-	end)
 
 	-- Hooks to keep action bars updated with changes
 	hooksecurefunc("MultiActionBar_Update", ClassicUI.UpdatedStatusBarsEvent)
 	hooksecurefunc(StatusTrackingBarManager, "UpdateBarsShown", ClassicUI.UpdatedStatusBarsEvent)
 	hooksecurefunc("ActionBarController_UpdateAll", ClassicUI.UpdatedStatusBarsEvent)
 	hooksecurefunc(StatusTrackingBarManager.MainStatusTrackingBarContainer, "SetShownBar", function(self, barIndex)
-		local stbm = self:GetParent()
+		local stbm = self.oriparent
 		if (barIndex > 0) then
 			ClassicUI.StatusTrackingBarManager_LayoutBar(stbm, self.bars[barIndex], false)
 		else
@@ -7245,7 +7389,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		end
 	end)
 	hooksecurefunc(StatusTrackingBarManager.SecondaryStatusTrackingBarContainer, "SetShownBar", function(self, barIndex)
-		local stbm = self:GetParent()
+		local stbm = self.oriparent
 		if (barIndex > 0) then
 			ClassicUI.StatusTrackingBarManager_LayoutBar(stbm, self.bars[barIndex], true)
 		else
@@ -8554,7 +8698,7 @@ ClassicUI.LayoutActionButton = function(iActionButton, typeActionButton)
 		iActionButton.NormalTexture:SetAlpha(typeABprofile.BLStyle1NormalTextureAlpha)
 		if (typeActionButton <= 2) then
 			ClassicUI.cached_ActionButtonInfo.currentScale[iActionButton] = ClassicUI.ACTIONBUTTON_NEWLAYOUT_SCALE
-			iActionButton:SetScale((newBLScale / (iActionButton:GetParent():GetScale() * iActionButton.bar:GetScale())) * ClassicUI.cached_ActionButtonInfo.currentScale[iActionButton])
+			iActionButton:SetScale((newBLScale / (iActionButton:GetParent():GetScale() * (iActionButton.bar and iActionButton.bar:GetScale() or 1))) * ClassicUI.cached_ActionButtonInfo.currentScale[iActionButton])
 			if (typeActionButton == 0) then
 				if ((iActionButton.UpdateButtonArt ~= nil) and iActionButton.SlotArt and iActionButton.SlotBackground and iActionButton.showButtonArt) then
 					if (iabnt ~= nil) and (iabnt:GetAtlas() ~= "UI-HUD-ActionBar-IconFrame-AddRow") then
@@ -8588,7 +8732,7 @@ ClassicUI.LayoutActionButton = function(iActionButton, typeActionButton)
 		end
 		ClassicUI.cached_ActionButtonInfo.currentScale[iActionButton] = 1
 		if (typeActionButton <= 2) then
-			iActionButton:SetScale(newBLScale / (iActionButton:GetParent():GetScale() * iActionButton.bar:GetScale()))
+			iActionButton:SetScale(newBLScale / (iActionButton:GetParent():GetScale() * (iActionButton.bar and iActionButton.bar:GetScale() or 1)))
 		end
 		if (iabnt ~= nil) then
 			iabnt:SetAtlas(nil)
@@ -9227,17 +9371,18 @@ ClassicUI.LayoutActionButton = function(iActionButton, typeActionButton)
 			else
 				iabcf:SetAlpha(1)
 				iabcf:SetScale(ClassicUI.ACTIONBUTTON_NEWLAYOUT_SCALE)
-				if not ClassicUI.hooked_ActionButtonCooldown_OnCooldownDone_CooldownFlash then
-					hooksecurefunc("ActionButtonCooldown_OnCooldownDone", function(self, requireCooldownUpdate)
-						local cooldownFlash = self:GetParent().CooldownFlash
-						local spellCastAnimFrame = self:GetParent().SpellCastAnimFrame
-						if (cooldownFlash) then
-							if (not spellCastAnimFrame or (spellCastAnimFrame and not spellCastAnimFrame:IsShown())) then
+				if (iActionButton.cooldown) then
+					if not ClassicUI.cached_ActionButtonInfo.hooked_OnCooldownDone_CooldownFlash[iActionButton] then
+						iActionButton.cooldown:HookScript("OnCooldownDone", function(self)
+							local parent = self:GetParent()
+							local cooldownFlash = parent.CooldownFlash
+							local spellCastAnimFrame = parent.SpellCastAnimFrame
+							if (cooldownFlash and (not spellCastAnimFrame or not spellCastAnimFrame:IsShown())) then
 								cooldownFlash:Setup()
 							end
-						end
-					end)
-					ClassicUI.hooked_ActionButtonCooldown_OnCooldownDone_CooldownFlash = true
+						end)
+						ClassicUI.cached_ActionButtonInfo.hooked_OnCooldownDone_CooldownFlash[iActionButton] = true
+					end
 				end
 			end
 		end
@@ -9247,41 +9392,6 @@ ClassicUI.LayoutActionButton = function(iActionButton, typeActionButton)
 				iabcc:SetEdgeTexture("Interface\\Cooldown\\edge")
 			else
 				iabcc:SetEdgeTexture("Interface\\Cooldown\\UI-HUD-ActionBar-SecondaryCooldown")
-			end
-		else
-			if not typeABprofile.BLStyle0UseNewChargeCooldownEdgeTexture then
-				if not ClassicUI.hooked_ActionButton_StartChargeCooldown then
-					hooksecurefunc("StartChargeCooldown", function(parent, chargeStart, chargeDuration, chargeModRate)
-						if ClassicUI.databaseCleaned then return end	-- [DB Integrity Check]
-						local iabcc = parent.chargeCooldown
-						if (iabcc == nil) then return end
-						local typeActionButton = ClassicUI.cached_ActionButtonInfo.typeActionButton[parent]
-						local typeABprofile
-						if (typeActionButton == 0) then
-							typeABprofile = ClassicUI.db.profile.barsConfig.MainMenuBar
-						elseif (typeActionButton == 1) then
-							typeABprofile = ClassicUI.db.profile.barsConfig.BottomMultiActionBars
-						elseif (typeActionButton == 2) then
-							typeABprofile = ClassicUI.db.profile.barsConfig.RightMultiActionBars
-						elseif (typeActionButton == 3) then
-							typeABprofile = ClassicUI.db.profile.barsConfig.PetActionBarFrame
-						elseif (typeActionButton == 4) then
-							typeABprofile = ClassicUI.db.profile.barsConfig.StanceBarFrame
-						elseif (typeActionButton == 5) then
-							typeABprofile = ClassicUI.db.profile.barsConfig.PossessBarFrame
-						elseif (typeActionButton == 6) then
-							typeABprofile = ClassicUI.db.profile.barsConfig.SpellFlyoutButtons
-						elseif (typeActionButton == 7) then
-							typeABprofile = ClassicUI.db.profile.barsConfig.OverrideActionBar
-						else
-							return
-						end
-						if ((typeABprofile.BLStyle == 0) and not(typeABprofile.BLStyle0UseNewChargeCooldownEdgeTexture)) then
-							iabcc:SetEdgeTexture("Interface\\Cooldown\\edge")
-						end
-					end)
-					ClassicUI.hooked_ActionButton_StartChargeCooldown = true
-				end
 			end
 		end
 		local iabachf = iActionButton.AssistedCombatHighlightFrame
@@ -9668,6 +9778,18 @@ function ClassicUI:ToggleVisibilityKeybinds(mode)
 			if (actionButtonHK) then
 				actionButtonHK:SetAlpha(0)
 			end
+			actionButtonHK = _G["MultiBar5Button"..i.."HotKey"]
+			if (actionButtonHK) then
+				actionButtonHK:SetAlpha(0)
+			end
+			actionButtonHK = _G["MultiBar6Button"..i.."HotKey"]
+			if (actionButtonHK) then
+				actionButtonHK:SetAlpha(0)
+			end
+			actionButtonHK = _G["MultiBar7Button"..i.."HotKey"]
+			if (actionButtonHK) then
+				actionButtonHK:SetAlpha(0)
+			end
 			actionButtonHK = _G["StanceButton"..i.."HotKey"]
 			if (actionButtonHK) then
 				actionButtonHK:SetAlpha(0)
@@ -9743,6 +9865,30 @@ function ClassicUI:ToggleVisibilityKeybinds(mode)
 				end
 			end
 			actionButton = _G["MultiBarRightButton"..i]
+			if (actionButton) then
+				actionButton.HotKey:SetAlpha(1)
+				if (actionButton.UpdateHotkeys ~= nil) then
+					ClassicUI:HookKeybindsVisibilityMode(actionButton)
+					actionButton:UpdateHotkeys()
+				end
+			end
+			actionButton = _G["MultiBar5Button"..i]
+			if (actionButton) then
+				actionButton.HotKey:SetAlpha(1)
+				if (actionButton.UpdateHotkeys ~= nil) then
+					ClassicUI:HookKeybindsVisibilityMode(actionButton)
+					actionButton:UpdateHotkeys()
+				end
+			end
+			actionButton = _G["MultiBar6Button"..i]
+			if (actionButton) then
+				actionButton.HotKey:SetAlpha(1)
+				if (actionButton.UpdateHotkeys ~= nil) then
+					ClassicUI:HookKeybindsVisibilityMode(actionButton)
+					actionButton:UpdateHotkeys()
+				end
+			end
+			actionButton = _G["MultiBar7Button"..i]
 			if (actionButton) then
 				actionButton.HotKey:SetAlpha(1)
 				if (actionButton.UpdateHotkeys ~= nil) then
@@ -9839,6 +9985,18 @@ function ClassicUI:ToggleVisibilityKeybinds(mode)
 				actionButtonHK:SetAlpha(1)
 			end
 			actionButtonHK = _G["MultiBarRightButton"..i.."HotKey"]
+			if (actionButtonHK) then
+				actionButtonHK:SetAlpha(1)
+			end
+			actionButtonHK = _G["MultiBar5Button"..i.."HotKey"]
+			if (actionButtonHK) then
+				actionButtonHK:SetAlpha(1)
+			end
+			actionButtonHK = _G["MultiBar6Button"..i.."HotKey"]
+			if (actionButtonHK) then
+				actionButtonHK:SetAlpha(1)
+			end
+			actionButtonHK = _G["MultiBar7Button"..i.."HotKey"]
 			if (actionButtonHK) then
 				actionButtonHK:SetAlpha(1)
 			end
@@ -9944,6 +10102,18 @@ function ClassicUI:ToggleVisibilityActionButtonNames(mode)
 			if (actionButtonName) then
 				actionButtonName:SetAlpha(0)
 			end
+			actionButtonName = _G["MultiBar5Button"..i.."Name"]
+			if (actionButtonName) then
+				actionButtonName:SetAlpha(0)
+			end
+			actionButtonName = _G["MultiBar6Button"..i.."Name"]
+			if (actionButtonName) then
+				actionButtonName:SetAlpha(0)
+			end
+			actionButtonName = _G["MultiBar7Button"..i.."Name"]
+			if (actionButtonName) then
+				actionButtonName:SetAlpha(0)
+			end
 			actionButtonName = _G["StanceButton"..i.."Name"]
 			if (actionButtonName) then
 				actionButtonName:SetAlpha(0)
@@ -9990,6 +10160,18 @@ function ClassicUI:ToggleVisibilityActionButtonNames(mode)
 			if (actionButtonName) then
 				actionButtonName:SetAlpha(1)
 			end
+			actionButtonName = _G["MultiBar5Button"..i.."Name"]
+			if (actionButtonName) then
+				actionButtonName:SetAlpha(1)
+			end
+			actionButtonName = _G["MultiBar6Button"..i.."Name"]
+			if (actionButtonName) then
+				actionButtonName:SetAlpha(1)
+			end
+			actionButtonName = _G["MultiBar7Button"..i.."Name"]
+			if (actionButtonName) then
+				actionButtonName:SetAlpha(1)
+			end
 			actionButtonName = _G["StanceButton"..i.."Name"]
 			if (actionButtonName) then
 				actionButtonName:SetAlpha(1)
@@ -10016,9 +10198,45 @@ end
 function ClassicUI:HookLossOfControlUICCRemover()
 	if (not DISABLELOSSOFCONTROLUI_HOOKED) then
 		-- Globally disable Loss of Control (LoC) cooldown effects on action buttons through 'ActionButton_ApplyCooldown'
-		hooksecurefunc('ActionButton_ApplyCooldown', function(normalCooldown, cooldownInfo, chargeCooldown, chargeInfo, lossOfControlCooldown, lossOfControlInfo)
-			if (lossOfControlInfo and (issecretvalue(lossOfControlInfo.startTime) or issecretvalue(lossOfControlInfo.duration) or issecretvalue(lossOfControlInfo.modRate) or lossOfControlInfo.startTime ~= 0 or lossOfControlInfo.duration ~= 0 or lossOfControlInfo.modRate ~= 0)) then
-				ActionButton_ApplyCooldown(normalCooldown, cooldownInfo, chargeCooldown, chargeInfo, lossOfControlCooldown)
+		hooksecurefunc("ActionButton_ApplyCooldown", function(normalCooldown, cooldownInfo, chargeCooldown, chargeInfo, lossOfControlCooldown, lossOfControlInfo)
+			if not lossOfControlInfo or not lossOfControlInfo.isActive or not lossOfControlCooldown then
+				return
+			end
+			lossOfControlCooldown:Clear()
+			if not lossOfControlInfo.shouldReplaceNormalCooldown then
+				return
+			end
+			local showChargeCooldown = chargeCooldown and chargeInfo and chargeInfo.isActive
+			local showNormalCooldown = normalCooldown and cooldownInfo and cooldownInfo.isActive
+			if showChargeCooldown then
+				local button = chargeCooldown and chargeCooldown:GetParent()
+				if not button or button == UIParent then return end
+				if button.action then
+					local durationObject = C_ActionBar_GetActionChargeDuration(button.action)
+					if durationObject then
+						chargeCooldown:SetCooldownFromDurationObject(durationObject)
+					end
+				elseif button.spellID then
+					local durationObject = C_Spell_GetSpellChargeDuration(button.spellID)
+					if durationObject then
+						chargeCooldown:SetCooldownFromDurationObject(durationObject)
+					end
+				end
+			end
+			if showNormalCooldown then
+				local button = normalCooldown and normalCooldown:GetParent()
+				if not button or button == UIParent then return end
+				if button.action then
+					local durationObject = C_ActionBar_GetActionCooldownDuration(button.action)
+					if durationObject then
+						normalCooldown:SetCooldownFromDurationObject(durationObject)
+					end
+				elseif button.spellID then
+					local durationObject = C_Spell_GetSpellCooldownDuration(button.spellID)
+					if durationObject then
+						normalCooldown:SetCooldownFromDurationObject(durationObject)
+					end
+				end
 			end
 		end)
 		-- Explicitly disable Loss of Control (LoC) cooldown effects on Blizzard default action buttons
@@ -10045,6 +10263,18 @@ function ClassicUI:HookLossOfControlUICCRemover()
 				actionButton.enableLOCCooldown = nil
 			end
 			actionButton = _G["MultiBarRightButton"..i]
+			if (actionButton and actionButton.enableLOCCooldown) then
+				actionButton.enableLOCCooldown = nil
+			end
+			actionButton = _G["MultiBar5Button"..i]
+			if (actionButton and actionButton.enableLOCCooldown) then
+				actionButton.enableLOCCooldown = nil
+			end
+			actionButton = _G["MultiBar6Button"..i]
+			if (actionButton and actionButton.enableLOCCooldown) then
+				actionButton.enableLOCCooldown = nil
+			end
+			actionButton = _G["MultiBar7Button"..i]
 			if (actionButton and actionButton.enableLOCCooldown) then
 				actionButton.enableLOCCooldown = nil
 			end
@@ -10186,6 +10416,18 @@ function ClassicUI:HookRedRangeIcons()
 			if (actionButton) then
 				HookRRActionBarButtonUpdateUsable(actionButton)
 			end
+			actionButton = _G["MultiBar5Button"..i]
+			if (actionButton) then
+				HookRRActionBarButtonUpdateUsable(actionButton)
+			end
+			actionButton = _G["MultiBar6Button"..i]
+			if (actionButton) then
+				HookRRActionBarButtonUpdateUsable(actionButton)
+			end
+			actionButton = _G["MultiBar7Button"..i]
+			if (actionButton) then
+				HookRRActionBarButtonUpdateUsable(actionButton)
+			end
 			actionButton = _G["StanceButton"..i]
 			if (actionButton) then
 				HookRRActionBarButtonUpdateUsable(actionButton)
@@ -10247,6 +10489,18 @@ function ClassicUI:GOC_UpdateAllActionButtons()
 			actionButton:GOCUpdateCheck()
 		end
 		actionButton = _G["MultiBarRightButton"..i]
+		if (actionButton and actionButton.GOCUpdateCheck) then
+			actionButton:GOCUpdateCheck()
+		end
+		actionButton = _G["MultiBar5Button"..i]
+		if (actionButton and actionButton.GOCUpdateCheck) then
+			actionButton:GOCUpdateCheck()
+		end
+		actionButton = _G["MultiBar6Button"..i]
+		if (actionButton and actionButton.GOCUpdateCheck) then
+			actionButton:GOCUpdateCheck()
+		end
+		actionButton = _G["MultiBar7Button"..i]
 		if (actionButton and actionButton.GOCUpdateCheck) then
 			actionButton:GOCUpdateCheck()
 		end
@@ -10350,14 +10604,18 @@ ClassicUI.GOC_GOCActionButtonUpdateCheck = function(self, isOnGCD)
 	local duration
 	local useGCDCurve = false
 	if (self.action) then
-		if (ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturateUnusableActions) then
+		if (ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturateUnusableActions or ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturateActionsWithoutResources) then
 			local isUsable, notEnoughMana = C_ActionBar_IsUsableAction(self.action)
-			if not(isUsable or notEnoughMana) then
+			if (ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturateUnusableActions and not(isUsable or notEnoughMana)) then
+				self.icon:SetDesaturation(1)
+				return
+			end
+			if (ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturateActionsWithoutResources and (not(isUsable) and notEnoughMana)) then
 				self.icon:SetDesaturation(1)
 				return
 			end
 		end
-		duration = C_ActionBar_GetActionCooldownDuration(self.action)
+		duration = C_ActionBar_GetActionCooldownDuration(self.action, true)
 		if duration:HasSecretValues() then
 			local actionInfoType, actionInfoID, actionInfoSubType = GetActionInfo(self.action)
 			if actionInfoType == "item" then
@@ -10404,9 +10662,13 @@ ClassicUI.GOC_GOCActionButtonUpdateCheck = function(self, isOnGCD)
 			end
 		end
 	elseif (self.spellID) then
-		if (ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturateUnusableActions) then
+		if (ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturateUnusableActions or ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturateActionsWithoutResources) then
 			local isUsable, notEnoughMana = C_Spell_IsSpellUsable(self.spellID)
-			if not(isUsable or notEnoughMana) then
+			if (ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturateUnusableActions and not(isUsable or notEnoughMana)) then
+				self.icon:SetDesaturation(1)
+				return
+			end
+			if (ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturateActionsWithoutResources and (not(isUsable) and notEnoughMana)) then
 				self.icon:SetDesaturation(1)
 				return
 			end
@@ -10418,7 +10680,7 @@ ClassicUI.GOC_GOCActionButtonUpdateCheck = function(self, isOnGCD)
 			end
 		end
 		if not(isOnGCD) then
-			duration = C_Spell_GetSpellCooldownDuration(self.spellID)
+			duration = C_Spell_GetSpellCooldownDuration(self.spellID, true)
 		end
 	end
 	if duration then
@@ -10706,6 +10968,18 @@ function ClassicUI:GOC_HookGOCActionButtons()
 		if (actionButton) then
 			ClassicUI:GOC_HookGOCActionButtonUpdate(actionButton)
 		end
+		actionButton = _G["MultiBar5Button"..i]
+		if (actionButton) then
+			ClassicUI:GOC_HookGOCActionButtonUpdate(actionButton)
+		end
+		actionButton = _G["MultiBar6Button"..i]
+		if (actionButton) then
+			ClassicUI:GOC_HookGOCActionButtonUpdate(actionButton)
+		end
+		actionButton = _G["MultiBar7Button"..i]
+		if (actionButton) then
+			ClassicUI:GOC_HookGOCActionButtonUpdate(actionButton)
+		end
 		actionButton = _G["StanceButton"..i]
 		if (actionButton) then
 			ClassicUI:GOC_HookGOCActionButtonUpdate(actionButton)
@@ -10733,10 +11007,6 @@ function ClassicUI:GOC_HookGOCActionButtons()
 	if not(GREYONCOOLDOWN_ACTIONBUTTON_UPDATECOOLDOWN_HOOKED) then
 		hooksecurefunc("ActionButton_UpdateCooldown", ClassicUI.GOC_ButtonUpdateHookFunc)
 		GREYONCOOLDOWN_ACTIONBUTTON_UPDATECOOLDOWN_HOOKED = true
-	end
-	if not(GREYONCOOLDOWN_MULTICASTSPELLBUTTON_UPDATECOOLDOWN_HOOKED) then
-		hooksecurefunc("MultiCastSpellButton_UpdateCooldown", ClassicUI.GOC_ButtonUpdateHookFunc)
-		GREYONCOOLDOWN_MULTICASTSPELLBUTTON_UPDATECOOLDOWN_HOOKED = true
 	end
 end
 

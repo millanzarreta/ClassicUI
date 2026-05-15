@@ -100,8 +100,12 @@ function CUI_GuildInfoFrame_UpdatePermissions()
 end
 
 function CUI_GuildInfoFrame_UpdateText(infoText)
-	CUI_GuildInfoMOTD:SetText(GetGuildRosterMOTD(), true); --Extra argument ignores markup.
-	CUI_GuildInfoDetails:SetText(infoText or GetGuildInfoText());
+	if not(InCombatLockdown()) then
+		CUI_GuildInfoMOTD:SetText(C_GuildInfo.GetMOTD(), true); --Extra argument ignores markup.
+	end
+	if (infoText or not(InCombatLockdown())) then
+		CUI_GuildInfoDetails:SetText(infoText or C_GuildInfo.GetInfoText());
+	end
 	CUI_GuildInfoDetailsFrame:SetVerticalScroll(0);
 	--CUI_GuildInfoDetailsFrameScrollBarScrollUpButton:Disable();
 end
@@ -139,15 +143,17 @@ end
 
 function CUI_GuildTextEditFrame_Show(editType)
 	if ( editType == "motd" ) then
-		CUI_GuildTextEditFrame:SetHeight(200);	-- �or maybe 162?
+		CUI_GuildTextEditFrame:SetHeight(200);	-- or maybe 162?
 		CUI_GuildTextEditBox:SetMaxLetters(128);
-		CUI_GuildTextEditBox:SetText(GetGuildRosterMOTD());
+		if not(InCombatLockdown()) then
+			CUI_GuildTextEditBox:SetText(C_GuildInfo.GetMOTD());
+		end
 		CUI_GuildTextEditFrameTitle:SetText(GUILD_MOTD_EDITLABEL);
 		CUI_GuildTextEditBox:SetScript("OnEnterPressed", CUI_GuildTextEditFrame_OnAccept);
 	elseif ( editType == "info" ) then
 		CUI_GuildTextEditFrame:SetHeight(295);
 		CUI_GuildTextEditBox:SetMaxLetters(500);
-		CUI_GuildTextEditBox:SetText(GetGuildInfoText());
+		CUI_GuildTextEditBox:SetText(C_GuildInfo.GetInfoText());
 		CUI_GuildTextEditFrameTitle:SetText(GUILD_INFO_EDITLABEL);
 		CUI_GuildTextEditBox:SetScript("OnEnterPressed", nil);
 	end
@@ -160,11 +166,13 @@ end
 
 function CUI_GuildTextEditFrame_OnAccept()
 	if ( CUI_GuildTextEditFrame.type == "motd" ) then
-		GuildSetMOTD(CUI_GuildTextEditBox:GetText());
+		--C_GuildInfo.SetMOTD(CUI_GuildTextEditBox:GetText());	-- removed because is restricted-protected
+		StaticPopup_Show("CUI_GUILD_PROTECTEDFUNC_W");
 	elseif ( CUI_GuildTextEditFrame.type == "info" ) then
-		local infoText = CUI_GuildTextEditBox:GetText();
-		SetGuildInfoText(infoText);
-		CUI_GuildInfoFrame_UpdateText(infoText);
+		--local infoText = CUI_GuildTextEditBox:GetText();
+		--C_GuildInfo.SetInfoText(infoText);	-- removed because is restricted-protected
+		--CUI_GuildInfoFrame_UpdateText(infoText);
+		StaticPopup_Show("CUI_GUILD_PROTECTEDFUNC_W");
 	end
 	CUI_GuildTextEditFrame:Hide();
 end

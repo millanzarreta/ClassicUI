@@ -116,6 +116,7 @@ function CUI_GuildFrame_UpdateFaction()
 	local factionBar = CUI_GuildFactionFrame;
 	local gender = UnitSex("player");
 	local guildFactionData = C_Reputation.GetGuildFactionData();
+	if (guildFactionData == nil) then return end
 	local barMin, barMax, barValue = guildFactionData.currentReactionThreshold, guildFactionData.nextReactionThreshold, guildFactionData.currentStanding;
 	local factionStandingtext = GetText("FACTION_STANDING_LABEL"..guildFactionData.reaction, gender);
 	--Normalize Values
@@ -382,6 +383,7 @@ end
 
 function CUI_GuildFactionBar_OnEnter(self)
 	local guildFactionData = C_Reputation.GetGuildFactionData();
+	if (guildFactionData == nil) then return end
 	local barMin, barMax, barValue = guildFactionData.currentReactionThreshold, guildFactionData.nextReactionThreshold, guildFactionData.currentStanding;
 	local factionStandingtext = GetText("FACTION_STANDING_LABEL"..guildFactionData.reaction);
 	--Normalize Values

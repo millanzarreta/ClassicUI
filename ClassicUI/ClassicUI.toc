@@ -1,7 +1,7 @@
-## Interface: 120000
+## Interface: 120005
 ## Title: ClassicUI
 ## Author: millanzarreta
-## Version: 3.0.0
+## Version: 3.0.1
 ## IconTexture: Interface\Addons\ClassicUI\micon
 ## Notes: Restores the classic interface pre-Dragonflight
 ## Notes-esES: Restaura la interfaz clasica pre-Dragonflight
@@ -25,7 +25,7 @@
 ## LoadOnDemand: 0
 ## SavedVariables: ClassicUI_DB
 ## OptionalDeps: Ace3, LibStub, CallbackHandler-1.0
-## X-Curse-Packaged-Version: 3.0.0
+## X-Curse-Packaged-Version: 3.0.1
 ## X-Curse-Project-Name: ClassicUI
 ## X-Curse-Project-ID: ClassicUI
 ## X-Curse-Repository-ID: ClassicUI-mainline

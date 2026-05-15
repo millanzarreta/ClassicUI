@@ -44,9 +44,9 @@ function CUI_GuildNews_Update()
 		CUI_GuildNewsContainer:SetHeight(287);
 	end
 	
-	local motd = GetGuildRosterMOTD();
+	local motd = not(InCombatLockdown()) and C_GuildInfo.GetMOTD() or "";
 	local scrollFrame = CUI_GuildNewsContainer;
-	local haveMOTD = motd ~= "" and 1 or 0;	
+	local haveMOTD = (motd ~= "" and motd ~= nil) and 1 or 0;
 	local buttons = scrollFrame.buttons;
 	local button, index;
 	
@@ -64,7 +64,9 @@ function CUI_GuildNews_Update()
 		button.newsInfo = nil;
 		index = offset + i;
 		if( index == haveMOTD ) then
-			GuildNewsButton_SetMOTD(button, motd);
+			if ( motd ~= nil ) then
+				GuildNewsButton_SetMOTD(button, motd);
+			end
 		elseif( index <= numEvents + haveMOTD ) then
 			CUI_GuildNewsButton_SetEvent(button, index - haveMOTD);
 		elseif( index <= numEvents + haveMOTD + numNews  ) then
@@ -99,6 +101,10 @@ local SIX_DAYS = 6 * 24 * 60 * 60		-- time in seconds
 function CUI_GuildNewsButton_SetEvent( button, event_id )
 	local today = date("*t");
 	local info = C_Calendar.GetGuildEventInfo(event_id);
+	if info == nil then
+		button:Hide()
+		return
+	end
 	local month = info.month;
 	local day = info.monthDay;
 	local weekday = info.weekday;
@@ -199,10 +205,10 @@ function CUI_GuildNewsButton_OnEnter(self)
 			GameTooltip:Show();
 		end
 	elseif ( newsType == NEWS_MOTD ) then
-		if ( self.text:IsTruncated() ) then
+		if ( self.text:IsTruncated() and not(InCombatLockdown()) ) then
 			CUI_GuildNewsButton_AnchorTooltip(self);
 			GameTooltip:SetText(GUILD_MOTD_LABEL);
-			GameTooltip:AddLine(GetGuildRosterMOTD(), 1, 1, 1, true);
+			GameTooltip:AddLine(C_GuildInfo.GetMOTD(), 1, 1, 1, true);
 			GameTooltip:Show();
 		end
 	end

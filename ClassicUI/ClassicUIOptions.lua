@@ -1680,7 +1680,7 @@ ClassicUI.optionsTable = {
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsOrderDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultOrderDesc'],
 									disabled = function() return ClassicUI:IsMicroButtonsOrderDefaultDB() end,
-									width = 0.72,
+									width = 0.76,
 									func = function()
 										ClassicUI:ReorderMicroButtonsDB(nil, "DEFAULT")
 										if (ClassicUI:IsEnabled()) then
@@ -1747,7 +1747,7 @@ ClassicUI.optionsTable = {
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsPriorityDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultPriorityDesc'],
 									disabled = function() return ClassicUI:IsMicroButtonsPriorityDefaultDB() end,
-									width = 0.72,
+									width = 0.76,
 									func = function()
 										ClassicUI:RepriorizeMicroButtonsDB(nil, "DEFAULT")
 										if (ClassicUI:IsEnabled()) then
@@ -2046,7 +2046,7 @@ ClassicUI.optionsTable = {
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsOrderDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultOrderDesc'],
 									disabled = function() return ClassicUI:IsMicroButtonsOrderDefaultDB() end,
-									width = 0.72,
+									width = 0.76,
 									func = function()
 										ClassicUI:ReorderMicroButtonsDB(nil, "DEFAULT")
 										if (ClassicUI:IsEnabled()) then
@@ -2113,7 +2113,7 @@ ClassicUI.optionsTable = {
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsPriorityDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultPriorityDesc'],
 									disabled = function() return ClassicUI:IsMicroButtonsPriorityDefaultDB() end,
-									width = 0.72,
+									width = 0.76,
 									func = function()
 										ClassicUI:RepriorizeMicroButtonsDB(nil, "DEFAULT")
 										if (ClassicUI:IsEnabled()) then
@@ -2406,7 +2406,7 @@ ClassicUI.optionsTable = {
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsOrderDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultOrderDesc'],
 									disabled = function() return ClassicUI:IsMicroButtonsOrderDefaultDB() end,
-									width = 0.72,
+									width = 0.76,
 									func = function()
 										ClassicUI:ReorderMicroButtonsDB(nil, "DEFAULT")
 										if (ClassicUI:IsEnabled()) then
@@ -2473,7 +2473,7 @@ ClassicUI.optionsTable = {
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsPriorityDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultPriorityDesc'],
 									disabled = function() return ClassicUI:IsMicroButtonsPriorityDefaultDB() end,
-									width = 0.72,
+									width = 0.76,
 									func = function()
 										ClassicUI:RepriorizeMicroButtonsDB(nil, "DEFAULT")
 										if (ClassicUI:IsEnabled()) then
@@ -2799,7 +2799,7 @@ ClassicUI.optionsTable = {
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsOrderDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultOrderDesc'],
 									disabled = function() return ClassicUI:IsMicroButtonsOrderDefaultDB() end,
-									width = 0.72,
+									width = 0.76,
 									func = function()
 										ClassicUI:ReorderMicroButtonsDB(nil, "DEFAULT")
 										if (ClassicUI:IsEnabled()) then
@@ -2866,7 +2866,7 @@ ClassicUI.optionsTable = {
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsPriorityDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultPriorityDesc'],
 									disabled = function() return ClassicUI:IsMicroButtonsPriorityDefaultDB() end,
-									width = 0.72,
+									width = 0.76,
 									func = function()
 										ClassicUI:RepriorizeMicroButtonsDB(nil, "DEFAULT")
 										if (ClassicUI:IsEnabled()) then
@@ -3167,7 +3167,7 @@ ClassicUI.optionsTable = {
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsOrderDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultOrderDesc'],
 									disabled = function() return ClassicUI:IsMicroButtonsOrderDefaultDB() end,
-									width = 0.72,
+									width = 0.76,
 									func = function()
 										ClassicUI:ReorderMicroButtonsDB(nil, "DEFAULT")
 										if (ClassicUI:IsEnabled()) then
@@ -3234,7 +3234,7 @@ ClassicUI.optionsTable = {
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsPriorityDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultPriorityDesc'],
 									disabled = function() return ClassicUI:IsMicroButtonsPriorityDefaultDB() end,
-									width = 0.72,
+									width = 0.76,
 									func = function()
 										ClassicUI:RepriorizeMicroButtonsDB(nil, "DEFAULT")
 										if (ClassicUI:IsEnabled()) then
@@ -3527,7 +3527,7 @@ ClassicUI.optionsTable = {
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsOrderDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultOrderDesc'],
 									disabled = function() return ClassicUI:IsMicroButtonsOrderDefaultDB() end,
-									width = 0.72,
+									width = 0.76,
 									func = function()
 										ClassicUI:ReorderMicroButtonsDB(nil, "DEFAULT")
 										if (ClassicUI:IsEnabled()) then
@@ -3594,7 +3594,7 @@ ClassicUI.optionsTable = {
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsPriorityDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultPriorityDesc'],
 									disabled = function() return ClassicUI:IsMicroButtonsPriorityDefaultDB() end,
-									width = 0.72,
+									width = 0.76,
 									func = function()
 										ClassicUI:RepriorizeMicroButtonsDB(nil, "DEFAULT")
 										if (ClassicUI:IsEnabled()) then
@@ -3942,7 +3942,7 @@ ClassicUI.optionsTable = {
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsOrderDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultOrderDesc'],
 									disabled = function() return ClassicUI:IsMicroButtonsOrderDefaultDB() end,
-									width = 0.72,
+									width = 0.76,
 									func = function()
 										ClassicUI:ReorderMicroButtonsDB(nil, "DEFAULT")
 										if (ClassicUI:IsEnabled()) then
@@ -4009,7 +4009,7 @@ ClassicUI.optionsTable = {
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsPriorityDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultPriorityDesc'],
 									disabled = function() return ClassicUI:IsMicroButtonsPriorityDefaultDB() end,
-									width = 0.72,
+									width = 0.76,
 									func = function()
 										ClassicUI:RepriorizeMicroButtonsDB(nil, "DEFAULT")
 										if (ClassicUI:IsEnabled()) then
@@ -4445,7 +4445,7 @@ ClassicUI.optionsTable = {
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsOrderDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultOrderDesc'],
 									disabled = function() return ClassicUI:IsMicroButtonsOrderDefaultDB() end,
-									width = 0.72,
+									width = 0.76,
 									func = function()
 										ClassicUI:ReorderMicroButtonsDB(nil, "DEFAULT")
 										if (ClassicUI:IsEnabled()) then
@@ -4512,7 +4512,7 @@ ClassicUI.optionsTable = {
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsPriorityDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultPriorityDesc'],
 									disabled = function() return ClassicUI:IsMicroButtonsPriorityDefaultDB() end,
-									width = 0.72,
+									width = 0.76,
 									func = function()
 										ClassicUI:RepriorizeMicroButtonsDB(nil, "DEFAULT")
 										if (ClassicUI:IsEnabled()) then
@@ -4813,7 +4813,7 @@ ClassicUI.optionsTable = {
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsOrderDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultOrderDesc'],
 									disabled = function() return ClassicUI:IsMicroButtonsOrderDefaultDB() end,
-									width = 0.72,
+									width = 0.76,
 									func = function()
 										ClassicUI:ReorderMicroButtonsDB(nil, "DEFAULT")
 										if (ClassicUI:IsEnabled()) then
@@ -4880,7 +4880,7 @@ ClassicUI.optionsTable = {
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsPriorityDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultPriorityDesc'],
 									disabled = function() return ClassicUI:IsMicroButtonsPriorityDefaultDB() end,
-									width = 0.72,
+									width = 0.76,
 									func = function()
 										ClassicUI:RepriorizeMicroButtonsDB(nil, "DEFAULT")
 										if (ClassicUI:IsEnabled()) then
@@ -5177,7 +5177,7 @@ ClassicUI.optionsTable = {
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsOrderDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultOrderDesc'],
 									disabled = function() return ClassicUI:IsMicroButtonsOrderDefaultDB() end,
-									width = 0.72,
+									width = 0.76,
 									func = function()
 										ClassicUI:ReorderMicroButtonsDB(nil, "DEFAULT")
 										if (ClassicUI:IsEnabled()) then
@@ -5244,7 +5244,7 @@ ClassicUI.optionsTable = {
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsPriorityDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultPriorityDesc'],
 									disabled = function() return ClassicUI:IsMicroButtonsPriorityDefaultDB() end,
-									width = 0.72,
+									width = 0.76,
 									func = function()
 										ClassicUI:RepriorizeMicroButtonsDB(nil, "DEFAULT")
 										if (ClassicUI:IsEnabled()) then
@@ -5594,7 +5594,7 @@ ClassicUI.optionsTable = {
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsOrderDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultOrderDesc'],
 									disabled = function() return ClassicUI:IsMicroButtonsOrderDefaultDB() end,
-									width = 0.72,
+									width = 0.76,
 									func = function()
 										ClassicUI:ReorderMicroButtonsDB(nil, "DEFAULT")
 										if (ClassicUI:IsEnabled()) then
@@ -5661,7 +5661,7 @@ ClassicUI.optionsTable = {
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsPriorityDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultPriorityDesc'],
 									disabled = function() return ClassicUI:IsMicroButtonsPriorityDefaultDB() end,
-									width = 0.72,
+									width = 0.76,
 									func = function()
 										ClassicUI:RepriorizeMicroButtonsDB(nil, "DEFAULT")
 										if (ClassicUI:IsEnabled()) then
@@ -5939,7 +5939,7 @@ ClassicUI.optionsTable = {
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsOrderDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultOrderDesc'],
 									disabled = function() return ClassicUI:IsMicroButtonsOrderDefaultDB() end,
-									width = 0.72,
+									width = 0.76,
 									func = function()
 										ClassicUI:ReorderMicroButtonsDB(nil, "DEFAULT")
 										if (ClassicUI:IsEnabled()) then
@@ -6006,7 +6006,7 @@ ClassicUI.optionsTable = {
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsPriorityDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultPriorityDesc'],
 									disabled = function() return ClassicUI:IsMicroButtonsPriorityDefaultDB() end,
-									width = 0.72,
+									width = 0.76,
 									func = function()
 										ClassicUI:RepriorizeMicroButtonsDB(nil, "DEFAULT")
 										if (ClassicUI:IsEnabled()) then
@@ -6060,9 +6060,9 @@ ClassicUI.optionsTable = {
 												StoreMicroButton:Hide()
 											else
 												local show = true
-												if not(C_StorePublic.IsDisabledByParentalControls()) and not(Kiosk.IsEnabled()) and
+												if not(Kiosk.IsEnabled()) and
 													((not C_StorePublic.IsEnabled() and GetCurrentRegionName() == "CN") or
-													(C_StorePublic.IsEnabled() and C_PlayerInfo.IsPlayerNPERestricted() and (TutorialLogic and TutorialLogic.Tutorials) and (TutorialLogic and TutorialLogic.Tutorials).UI_Watcher and (TutorialLogic and TutorialLogic.Tutorials).UI_Watcher.IsActive)) then
+													(C_StorePublic.IsEnabled() and C_PlayerInfo.IsPlayerNPERestricted() and (TutorialManager and TutorialManager:GetWatcher("UI_Watcher") and TutorialManager:GetWatcher("UI_Watcher").IsActive))) then
 													show = false
 												end
 												if (show) then
@@ -6109,7 +6109,7 @@ ClassicUI.optionsTable = {
 												StoreMicroButton:Disable()
 											else
 												local enable = true
-												if Kiosk.IsEnabled() or ( C_StorePublic.IsDisabledByParentalControls() ) or ( not(C_StorePublic.IsEnabled()) and not( GetCurrentRegionName() == "CN" ) ) then
+												if ( Kiosk.IsEnabled() or ( not(C_StorePublic.IsEnabled()) and not( GetCurrentRegionName() == "CN" ) ) ) then
 													enable = false
 												end
 												if (enable) then
@@ -6308,7 +6308,7 @@ ClassicUI.optionsTable = {
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsOrderDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultOrderDesc'],
 									disabled = function() return ClassicUI:IsMicroButtonsOrderDefaultDB() end,
-									width = 0.72,
+									width = 0.76,
 									func = function()
 										ClassicUI:ReorderMicroButtonsDB(nil, "DEFAULT")
 										if (ClassicUI:IsEnabled()) then
@@ -6375,7 +6375,7 @@ ClassicUI.optionsTable = {
 									name = function() return '|T'..(ClassicUI:IsMicroButtonsPriorityDefaultDB() and 'Interface\\Addons\\ClassicUI\\Textures\\UI-RefreshButton-Disabled-custom' or '851904')..':0|t '..L['Default'] end,
 									desc = L['DefaultPriorityDesc'],
 									disabled = function() return ClassicUI:IsMicroButtonsPriorityDefaultDB() end,
-									width = 0.72,
+									width = 0.76,
 									func = function()
 										ClassicUI:RepriorizeMicroButtonsDB(nil, "DEFAULT")
 										if (ClassicUI:IsEnabled()) then
@@ -9549,11 +9549,11 @@ ClassicUI.optionsTable = {
 								[7] = L['AzeriteBar+ArtifactBar'],
 								[8] = L['AzeriteBar+ReputationBar'],
 								[9] = L['ArtifactBar+ReputationBar'],
-								[10] = L['ExpBar+HouseFavorBar'],
-								[11] = L['HonorBar+HouseFavorBar'],
-								[12] = L['AzeriteBar+HouseFavorBar'],
-								[13] = L['ArtifactBar+HouseFavorBar'],
-								[14] = L['ReputationBar+HouseFavorBar']
+								[10] = L['HouseFavorBar+ExpBar'],
+								[11] = L['HouseFavorBar+HonorBar'],
+								[12] = L['HouseFavorBar+AzeriteBar'],
+								[13] = L['HouseFavorBar+ArtifactBar'],
+								[14] = L['HouseFavorBar+ReputationBar']
 							},
 							get = function(_, keyname) return ClassicUI.db.profile.barsConfig.DoubleUpperStatusBar.hide[keyname] end,
 							set = function(_, keyname, value)
@@ -11265,7 +11265,7 @@ ClassicUI.optionsTable = {
 					order = 5,
 					type = "toggle",
 					name = L['Force Extra Options'],
-					desc = L['Enable Extra Options even ClassicUI core is disabled'],
+					desc = L['Enable Extra Options even when ClassicUI core is disabled'],
 					width = "double",
 					confirm = function(_, newValue)
 						if ((not newValue) and (not ClassicUI:IsEnabled())) then
@@ -11274,9 +11274,9 @@ ClassicUI.optionsTable = {
 							return false
 						end
 					end,
-					get = function() return ClassicUI.db.profile.forceExtraOptions end,
+					get = function() return ClassicUI.db.profile.extraConfigs.forceExtraOptions end,
 					set = function(_,value)
-						ClassicUI.db.profile.forceExtraOptions = value
+						ClassicUI.db.profile.extraConfigs.forceExtraOptions = value
 						if value then
 							if (not ClassicUI:IsEnabled()) then
 								ClassicUI:ExtraOptionsFunc()
@@ -11330,7 +11330,7 @@ ClassicUI.optionsTable = {
 							desc = L['OPEN_GUILD_PANEL_NORMAL_DESC'],
 							width = 2.25,
 							values = {
-								[0] = L['Defauilt - Show the new social guild panel'],
+								[0] = L['Default - Show the new social guild panel'],
 								[1] = L['Show the old guild panel']
 							},
 							get = function()
@@ -11340,7 +11340,7 @@ ClassicUI.optionsTable = {
 								if (value == 1) then
 									ClassicUI.db.profile.extraConfigs.GuildPanelMode.defaultOpenOldMenu = true
 									ClassicUI.cached_db_profile.extraConfigs_GuildPanelMode_defaultOpenOldMenu = true
-									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
+									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.extraConfigs.forceExtraOptions) then
 										ClassicUI:HookOpenGuildPanelMode()
 									end
 								else
@@ -11356,7 +11356,7 @@ ClassicUI.optionsTable = {
 							desc = L['OPEN_GUILD_PANEL_LEFT_MICROBUTTON_CLICK_DESC'],
 							width = 2.25,
 							values = {
-								[0] = L['Defauilt - Show the new social guild panel'],
+								[0] = L['Default - Show the new social guild panel'],
 								[1] = L['Show the old guild panel']
 							},
 							get = function()
@@ -11366,7 +11366,7 @@ ClassicUI.optionsTable = {
 								if (value == 1) then
 									ClassicUI.db.profile.extraConfigs.GuildPanelMode.leftClickMicroButtonOpenOldMenu = true
 									ClassicUI.cached_db_profile.extraConfigs_GuildPanelMode_leftClickMicroButtonOpenOldMenu = true
-									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
+									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.extraConfigs.forceExtraOptions) then
 										ClassicUI:HookOpenGuildPanelMode()
 									end
 								else
@@ -11382,7 +11382,7 @@ ClassicUI.optionsTable = {
 							desc = L['OPEN_GUILD_PANEL_RIGHT_MICROBUTTON_CLICK_DESC'],
 							width = 2.25,
 							values = {
-								[0] = L['Defauilt - Show the new social guild panel'],
+								[0] = L['Default - Show the new social guild panel'],
 								[1] = L['Show the old guild panel']
 							},
 							get = function()
@@ -11392,7 +11392,7 @@ ClassicUI.optionsTable = {
 								if (value == 1) then
 									ClassicUI.db.profile.extraConfigs.GuildPanelMode.rightClickMicroButtonOpenOldMenu = true
 									ClassicUI.cached_db_profile.extraConfigs_GuildPanelMode_rightClickMicroButtonOpenOldMenu = true
-									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
+									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.extraConfigs.forceExtraOptions) then
 										ClassicUI:HookOpenGuildPanelMode()
 									end
 								else
@@ -11408,7 +11408,7 @@ ClassicUI.optionsTable = {
 							desc = L['OPEN_GUILD_PANEL_MIDDLE_MICROBUTTON_CLICK_DESC'],
 							width = 2.25,
 							values = {
-								[0] = L['Defauilt - Show the new social guild panel'],
+								[0] = L['Default - Show the new social guild panel'],
 								[1] = L['Show the old guild panel']
 							},
 							get = function()
@@ -11418,7 +11418,7 @@ ClassicUI.optionsTable = {
 								if (value == 1) then
 									ClassicUI.db.profile.extraConfigs.GuildPanelMode.middleClickMicroButtonOpenOldMenu = true
 									ClassicUI.cached_db_profile.extraConfigs_GuildPanelMode_middleClickMicroButtonOpenOldMenu = true
-									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
+									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.extraConfigs.forceExtraOptions) then
 										ClassicUI:HookOpenGuildPanelMode()
 									end
 								else
@@ -11456,7 +11456,7 @@ ClassicUI.optionsTable = {
 							desc = L['KEYBINDS_VISIBILITY_OPTIONS_SELECT_DESC'],
 							width = 2.30,
 							confirm = function(_, newValue)
-								if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
+								if (ClassicUI:IsEnabled() or ClassicUI.db.profile.extraConfigs.forceExtraOptions) then
 									if ((ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode >= 2) and (newValue < 2)) then
 										return L['RELOADUI_MSG']
 									else
@@ -11468,7 +11468,7 @@ ClassicUI.optionsTable = {
 							end,
 							values = {
 								[0] = L['Default - Show all keybinds'],
-								[1] = L['Hide completly all keybinds'],
+								[1] = L['Hide all keybinds completely'],
 								[2] = L['Hide keybinds but show dot range'],
 								[3] = L['Hide keybinds but show a permanent dot range']
 							},
@@ -11479,14 +11479,14 @@ ClassicUI.optionsTable = {
 								if ((ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode >= 2) and (value < 2)) then
 									ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode = value
 									ClassicUI.cached_db_profile.extraConfigs_KeybindsConfig_hideKeybindsMode = value
-									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
+									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.extraConfigs.forceExtraOptions) then
 										ClassicUI:ToggleVisibilityKeybinds(value)
 										ReloadUI()
 									end
 								else
 									ClassicUI.db.profile.extraConfigs.KeybindsConfig.hideKeybindsMode = value
 									ClassicUI.cached_db_profile.extraConfigs_KeybindsConfig_hideKeybindsMode = value
-									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
+									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.extraConfigs.forceExtraOptions) then
 										ClassicUI:ToggleVisibilityKeybinds(value)
 									end
 								end
@@ -11539,7 +11539,7 @@ ClassicUI.optionsTable = {
 							name = L['Enable'],
 							desc = L['Enable RedRange'],
 							confirm = function(_, newValue)
-								if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
+								if (ClassicUI:IsEnabled() or ClassicUI.db.profile.extraConfigs.forceExtraOptions) then
 									if ((not newValue) and (ClassicUI.db.profile.extraConfigs.RedRangeConfig.enabled)) then
 										return L['RELOADUI_MSG']
 									else
@@ -11555,12 +11555,12 @@ ClassicUI.optionsTable = {
 							set = function(_,value)
 								if ((not value) and (ClassicUI.db.profile.extraConfigs.RedRangeConfig.enabled)) then
 									ClassicUI.db.profile.extraConfigs.RedRangeConfig.enabled = value
-									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
+									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.extraConfigs.forceExtraOptions) then
 										ReloadUI()
 									end
 								else
 									ClassicUI.db.profile.extraConfigs.RedRangeConfig.enabled = value
-									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
+									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.extraConfigs.forceExtraOptions) then
 										ClassicUI:HookRedRangeIcons()
 									end
 								end
@@ -11587,7 +11587,7 @@ ClassicUI.optionsTable = {
 							name = L['Enable'],
 							desc = L['Enable GreyOnCooldown'],
 							confirm = function(_, newValue)
-								if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
+								if (ClassicUI:IsEnabled() or ClassicUI.db.profile.extraConfigs.forceExtraOptions) then
 									if ((not newValue) and (ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.enabled)) then
 										return L['RELOADUI_MSG']
 									else
@@ -11604,13 +11604,13 @@ ClassicUI.optionsTable = {
 								if ((not value) and (ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.enabled)) then
 									ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.enabled = value
 									ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_enabled = value
-									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
+									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.extraConfigs.forceExtraOptions) then
 										ReloadUI()
 									end
 								else
 									ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.enabled = value
 									ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_enabled = value
-									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
+									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.extraConfigs.forceExtraOptions) then
 										ClassicUI:GOC_MainFunction()
 									end
 								end
@@ -11631,7 +11631,24 @@ ClassicUI.optionsTable = {
 							set = function(_,value)
 								ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.desaturateUnusableActions = value
 								ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturateUnusableActions = value
-								if ((ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) and (ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.enabled)) then
+								if ((ClassicUI:IsEnabled() or ClassicUI.db.profile.extraConfigs.forceExtraOptions) and (ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.enabled)) then
+									if (GREYONCOOLDOWN_HOOKED == ClassicUI) then
+										ClassicUI:GOC_UpdateAllActionButtons()
+									end
+								end
+							end
+						},
+						desaturateActionsWithoutResources = {
+							order = 11,
+							type = "toggle",
+							name = L['DesaturateActionsWithoutResources'],
+							desc = L['DesaturateActionsWithoutResourcesDesc'],
+							width = "double",
+							get = function() return ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.desaturateActionsWithoutResources end,
+							set = function(_,value)
+								ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.desaturateActionsWithoutResources = value
+								ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturateActionsWithoutResources = value
+								if ((ClassicUI:IsEnabled() or ClassicUI.db.profile.extraConfigs.forceExtraOptions) and (ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.enabled)) then
 									if (GREYONCOOLDOWN_HOOKED == ClassicUI) then
 										ClassicUI:GOC_UpdateAllActionButtons()
 									end
@@ -11639,7 +11656,7 @@ ClassicUI.optionsTable = {
 							end
 						},
 						desaturatePetActionButtons = {
-							order = 11,
+							order = 12,
 							type = "toggle",
 							name = L['DesaturatePetActionButtons'],
 							desc = L['DesaturatePetActionButtonsDesc'],
@@ -11648,7 +11665,7 @@ ClassicUI.optionsTable = {
 							set = function(_,value)
 								ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.desaturatePetActionButtons = value
 								ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturatePetActionButtons = value
-								if ((ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) and (ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.enabled)) then
+								if ((ClassicUI:IsEnabled() or ClassicUI.db.profile.extraConfigs.forceExtraOptions) and (ClassicUI.db.profile.extraConfigs.GreyOnCooldownConfig.enabled)) then
 									if (GREYONCOOLDOWN_HOOKED == ClassicUI) then
 										ClassicUI:GOC_HookGOCPetActionButtons()
 									end
@@ -11683,7 +11700,7 @@ ClassicUI.optionsTable = {
 							name = L['Enable'],
 							desc = L['Enable LossOfControlUI Remover'],
 							confirm = function(_, newValue)
-								if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
+								if (ClassicUI:IsEnabled() or ClassicUI.db.profile.extraConfigs.forceExtraOptions) then
 									if ((not newValue) and (ClassicUI.db.profile.extraConfigs.LossOfControlUIConfig.enabled)) then
 										return L['RELOADUI_MSG']
 									else
@@ -11700,13 +11717,13 @@ ClassicUI.optionsTable = {
 								if ((not value) and (ClassicUI.db.profile.extraConfigs.LossOfControlUIConfig.enabled)) then
 									ClassicUI.db.profile.extraConfigs.LossOfControlUIConfig.enabled = value
 									ClassicUI.cached_db_profile.extraConfigs_LossOfControlUIConfig_enabled = value
-									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
+									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.extraConfigs.forceExtraOptions) then
 										ReloadUI()
 									end
 								else
 									ClassicUI.db.profile.extraConfigs.LossOfControlUIConfig.enabled = value
 									ClassicUI.cached_db_profile.extraConfigs_LossOfControlUIConfig_enabled = value
-									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.forceExtraOptions) then
+									if (ClassicUI:IsEnabled() or ClassicUI.db.profile.extraConfigs.forceExtraOptions) then
 										ClassicUI:HookLossOfControlUICCRemover()
 									end
 								end

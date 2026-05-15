@@ -453,7 +453,11 @@
 				</KeyValues>
 				<Scripts>
 					<OnMouseUp>
-						StaticPopup_Show("SET_GUILDPLAYERNOTE");
+						local _, _, _, _, _, _, memberPublicNote, _, _, _, _, _, _, _, _, _, memberGuid = GetGuildRosterInfo(GetGuildRosterSelection());
+						if ( memberPublicNote ~= nil and memberGuid ~= nil ) then
+							--StaticPopup_Show("SET_GUILDPLAYERNOTE", nil, nil, { guid = memberGuid, currentNote = memberPublicNote, isPublic = true });	-- removed because is restricted-protected
+							StaticPopup_Show("CUI_GUILD_PROTECTEDFUNC_W");
+						end
 					</OnMouseUp>
 				</Scripts>
 			</Frame>
@@ -478,7 +482,11 @@
 				</KeyValues>
 				<Scripts>
 					<OnMouseUp>
-						StaticPopup_Show("SET_GUILDOFFICERNOTE");
+						local _, _, _, _, _, _, _, memberOfficerNote, _, _, _, _, _, _, _, _, memberGuid = GetGuildRosterInfo(GetGuildRosterSelection());
+						if ( memberOfficerNote ~= nil and memberGuid ~= nil ) then
+							--StaticPopup_Show("SET_GUILDOFFICERNOTE", nil, nil, { guid = memberGuid, currentNote = memberOfficerNote, isPublic = false });	-- removed because is restricted-protected
+							StaticPopup_Show("CUI_GUILD_PROTECTEDFUNC_W");
+						end
 					</OnMouseUp>
 				</Scripts>
 			</Frame>
