@@ -68,7 +68,6 @@ local C_Club_IsRestricted = C_Club.IsRestricted
 local C_Container_GetContainerNumFreeSlots = C_Container.GetContainerNumFreeSlots
 local C_SocialRestrictions_CanReceiveChat = C_SocialRestrictions.CanReceiveChat
 local CommunitiesUtil_DoesAnyCommunityHaveUnreadMessages = CommunitiesUtil.DoesAnyCommunityHaveUnreadMessages
-local CommunitiesFrame_IsEnabled = CommunitiesFrame_IsEnabled
 local ContainerFrame_IsReagentBag = ContainerFrame_IsReagentBag
 local GetRestrictedAccountData = GetRestrictedAccountData
 local C_Reputation_GetWatchedFactionData = C_Reputation.GetWatchedFactionData
@@ -79,7 +78,6 @@ local C_CatalogShop_IsShop2Enabled = C_CatalogShop.IsShop2Enabled
 local StoreFrame_IsShown = StoreFrame_IsShown
 local Kiosk_IsEnabled = Kiosk.IsEnabled
 local CurrentVersionHasNewUnseenSettings = CurrentVersionHasNewUnseenSettings
-local IsPlayerAtEffectiveMaxLevel = IsPlayerAtEffectiveMaxLevel
 local IsXPUserDisabled = IsXPUserDisabled
 local UnitXP = UnitXP
 local UnitXPMax = UnitXPMax
@@ -2241,8 +2239,9 @@ function ClassicUI:ReLayoutMainFrames()
 	ClassicUI:ModifyOriginalFrames()
 	ClassicUI:ReloadMainFramesSettings()
 	local rightAnchor = (EditModeUtil ~= nil) and EditModeUtil:GetRightContainerAnchor() or nil
-	if (rightAnchor and UIParentRightManagedFrameContainer) then
-		rightAnchor:SetPoint(UIParentRightManagedFrameContainer, true)
+	local rightManagedFrameContainer = GetRightManagedFrameContainer and GetRightManagedFrameContainer()
+	if (rightAnchor and rightManagedFrameContainer) then
+		rightAnchor:SetPoint(rightManagedFrameContainer, true)
 	end
 end
 
@@ -5954,7 +5953,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	ClassicUI.hook_GuildMicroButton_UpdateNotificationIcon = function(self)
 		if (ClassicUI.cached_db_profile.barsConfig_MicroButtons_GuildMicroButton_classicNotificationMicroButton) then	-- cached db value
 			self.NotificationOverlay:SetShown(false)
-			if CommunitiesFrame_IsEnabled() and self:IsEnabled() then
+			if C_Club_IsEnabled() and self:IsEnabled() then
 				self.CUI_NotificationOverlay:SetShown(C_SocialRestrictions_CanReceiveChat() and (self:HasUnseenInvitations() or CommunitiesUtil_DoesAnyCommunityHaveUnreadMessages()))
 			else
 				self.CUI_NotificationOverlay:SetShown(false)
@@ -7239,7 +7238,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 			bar.priority = 4
 			if (bar.ShouldBeVisible == nil) then
 				bar.ShouldBeVisible = function(self)
-					return not IsPlayerAtEffectiveMaxLevel() and not IsXPUserDisabled()
+					return not GameRulesUtil.IsPlayerAtEffectiveMaxLevel() and not IsXPUserDisabled()
 				end
 			end
 			hooksecurefunc(bar, "Update", function(self)
@@ -9694,14 +9693,15 @@ function ClassicUI:MainFunction(isLogin)
 	ClassicUI:InitActionButtonInfoCache()
 
 	-- Seems that this frame normally does not need protection (InCombatLockdown) to be moved, as long as there are no protected frames anchored to it.
-	hooksecurefunc("UIParent_ManageFramePositions", function()
-		if (not(InCombatLockdown()) or not(UIParentBottomManagedFrameContainer:IsProtected())) then
-			UIParentBottomManagedFrameContainer:ClearAllPoints()
-			UIParentBottomManagedFrameContainer:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, MAIN_ACTION_BAR_DEFAULT_OFFSET_Y + 100)
+	local bottomManagedFrameContainer = GetBottomManagedFrameContainer()
+	hooksecurefunc("ManageFramePositions", function()
+		if (not(InCombatLockdown()) or not(bottomManagedFrameContainer:IsProtected())) then
+			bottomManagedFrameContainer:ClearAllPoints()
+			bottomManagedFrameContainer:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, MAIN_ACTION_BAR_DEFAULT_OFFSET_Y + 100)
 		end
 	end)
-	UIParentBottomManagedFrameContainer:ClearAllPoints()
-	UIParentBottomManagedFrameContainer:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, MAIN_ACTION_BAR_DEFAULT_OFFSET_Y + 100)
+	bottomManagedFrameContainer:ClearAllPoints()
+	bottomManagedFrameContainer:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, MAIN_ACTION_BAR_DEFAULT_OFFSET_Y + 100)
 
 	if InCombatLockdown() then
 		delayFunc_MainFunction = true
