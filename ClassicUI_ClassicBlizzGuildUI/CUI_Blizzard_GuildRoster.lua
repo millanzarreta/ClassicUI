@@ -19,7 +19,7 @@ local GUILD_ROSTER_COLUMNS = {
 	pvp = { "level", "class", "name", "bgrating", "arenarating" },
 	achievement = { "level", "class", "wideName", "achievement" },
 	tradeskill = { "wideName", "zone", "skill" },
-	reputation = { "level", "class", "wideName", "reputation" },
+	reputation = { "level", "class", "wideName", "reputation" }
 };
 
 -- global for localization changes
@@ -31,14 +31,14 @@ GUILD_ROSTER_COLUMN_DATA = {
 	rank = { width = 76, text = RANK, stringJustify="LEFT" },
 	note = { width = 76, text = LABEL_NOTE, stringJustify="LEFT" },
 	online = { width = 76, text = LASTONLINE, stringJustify="LEFT" },
-	zone = { width = 136, text = ZONE, stringJustify="LEFT" },	
+	zone = { width = 136, text = ZONE, stringJustify="LEFT" },
 	bgrating = { width = 83, text = BG_RATING_ABBR, stringJustify="RIGHT" },
 	arenarating = { width = 83, text = ARENA_RATING, stringJustify="RIGHT" },
 	weeklyxp = { width = 136, text = GUILD_XP_WEEKLY, stringJustify="RIGHT", hasBar = true },
 	totalxp = { width = 136, text = GUILD_XP_TOTAL, stringJustify="RIGHT", hasBar = true },
 	achievement = { width = 136, text = ACHIEVEMENT_POINTS, stringJustify="RIGHT", sortType="achievementpoints", hasBar = true },
 	skill = { width = 63, text = SKILL_POINTS_ABBR, stringJustify="LEFT" },
-	reputation = { width = 136, text = REPUTATION, stringJustify="LEFT" },
+	reputation = { width = 136, text = REPUTATION, stringJustify="LEFT" }
 };
 
 local MOBILE_BUSY_ICON = "|TInterface\\ChatFrame\\UI-ChatIcon-ArmoryChat-BusyMobile:14:14:0:0:16:16:0:16:0:16|t";
@@ -57,8 +57,6 @@ function CUI_GuildRosterFrame_OnLoad(self)
 	CUI_GuildRoster_SetView(GetCVar("guildRosterView"));
 	SetGuildRosterSelection(0);
 	UIDropDownMenu_SetSelectedValue(CUI_GuildRosterViewDropdown, currentGuildView);
-	-- right-click dropdown
-	CUI_GuildMemberDropDown.displayMode = "MENU";
 
 	self.doRecipeQuery = true;
 end
@@ -76,7 +74,7 @@ function CUI_GuildRosterFrame_OnEvent(self, event, ...)
 			local canRequestRosterUpdate = ...;
 			if ( canRequestRosterUpdate ) then
 				C_GuildInfo.GuildRoster();
-			end		
+			end
 			CUI_GuildRoster_Update();
 		end
 	elseif ( event == "PLAYER_ENTERING_WORLD" ) then
@@ -97,7 +95,7 @@ function CUI_GuildRoster_RecipeQueryCheck()
 end
 
 function CUI_GuildRoster_GetLastOnline(guildIndex)
-	return RecentTimeDate( GetGuildRosterLastOnline(guildIndex) );
+	return TimeUtil.GetRecentTimeDate( GetGuildRosterLastOnline(guildIndex) );
 end
 
 function CUI_GuildRoster_SortByColumn(column)
@@ -135,14 +133,14 @@ function CUI_GuildRoster_Update()
 	local button, index, class;
 	local totalMembers, onlineMembers = GetNumGuildMembers();
 	local selectedGuildMember = GetGuildRosterSelection();
-	
+
 	if ( currentGuildView == "tradeskill" ) then
 		CUI_GuildRoster_UpdateTradeSkills();
 		return;
 	end
 
 	local guildName, guildRankName, guildRankIndex = GetGuildInfo("player");
-	local maxRankIndex = GuildControlGetNumRanks() - 1;	
+	local maxRankIndex = GuildControlGetNumRanks() - 1;
 	-- Get selected guild member info
 	local fullName, rank, rankIndex, level, class, zone, note, officernote, online, isAway, classFileName, achievementPoints, achievementRank, isMobile = GetGuildRosterInfo(selectedGuildMember);
 	CUI_GuildFrame.selectedName = fullName;
@@ -156,7 +154,7 @@ function CUI_GuildRoster_Update()
 				CUI_GuildMemberDetailName:SetText(MOBILE_AWAY_ICON..CUI_GuildFrame.selectedName);
 			else
 				CUI_GuildMemberDetailName:SetText(ChatFrame_GetMobileEmbeddedTexture(73/255, 177/255, 73/255)..CUI_GuildFrame.selectedName);
-			end			
+			end
 		else
 			CUI_GuildMemberDetailName:SetText(CUI_GuildFrame.selectedName);
 		end
@@ -196,7 +194,7 @@ function CUI_GuildRoster_Update()
 			CUI_GuildMemberDetailRankLabel:SetHeight(0);
 			CUI_GuildMemberRankDropdown:Hide();
 		end
-		
+
 		-- Update officer note
 		if ( C_GuildInfo.CanViewOfficerNote() ) then
 			if ( C_GuildInfo.CanEditOfficerNote() ) then
@@ -235,7 +233,7 @@ function CUI_GuildRoster_Update()
 	else
 		CUI_GuildMemberDetailFrame:Hide();
 	end
-	
+
 --	local maxWeeklyXP, maxTotalXP = GetGuildRosterLargestContribution();
 	local maxAchievementsPoints = GetGuildRosterLargestAchievementPoints();
 	-- numVisible
@@ -244,10 +242,10 @@ function CUI_GuildRoster_Update()
 		visibleMembers = totalMembers;
 	end
 	for i = 1, numButtons do
-		button = buttons[i];		
+		button = buttons[i];
 		index = offset + i;
 		local fullName, rank, rankIndex, level, class, zone, note, officernote, online, isAway, classFileName, achievementPoints, achievementRank, isMobile, canSoR, repStanding = GetGuildRosterInfo(index);
-		
+
 		local onlineOrMobile = online or isMobile;
 
 		if ( fullName and index <= visibleMembers ) then
@@ -270,14 +268,14 @@ function CUI_GuildRoster_Update()
 				local zoneText = zone;
 				if(isMobile and not online) then zoneText = REMOTE_CHAT; end;
 				CUI_GuildRosterButton_SetStringText(button.string3, zoneText, onlineOrMobile)
-				
+
 			elseif ( currentGuildView == "guildStatus" ) then
 				CUI_GuildRosterButton_SetStringText(button.string1, displayedName, onlineOrMobile, classFileName)
 				CUI_GuildRosterButton_SetStringText(button.string2, rank, onlineOrMobile)
 				CUI_GuildRosterButton_SetStringText(button.string3, note, onlineOrMobile)
-				
+
 				if ( onlineOrMobile ) then
-					CUI_GuildRosterButton_SetStringText(button.string4, GUILD_ONLINE_LABEL, onlineOrMobile);					
+					CUI_GuildRosterButton_SetStringText(button.string4, GUILD_ONLINE_LABEL, onlineOrMobile);
 				else
 					CUI_GuildRosterButton_SetStringText(button.string4, CUI_GuildRoster_GetLastOnline(index), onlineOrMobile);
 				end
@@ -307,7 +305,7 @@ function CUI_GuildRoster_Update()
 					button.barTexture:SetWidth(totalXP / maxTotalXP * GUILD_ROSTER_BAR_MAX);
 					button.barTexture:Show();
 				end
-				CUI_GuildRosterButton_SetStringText(button.barLabel, "#"..totalRank, onlineOrMobile);			
+				CUI_GuildRosterButton_SetStringText(button.barLabel, "#"..totalRank, onlineOrMobile);
 --]]
 			elseif ( currentGuildView == "pve" ) then
 				CUI_GuildRosterButton_SetStringText(button.string1, level, onlineOrMobile);
@@ -392,32 +390,13 @@ function CUI_GuildRosterButton_OnClick(self, button)
 end
 
 function CUI_GuildRoster_ShowMemberDropDown(name, online, isMobile, guid)
-	local initFunc = CUI_GuildMemberDropDown_Initialize;
-	if ( not online and not isMobile ) then
-		initFunc = CUI_GuildMemberOfflineDropDown_Initialize;
-	end
-
-	CUI_GuildMemberDropDown.name = name;
-	CUI_GuildMemberDropDown.isMobile = isMobile;
-	CUI_GuildMemberDropDown.initialize = initFunc;
-	CUI_GuildMemberDropDown.guid = guid; --Not included on tradeskill pane
-	ToggleDropDownMenu(1, nil, CUI_GuildMemberDropDown, "cursor");
-end
-
-function CUI_GuildMemberDropDown_Initialize()
+	local which = (online or isMobile) and "GUILD" or "GUILD_OFFLINE";
 	local contextData = {
-		name = CUI_GuildMemberDropDown.name,
-		guid = CUI_GuildMemberDropDown.guid
+		name = name,
+		guid = guid, --Not included on tradeskill pane
+		isMobile = isMobile,
 	};
-	UnitPopup_OpenMenu("GUILD", contextData);
-end
-
-function CUI_GuildMemberOfflineDropDown_Initialize()
-	local contextData = {
-		name = CUI_GuildMemberDropDown.name,
-		guid = CUI_GuildMemberDropDown.guid
-	};
-	UnitPopup_OpenMenu("GUILD_OFFLINE", contextData);
+	UnitPopup_OpenMenu(which, contextData);
 end
 
 function CUI_GuildRoster_UpdateTradeSkills()
@@ -425,17 +404,39 @@ function CUI_GuildRoster_UpdateTradeSkills()
 	local offset = HybridScrollFrame_GetOffset(scrollFrame);
 	local buttons = scrollFrame.buttons;
 	local numButtons = #buttons;
-	local button, index, class;
-	local numTradeSkill = GetNumGuildTradeSkill();
-	
+	local button, index;
+
+	local tradeSkillIndices = {};
+	local showTradeSkill;
+
+	for tradeSkillIndex = 1, GetNumGuildTradeSkill() do
+		local skillID, isCollapsed, iconTexture, headerName = GetGuildTradeSkillInfo(tradeSkillIndex);
+
+		if headerName then
+			local professionInfo = C_TradeSkillUI.GetProfessionInfoBySkillLineID(skillID);
+			showTradeSkill = professionInfo and professionInfo.profession ~= nil;
+		end
+
+		if showTradeSkill then
+			table.insert(tradeSkillIndices, tradeSkillIndex);
+		end
+	end
+
+	local numTradeSkill = #tradeSkillIndices;
+
 	for i = 1, numButtons do
 		button = buttons[i];
 		index = offset + i;
-		if ( index <= numTradeSkill ) then
-			button.guildIndex = index;
-			local skillID, isCollapsed, iconTexture, headerName, numOnline, numVisible, numPlayers, playerDisplayName, playerFullName, class, online, zone, skill, classFileName, isMobile, isAway = GetGuildTradeSkillInfo(index);
+
+		local tradeSkillIndex = tradeSkillIndices[index];
+		if tradeSkillIndex then
+			button.guildIndex = tradeSkillIndex;
+
+			local skillID, isCollapsed, iconTexture, headerName, numOnline, numVisible, numPlayers, playerDisplayName, playerFullName, class, online, zone, skill, classFileName, isMobile, isAway = GetGuildTradeSkillInfo(tradeSkillIndex);
+
 			button.online = online;
-			if ( headerName ) then
+
+			if headerName then
 				CUI_GuildRosterButton_SetStringText(button.string1, headerName, 1);
 				CUI_GuildRosterButton_SetStringText(button.string2, "", 1);
 				CUI_GuildRosterButton_SetStringText(button.string3, numOnline, 1);
@@ -444,16 +445,19 @@ function CUI_GuildRoster_UpdateTradeSkills()
 				button.header.icon:SetTexture(iconTexture);
 				button.header.name:SetText(headerName);
 				button.header.collapsed = isCollapsed;
-				if ( numVisible == 0 ) then
+
+				if numVisible == 0 then
 					button.header:Disable();
 					button.header.icon:SetDesaturated(true);
 					button.header.collapsedIcon:Hide();
 					button.header.expandedIcon:Hide();
-					if ( numPlayers > 0 and CanViewGuildRecipes(skillID) ) then
+
+					if numPlayers > 0 and CanViewGuildRecipes(skillID) then
 						button.header.allRecipes:Show();
 					else
 						button.header.allRecipes:Hide();
 					end
+
 					button.header.name:SetTextColor(GRAY_FONT_COLOR.r, GRAY_FONT_COLOR.g, GRAY_FONT_COLOR.b);
 					button.header.leftEdge:SetVertexColor(0.75, 0.75, 0.75);
 					button.header.rightEdge:SetVertexColor(0.75, 0.75, 0.75);
@@ -461,16 +465,19 @@ function CUI_GuildRoster_UpdateTradeSkills()
 				else
 					button.header:Enable();
 					button.header.icon:SetDesaturated(false);
-					if ( CanViewGuildRecipes(skillID) ) then
+
+					if CanViewGuildRecipes(skillID) then
 						button.header.allRecipes:Show();
 					else
 						button.header.allRecipes:Hide();
 					end
+
 					button.header.name:SetTextColor(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b);
 					button.header.leftEdge:SetVertexColor(1, 1, 1);
 					button.header.rightEdge:SetVertexColor(1, 1, 1);
 					button.header.middle:SetVertexColor(1, 1, 1);
-					if ( isCollapsed ) then
+
+					if isCollapsed then
 						button.header.collapsedIcon:Show();
 						button.header.expandedIcon:Hide();
 					else
@@ -478,20 +485,25 @@ function CUI_GuildRoster_UpdateTradeSkills()
 						button.header.collapsedIcon:Hide();
 					end
 				end
+
 				button.header.skillID = skillID;
 				button:Show();
-			elseif ( playerDisplayName ) then
-				if ( isMobile ) then
-					if (isAway == 2) then
+			elseif playerDisplayName then
+				if isMobile then
+					if isAway == 2 then
 						playerDisplayName = MOBILE_BUSY_ICON..playerDisplayName;
-					elseif (isAway == 1) then
+					elseif isAway == 1 then
 						playerDisplayName = MOBILE_AWAY_ICON..playerDisplayName;
 					else
 						playerDisplayName = ChatFrame_GetMobileEmbeddedTexture(73/255, 177/255, 73/255)..playerDisplayName;
 					end
 				end
+
 				local zoneText = zone;
-				if(isMobile and not online) then zoneText = REMOTE_CHAT; end;
+				if isMobile and not online then
+					zoneText = REMOTE_CHAT;
+				end
+
 				CUI_GuildRosterButton_SetStringText(button.string1, playerDisplayName, online, classFileName);
 				CUI_GuildRosterButton_SetStringText(button.string2, zoneText, online);
 				CUI_GuildRosterButton_SetStringText(button.string3, "["..skill.."]", online);
@@ -500,7 +512,8 @@ function CUI_GuildRoster_UpdateTradeSkills()
 			else
 				button:Hide();
 			end
-			if ( mod(index, 2) == 0 ) then
+
+			if mod(index, 2) == 0 then
 				button.stripe:SetTexCoord(0.36230469, 0.38183594, 0.95898438, 0.99804688);
 			else
 				button.stripe:SetTexCoord(0.51660156, 0.53613281, 0.88281250, 0.92187500);
@@ -509,7 +522,7 @@ function CUI_GuildRoster_UpdateTradeSkills()
 			button:Hide();
 		end
 	end
-	
+
 	local totalHeight = numTradeSkill * (GUILD_ROSTER_BUTTON_HEIGHT + GUILD_ROSTER_BUTTON_OFFSET);
 	local displayedHeight = numButtons * (GUILD_ROSTER_BUTTON_HEIGHT + GUILD_ROSTER_BUTTON_OFFSET);
 	HybridScrollFrame_Update(scrollFrame, totalHeight, displayedHeight);
@@ -535,7 +548,7 @@ function CUI_GuildRoster_SetView(view)
 	local stringsInfo = { };
 	local stringOffset = 0;
 	local haveIcon, haveBar;
-	
+
 	-- set up columns
 	for columnIndex = 1, GUILD_ROSTER_MAX_COLUMNS do
 		local columnButton = _G["CUI_GuildRosterColumnButton"..columnIndex];
@@ -553,7 +566,7 @@ function CUI_GuildRoster_SetView(view)
 			end
 			if ( columnData.hasIcon ) then
 				haveIcon = true;
-			else	
+			else
 				-- store string data for processing
 				columnData["stringOffset"] = stringOffset;
 				table.insert(stringsInfo, columnData);
@@ -563,8 +576,8 @@ function CUI_GuildRoster_SetView(view)
 		else
 			columnButton:Hide();
 		end
-	end	
-	
+	end
+
 	-- process the button strings
 	local buttons = CUI_GuildRosterContainer.buttons;
 	local button, fontString;
@@ -583,7 +596,7 @@ function CUI_GuildRoster_SetView(view)
 				fontString:Hide();
 			end
 		end
-		
+
 		if ( haveIcon ) then
 			button.icon:Show();
 		else
@@ -591,14 +604,14 @@ function CUI_GuildRoster_SetView(view)
 		end
 		if ( haveBar ) then
 			button.barLabel:Show();
-			-- button.barTexture:Show(); -- shown status determined in CUI_GuildRoster_Update 
+			-- button.barTexture:Show(); -- shown status determined in CUI_GuildRoster_Update
 		else
 			button.barLabel:Hide();
 			button.barTexture:Hide();
 		end
 		button.header:Hide();
 	end
-	
+
 	if ( view == "tradeskill" ) then
 		CUI_GuildRoster_RecipeQueryCheck();
 	end
@@ -613,7 +626,7 @@ end
 function CUI_GuildRosterViewDropdown_Initialize()
 	local info = UIDropDownMenu_CreateInfo();
 	info.func = CUI_GuildRosterViewDropdown_OnClick;
-	
+
 	info.text = PLAYER_STATUS;
 	info.value = "playerStatus";
 	UIDropDownMenu_AddButton(info);
@@ -625,11 +638,11 @@ function CUI_GuildRosterViewDropdown_Initialize()
 	UIDropDownMenu_AddButton(info);
 	info.text = TRADE_SKILLS;
 	info.value = "tradeskill";
-	UIDropDownMenu_AddButton(info);	
+	UIDropDownMenu_AddButton(info);
 	info.text = GUILD_REPUTATION;
 	info.value = "reputation";
 	UIDropDownMenu_AddButton(info);
-	
+
 	UIDropDownMenu_SetSelectedValue(CUI_GuildRosterViewDropdown, currentGuildView);
 end
 
@@ -656,7 +669,7 @@ function CUI_GuildMemberRankDropdown_Initialize(self)
 	memberRankIndex = memberRankIndex + 1;  -- adjust to 1-based
 	local _, _, userRankIndex = GetGuildInfo("player");
 	userRankIndex = userRankIndex + 1;	-- adjust to 1-based
-	
+
 	local highestRank = userRankIndex + 1;
 	if not ( CanGuildPromote() ) then
 		highestRank = memberRankIndex;
@@ -665,7 +678,7 @@ function CUI_GuildMemberRankDropdown_Initialize(self)
 	if not ( CanGuildDemote() ) then
 		lowestRank = memberRankIndex;
 	end
-	
+
 	for listRank = highestRank, lowestRank do
 		local info = UIDropDownMenu_CreateInfo();
 		info.text = GuildControlGetRankName(listRank);

@@ -136,7 +136,7 @@ function CUI_GuildFrame_UpdateTabard()
 end
 
 function CUI_GuildFrame_CheckPermissions()
-	if ( IsGuildLeader() ) then
+	if ( IsGuildLeader() or C_GuildInfo.IsGuildOfficer() ) then
 		CUI_GuildControlButton:Enable();
 	else
 		CUI_GuildControlButton:Disable();
@@ -211,22 +211,20 @@ function CUI_GuildPointFrame_OnLeave(self)
 end
 
 function CUI_GuildPointFrame_OnMouseUp(self)
-	if ( IsInGuild() and CanShowAchievementUI() ) then
-		AchievementFrame_LoadUI();
-		AchievementFrame_ToggleAchievementFrame(false, true);
+	if ( IsInGuild() and not(InCombatLockdown()) and CanShowAchievementUI() ) then
+		if AchievementFrame_LoadUI() then
+			AchievementFrame_ToggleAchievementFrame(false, true);
+		end
 	end
 end
 
 --****** Common Functions *******************************************************
 
 function CUI_GuildFrame_OpenAchievement(button, achievementID)
-	if ( not AchievementFrame ) then
-		AchievementFrame_LoadUI();
+	if InCombatLockdown() and not (AchievementFrame and AchievementFrame:IsShown()) then
+		return
 	end
-	if ( not AchievementFrame:IsShown() ) then
-		AchievementFrame_ToggleAchievementFrame();
-	end
-	AchievementFrame_SelectAchievement(achievementID);
+	ShowAchievementFrameForAchievement(achievementID);
 end
 
 function CUI_GuildFrame_LinkItem(button, itemID, itemLink)
@@ -459,6 +457,9 @@ end
 --****** News/Events ************************************************************
 function CUI_GuildEventButton_OnClick(self, button)
 	if ( button == "LeftButton" ) then
+		if Kiosk.IsEnabled() or DISALLOW_FRAME_TOGGLING then
+			return
+		end
 		if ( CalendarFrame ) then
 			CalendarFrame_OpenToGuildEventIndex(self.index);
 		else

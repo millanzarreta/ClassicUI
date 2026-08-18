@@ -1,7 +1,7 @@
 -- ------------------------------------------------------------ --
 -- Addon: ClassicUI                                             --
 --                                                              --
--- Version: 3.0.1                                               --
+-- Version: 3.0.2                                               --
 -- Author: Millán - Sanguino                                    --
 --                                                              --
 -- License: GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007 --
@@ -41,7 +41,7 @@ local pairs = pairs
 local ipairs = ipairs
 local next = next
 local InCombatLockdown = InCombatLockdown
-local AnimateTexCoords = AnimateTexCoords
+local TextureUtil_AnimateTexCoords = TextureUtil.AnimateTexCoords
 local GetActionInfo = GetActionInfo
 local GetPetActionInfo = GetPetActionInfo
 local GetPetActionSlotUsable = GetPetActionSlotUsable
@@ -66,20 +66,20 @@ local C_GossipInfo_GetFriendshipReputation = C_GossipInfo.GetFriendshipReputatio
 local C_Club_IsEnabled = C_Club.IsEnabled
 local C_Club_IsRestricted = C_Club.IsRestricted
 local C_Container_GetContainerNumFreeSlots = C_Container.GetContainerNumFreeSlots
+local C_Container_CalculateTotalNumberOfFreeBagSlots = C_Container.CalculateTotalNumberOfFreeBagSlots
 local C_SocialRestrictions_CanReceiveChat = C_SocialRestrictions.CanReceiveChat
 local CommunitiesUtil_DoesAnyCommunityHaveUnreadMessages = CommunitiesUtil.DoesAnyCommunityHaveUnreadMessages
-local CommunitiesFrame_IsEnabled = CommunitiesFrame_IsEnabled
 local ContainerFrame_IsReagentBag = ContainerFrame_IsReagentBag
 local GetRestrictedAccountData = GetRestrictedAccountData
 local C_Reputation_GetWatchedFactionData = C_Reputation.GetWatchedFactionData
 local C_Housing_GetTrackedHouseGuid = C_Housing.GetTrackedHouseGuid
 local C_PvP_IsActiveBattlefield = C_PvP.IsActiveBattlefield
 local GameLimitedMode_IsActive = GameLimitedMode_IsActive
+local GameRulesUtil_CanShowExperienceBar = GameRulesUtil.CanShowExperienceBar
 local C_CatalogShop_IsShop2Enabled = C_CatalogShop.IsShop2Enabled
 local StoreFrame_IsShown = StoreFrame_IsShown
 local Kiosk_IsEnabled = Kiosk.IsEnabled
 local CurrentVersionHasNewUnseenSettings = CurrentVersionHasNewUnseenSettings
-local IsPlayerAtEffectiveMaxLevel = IsPlayerAtEffectiveMaxLevel
 local IsXPUserDisabled = IsXPUserDisabled
 local UnitXP = UnitXP
 local UnitXPMax = UnitXPMax
@@ -103,7 +103,7 @@ local GetNetStats = GetNetStats
 local InGuildParty = InGuildParty
 
 -- Global constants
-ClassicUI.VERSION = "3.0.1"
+ClassicUI.VERSION = "3.0.2"
 ClassicUI.STANDARD_EPSILON = STANDARD_EPSILON
 ClassicUI.SCALE_EPSILON = SCALE_EPSILON
 ClassicUI.ACTIONBUTTON_NEWLAYOUT_SCALE = 0.826
@@ -377,14 +377,15 @@ ClassicUI.MICROBUTTONS_ARRAYINFO = {
 ClassicUI.databaseCleaned = false
 ClassicUI.elpmbSizes = {
 	['dragonflight'] = { w = 0, h = 0 },
-	['warwithin'] = { w = 0, h = 0 }
+	['warwithin'] = { w = 0, h = 0 },
+	['midnight'] = { w = 0, h = 0 }
 }
 ClassicUI.ACIaddonData = {
 	text = "ClassicUI",
 	icon = "Interface\\Addons\\ClassicUI\\micon",
 	notCheckable = true,
 	func = function()
-		ClassicUI:ShowConfig(ClassicUI.optionsFramesCatId.general)
+		ClassicUI:ShowConfig(0)
 	end
 }
 -- Recreate the old global variables from the classic AutoCastShine action button animation
@@ -468,6 +469,7 @@ ClassicUI.defaults = {
 				BLStyle0UseNewSpellHighlightTexture = false,
 				BLStyle0UseNewFlyoutBorder = false,
 				BLStyle0UseNewSpellActivationAlert = false,
+				BLStyle0NeverReduceSpellActivationAlert = false,
 				BLStyle0UseNewTargetReticleAnimFrame = false,
 				BLStyle0UseNewInterruptDisplay = false,
 				BLStyle0UseNewSpellCastAnimFrame = false,
@@ -488,6 +490,7 @@ ClassicUI.defaults = {
 				BLStyle0UseNewSpellHighlightTexture = false,
 				BLStyle0UseNewFlyoutBorder = false,
 				BLStyle0UseNewSpellActivationAlert = false,
+				BLStyle0NeverReduceSpellActivationAlert = false,
 				BLStyle0UseNewTargetReticleAnimFrame = false,
 				BLStyle0UseNewInterruptDisplay = false,
 				BLStyle0UseNewSpellCastAnimFrame = false,
@@ -680,6 +683,7 @@ ClassicUI.defaults = {
 				BLStyle0UseNewSpellHighlightTexture = false,
 				BLStyle0UseNewFlyoutBorder = false,
 				BLStyle0UseNewSpellActivationAlert = false,
+				BLStyle0NeverReduceSpellActivationAlert = false,
 				BLStyle0UseNewTargetReticleAnimFrame = false,
 				BLStyle0UseNewInterruptDisplay = false,
 				BLStyle0UseNewSpellCastAnimFrame = false,
@@ -707,6 +711,7 @@ ClassicUI.defaults = {
 				BLStyle0UseNewSpellHighlightTexture = false,
 				BLStyle0UseNewFlyoutBorder = false,
 				BLStyle0UseNewSpellActivationAlert = false,
+				BLStyle0NeverReduceSpellActivationAlert = false,
 				BLStyle0UseNewTargetReticleAnimFrame = false,
 				BLStyle0UseNewInterruptDisplay = false,
 				BLStyle0UseNewSpellCastAnimFrame = false,
@@ -731,6 +736,7 @@ ClassicUI.defaults = {
 				BLStyle0UseNewSpellHighlightTexture = false,
 				BLStyle0UseNewFlyoutBorder = false,
 				BLStyle0UseNewSpellActivationAlert = false,
+				BLStyle0NeverReduceSpellActivationAlert = false,
 				BLStyle0UseNewTargetReticleAnimFrame = false,
 				BLStyle0UseNewInterruptDisplay = false,
 				BLStyle0UseNewSpellCastAnimFrame = false,
@@ -761,6 +767,7 @@ ClassicUI.defaults = {
 				BLStyle0UseNewSpellHighlightTexture = false,
 				BLStyle0UseNewFlyoutBorder = false,
 				BLStyle0UseNewSpellActivationAlert = false,
+				BLStyle0NeverReduceSpellActivationAlert = false,
 				BLStyle0UseNewTargetReticleAnimFrame = false,
 				BLStyle0UseNewInterruptDisplay = false,
 				BLStyle0UseNewSpellCastAnimFrame = false,
@@ -785,6 +792,7 @@ ClassicUI.defaults = {
 				BLStyle0UseNewSpellHighlightTexture = false,
 				BLStyle0UseNewFlyoutBorder = false,
 				BLStyle0UseNewSpellActivationAlert = false,
+				BLStyle0NeverReduceSpellActivationAlert = false,
 				BLStyle0UseNewTargetReticleAnimFrame = false,
 				BLStyle0UseNewInterruptDisplay = false,
 				BLStyle0UseNewSpellCastAnimFrame = false,
@@ -809,6 +817,7 @@ ClassicUI.defaults = {
 				BLStyle0UseNewSpellHighlightTexture = false,
 				BLStyle0UseNewFlyoutBorder = false,
 				BLStyle0UseNewSpellActivationAlert = false,
+				BLStyle0NeverReduceSpellActivationAlert = false,
 				BLStyle0UseNewTargetReticleAnimFrame = false,
 				BLStyle0UseNewInterruptDisplay = false,
 				BLStyle0UseNewSpellCastAnimFrame = false,
@@ -907,6 +916,7 @@ ClassicUI.defaults = {
 				yOffsetExpansionLandingPage = 0,
 				scaleExpansionLandingPageDragonflight = 0.82,
 				scaleExpansionLandingPageTheWarWithin = 0.82,
+				scaleExpansionLandingPageMidnight = 0.82,
 				hideAddonCompartment = true,
 				xOffsetAddonCompartment = 0,
 				yOffsetAddonCompartment = 0,
@@ -972,6 +982,7 @@ local delayFunc_UpdatedStatusBarsEvent = false
 local delayFunc_CUI_PetActionBarFrame_RelocateBar_Update = false
 local delayFunc_ActionButtonProtectedApplyLayout = false
 local delayFunc_BarHookProtectedApplySetScale = false
+local delayFunc_BottomManagedFrameContainer_Relocate = false
 local delayFunc_ClassicUI_ShowConfig = { false, 0 }
 fclFrame:SetScript("OnEvent",function(self,event)
 	if event=="PLAYER_REGEN_ENABLED" then
@@ -1009,8 +1020,12 @@ fclFrame:SetScript("OnEvent",function(self,event)
 			ClassicUI:ActionButtonProtectedApplyLayout()
 		end
 		if (delayFunc_BarHookProtectedApplySetScale) then
-			delayFunc_BarHookProtectedApplySetScale = true
+			delayFunc_BarHookProtectedApplySetScale = false
 			ClassicUI:BarHookProtectedApplySetScale()
+		end
+		if (delayFunc_BottomManagedFrameContainer_Relocate) then
+			delayFunc_BottomManagedFrameContainer_Relocate = false
+			ClassicUI.BottomManagedFrameContainer_Relocate()
 		end
 		if (delayFunc_ClassicUI_ShowConfig[1]) then
 			delayFunc_ClassicUI_ShowConfig[1] = false
@@ -1114,6 +1129,7 @@ function ClassicUI:RefreshConfig()
 			ReloadUI()
 		end
 	end
+	self:AddonCompartmentIntegration(not self.db.profile.disabledAddonCompartmentIntegration)
 end
 
 -- Function to control the slash commands
@@ -1544,6 +1560,7 @@ function ClassicUI:UpdateDBValuesCache()
 	self.cached_db_profile.extraFrames_Minimap_yOffsetExpansionLandingPage = self.db.profile.extraFrames.Minimap.yOffsetExpansionLandingPage
 	self.cached_db_profile.extraFrames_Minimap_scaleExpansionLandingPageDragonflight = self.db.profile.extraFrames.Minimap.scaleExpansionLandingPageDragonflight
 	self.cached_db_profile.extraFrames_Minimap_scaleExpansionLandingPageTheWarWithin = self.db.profile.extraFrames.Minimap.scaleExpansionLandingPageTheWarWithin
+	self.cached_db_profile.extraFrames_Minimap_scaleExpansionLandingPageMidnight = self.db.profile.extraFrames.Minimap.scaleExpansionLandingPageMidnight
 	self.cached_db_profile.extraFrames_Minimap_hideAddonCompartment = self.db.profile.extraFrames.Minimap.hideAddonCompartment
 	self.cached_db_profile.extraFrames_Minimap_anchorQueueButtonToMinimap = self.db.profile.extraFrames.Minimap.anchorQueueButtonToMinimap
 	self.cached_db_profile.extraFrames_Minimap_xOffsetQueueButton = self.db.profile.extraFrames.Minimap.xOffsetQueueButton
@@ -1676,7 +1693,7 @@ function ClassicUI:BagsFreeSlotsCounterMod()
 	if (ClassicUI.db.profile.extraFrames.Bags.freeSlotCounterMod ~= 0) then
 		ClassicUI.MainMenuBarBackpackButton_UpdateFreeSlots(MainMenuBarBackpackButton)
 	else
-		local freeBagSlots = CalculateTotalNumberOfFreeBagSlots()
+		local freeBagSlots = C_Container_CalculateTotalNumberOfFreeBagSlots()
 		MainMenuBarBackpackButton:UpdateFreeSlots()
 		MainMenuBarBackpackButton.Count:SetText(ClassicUI.BACKPACK_FREESLOTS_FORMAT:format(freeBagSlots))
 	end
@@ -2241,8 +2258,8 @@ function ClassicUI:ReLayoutMainFrames()
 	ClassicUI:ModifyOriginalFrames()
 	ClassicUI:ReloadMainFramesSettings()
 	local rightAnchor = (EditModeUtil ~= nil) and EditModeUtil:GetRightContainerAnchor() or nil
-	if (rightAnchor and UIParentRightManagedFrameContainer) then
-		rightAnchor:SetPoint(UIParentRightManagedFrameContainer, true)
+	if (rightAnchor and RightManagedFrameContainer) then
+		rightAnchor:SetPoint(RightManagedFrameContainer, true)
 	end
 end
 
@@ -2692,6 +2709,13 @@ function ClassicUI:EnableOldMinimap()
 					ClassicUI.elpmbSizes.warwithin.h = ExpansionLandingPageMinimapButton:GetHeight()
 				end
 				ExpansionLandingPageMinimapButton:SetSize(mathfloor(ClassicUI.elpmbSizes.warwithin.w * ClassicUI.cached_db_profile.extraFrames_Minimap_scaleExpansionLandingPageTheWarWithin + 0.5), mathfloor(ClassicUI.elpmbSizes.warwithin.h * ClassicUI.cached_db_profile.extraFrames_Minimap_scaleExpansionLandingPageTheWarWithin + 0.5))	-- cached db value
+			elseif (ExpansionLandingPageMinimapButton:GetNormalTexture():GetAtlas() == "midnight-landingbutton-up") then
+				ExpansionLandingPageMinimapButton:SetPoint("CENTER", MinimapBackdrop, "TOPLEFT", 32 + 4 + 26.5 + ClassicUI.cached_db_profile.extraFrames_Minimap_xOffsetExpansionLandingPage, -105 - 6 - 26.5 + ClassicUI.cached_db_profile.extraFrames_Minimap_yOffsetExpansionLandingPage)	-- cached db value
+				if (ClassicUI.elpmbSizes.midnight.w == 0 or ClassicUI.elpmbSizes.midnight.h == 0) then
+					ClassicUI.elpmbSizes.midnight.w = ExpansionLandingPageMinimapButton:GetWidth()
+					ClassicUI.elpmbSizes.midnight.h = ExpansionLandingPageMinimapButton:GetHeight()
+				end
+				ExpansionLandingPageMinimapButton:SetSize(mathfloor(ClassicUI.elpmbSizes.midnight.w * ClassicUI.cached_db_profile.extraFrames_Minimap_scaleExpansionLandingPageMidnight + 0.5), mathfloor(ClassicUI.elpmbSizes.midnight.h * ClassicUI.cached_db_profile.extraFrames_Minimap_scaleExpansionLandingPageMidnight + 0.5))	-- cached db value
 			else
 				ExpansionLandingPageMinimapButton:SetPoint("CENTER", MinimapBackdrop, "TOPLEFT", 32 + 6 + 26.5 + ClassicUI.cached_db_profile.extraFrames_Minimap_xOffsetExpansionLandingPage, -105 - 7 - 26.5 + ClassicUI.cached_db_profile.extraFrames_Minimap_yOffsetExpansionLandingPage)	-- cached db value
 			end
@@ -2714,12 +2738,19 @@ function ClassicUI:EnableOldMinimap()
 				ClassicUI.elpmbSizes.warwithin.h = self:GetHeight()
 			end
 			self:SetSize(mathfloor(ClassicUI.elpmbSizes.warwithin.w * ClassicUI.cached_db_profile.extraFrames_Minimap_scaleExpansionLandingPageTheWarWithin + 0.5), mathfloor(ClassicUI.elpmbSizes.warwithin.h * ClassicUI.cached_db_profile.extraFrames_Minimap_scaleExpansionLandingPageTheWarWithin + 0.5))	-- cached db value
+		elseif (self:GetNormalTexture():GetAtlas() == "midnight-landingbutton-up") then
+			self:SetPoint("CENTER", MinimapBackdrop, "TOPLEFT", 32 + 4 + 26.5 + ClassicUI.cached_db_profile.extraFrames_Minimap_xOffsetExpansionLandingPage, -105 - 6 - 26.5 + ClassicUI.cached_db_profile.extraFrames_Minimap_yOffsetExpansionLandingPage)	-- cached db value
+			if (ClassicUI.elpmbSizes.midnight.w == 0 or ClassicUI.elpmbSizes.midnight.h == 0) then
+				ClassicUI.elpmbSizes.midnight.w = self:GetWidth()
+				ClassicUI.elpmbSizes.midnight.h = self:GetHeight()
+			end
+			self:SetSize(mathfloor(ClassicUI.elpmbSizes.midnight.w * ClassicUI.cached_db_profile.extraFrames_Minimap_scaleExpansionLandingPageMidnight + 0.5), mathfloor(ClassicUI.elpmbSizes.midnight.h * ClassicUI.cached_db_profile.extraFrames_Minimap_scaleExpansionLandingPageMidnight + 0.5))	-- cached db value
 		else
 			self:SetPoint("CENTER", MinimapBackdrop, "TOPLEFT", 32 + 6 + 26.5 + ClassicUI.cached_db_profile.extraFrames_Minimap_xOffsetExpansionLandingPage, -105 - 7 - 26.5 + ClassicUI.cached_db_profile.extraFrames_Minimap_yOffsetExpansionLandingPage)	-- cached db value
 		end
 	end)
 	hooksecurefunc(ExpansionLandingPageMinimapButton, "UpdateIcon", function(self)
-		if not(self.garrisonMode) then
+		if not(self:IsInGarrisonMode()) then
 			self:ClearAllPoints()
 			if (self:GetNormalTexture():GetAtlas() == "dragonflight-landingbutton-up") then
 				self:SetPoint("CENTER", MinimapBackdrop, "TOPLEFT", 32 + 4 + 26.5 + ClassicUI.cached_db_profile.extraFrames_Minimap_xOffsetExpansionLandingPage, -105 - 6 - 26.5 + ClassicUI.cached_db_profile.extraFrames_Minimap_yOffsetExpansionLandingPage)	-- cached db value
@@ -2735,6 +2766,13 @@ function ClassicUI:EnableOldMinimap()
 					ClassicUI.elpmbSizes.warwithin.h = self:GetHeight()
 				end
 				self:SetSize(mathfloor(ClassicUI.elpmbSizes.warwithin.w * ClassicUI.cached_db_profile.extraFrames_Minimap_scaleExpansionLandingPageTheWarWithin + 0.5), mathfloor(ClassicUI.elpmbSizes.warwithin.h * ClassicUI.cached_db_profile.extraFrames_Minimap_scaleExpansionLandingPageTheWarWithin + 0.5))	-- cached db value
+			elseif (self:GetNormalTexture():GetAtlas() == "midnight-landingbutton-up") then
+				self:SetPoint("CENTER", MinimapBackdrop, "TOPLEFT", 32 + 4 + 26.5 + ClassicUI.cached_db_profile.extraFrames_Minimap_xOffsetExpansionLandingPage, -105 - 6 - 26.5 + ClassicUI.cached_db_profile.extraFrames_Minimap_yOffsetExpansionLandingPage)	-- cached db value
+				if (ClassicUI.elpmbSizes.midnight.w == 0 or ClassicUI.elpmbSizes.midnight.h == 0) then
+					ClassicUI.elpmbSizes.midnight.w = self:GetWidth()
+					ClassicUI.elpmbSizes.midnight.h = self:GetHeight()
+				end
+				self:SetSize(mathfloor(ClassicUI.elpmbSizes.midnight.w * ClassicUI.cached_db_profile.extraFrames_Minimap_scaleExpansionLandingPageMidnight + 0.5), mathfloor(ClassicUI.elpmbSizes.midnight.h * ClassicUI.cached_db_profile.extraFrames_Minimap_scaleExpansionLandingPageMidnight + 0.5))	-- cached db value
 			else
 				self:SetPoint("CENTER", MinimapBackdrop, "TOPLEFT", 32 + 6 + 26.5 + ClassicUI.cached_db_profile.extraFrames_Minimap_xOffsetExpansionLandingPage, -105 - 7 - 26.5 + ClassicUI.cached_db_profile.extraFrames_Minimap_yOffsetExpansionLandingPage)	-- cached db value
 			end
@@ -2751,6 +2789,11 @@ function ClassicUI:EnableOldMinimap()
 		ClassicUI.elpmbSizes.warwithin.w = ExpansionLandingPageMinimapButton:GetWidth()
 		ClassicUI.elpmbSizes.warwithin.h = ExpansionLandingPageMinimapButton:GetHeight()
 		ExpansionLandingPageMinimapButton:SetSize(mathfloor(ClassicUI.elpmbSizes.warwithin.w * ClassicUI.db.profile.extraFrames.Minimap.scaleExpansionLandingPageTheWarWithin + 0.5), mathfloor(ClassicUI.elpmbSizes.warwithin.h * ClassicUI.db.profile.extraFrames.Minimap.scaleExpansionLandingPageTheWarWithin + 0.5))
+	elseif (ExpansionLandingPageMinimapButton:GetNormalTexture():GetAtlas() == "midnight-landingbutton-up") then
+		ExpansionLandingPageMinimapButton:SetPoint("CENTER", MinimapBackdrop, "TOPLEFT", 32 + 4 + 26.5 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetExpansionLandingPage, -105 - 6 - 26.5 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetExpansionLandingPage)
+		ClassicUI.elpmbSizes.midnight.w = ExpansionLandingPageMinimapButton:GetWidth()
+		ClassicUI.elpmbSizes.midnight.h = ExpansionLandingPageMinimapButton:GetHeight()
+		ExpansionLandingPageMinimapButton:SetSize(mathfloor(ClassicUI.elpmbSizes.midnight.w * ClassicUI.db.profile.extraFrames.Minimap.scaleExpansionLandingPageMidnight + 0.5), mathfloor(ClassicUI.elpmbSizes.midnight.h * ClassicUI.db.profile.extraFrames.Minimap.scaleExpansionLandingPageMidnight + 0.5))
 	else
 		ExpansionLandingPageMinimapButton:SetPoint("CENTER", MinimapBackdrop, "TOPLEFT", 32 + 6 + 26.5 + ClassicUI.db.profile.extraFrames.Minimap.xOffsetExpansionLandingPage, -105 - 7 - 26.5 + ClassicUI.db.profile.extraFrames.Minimap.yOffsetExpansionLandingPage)
 	end
@@ -5954,7 +5997,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 	ClassicUI.hook_GuildMicroButton_UpdateNotificationIcon = function(self)
 		if (ClassicUI.cached_db_profile.barsConfig_MicroButtons_GuildMicroButton_classicNotificationMicroButton) then	-- cached db value
 			self.NotificationOverlay:SetShown(false)
-			if CommunitiesFrame_IsEnabled() and self:IsEnabled() then
+			if C_Club_IsEnabled() and self:IsEnabled() then
 				self.CUI_NotificationOverlay:SetShown(C_SocialRestrictions_CanReceiveChat() and (self:HasUnseenInvitations() or CommunitiesUtil_DoesAnyCommunityHaveUnreadMessages()))
 			else
 				self.CUI_NotificationOverlay:SetShown(false)
@@ -6292,7 +6335,8 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 		if (ClassicUI.cached_db_profile.barsConfig_MicroButtons_EJMicroButton_classicNotificationMicroButton) then	-- cached db value
 			self.NotificationOverlay:SetShown(false)
 			local show = not GetCVarBitfield("closedInfoFramesAccountWide", Enum.FrameTutorialAccount.EnconterJournalTutorialsTabSeen)
-			self.CUI_NotificationOverlay:SetShown(show)
+			local journeyTutorial = not GetCVarBitfield("closedInfoFrames", LE_FRAME_TUTORIAL_JOURNEYS_TAB)
+			self.CUI_NotificationOverlay:SetShown(show or journeyTutorial)
 		end
 	end
 	if (ClassicUI.db.profile.barsConfig.MicroButtons.EJMicroButton.classicNotificationMicroButton) then
@@ -7239,7 +7283,7 @@ function ClassicUI:MF_PLAYER_ENTERING_WORLD()
 			bar.priority = 4
 			if (bar.ShouldBeVisible == nil) then
 				bar.ShouldBeVisible = function(self)
-					return not IsPlayerAtEffectiveMaxLevel() and not IsXPUserDisabled()
+					return GameRulesUtil_CanShowExperienceBar()
 				end
 			end
 			hooksecurefunc(bar, "Update", function(self)
@@ -7596,6 +7640,30 @@ function ClassicUI:HideMainMenuBarDividers(actionBar, forceHide)
 	end
 end
 
+-- Return the profile used to lay out an ActionButton
+ClassicUI.GetActionButtonBarsConfig = function(iActionButton, typeActionButton)
+	if (typeActionButton == nil) then
+		typeActionButton = ClassicUI.cached_ActionButtonInfo.typeActionButton[iActionButton]
+	end
+	if (typeActionButton == 0) then
+		return ClassicUI.db.profile.barsConfig.MainMenuBar
+	elseif (typeActionButton == 1) then
+		return ClassicUI.db.profile.barsConfig.BottomMultiActionBars
+	elseif (typeActionButton == 2) then
+		return ClassicUI.db.profile.barsConfig.RightMultiActionBars
+	elseif (typeActionButton == 3) then
+		return ClassicUI.db.profile.barsConfig.PetActionBarFrame
+	elseif (typeActionButton == 4) then
+		return ClassicUI.db.profile.barsConfig.StanceBarFrame
+	elseif (typeActionButton == 5) then
+		return ClassicUI.db.profile.barsConfig.PossessBarFrame
+	elseif (typeActionButton == 6) then
+		return ClassicUI.db.profile.barsConfig.SpellFlyoutButtons
+	elseif (typeActionButton == 7) then
+		return ClassicUI.db.profile.barsConfig.OverrideActionBar
+	end
+end
+
 -- Recreate the old 'AutoCastShine_AutoCastStart' from the classic AutoCastShine action button animation
 ClassicUI.AutoCastShine_AutoCastStart = function(button, r, g, b)
 	if ( ClassicUI.AUTOCAST_SHINES[button] ) then
@@ -7901,10 +7969,71 @@ ClassicUI.CreateClassicAutoCastShine = function(iActionButton)
 	return iabcset
 end
 
+-- Select the normal or reduced classic SpellActivationAlert using Blizzard's Assisted Combat rules
+ClassicUI.UpdateClassicSpellActivationAlertReduction = function(iActionButton, playAnimIn)
+	if ClassicUI.databaseCleaned then return end	-- [DB Integrity Check]
+	if issecretvalue(iActionButton) then return end	-- function also called from secret-protected CooldownViewer items
+	local iabcsaa = iActionButton.ClassicSpellActivationAlert
+	local iabcsaar = iActionButton.ClassicSpellActivationAlertReduced
+	if not(iabcsaa and iabcsaar) then return end
+
+	local typeABprofile = ClassicUI.GetActionButtonBarsConfig(iActionButton)
+	if not typeABprofile then return end
+
+	if ((typeABprofile.BLStyle ~= 0) or typeABprofile.BLStyle0UseNewSpellActivationAlert) then
+		iabcsaar:Hide()
+		return
+	end
+
+	local hasAlert, alertType = ActionButtonSpellAlertManager:HasAlert(iActionButton)
+	if not(hasAlert) then
+		iabcsaar:Hide()
+		return
+	elseif (alertType ~= ActionButtonSpellAlertManager.SpellAlertType.Default) then
+		if (iabcsaa.animIn:IsPlaying()) then
+			iabcsaa.animIn:Stop()
+		end
+		if (iabcsaa.animOut:IsPlaying()) then
+			iabcsaa.animOut:Stop()
+		end
+		iabcsaa:Hide()
+		iabcsaar:Hide()
+		return
+	end
+
+	local shouldReduce = not(typeABprofile.BLStyle0NeverReduceSpellActivationAlert) and iActionButton.bar and iActionButton.bar.isNormalBar and AssistedCombatManager
+							and AssistedCombatManager.ShouldDowngradeSpellAlertForButton and AssistedCombatManager:ShouldDowngradeSpellAlertForButton(iActionButton)
+
+	if (shouldReduce) then
+		if (iabcsaa.animIn:IsPlaying()) then
+			iabcsaa.animIn:Stop()
+		end
+		if (iabcsaa.animOut:IsPlaying()) then
+			iabcsaa.animOut:Stop()
+		end
+		iabcsaa:Hide()
+		iabcsaar:Show()
+	else
+		local wasReduced = iabcsaar:IsShown()
+		local wasAnimatingOut = iabcsaa.animOut:IsPlaying()
+		iabcsaar:Hide()
+		if (wasAnimatingOut) then
+			iabcsaa.animOut:Stop()
+		end
+		if (wasReduced or (not(playAnimIn) and (wasAnimatingOut or not(iabcsaa:IsShown())))) then
+			iabcsaa.animIn:Play()
+			iabcsaa.animIn:Finish()
+		elseif (playAnimIn and (wasAnimatingOut or not(iabcsaa:IsShown()) or iabcsaa.animIn:IsStopped())) then
+			iabcsaa.animIn:Play()
+		end
+	end
+end
+
 -- Function to recreate the classic SpellActivationAlert animation frame for an ActionButton
 ClassicUI.CreateClassicSpellActivationAlertFrame = function(iActionButton)
 	if (iActionButton.ClassicSpellActivationAlert) then return end
 
+	-- ClassicSpellActivationAlert
 	-- Recreate the classic animation frames and animations
 	local parentName = iActionButton:GetName()
 	local iabcsaa = CreateFrame("Frame", nil, iActionButton)
@@ -7968,7 +8097,7 @@ ClassicUI.CreateClassicSpellActivationAlertFrame = function(iActionButton)
 	end
 
 	iabcsaa.OnUpdate = function(self, elapsed)
-		AnimateTexCoords(self.ants, 256, 256, 48, 48, 22, elapsed, 0.01)
+		TextureUtil_AnimateTexCoords(self.ants, 256, 256, 48, 48, 22, elapsed, 0.01)
 		local button = self:GetParent():GetParent()
 		local cooldown = button.cooldown
 		-- we need some threshold to avoid dimming the glow during the gdc
@@ -8225,31 +8354,56 @@ ClassicUI.CreateClassicSpellActivationAlertFrame = function(iActionButton)
 
 	-- Global hooks to the main functions that show/hide these animations
 	if not ClassicUI.hooked_ActionButton_ShowHideOverlayGlow then
-		hooksecurefunc(ActionButtonSpellAlertManager, "ShowAlert", function(self, button)
-			if issecretvalue(button) then return end	-- function also used by secret-protected CooldownViewer items
-			if not(button.ClassicSpellActivationAlert) then return end
-			if button.ClassicSpellActivationAlert.animOut:IsPlaying() then
-				button.ClassicSpellActivationAlert.animOut:Stop()
-			end
-			if not button.ClassicSpellActivationAlert:IsShown() or button.ClassicSpellActivationAlert.animIn:IsStopped() then
-				button.ClassicSpellActivationAlert.animIn:Play()
-			end
+		hooksecurefunc(ActionButtonSpellAlertManager, "ShowAlert", function(self, button, skipBirth)
+			ClassicUI.UpdateClassicSpellActivationAlertReduction(button, not(skipBirth))
 		end)
 		hooksecurefunc(ActionButtonSpellAlertManager, "HideAlert", function(self, button)
 			if issecretvalue(button) then return end	-- function also used by secret-protected CooldownViewer items
 			if not(button.ClassicSpellActivationAlert) then	return end
+			if (button.ClassicSpellActivationAlertReduced) then
+				button.ClassicSpellActivationAlertReduced:Hide()
+			end
 			if button.ClassicSpellActivationAlert.animIn:IsPlaying() then
 				button.ClassicSpellActivationAlert.animIn:Stop()
 			end
-			if button:IsVisible() then
-				button.ClassicSpellActivationAlert.animOut:Play()
-			else
-				button.ClassicSpellActivationAlert.animOut:OnFinished()	-- We aren't shown anyway, so we'll instantly hide it.
+			if button.ClassicSpellActivationAlert:IsShown() then
+				if button:IsVisible() then
+					if not button.ClassicSpellActivationAlert.animOut:IsPlaying() then
+						button.ClassicSpellActivationAlert.animOut:Play()
+					end
+				else
+					button.ClassicSpellActivationAlert.animOut:OnFinished()	-- We aren't shown anyway, so we'll instantly hide it.
+				end
 			end
 		end)
+		ClassicUI.RefreshClassicSpellActivationAlerts = function()
+			if ClassicUI.databaseCleaned then return end	-- [DB Integrity Check]
+			for button in pairs(ActionButtonSpellAlertManager.activeAlerts) do
+				ClassicUI.UpdateClassicSpellActivationAlertReduction(button, false)
+			end
+		end
+		EventRegistry:RegisterCallback("ActionButton.OnAssistedCombatRotationFrameChanged", ClassicUI.RefreshClassicSpellActivationAlerts)
+		EventRegistry:RegisterCallback("AssistedCombatManager.OnAssistedHighlightSpellChange", ClassicUI.RefreshClassicSpellActivationAlerts)
+		EventRegistry:RegisterCallback("AssistedCombatManager.OnSetUseAssistedHighlight", ClassicUI.RefreshClassicSpellActivationAlerts)
+		EventRegistry:RegisterCallback("AssistedCombatManager.RotationSpellsUpdated", ClassicUI.RefreshClassicSpellActivationAlerts)
+		CVarCallbackRegistry:RegisterCallback("assistedCombatReduceHighlights", ClassicUI.RefreshClassicSpellActivationAlerts)
 		ClassicUI.hooked_ActionButton_ShowHideOverlayGlow = true
 	end
-	return iabcsaa
+
+	-- ClassicSpellActivationAlertReduced
+	local iabcsaar = CreateFrame("Frame", nil, iActionButton)
+	iabcsaar.glow = iabcsaar:CreateTexture(parentName.."ReducedGlow", "ARTWORK")
+	iabcsaar.glow:SetTexture("Interface\\Addons\\ClassicUI\\Textures\\ClassicSpellActivationAlertReduced")
+	iabcsaar.glow:SetTexCoord(0, 0.765625, 0, 0.765625)
+	iabcsaar.glow:SetSize(41, 41)
+	iabcsaar.glow:SetPoint("CENTER")
+	iabcsaar:SetParent(iabpcsaa)
+	iActionButton.ClassicSpellActivationAlertReduced = iabcsaar
+	iabcsaar:SetSize(frameWidth * 1.4, frameHeight * 1.4)
+	iabcsaar:SetPoint("CENTER", iActionButton, "CENTER", 0, 0)
+	iabcsaar:Hide()
+
+	return iabcsaa, iabcsaar
 end
 
 -- Function that handles a queue of pending functions that set the scale of combat-protected frames
@@ -8475,17 +8629,21 @@ ClassicUI.RestoreModernLayoutActionButton = function(iActionButton, typeActionBu
 		iabsaa.ProcStartFlipbook:SetSize(150, 150)
 		iabsaa.ProcAltGlow:SetSize(49, 49)
 		iabsaa:SetAlpha(1)
-		local iabcsaa = iActionButton.ClassicSpellActivationAlert
-		if (iabcsaa ~= nil) then
-			iabcsaa.spark:Hide()
-			iabcsaa.innerGlow:Hide()
-			iabcsaa.innerGlowOver:Hide()
-			iabcsaa.outerGlow:Hide()
-			iabcsaa.outerGlowOver:Hide()
-			iabcsaa.ants:Hide()
-			iabcsaa:GetParent():Hide()
-			iabcsaa:GetParent():SetAlpha(0)
-		end
+	end
+	local iabcsaa = iActionButton.ClassicSpellActivationAlert
+	if (iabcsaa ~= nil) then
+		iabcsaa.spark:Hide()
+		iabcsaa.innerGlow:Hide()
+		iabcsaa.innerGlowOver:Hide()
+		iabcsaa.outerGlow:Hide()
+		iabcsaa.outerGlowOver:Hide()
+		iabcsaa.ants:Hide()
+		iabcsaa:GetParent():Hide()
+		iabcsaa:GetParent():SetAlpha(0)
+	end
+	local iabcsaar = iActionButton.ClassicSpellActivationAlertReduced
+	if (iabcsaar ~= nil) then
+		iabcsaar:Hide()
 	end
 	local iabtraf = iActionButton.TargetReticleAnimFrame
 	if (iabtraf ~= nil) then
@@ -8539,26 +8697,8 @@ end
 --     0 = MainMenuBarButton     | 1 = BottomMultiBarButton | 2 = RightMultiBarButton  | 3 = PetBarButton
 --     4 = StanceBarButton       | 5 = PossessBarButton     | 6 = SpellFlyoutButton    | 7 = OverrideBarButton
 ClassicUI.LayoutActionButton = function(iActionButton, typeActionButton)
-	local typeABprofile
-	if (typeActionButton == 0) then
-		typeABprofile = ClassicUI.db.profile.barsConfig.MainMenuBar
-	elseif (typeActionButton == 1) then
-		typeABprofile = ClassicUI.db.profile.barsConfig.BottomMultiActionBars
-	elseif (typeActionButton == 2) then
-		typeABprofile = ClassicUI.db.profile.barsConfig.RightMultiActionBars
-	elseif (typeActionButton == 3) then
-		typeABprofile = ClassicUI.db.profile.barsConfig.PetActionBarFrame
-	elseif (typeActionButton == 4) then
-		typeABprofile = ClassicUI.db.profile.barsConfig.StanceBarFrame
-	elseif (typeActionButton == 5) then
-		typeABprofile = ClassicUI.db.profile.barsConfig.PossessBarFrame
-	elseif (typeActionButton == 6) then
-		typeABprofile = ClassicUI.db.profile.barsConfig.SpellFlyoutButtons
-	elseif (typeActionButton == 7) then
-		typeABprofile = ClassicUI.db.profile.barsConfig.OverrideActionBar
-	else
-		return
-	end
+	local typeABprofile = ClassicUI.GetActionButtonBarsConfig(iActionButton, typeActionButton)
+	if not typeABprofile then return end
 	local newBLScale = typeABprofile.scale or 1
 
 	local name = iActionButton:GetName()
@@ -9248,34 +9388,21 @@ ClassicUI.LayoutActionButton = function(iActionButton, typeActionButton)
 					iabcsaa:GetParent():SetAlpha(0)
 				end
 			end
+			ClassicUI.cached_ActionButtonInfo.spellActivationAlertAdjusted[iActionButton] = true
 		else
+			ClassicUI.cached_ActionButtonInfo.spellActivationAlertAdjusted[iActionButton] = false
 			if not ClassicUI.hooked_ActionButton_SetupOverlayGlow then
-				hooksecurefunc(ActionButtonSpellAlertManager, "ShowAlert", function(self, button)
+				hooksecurefunc(ActionButtonSpellAlertManager, "ShowAlert", function(self, button, skipBirth)
 					if issecretvalue(button) then return end	-- function also used by secret-protected CooldownViewer items
 					if ClassicUI.databaseCleaned then return end	-- [DB Integrity Check]
+					if ClassicUI.cached_ActionButtonInfo.spellActivationAlertAdjusted[button] then return end
+					-- Don't let AssistedCombatRotation consume the lazy setup intended for the Default SpellActivationAlert
+					local hasAlert, alertType = ActionButtonSpellAlertManager:HasAlert(button)
+					if (hasAlert and alertType ~= ActionButtonSpellAlertManager.SpellAlertType.Default) then return end
 					local iabsaa = button.SpellActivationAlert
 					local iabcsaa = button.ClassicSpellActivationAlert
-					local typeActionButton = ClassicUI.cached_ActionButtonInfo.typeActionButton[button]
-					local typeABprofile
-					if (typeActionButton == 0) then
-						typeABprofile = ClassicUI.db.profile.barsConfig.MainMenuBar
-					elseif (typeActionButton == 1) then
-						typeABprofile = ClassicUI.db.profile.barsConfig.BottomMultiActionBars
-					elseif (typeActionButton == 2) then
-						typeABprofile = ClassicUI.db.profile.barsConfig.RightMultiActionBars
-					elseif (typeActionButton == 3) then
-						typeABprofile = ClassicUI.db.profile.barsConfig.PetActionBarFrame
-					elseif (typeActionButton == 4) then
-						typeABprofile = ClassicUI.db.profile.barsConfig.StanceBarFrame
-					elseif (typeActionButton == 5) then
-						typeABprofile = ClassicUI.db.profile.barsConfig.PossessBarFrame
-					elseif (typeActionButton == 6) then
-						typeABprofile = ClassicUI.db.profile.barsConfig.SpellFlyoutButtons
-					elseif (typeActionButton == 7) then
-						typeABprofile = ClassicUI.db.profile.barsConfig.OverrideActionBar
-					else
-						return
-					end
+					local typeABprofile = ClassicUI.GetActionButtonBarsConfig(button)
+					if not typeABprofile then return end
 					if ((typeABprofile.BLStyle == 0) and not(typeABprofile.BLStyle0UseNewSpellActivationAlert)) then
 						if (iabsaa ~= nil) then
 							iabsaa:SetAlpha(0)
@@ -9291,6 +9418,8 @@ ClassicUI.LayoutActionButton = function(iActionButton, typeActionButton)
 						iabcsaa.ants:Show()
 						iabcsaa:GetParent():Show()
 						iabcsaa:GetParent():SetAlpha(1)
+						ClassicUI.cached_ActionButtonInfo.spellActivationAlertAdjusted[button] = true
+						ClassicUI.UpdateClassicSpellActivationAlertReduction(button, not(skipBirth))
 					else
 						if (iabcsaa ~= nil) then
 							iabcsaa.spark:Hide()
@@ -9303,24 +9432,25 @@ ClassicUI.LayoutActionButton = function(iActionButton, typeActionButton)
 							iabcsaa:GetParent():SetAlpha(0)
 						end
 						if (iabsaa ~= nil) then
-							if not(ClassicUI.cached_ActionButtonInfo.spellActivationAlertAdjusted[button]) then
-								local frameWidth, frameHeight = button:GetSize()
-								iabsaa:SetSize(frameWidth * 1.4, frameHeight * 1.4)
-								if (typeABprofile.BLStyle == 0) then
-									iabsaa.ProcStartFlipbook:SetSize(128, 128)
-									iabsaa.ProcAltGlow:SetSize(41, 41)
-								else
-									iabsaa.ProcStartFlipbook:SetSize(150, 150)
-									iabsaa.ProcAltGlow:SetSize(49, 49)
-								end
-								ClassicUI.cached_ActionButtonInfo.spellActivationAlertAdjusted[button] = true
+							local frameWidth, frameHeight = button:GetSize()
+							iabsaa:SetSize(frameWidth * 1.4, frameHeight * 1.4)
+							if (typeABprofile.BLStyle == 0) then
+								iabsaa.ProcStartFlipbook:SetSize(128, 128)
+								iabsaa.ProcAltGlow:SetSize(41, 41)
+							else
+								iabsaa.ProcStartFlipbook:SetSize(150, 150)
+								iabsaa.ProcAltGlow:SetSize(49, 49)
 							end
 							iabsaa:SetAlpha(1)
+							ClassicUI.cached_ActionButtonInfo.spellActivationAlertAdjusted[button] = true
 						end
 					end
 				end)
 				ClassicUI.hooked_ActionButton_SetupOverlayGlow = true
 			end
+		end
+		if (iActionButton.ClassicSpellActivationAlert) then
+			ClassicUI.UpdateClassicSpellActivationAlertReduction(iActionButton, false)
 		end
 		local iabtraf = iActionButton.TargetReticleAnimFrame
 		if (iabtraf ~= nil) then
@@ -9404,27 +9534,8 @@ ClassicUI.LayoutActionButton = function(iActionButton, typeActionButton)
 				hooksecurefunc(AssistedCombatManager, "SetAssistedHighlightFrameShown", function(self, actionButton, shown)
 					if (shown) then
 						if (actionButton.AssistedCombatHighlightFrame and actionButton.AssistedCombatHighlightFrame.Flipbook) then
-							local typeActionButton = ClassicUI.cached_ActionButtonInfo.typeActionButton[actionButton]
-							local typeABprofile
-							if (typeActionButton == 0) then
-								typeABprofile = ClassicUI.db.profile.barsConfig.MainMenuBar
-							elseif (typeActionButton == 1) then
-								typeABprofile = ClassicUI.db.profile.barsConfig.BottomMultiActionBars
-							elseif (typeActionButton == 2) then
-								typeABprofile = ClassicUI.db.profile.barsConfig.RightMultiActionBars
-							elseif (typeActionButton == 3) then
-								typeABprofile = ClassicUI.db.profile.barsConfig.PetActionBarFrame
-							elseif (typeActionButton == 4) then
-								typeABprofile = ClassicUI.db.profile.barsConfig.StanceBarFrame
-							elseif (typeActionButton == 5) then
-								typeABprofile = ClassicUI.db.profile.barsConfig.PossessBarFrame
-							elseif (typeActionButton == 6) then
-								typeABprofile = ClassicUI.db.profile.barsConfig.SpellFlyoutButtons
-							elseif (typeActionButton == 7) then
-								typeABprofile = ClassicUI.db.profile.barsConfig.OverrideActionBar
-							else
-								return
-							end
+							local typeABprofile = ClassicUI.GetActionButtonBarsConfig(actionButton)
+							if not typeABprofile then return end
 							if (typeABprofile.BLStyle == 0) then
 								actionButton.AssistedCombatHighlightFrame.Flipbook:SetSize(57, 57)
 							end
@@ -9684,6 +9795,18 @@ function ClassicUI:PLAYER_SPECIALIZATION_CHANGED()
 	ClassicUI:ReLayoutMainFrames()
 end
 
+function ClassicUI.BottomManagedFrameContainer_Relocate()
+	if (not(InCombatLockdown()) or not(BottomManagedFrameContainer:IsProtected())) then
+		BottomManagedFrameContainer:ClearAllPoints()
+		BottomManagedFrameContainer:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, MAIN_ACTION_BAR_DEFAULT_OFFSET_Y + 100)
+	else
+		delayFunc_BottomManagedFrameContainer_Relocate = true
+		if (not fclFrame:IsEventRegistered("PLAYER_REGEN_ENABLED")) then
+			fclFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+		end
+	end
+end
+
 -- Main function that loads the core features of ClassicUI. This function at the end calls to 'ClassicUI:PLAYER_ENTERING_WORLD()'.
 function ClassicUI:MainFunction(isLogin)
 
@@ -9694,14 +9817,8 @@ function ClassicUI:MainFunction(isLogin)
 	ClassicUI:InitActionButtonInfoCache()
 
 	-- Seems that this frame normally does not need protection (InCombatLockdown) to be moved, as long as there are no protected frames anchored to it.
-	hooksecurefunc("UIParent_ManageFramePositions", function()
-		if (not(InCombatLockdown()) or not(UIParentBottomManagedFrameContainer:IsProtected())) then
-			UIParentBottomManagedFrameContainer:ClearAllPoints()
-			UIParentBottomManagedFrameContainer:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, MAIN_ACTION_BAR_DEFAULT_OFFSET_Y + 100)
-		end
-	end)
-	UIParentBottomManagedFrameContainer:ClearAllPoints()
-	UIParentBottomManagedFrameContainer:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, MAIN_ACTION_BAR_DEFAULT_OFFSET_Y + 100)
+	hooksecurefunc("ManageFramePositions", ClassicUI.BottomManagedFrameContainer_Relocate)
+	ClassicUI.BottomManagedFrameContainer_Relocate()
 
 	if InCombatLockdown() then
 		delayFunc_MainFunction = true
@@ -10567,7 +10684,7 @@ end
 
 -- Extra Option: GreyOnCooldown. Function to update the RegisteredActionSpells table (PetActionButtons)
 ClassicUI.GOC_UpdatePetActionButtonAction = function(button)
-	local index = button.index or button.id
+	local index = button.index or button.id or (type(button.GetID)=="function" and button:GetID())
 	if (index) then
 		local _, _, _, _, _, _, spellID = GetPetActionInfo(index)
 		if (spellID ~= nil) then
@@ -10603,6 +10720,7 @@ ClassicUI.GOC_GOCActionButtonUpdateCheck = function(self, isOnGCD)
 	if not(self.icon) then return end
 	local duration
 	local useGCDCurve = false
+	local isActive = false
 	if (self.action) then
 		if (ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturateUnusableActions or ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturateActionsWithoutResources) then
 			local isUsable, notEnoughMana = C_ActionBar_IsUsableAction(self.action)
@@ -10634,8 +10752,9 @@ ClassicUI.GOC_GOCActionButtonUpdateCheck = function(self, isOnGCD)
 					if actionCooldownInfo then
 						isOnGCD = actionCooldownInfo.isOnGCD or false
 						if not(isOnGCD) then
-							if actionInfoType == "macro" and actionInfoSubType=="item" then
+							if actionInfoType ~= "spell" and actionInfoSubType~="spell" and actionInfoSubType~="pet" then
 								useGCDCurve = true
+								isActive = actionCooldownInfo.isActive
 							end
 						end
 					end
@@ -10695,7 +10814,11 @@ ClassicUI.GOC_GOCActionButtonUpdateCheck = function(self, isOnGCD)
 				if not(useGCDCurve) then
 					self.icon:SetDesaturation(duration:EvaluateRemainingDuration(ClassicUI.GOC_DesaturationCurve))
 				else
-					self.icon:SetDesaturation(duration:EvaluateRemainingDuration(ClassicUI.GOC_DesaturationCurveGCD))
+					if isActive then
+						self.icon:SetDesaturation(duration:EvaluateTotalDuration(ClassicUI.GOC_DesaturationCurveGCD))
+					else
+						self.icon:SetDesaturation(0)
+					end
 				end
 			else
 				if (duration:GetRemainingDuration() > 0) then
@@ -10712,7 +10835,7 @@ end
 
 -- Extra Option: GreyOnCooldown. Main GOC PetActionButton Update function to desaturate the entire action icon when the spell is on cooldown or unusable
 ClassicUI.GOC_GOCPetActionButtonUpdateCheck = function(self)
-	local index = self.index or self.id
+	local index = self.index or self.id or (type(self.GetID)=="function" and self:GetID())
 	if not(self.icon and index and GetPetActionInfo(index)) then return end
 	if (ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturatePetActionButtons) then
 		if (ClassicUI.cached_db_profile.extraConfigs_GreyOnCooldownConfig_desaturateUnusableActions) then
@@ -10858,46 +10981,63 @@ function ClassicUI:GOC_HookGOCPetActionButtonUpdate(button)
 		if (PetActionBar ~= nil and type(PetActionBar.UpdateCooldowns) == "function") then
 			hooksecurefunc(PetActionBar, "UpdateCooldowns", function(self)
 				for i = 1, ClassicUI.NUM_PET_ACTION_SLOTS do
-					local button = self.actionButtons[i]
-					if button then
-						ClassicUI.GOC_UpdatePetActionButtonAction(button)
+					local butt = self.actionButtons[i]
+					if butt then
+						ClassicUI.GOC_UpdatePetActionButtonAction(butt)
 					end
 				end
 			end)
+			GREYONCOOLDOWN_UPDATECOOLDOWNS_HOOKED_PAB = true
 		end
-		GREYONCOOLDOWN_UPDATECOOLDOWNS_HOOKED_PAB = true
 	end
 	ClassicUI.GOC_UpdatePetActionButtonAction(button)
 end
 
 -- Extra Option: GreyOnCooldown. Function to handle the SPELL_UPDATE_COOLDOWN event
-function ClassicUI:SPELL_UPDATE_COOLDOWN(spellID, baseSpellID, category, startRecoveryCategory)
-	if (spellID == nil) then
-		spellID = baseSpellID
-		if (spellID == nil) then
-			return
-		end
-	end
-	local spellCooldownInfo = C_Spell_GetSpellCooldown(spellID)
-	if (spellCooldownInfo) then
+function ClassicUI:SPELL_UPDATE_COOLDOWN(spellID, baseSpellID)
+	if (spellID ~= nil) then
 		if (ClassicUI.GOC_RegisteredActionSpells[spellID]) then
-			for k, _ in pairs(ClassicUI.GOC_RegisteredActionSpells[spellID]) do
-				if (k.GOCUpdateCheck) then
-					k:GOCUpdateCheck(spellCooldownInfo.isOnGCD or false)
+			local spellCooldownInfo = C_Spell_GetSpellCooldown(spellID)
+			if (spellCooldownInfo) then
+				for k, _ in pairs(ClassicUI.GOC_RegisteredActionSpells[spellID]) do
+					if (k.GOCUpdateCheck) then
+						k:GOCUpdateCheck(spellCooldownInfo.isOnGCD or false)
+					end
+				end
+			else
+				for k, _ in pairs(ClassicUI.GOC_RegisteredActionSpells[spellID]) do
+					if (k.GOCUpdateCheck) then
+						k:GOCUpdateCheck()
+					end
+				end
+			end
+		end
+		if (ClassicUI.GOC_RelatedActionSpells[spellID] ~= nil) then
+			for _, relatedSpellID in pairs(ClassicUI.GOC_RelatedActionSpells[spellID]) do
+				if (ClassicUI.GOC_RegisteredActionSpells[relatedSpellID]) then
+					local spellCooldownInfo = C_Spell_GetSpellCooldown(relatedSpellID)
+					if (spellCooldownInfo) then
+						for k, _ in pairs(ClassicUI.GOC_RegisteredActionSpells[relatedSpellID]) do
+							if (k.GOCUpdateCheck) then
+								k:GOCUpdateCheck(spellCooldownInfo.isOnGCD or false)
+							end
+						end
+					else
+						for k, _ in pairs(ClassicUI.GOC_RegisteredActionSpells[relatedSpellID]) do
+							if (k.GOCUpdateCheck) then
+								k:GOCUpdateCheck()
+							end
+						end
+					end
 				end
 			end
 		end
 	end
-	if (ClassicUI.GOC_RelatedActionSpells[spellID] ~= nil) then
-		for _, relatedSpellID in pairs(ClassicUI.GOC_RelatedActionSpells[spellID]) do
-			spellCooldownInfo = C_Spell_GetSpellCooldown(relatedSpellID)
-			if (spellCooldownInfo) then
-				if (ClassicUI.GOC_RegisteredActionSpells[relatedSpellID]) then
-					for k, _ in pairs(ClassicUI.GOC_RegisteredActionSpells[relatedSpellID]) do
-						if (k.GOCUpdateCheck) then
-							k:GOCUpdateCheck(spellCooldownInfo.isOnGCD or false)
-						end
-					end
+	if (baseSpellID ~= nil and baseSpellID ~= spellID) then
+		if (ClassicUI.GOC_RegisteredActionSpells[baseSpellID]) then
+			for k, _ in pairs(ClassicUI.GOC_RegisteredActionSpells[baseSpellID]) do
+				if (k.GOCUpdateCheck) then
+					k:GOCUpdateCheck()
 				end
 			end
 		end
@@ -11026,12 +11166,12 @@ function ClassicUI:GOC_MainFunction()
 	ClassicUI.GOC_DesaturationCurve = C_CurveUtil.CreateCurve()
 	ClassicUI.GOC_DesaturationCurve:SetType(Enum.LuaCurveType.Step)
 	ClassicUI.GOC_DesaturationCurve:AddPoint(0, 0)
-	ClassicUI.GOC_DesaturationCurve:AddPoint(0.001, 1)
+	ClassicUI.GOC_DesaturationCurve:AddPoint(STANDARD_EPSILON, 1)
 	-- Alternative desaturation Curve that establishes the GCD duration as the step-point (for cases where isOnGCD is not available/reliable)
 	ClassicUI.GOC_DesaturationCurveGCD = C_CurveUtil.CreateCurve()
 	ClassicUI.GOC_DesaturationCurveGCD:SetType(Enum.LuaCurveType.Step)
 	ClassicUI.GOC_DesaturationCurveGCD:AddPoint(0, 0)
-	ClassicUI.GOC_DesaturationCurveGCD:AddPoint(ClassicUI.GOC_GCD, 1)
+	ClassicUI.GOC_DesaturationCurveGCD:AddPoint(ClassicUI.GOC_GCD + STANDARD_EPSILON, 1)
 
 	-- Set ActionButton hooks to desaturate the entire action icon when the spell is on cooldown or unusable
 	if not(GREYONCOOLDOWN_HOOKED) then
@@ -11057,6 +11197,9 @@ function ClassicUI:HookOpenGuildPanelMode()
 		-- New global functions ToggleOldGuildFrame and ToggleNewGuildFrame to toggle the old and the new menu frame respectively
 		ToggleNewGuildFrame = ToggleGuildFrame
 		function ToggleOldGuildFrame()
+			if InCombatLockdown() or DISALLOW_FRAME_TOGGLING then
+				return
+			end
 			if (Kiosk_IsEnabled()) then
 				return
 			end

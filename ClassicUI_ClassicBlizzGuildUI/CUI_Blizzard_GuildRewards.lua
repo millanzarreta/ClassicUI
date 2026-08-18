@@ -8,6 +8,7 @@ function CUI_GuildRewardsFrame_OnLoad(self)
 	HybridScrollFrame_CreateButtons(CUI_GuildRewardsContainer, "CUI_GuildRewardsButtonTemplate", 1, 0);
 	CUI_GuildRewardsContainerScrollBar.doNotHide = true;
 	self:RegisterEvent("GUILD_REWARDS_LIST");
+	self:RegisterEvent("GUILD_REWARDS_LIST_UPDATE");
 end
 
 function CUI_GuildRewardsFrame_OnShow(self)

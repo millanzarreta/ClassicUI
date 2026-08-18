@@ -341,7 +341,9 @@
 							StaticPopup_Hide("ADD_GUILDMEMBER");
 						else
 							local clubId = C_Club.GetGuildClubId()
-							StaticPopup_Show("ADD_GUILDMEMBER", nil, nil, {clubId = clubId});
+							if clubId then
+								StaticPopup_Show("ADD_GUILDMEMBER", nil, nil, {clubId = clubId});
+							end
 						end
 					</OnClick>
 				</Scripts>
@@ -354,7 +356,8 @@
 				<Scripts>
 					<OnClick>
 						if ( not GuildControlUI ) then
-							UIParentLoadAddOn("Blizzard_GuildControlUI");
+							local loaded = LoadAddOnWithErrorHandling("Blizzard_GuildControlUI");
+							if not(loaded) then return; end
 						end
 
 						local wasShown = GuildControlUI:IsShown();

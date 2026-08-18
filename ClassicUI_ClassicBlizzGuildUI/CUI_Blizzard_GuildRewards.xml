@@ -70,14 +70,14 @@
 		</NormalTexture>
 		<HighlightTexture name="$parentHighlight" file="Interface\ClassTrainerFrame\TrainerTextures" alphaMode="ADD">
 			<TexCoords left="0.00195313" right="0.57421875" top="0.75390625" bottom="0.84570313"/>
-		</HighlightTexture>	
+		</HighlightTexture>
 		<Scripts>
 			<OnLoad>
 				self:RegisterForClicks("LeftButtonUp", "RightButtonUp");
 			</OnLoad>
 			<OnEnter function="CUI_GuildRewardsButton_OnEnter"/>
 			<OnLeave function="CUI_GuildRewardsButton_OnLeave"/>
-			<OnClick function="CUI_GuildRewardsButton_OnClick"/> 
+			<OnClick function="CUI_GuildRewardsButton_OnClick"/>
 		</Scripts>
 	</Button>
 <!--
@@ -89,7 +89,7 @@
 		<Anchors>
 			<Anchor point="TOPLEFT" relativeTo="$parent" x="4" y="-65"/>
 			<Anchor point="BOTTOMRIGHT" relativeTo="$parent" x="-7" y="26"/>
-		</Anchors>	
+		</Anchors>
 		<Layers>
 			<Layer level="BACKGROUND">
 				<Texture name="$parentBg" file="Interface\ClassTrainerFrame\TrainerTextures">

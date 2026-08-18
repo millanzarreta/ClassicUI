@@ -11,6 +11,7 @@ function CUI_GuildInfoFrame_OnLoad(self)
 	self:RegisterEvent("GUILD_RANKS_UPDATE");
 	self:RegisterEvent("PLAYER_GUILD_UPDATE");
 	self:RegisterEvent("GUILD_CHALLENGE_UPDATED");
+	self:RegisterEvent("GUILD_RANKS_UPDATE_ACTIVE_PLAYER");
 
 	RequestGuildChallengeInfo();
 end
@@ -21,7 +22,7 @@ function CUI_GuildInfoFrame_OnEvent(self, event, arg1)
 	elseif ( event == "GUILD_ROSTER_UPDATE" ) then
 		CUI_GuildInfoFrame_UpdatePermissions();
 		CUI_GuildInfoFrame_UpdateText();
-	elseif ( event == "GUILD_RANKS_UPDATE" ) then
+	elseif ( event == "GUILD_RANKS_UPDATE" or event == "GUILD_RANKS_UPDATE_ACTIVE_PLAYER" ) then
 		CUI_GuildInfoFrame_UpdatePermissions();
 	elseif ( event == "PLAYER_GUILD_UPDATE" ) then
 		CUI_GuildInfoFrame_UpdatePermissions();
@@ -71,7 +72,7 @@ function CUI_GuildInfoFrame_UpdatePermissions()
 		CUI_GuildInfoEditDetailsButton:Hide();
 	end
 	local guildInfoFrame = CUI_GuildInfoFrame;
-	if ( IsGuildLeader() ) then
+	if IsGuildLeader() or C_GuildInfo.IsGuildOfficer() then
 		CUI_GuildControlButton:Enable();
 	else
 		CUI_GuildControlButton:Disable();
@@ -211,7 +212,7 @@ function CUI_GuildLogFrame_Update()
 			msg = format(GUILDEVENT_TYPE_QUIT, player1);
 		end
 		if ( msg ) then
-			buffer = buffer..msg..GUILD_BANK_LOG_TIME:format(RecentTimeDate(year, month, day, hour)).."|n";
+			buffer = buffer..msg..GUILD_BANK_LOG_TIME:format(TimeUtil.GetRecentTimeDate(year, month, day, hour)).."|n";
 		end
 	end
 	CUI_GuildLogHTMLFrame:SetText(buffer);

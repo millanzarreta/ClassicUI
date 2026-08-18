@@ -212,7 +212,6 @@
 -->
 	<Frame name="CUI_GuildRosterFrame" parent="CUI_GuildFrame" setAllPoints="true" hidden="true">
 		<Frames>
-			<Frame name="CUI_GuildMemberDropDown" inherits="UIDropDownMenuTemplate"/>
 			<Frame name="CUI_GuildRosterViewDropdown" inherits="UIDropDownMenuTemplate">
 				<Anchors>
 					<Anchor point="TOPRIGHT" x="-12" y="-34"/>
